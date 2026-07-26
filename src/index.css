@@ -1,0 +1,116 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Relay — industrial signal palette */
+  --color-panel: #0b0e14; /* body background — deep graphite blue, not pure black */
+  --color-panel-raised: #131826; /* card / surface */
+  --color-panel-line: #232a3d; /* hairline borders on dark */
+  --color-signal: #ff7a33; /* amber — primary indicator / CTA */
+  --color-signal-dim: #b5551f; /* amber, low state */
+  --color-relay: #5fd4c4; /* teal — secondary signal / success */
+  --color-brass: #c08552; /* brass — structural accent, headings rules */
+  --color-ink: #f4f1ea; /* warm off-white text on dark */
+  --color-ink-dim: #9aa2b8; /* steel muted text */
+  --color-ink-faint: #5a6178; /* captions / disabled */
+
+  --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --breakpoint-xs: 30rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-panel);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--color-signal);
+  color: #12100c;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes signal-travel {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.signal-pulse-travel {
+  animation: signal-travel 3.4s linear infinite;
+  box-shadow: 0 0 10px 2px var(--color-relay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-pulse-travel {
+    animation: none;
+    display: none;
+  }
+}
+
+/* subtle schematic grid used behind panels */
+.grid-schematic {
+  background-image:
+    linear-gradient(to right, var(--color-panel-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-panel-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
