@@ -26,6 +26,7 @@ npm run scan                          # one cycle, ranked table, no trades
 node src/cli.js analyze <token-addr>  # every check and signal for one token
 npm run watch                         # run continuously, paper-trade the signals
 npm run report                        # portfolio and closed-trade statistics
+npm run serve                         # run the loop + the API the dashboard reads
 ```
 
 Without `ANTHROPIC_API_KEY` the bot still runs end to end; narrative scores fall
@@ -118,6 +119,47 @@ cheaper.
 Simulated fills are worse than the quoted price: a constant-product slippage
 term scaled by position size against pool depth, plus LP and priority fees. A
 backtest that fills at mid will flatter any strategy.
+
+## The dashboard
+
+The bot can drive a live web control panel — equity curve, open positions with
+stop/target tracks, and a feed of every decision with the reasoning behind it.
+
+A browser can't read the bot's JSON files, so `serve` runs the normal cycle loop
+*and* exposes a small local API for the UI to read:
+
+```bash
+# terminal 1 — the bot and its API
+cd bot && node src/cli.js serve
+
+# terminal 2 — the web app
+cd .. && npm install && npm run dev
+# open http://localhost:5173/dashboard.html
+```
+
+The dashboard lives in the repo's Vite app as a **separate page**
+(`dashboard.html`), not a route on the Relay landing page — the two share the
+design tokens and nothing else. In dev, Vite proxies `/api` to the bot, so the
+page is same-origin and the event stream needs no CORS.
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/state` | Everything the page paints on load |
+| `GET /api/stream` | Server-sent events: stage changes, decisions, fills |
+| `GET /api/equity` | Equity samples, one per cycle |
+| `GET /api/decisions` | Recent scored tokens |
+| `GET /api/positions` · `/api/trades` · `/api/signals` | Open, closed, and raw signal log |
+| `POST /api/scan` | Run a cycle now (the "scan now" button) |
+
+Updates are pushed over SSE; if the stream drops the page falls back to polling
+and keeps retrying, so a restarted bot reconnects on its own.
+
+`serve --no-loop` serves stored state without scanning — useful for reading back
+a previous run's history.
+
+> **Bind it to loopback.** The API has no authentication and can trigger a scan.
+> `server.host` defaults to `127.0.0.1`; putting it on a public interface would
+> expose your portfolio state and a trigger endpoint to anyone who finds it.
 
 ## Configuration
 

@@ -36,3 +36,16 @@ paper-trading agent for Solana. Unrelated to the landing page; it has its own
 ```bash
 cd bot && npm install && npm run scan
 ```
+
+Its live control panel is a **second page in this Vite app** —
+[`dashboard.html`](./dashboard.html), built from `src/dashboard/`. It is not a
+route on the Relay site; the two share only the design tokens in
+`src/index.css`. Run the bot's API and the dev server together:
+
+```bash
+cd bot && npm run serve   # terminal 1 — bot + local API on :7331
+npm run dev               # terminal 2 — then open /dashboard.html
+```
+
+`vite.config.js` proxies `/api` to the bot in dev, and `npm run build` emits
+both pages.

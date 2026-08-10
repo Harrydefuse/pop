@@ -94,6 +94,15 @@ export const DEFAULTS = {
     intervalSeconds: 180,
   },
 
+  /**
+   * Local API the dashboard reads. No authentication — it exposes portfolio
+   * state and can trigger a scan, so keep the host on loopback.
+   */
+  server: {
+    port: 7331,
+    host: '127.0.0.1',
+  },
+
   solana: {
     rpcUrl: 'https://api.mainnet-beta.solana.com',
   },

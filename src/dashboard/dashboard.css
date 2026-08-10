@@ -1,0 +1,30 @@
+/*
+ * Dashboard-only styles. The chart colour tokens live in ../index.css, inside
+ * the @theme block — Tailwind only generates utilities from the entry file, so
+ * declaring them here would produce variables with no matching classes.
+ */
+
+/* Numeric columns must not jitter as digits change during live updates. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.live-dot {
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}

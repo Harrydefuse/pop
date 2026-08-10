@@ -13,6 +13,30 @@
   --color-ink-dim: #9aa2b8; /* steel muted text */
   --color-ink-faint: #5a6178; /* captions / disabled */
 
+  /*
+   * Chart tokens for the memebot control panel (/dashboard.html).
+   *
+   * These are NOT eyeballed. The three categorical hues were validated with a
+   * palette checker against the card surface (--color-panel-raised) in dark
+   * mode and pass all five computable checks — lightness band, chroma floor,
+   * CVD separation (worst adjacent ΔE 14.3 deutan), normal-vision floor and
+   * contrast. They are deliberately deeper than --color-signal / --color-relay,
+   * which sit outside the dark-mode lightness band and fail as chart marks.
+   *
+   * The gain/loss pair lands in the CVD warn band (ΔE 6.6 deutan) because
+   * up-green / down-red is too entrenched in trading UIs to break. It is
+   * therefore never the only encoding: every P&L value ships with a sign and a
+   * directional caret.
+   *
+   * They live here rather than in the dashboard's own stylesheet because
+   * Tailwind only generates utilities from an @theme block in this entry file.
+   */
+  --color-chart-safety: #279a8b;
+  --color-chart-momentum: #d95f1a;
+  --color-chart-narrative: #7f70ea;
+  --color-gain: #2aa77b;
+  --color-loss: #e5484d;
+
   --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

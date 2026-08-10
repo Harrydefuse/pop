@@ -10,9 +10,11 @@ import { loadConfig } from './config.js';
 import { color, log, setLevel } from './log.js';
 import { ACTIONS } from './analysis/score.js';
 import { analyze, enrich, managePositions, runCycle } from './trade/engine.js';
+import { BotRunner } from './trade/runner.js';
 import { Portfolio } from './trade/portfolio.js';
+import { startServer } from './server.js';
 import { readJsonl } from './store.js';
-import { ageString, pct, sleep, usd } from './util.js';
+import { ageString, pct, usd } from './util.js';
 
 const USAGE = `memebot — memecoin scanner and paper-trading agent
 
@@ -22,6 +24,7 @@ Commands:
   scan                 Run one discovery + scoring cycle and print the ranked table
   analyze <address>    Deep-dive a single token: every check, signal and score
   watch                Run cycles on an interval, opening and closing paper trades
+  serve                Run the loop and expose the local API the dashboard reads
   positions            Show open paper positions and their live P&L
   report               Portfolio summary, closed-trade stats and recent signals
   config               Print the resolved configuration
@@ -31,6 +34,9 @@ Options:
   --dry-run            Analyse and report, but never open a position
   --limit <n>          Rows to display (default 15)
   --interval <sec>     Override the watch interval
+  --port <n>           serve: API port (default 7331)
+  --host <addr>        serve: bind address (default 127.0.0.1)
+  --no-loop            serve: serve stored state without scanning
   --json               Emit machine-readable JSON instead of a table
   --verbose            Debug logging
   --quiet              Warnings and errors only
@@ -54,7 +60,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.replace(/^--?/, '');
-    const takesValue = ['limit', 'interval'].includes(key);
+    const takesValue = ['limit', 'interval', 'port', 'host'].includes(key);
     if (takesValue) {
       args.flags[key] = argv[i + 1];
       i += 1;
@@ -199,41 +205,63 @@ async function cmdAnalyze(config, args) {
   log.print('');
 }
 
+/** Wire ctrl-c to a graceful runner shutdown; a second press exits hard. */
+function attachSignalHandlers(runner) {
+  let stopping = false;
+  const handler = () => {
+    if (stopping) process.exit(1);
+    stopping = true;
+    log.info('stopping after this cycle…');
+    runner.stop();
+  };
+  process.on('SIGINT', handler);
+  process.on('SIGTERM', handler);
+}
+
+function buildRunner(config, args) {
+  const overrides = args.flags.interval
+    ? { ...config, watch: { ...config.watch, intervalSeconds: Number(args.flags.interval) } }
+    : config;
+  return new BotRunner(overrides, { dryRun: Boolean(args.flags['dry-run']) });
+}
+
 async function cmdWatch(config, args) {
-  const intervalMs = Number(args.flags.interval ?? config.watch.intervalSeconds) * 1000;
-  const dryRun = Boolean(args.flags['dry-run']);
-  const portfolio = new Portfolio(config.dataDirAbsolute, config.risk);
+  const runner = buildRunner(config, args);
+  const { portfolio } = runner;
 
   log.info(
-    `watching ${config.chain} every ${intervalMs / 1000}s · ${dryRun ? 'dry run' : 'paper trading'} · equity ${usd(portfolio.equity())}`,
+    `watching ${config.chain} every ${runner.config.watch.intervalSeconds}s · ${runner.dryRun ? 'dry run' : 'paper trading'} · equity ${usd(portfolio.equity())}`,
   );
   log.info('press ctrl-c to stop');
 
-  const controller = new AbortController();
-  let stopping = false;
-  process.on('SIGINT', () => {
-    if (stopping) process.exit(1);
-    stopping = true;
-    controller.abort();
-    log.info('stopping after this cycle…');
+  runner.on('cycle:end', ({ cycle, summary }) => {
+    log.info(
+      `cycle ${cycle}: ${summary.positions.length} open · equity ${usd(summary.portfolio.equityUsd)} (${pct(summary.portfolio.totalPnlPct)})`,
+    );
   });
 
-  while (!stopping) {
-    try {
-      const cycle = await runCycle(config, { signal: controller.signal, dryRun, portfolio });
-      const enterable = cycle.results.filter((r) => r.decision.action === ACTIONS.ENTER).length;
-      log.info(
-        `cycle: ${cycle.analyzed} analysed · ${enterable} entries · ${cycle.opened.length} opened · ${cycle.closed.length} closed · equity ${usd(portfolio.equity())}`,
-      );
-    } catch (error) {
-      if (controller.signal.aborted) break;
-      log.error('cycle failed:', error.message);
-    }
-    if (stopping) break;
-    await sleep(intervalMs);
-  }
-
+  attachSignalHandlers(runner);
+  await runner.start();
   log.info(`stopped. equity ${usd(portfolio.equity())} (${pct(portfolio.summary().totalPnlPct)})`);
+}
+
+async function cmdServe(config, args) {
+  const runner = buildRunner(config, args);
+  const port = Number(args.flags.port ?? config.server.port);
+  const host = args.flags.host ?? config.server.host;
+
+  const server = await startServer(runner, { port, host });
+  log.info(`dashboard: run \`npm run dev\` in the repo root, then open /dashboard.html`);
+
+  attachSignalHandlers(runner);
+  // `--no-loop` serves the existing state without scanning, for reading history.
+  if (args.flags['no-loop']) {
+    log.info('serving stored state only (--no-loop); POST /api/scan to run a cycle');
+    await new Promise((resolve) => process.once('SIGINT', resolve));
+  } else {
+    await runner.start();
+  }
+  server.close();
 }
 
 async function cmdPositions(config, args) {
@@ -296,7 +324,9 @@ async function cmdReport(config, args) {
   log.print(`  Open / closed ${summary.openPositions} / ${summary.closedTrades}`);
   log.print(`  Win rate      ${pct(summary.winRate)}`);
   log.print(`  Avg trade     ${pct(summary.avgPnlPct)}   best ${pct(summary.bestPnlPct)}   worst ${pct(summary.worstPnlPct)}`);
-  log.print(`  Profit factor ${Number.isFinite(summary.profitFactor) ? summary.profitFactor.toFixed(2) : '∞'}`);
+  log.print(
+    `  Profit factor ${summary.profitFactor === null ? (summary.closedTrades ? '∞ (no losses yet)' : '—') : summary.profitFactor.toFixed(2)}`,
+  );
   log.print(`  Sim. fees     ${usd(summary.feesPaidUsd)}`);
 
   const recent = portfolio.state.closed.slice(-10).reverse();
@@ -335,6 +365,7 @@ const COMMANDS = {
   scan: cmdScan,
   analyze: cmdAnalyze,
   watch: cmdWatch,
+  serve: cmdServe,
   positions: cmdPositions,
   report: cmdReport,
   config: (config) => cmdConfig(config),

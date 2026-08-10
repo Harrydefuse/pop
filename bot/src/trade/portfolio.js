@@ -234,7 +234,9 @@ export class Portfolio {
       avgPnlPct: closed.length ? closed.reduce((sum, t) => sum + t.pnlPct, 0) / closed.length : 0,
       bestPnlPct: closed.length ? Math.max(...closed.map((t) => t.pnlPct)) : 0,
       worstPnlPct: closed.length ? Math.min(...closed.map((t) => t.pnlPct)) : 0,
-      profitFactor: grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0,
+      // null means "undefined so far" — no losing trades to divide by. Infinity
+      // would serialise to null over JSON anyway, so say it explicitly.
+      profitFactor: grossLoss > 0 ? grossWin / grossLoss : null,
       feesPaidUsd: this.state.stats.feesPaidUsd,
     };
   }

@@ -164,10 +164,14 @@ export async function managePositions(portfolio, config, { signal } = {}) {
  *
  * @param {object} options.dryRun  analyse and report, but never open positions
  */
-export async function runCycle(config, { signal, anthropic, dryRun = false, portfolio } = {}) {
+export async function runCycle(
+  config,
+  { signal, anthropic, dryRun = false, portfolio, onProgress = () => {} } = {},
+) {
   const started = Date.now();
   const book = portfolio ?? new Portfolio(config.dataDirAbsolute, config.risk);
 
+  onProgress('managing', { open: book.openPositions.length });
   const managed = await managePositions(book, config, { signal });
   for (const trade of managed.closed) {
     log.info(
@@ -176,18 +180,22 @@ export async function runCycle(config, { signal, anthropic, dryRun = false, port
     appendJsonl(config.dataDirAbsolute, 'trades.jsonl', { type: 'close', ...trade });
   }
 
+  onProgress('discovering', {});
   const candidates = await discover(config, { signal });
   log.debug(`discovered ${candidates.length} candidate addresses`);
 
+  onProgress('enriching', { candidates: candidates.length });
   const tokens = await enrich(candidates.map((c) => c.address), config, { signal });
   log.debug(`enriched ${tokens.length} tokens with market data`);
 
   // Skip what we already hold (managePositions owns those) and what we just
   // closed — re-analysing either wastes an API call on a token we can't buy.
   const fresh = tokens.filter((token) => !book.has(token.address) && !book.isCoolingDown(token.address));
+  onProgress('analyzing', { tokens: fresh.length });
   const results = await analyze(fresh, config, { signal, anthropic });
   results.sort((a, b) => b.decision.score - a.decision.score);
 
+  onProgress('trading', { entries: results.filter((r) => r.decision.action === ACTIONS.ENTER).length });
   const opened = [];
   for (const result of results) {
     if (result.decision.action !== ACTIONS.ENTER) continue;

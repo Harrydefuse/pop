@@ -12,7 +12,8 @@
     "watch": "node src/cli.js watch",
     "positions": "node src/cli.js positions",
     "report": "node src/cli.js report",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test \"test/**/*.test.js\"",
+    "serve": "node src/cli.js serve"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.0"

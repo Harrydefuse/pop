@@ -1,0 +1,188 @@
+/**
+ * Local HTTP + SSE bridge between the bot and a browser.
+ *
+ * A browser cannot read the bot's JSON files, so the dashboard talks to this.
+ * Zero dependencies — node:http is enough for a handful of JSON routes and an
+ * event stream.
+ *
+ * It binds to 127.0.0.1 by default and is intended to stay there: it exposes
+ * portfolio state and can trigger a scan, with no authentication. Do not put it
+ * on a public interface.
+ */
+import http from 'node:http';
+
+import { readJsonl } from './store.js';
+import { log } from './log.js';
+
+const SSE_HEADERS = {
+  'content-type': 'text/event-stream',
+  'cache-control': 'no-cache, no-transform',
+  connection: 'keep-alive',
+  'x-accel-buffering': 'no',
+};
+
+/** Events forwarded verbatim from the runner to every connected client. */
+const FORWARDED = [
+  'cycle:start',
+  'cycle:end',
+  'cycle:error',
+  'stage',
+  'activity',
+  'decisions',
+  'position:open',
+  'position:close',
+  'started',
+  'stopped',
+  'waiting',
+];
+
+function sendJson(response, status, body) {
+  const payload = JSON.stringify(body);
+  response.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(payload),
+    // The Vite dev server runs on another port; allow it to read from here.
+    'access-control-allow-origin': '*',
+  });
+  response.end(payload);
+}
+
+export function createServer(runner, { allowControl = true } = {}) {
+  /** @type {Set<import('node:http').ServerResponse>} */
+  const clients = new Set();
+
+  const broadcast = (event, data) => {
+    if (clients.size === 0) return;
+    const frame = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const client of clients) {
+      // A slow or dead client must never take down the runner.
+      try {
+        client.write(frame);
+      } catch {
+        clients.delete(client);
+      }
+    }
+  };
+
+  for (const event of FORWARDED) {
+    runner.on(event, (payload) => broadcast(event, payload ?? {}));
+  }
+
+  const server = http.createServer((request, response) => {
+    const url = new URL(request.url, 'http://localhost');
+    const route = url.pathname;
+
+    if (request.method === 'OPTIONS') {
+      response.writeHead(204, {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
+        'access-control-allow-headers': 'content-type',
+      });
+      response.end();
+      return;
+    }
+
+    try {
+      if (route === '/api/health') {
+        sendJson(response, 200, { ok: true, uptimeSeconds: Math.round(process.uptime()) });
+        return;
+      }
+
+      if (route === '/api/state') {
+        sendJson(response, 200, {
+          ...runner.summary(),
+          feed: runner.feed.slice(0, Number(url.searchParams.get('feed') ?? 40)),
+          activity: runner.activity.slice(0, 30),
+          equity: runner.equityHistory({ limit: 500 }),
+        });
+        return;
+      }
+
+      if (route === '/api/equity') {
+        sendJson(response, 200, runner.equityHistory({ limit: Number(url.searchParams.get('limit') ?? 500) }));
+        return;
+      }
+
+      if (route === '/api/decisions') {
+        sendJson(response, 200, runner.feed.slice(0, Number(url.searchParams.get('limit') ?? 60)));
+        return;
+      }
+
+      if (route === '/api/positions') {
+        sendJson(response, 200, runner.portfolio.openPositions);
+        return;
+      }
+
+      if (route === '/api/trades') {
+        const limit = Number(url.searchParams.get('limit') ?? 50);
+        sendJson(response, 200, runner.portfolio.state.closed.slice(-limit).reverse());
+        return;
+      }
+
+      if (route === '/api/signals') {
+        const limit = Number(url.searchParams.get('limit') ?? 200);
+        sendJson(response, 200, readJsonl(runner.config.dataDirAbsolute, 'signals.jsonl', { limit }).reverse());
+        return;
+      }
+
+      if (route === '/api/scan' && request.method === 'POST') {
+        if (!allowControl) {
+          sendJson(response, 403, { error: 'control endpoints disabled' });
+          return;
+        }
+        // Fire and forget — the client watches the event stream for progress.
+        runner.runOnce();
+        sendJson(response, 202, { accepted: true });
+        return;
+      }
+
+      if (route === '/api/stream') {
+        response.writeHead(200, { ...SSE_HEADERS, 'access-control-allow-origin': '*' });
+        response.write(`event: snapshot\ndata: ${JSON.stringify(runner.summary())}\n\n`);
+        clients.add(response);
+
+        // Proxies and browsers drop idle streams; a comment every 20s keeps it open.
+        const heartbeat = setInterval(() => {
+          try {
+            response.write(': ping\n\n');
+          } catch {
+            clearInterval(heartbeat);
+          }
+        }, 20_000);
+
+        request.on('close', () => {
+          clearInterval(heartbeat);
+          clients.delete(response);
+        });
+        return;
+      }
+
+      sendJson(response, 404, { error: `no route for ${route}` });
+    } catch (error) {
+      log.error('server error:', error.message);
+      sendJson(response, 500, { error: error.message });
+    }
+  });
+
+  server.on('close', () => {
+    for (const client of clients) client.end();
+    clients.clear();
+  });
+
+  return Object.assign(server, {
+    get clientCount() {
+      return clients.size;
+    },
+  });
+}
+
+export function startServer(runner, { port = 7331, host = '127.0.0.1' } = {}) {
+  const server = createServer(runner);
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, host, () => {
+      log.info(`api listening on http://${host}:${server.address().port}`);
+      resolve(server);
+    });
+  });
+}
