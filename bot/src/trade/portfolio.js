@@ -135,6 +135,76 @@ export class Portfolio {
     return position;
   }
 
+  /**
+   * Record a position from a real, confirmed fill.
+   *
+   * Unlike `open()`, nothing here is modelled — the quantity, price and cost
+   * come from the transaction that landed, so the ledger reflects what the
+   * wallet actually holds.
+   */
+  openWithFill(token, { quantity, fillPriceUsd, costUsd, decimals, signature, venue, score, reason, now = Date.now() }) {
+    if (this.has(token.address)) return null;
+    if (!(quantity > 0) || !(fillPriceUsd > 0)) return null;
+
+    const position = {
+      address: token.address,
+      symbol: token.symbol,
+      name: token.name,
+      chainId: token.chainId,
+      pairUrl: token.url,
+      venue,
+      live: true,
+      signature,
+      decimals,
+      openedAt: new Date(now).toISOString(),
+      openedAtMs: now,
+      entryPriceUsd: fillPriceUsd,
+      quotedPriceUsd: token.priceUsd,
+      entrySlippage: token.priceUsd > 0 ? fillPriceUsd / token.priceUsd - 1 : 0,
+      quantity,
+      costUsd,
+      peakPriceUsd: token.priceUsd || fillPriceUsd,
+      lastPriceUsd: token.priceUsd || fillPriceUsd,
+      score,
+      reason,
+    };
+
+    this.state.positions[token.address] = position;
+    this.state.cashUsd -= costUsd;
+    this.save();
+    return position;
+  }
+
+  /** Close a position against a real, confirmed exit fill. */
+  closeWithFill(address, { quantity, proceedsUsd, exitPriceUsd, signature, reason, now = Date.now() }) {
+    const position = this.state.positions[address];
+    if (!position) return null;
+
+    const pnlUsd = proceedsUsd - position.costUsd;
+    const record = {
+      ...position,
+      closedAt: new Date(now).toISOString(),
+      closedAtMs: now,
+      exitPriceUsd,
+      exitSignature: signature,
+      soldQuantity: quantity,
+      proceedsUsd,
+      pnlUsd,
+      pnlPct: position.costUsd > 0 ? pnlUsd / position.costUsd : 0,
+      holdMs: now - position.openedAtMs,
+      exitReason: reason,
+    };
+
+    delete this.state.positions[address];
+    this.state.cooldowns[address] = now + this.risk.reentryCooldownHours * HOUR;
+    this.state.cashUsd += proceedsUsd;
+    this.state.closed.push(record);
+    this.state.stats.trades += 1;
+    this.state.stats[pnlUsd >= 0 ? 'wins' : 'losses'] += 1;
+    this.save();
+    return record;
+  }
+
   /** Close a simulated long at `priceUsd`. Returns the closed-trade record. */
   close(address, { priceUsd, liquidityUsd, reason, now = Date.now() } = {}) {
     const position = this.state.positions[address];

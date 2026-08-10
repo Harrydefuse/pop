@@ -10,6 +10,7 @@ import { EventEmitter } from 'node:events';
 
 import { runCycle } from './engine.js';
 import { Portfolio } from './portfolio.js';
+import { createExecutor } from '../execute/index.js';
 import { appendJsonl, readJsonl } from '../store.js';
 import { log } from '../log.js';
 import { sleep } from '../util.js';
@@ -20,12 +21,15 @@ const FEED_LIMIT = 120;
 const ACTIVITY_LIMIT = 60;
 
 export class BotRunner extends EventEmitter {
-  constructor(config, { anthropic, dryRun = false, portfolio } = {}) {
+  constructor(config, { anthropic, dryRun = false, portfolio, executor } = {}) {
     super();
     this.config = config;
     this.anthropic = anthropic;
     this.dryRun = dryRun;
     this.portfolio = portfolio ?? new Portfolio(config.dataDirAbsolute, config.risk);
+    // Built once, not per cycle: creating it re-checks arming and logs the live
+    // banner, and doing that every three minutes would be noise.
+    this.executor = executor ?? createExecutor(config, { portfolio: this.portfolio });
     this.controller = new AbortController();
 
     this.running = false;
@@ -64,6 +68,7 @@ export class BotRunner extends EventEmitter {
           anthropic: this.anthropic,
           dryRun: this.dryRun,
           portfolio: this.portfolio,
+          executor: this.executor,
           onProgress: (stage, detail) => this.#setStage(stage, detail),
         });
 
@@ -79,6 +84,9 @@ export class BotRunner extends EventEmitter {
             reason: trade.exitReason,
           });
         }
+        for (const failure of cycle.failedExits ?? []) {
+          this.#note('error', `could not exit ${failure.symbol}: ${failure.reason}`, failure);
+        }
         for (const position of cycle.opened) {
           this.emit('position:open', position);
           this.#note('trade', `opened ${position.symbol} at ${position.score.toFixed(2)}`, {
@@ -92,6 +100,7 @@ export class BotRunner extends EventEmitter {
         this.feed = [...decisions, ...this.feed].slice(0, FEED_LIMIT);
         this.emit('decisions', decisions);
 
+        this.lastExecutionStatus = await this.executor.status();
         const sample = this.#recordEquity();
         this.#note('cycle', `cycle ${this.cycleCount}: ${cycle.analyzed} analysed`, {
           analyzed: cycle.analyzed,
@@ -164,6 +173,9 @@ export class BotRunner extends EventEmitter {
     return {
       running: this.running,
       dryRun: this.dryRun,
+      /** 'paper' or 'live' — what the executor actually resolved to. */
+      mode: this.executor.mode,
+      execution: this.executionStatus,
       stage: this.stage,
       cycleCount: this.cycleCount,
       lastCycleAt: this.lastCycleAt,
@@ -179,6 +191,11 @@ export class BotRunner extends EventEmitter {
       positions: this.portfolio.openPositions,
       recentTrades: this.portfolio.state.closed.slice(-12).reverse(),
     };
+  }
+
+  /** Refreshed on each cycle so the UI can show guard state without polling. */
+  get executionStatus() {
+    return this.lastExecutionStatus ?? { mode: this.executor.mode };
   }
 
   equityHistory({ limit = 500 } = {}) {

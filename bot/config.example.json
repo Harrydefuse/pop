@@ -27,5 +27,19 @@
 
   "watch": {
     "intervalSeconds": 180
+  },
+
+  "_live_trading": "Set mode to 'live' AND armPhrase to the exact phrase AND export MEMEBOT_LIVE_ARMED=true AND provide a key. Missing any one runs as paper. See README > Live trading.",
+  "mode": "paper",
+  "execution": {
+    "armPhrase": "",
+    "keypairPath": "",
+    "maxTradeUsd": 25,
+    "maxDailySpendUsd": 100,
+    "maxTradesPerDay": 10,
+    "minSecondsBetweenTrades": 60,
+    "minSolReserve": 0.05,
+    "maxSlippageBps": 300,
+    "exitSlippageBps": 900
   }
 }

@@ -112,7 +112,7 @@ const anthropic = {
 function makeRunner() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'memebot-server-'));
   const config = loadConfig(
-    { dataDir: dir, solana: { rpcUrl: 'https://rpc.test/' }, discovery: { sources: ['token-profiles'] } },
+    { dataDir: dir, solana: { rpcUrl: 'https://rpc.test/' }, discovery: { sources: ['token-profiles'], venues: ['*'] } },
     { ANTHROPIC_API_KEY: 'test-key' },
   );
   return { runner: new BotRunner(config, { anthropic }), dir };

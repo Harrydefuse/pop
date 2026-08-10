@@ -9,6 +9,7 @@ import PositionsPanel from './components/PositionsPanel.jsx'
 import DecisionFeed from './components/DecisionFeed.jsx'
 import ActivityLog from './components/ActivityLog.jsx'
 import ClosedTrades from './components/ClosedTrades.jsx'
+import ExecutionBanner from './components/ExecutionBanner.jsx'
 
 function Offline({ error }) {
   return (
@@ -112,13 +113,21 @@ export default function Dashboard() {
             </span>
             <span
               className={`rounded border px-2 py-1 font-mono text-[11px] ${
-                state.dryRun
-                  ? 'border-panel-line text-ink-faint'
-                  : 'border-relay/40 bg-relay/10 text-relay'
+                state.mode === 'live'
+                  ? 'border-loss/60 bg-loss/15 text-loss'
+                  : state.dryRun
+                    ? 'border-panel-line text-ink-faint'
+                    : 'border-relay/40 bg-relay/10 text-relay'
               }`}
-              title={state.dryRun ? 'Analysing only — no positions opened' : 'Simulated money only'}
+              title={
+                state.mode === 'live'
+                  ? 'Real funds — orders are signed and sent on chain'
+                  : state.dryRun
+                    ? 'Analysing only — no positions opened'
+                    : 'Simulated money only'
+              }
             >
-              {state.dryRun ? 'dry run' : 'paper'}
+              {state.mode === 'live' ? 'LIVE' : state.dryRun ? 'dry run' : 'paper'}
             </span>
             <StatusPill connected={connected} stage={state.stage} running={state.running} />
             <NextCycle nextCycleAt={state.nextCycleAt} />
@@ -135,6 +144,8 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-[92rem] space-y-4 px-4 py-5 sm:px-6">
+        <ExecutionBanner mode={state.mode} execution={state.execution} dryRun={state.dryRun} />
+
         {state.lastError ? (
           <p className="rounded border border-loss/40 bg-loss/10 px-3 py-2 text-sm text-loss">
             Last cycle failed: {state.lastError}
@@ -185,7 +196,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             <Panel
               title="Equity"
-              subtitle="Paper portfolio marked at live prices, one sample per cycle"
+              subtitle={`${state.mode === 'live' ? 'Live portfolio' : 'Paper portfolio'} marked at live prices, one sample per cycle`}
             >
               <EquityChart samples={equity} startingCashUsd={portfolio.startingCashUsd} />
             </Panel>
@@ -214,8 +225,9 @@ export default function Dashboard() {
         </div>
 
         <footer className="pb-8 text-xs text-ink-faint">
-          Paper trading only — no keys, no signers, no real orders. Scores are heuristics over public
-          data, not a contract audit.
+          {state.mode === 'live'
+            ? 'Live mode: orders are signed with your key and sent on chain. Scores are heuristics over public data, not a contract audit.'
+            : 'Paper trading — simulated fills, no keys and no real orders. Scores are heuristics over public data, not a contract audit.'}
         </footer>
       </main>
     </div>

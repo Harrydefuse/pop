@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * memebot — AI-assisted memecoin scanner and paper-trading agent.
+ * memebot — AI-assisted memecoin scanner and trading agent.
  *
- * Paper trading only. Nothing here signs a transaction or touches a wallet.
+ * Paper trading is the default and the fallback. Live execution exists but is
+ * off unless every arming condition in `status` is satisfied; see execute/guard.js.
  */
 import { pathToFileURL } from 'node:url';
 
@@ -13,6 +14,10 @@ import { analyze, enrich, managePositions, runCycle } from './trade/engine.js';
 import { BotRunner } from './trade/runner.js';
 import { Portfolio } from './trade/portfolio.js';
 import { startServer } from './server.js';
+import { ARM_PHRASE, TradeGuard } from './execute/guard.js';
+import { createExecutor } from './execute/index.js';
+import { loadWallet } from './execute/wallet.js';
+import { venueFor } from './venues/index.js';
 import { readJsonl } from './store.js';
 import { ageString, pct, usd } from './util.js';
 
@@ -29,6 +34,11 @@ Commands:
   report               Portfolio summary, closed-trade stats and recent signals
   config               Print the resolved configuration
   reset                Wipe the paper portfolio and start fresh
+
+Live trading:
+  status               Execution mode, arming state, wallet and today's spend
+  stop                 Engage the kill switch — halts live trading immediately
+  resume               Release the kill switch
 
 Options:
   --dry-run            Analyse and report, but never open a position
@@ -49,6 +59,14 @@ Environment:
                        limited. Use a paid RPC before running watch for real.
   MEMEBOT_*            Override any config value, e.g.
                        MEMEBOT_SAFETY_MIN_LIQUIDITY_USD=25000
+
+Live trading requires ALL of:
+  1. mode: "live" in config.json
+  2. execution.armPhrase set to "${ARM_PHRASE}"
+  3. MEMEBOT_LIVE_ARMED=true in the environment
+  4. a key via SOLANA_PRIVATE_KEY or execution.keypairPath
+  5. no kill-switch file present
+Anything missing and the bot runs as paper instead. Run \`status\` to see which.
 `;
 
 function parseArgs(argv) {
@@ -168,7 +186,9 @@ async function cmdAnalyze(config, args) {
   const address = args._[1];
   if (!address) throw new Error('usage: analyze <token-address>');
 
-  const tokens = await enrich([address], config);
+  // The venue allowlist governs what the bot *scans*; an explicit analyze is a
+  // direct question about one token, so answer it whatever venue it trades on.
+  const tokens = await enrich([address], config, { ignoreVenueFilter: true });
   if (tokens.length === 0) throw new Error(`no ${config.chain} pair found for ${address}`);
   const [result] = await analyze(tokens, config);
   const { token, safety, momentum, narrative, decision } = result;
@@ -180,7 +200,7 @@ async function cmdAnalyze(config, args) {
 
   log.print(`\n${color.bold}${token.name} (${token.symbol})${color.reset}  ${color.dim}${token.address}${color.reset}`);
   log.print(
-    `${token.dexId} · ${usd(token.priceUsd)} · liquidity ${usd(token.liquidityUsd)} · mcap ${usd(token.marketCap)} · ${ageString(token.ageMs)} old`,
+    `${venueFor(token.dexId).label} · ${usd(token.priceUsd)} · liquidity ${usd(token.liquidityUsd)} · mcap ${usd(token.marketCap)} · ${ageString(token.ageMs)} old`,
   );
   if (token.url) log.print(color.dim + token.url + color.reset);
 
@@ -350,6 +370,74 @@ async function cmdReport(config, args) {
   log.print('');
 }
 
+async function cmdStatus(config, args) {
+  const guard = new TradeGuard(config);
+  const status = guard.status();
+
+  let wallet = null;
+  let walletError = null;
+  try {
+    wallet = loadWallet(config);
+  } catch (error) {
+    walletError = error.message;
+  }
+
+  // Resolving the executor is the honest answer to "what will actually happen":
+  // it applies every fallback the real cycle would apply.
+  const executor = createExecutor(config, { portfolio: new Portfolio(config.dataDirAbsolute, config.risk) });
+
+  if (args.flags.json) {
+    log.print(JSON.stringify({ ...status, effectiveMode: executor.mode, wallet: wallet?.address ?? null, walletError }, null, 2));
+    return;
+  }
+
+  const tint = executor.mode === 'live' ? color.red : color.green;
+  log.print(`\n${color.bold}Execution${color.reset}`);
+  log.print(`  Configured mode  ${status.mode}`);
+  log.print(`  Effective mode   ${tint}${executor.mode.toUpperCase()}${color.reset}`);
+  log.print(`  Wallet           ${wallet ? wallet.address : color.dim + (walletError ?? 'none configured') + color.reset}`);
+  log.print(`  Kill switch      ${status.killSwitch ? `${color.red}ENGAGED${color.reset}` : 'clear'} ${color.dim}(${status.killSwitchPath})${color.reset}`);
+
+  if (status.blockedBy.length) {
+    log.print(`\n${color.bold}Not armed because${color.reset}`);
+    for (const reason of status.blockedBy) log.print(`  ${color.yellow}·${color.reset} ${reason}`);
+  }
+
+  log.print(`\n${color.bold}Today (UTC ${status.day})${color.reset}`);
+  log.print(`  Spent            ${usd(status.spentTodayUsd)} of ${usd(status.limits.maxDailySpendUsd)}`);
+  log.print(`  Remaining        ${usd(status.remainingTodayUsd)}`);
+  log.print(`  Trades           ${status.tradesToday} of ${status.limits.maxTradesPerDay}`);
+
+  log.print(`\n${color.bold}Per-trade limits${color.reset}`);
+  log.print(`  Max size         ${usd(status.limits.maxTradeUsd)}`);
+  log.print(`  Max slippage     ${(status.limits.maxSlippageBps / 100).toFixed(2)}%`);
+  log.print(`  SOL reserve      ${status.limits.minSolReserve} SOL`);
+
+  const venues = config.discovery.venues;
+  log.print(`\n${color.bold}Venues${color.reset}`);
+  log.print(
+    `  ${venues.length === 0 || venues.includes('*') ? 'all' : venues.map((v) => venueFor(v).label).join(', ')}`,
+  );
+  log.print('');
+}
+
+function cmdStop(config) {
+  const guard = new TradeGuard(config);
+  const file = guard.engageKillSwitch('cli');
+  log.print(`Kill switch engaged. Live trading halted.\n  ${file}\n\nOpen positions are NOT closed — exit them yourself if you need to.`);
+}
+
+function cmdResume(config) {
+  const guard = new TradeGuard(config);
+  if (!guard.killSwitchEngaged()) {
+    log.print('Kill switch was not engaged.');
+    return;
+  }
+  guard.releaseKillSwitch();
+  const { armed, reasons } = guard.armedStatus();
+  log.print(`Kill switch released. ${armed ? 'Live trading is ARMED.' : `Still not armed: ${reasons.join('; ')}`}`);
+}
+
 function cmdConfig(config) {
   const { dataDirAbsolute, ...rest } = config;
   log.print(JSON.stringify({ ...rest, dataDir: dataDirAbsolute }, null, 2));
@@ -370,6 +458,9 @@ const COMMANDS = {
   report: cmdReport,
   config: (config) => cmdConfig(config),
   reset: (config) => cmdReset(config),
+  status: cmdStatus,
+  stop: cmdStop,
+  resume: cmdResume,
 };
 
 async function main() {

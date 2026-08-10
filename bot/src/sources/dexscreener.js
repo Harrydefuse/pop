@@ -122,6 +122,9 @@ export function normalizePair(pair, now = Date.now()) {
     symbol: pair.baseToken?.symbol ?? '',
     quoteSymbol: pair.quoteToken?.symbol ?? '',
     priceUsd: num(pair.priceUsd),
+    // Price in the quote token (usually SOL) — lets us derive the SOL/USD rate
+    // from data we already fetched, instead of another API call.
+    priceNative: num(pair.priceNative),
     liquidityUsd: num(pair.liquidity?.usd),
     liquidityBase: num(pair.liquidity?.base),
     fdv: num(pair.fdv),
@@ -149,6 +152,7 @@ export async function pricesForTokens(chainId, addresses, { signal } = {}) {
   for (const [address, pair] of groupByBaseToken(pairs)) {
     prices.set(address, {
       priceUsd: num(pair.priceUsd),
+      priceNative: num(pair.priceNative),
       liquidityUsd: num(pair.liquidity?.usd),
       pair,
     });

@@ -9,10 +9,12 @@
 import * as dex from '../sources/dexscreener.js';
 import { inspectToken } from '../sources/solana.js';
 import { assessSafety } from '../analysis/safety.js';
+import { safetyFor, venueAllowed, venueFor } from '../venues/index.js';
 import { assessMomentum } from '../analysis/momentum.js';
 import { assessNarratives } from '../analysis/narrative.js';
 import { ACTIONS, decide } from '../analysis/score.js';
 import { Portfolio } from './portfolio.js';
+import { createExecutor } from '../execute/index.js';
 import { appendJsonl } from '../store.js';
 import { log } from '../log.js';
 import { num, uniqueBy } from '../util.js';
@@ -59,11 +61,18 @@ export async function discover(config, { signal } = {}) {
 }
 
 /** Fetch market data for candidate addresses and normalise it. */
-export async function enrich(addresses, config, { signal } = {}) {
+export async function enrich(addresses, config, { signal, ignoreVenueFilter = false } = {}) {
   if (addresses.length === 0) return [];
   const pairs = await dex.pairsForTokens(config.chain, addresses, { signal });
   const now = Date.now();
-  return [...dex.groupByBaseToken(pairs).values()].map((pair) => dex.normalizePair(pair, now));
+  const tokens = [...dex.groupByBaseToken(pairs).values()].map((pair) => dex.normalizePair(pair, now));
+
+  // Venue is a hard filter, not a score: if we cannot execute on it, there is
+  // no point paying to analyse it.
+  const allowed = ignoreVenueFilter ? [] : config.discovery.venues;
+  return tokens
+    .filter((token) => venueAllowed(token.dexId, allowed))
+    .map((token) => ({ ...token, venue: venueFor(token.dexId) }));
 }
 
 /**
@@ -89,7 +98,9 @@ export async function analyze(tokens, config, { signal, anthropic } = {}) {
   }
 
   const partial = tokens.map((token) => {
-    const safety = assessSafety(token, onChain.get(token.address), config.safety);
+    // Bonding-curve tokens are judged against their own thresholds; see
+    // safety.venueOverrides in config.js for why.
+    const safety = assessSafety(token, onChain.get(token.address), safetyFor(token.dexId, config.safety));
     const momentum = assessMomentum(token, config.momentum);
     return { token, safety, momentum, chainInfo: onChain.get(token.address) };
   });
@@ -127,13 +138,19 @@ export async function analyze(tokens, config, { signal, anthropic } = {}) {
   });
 }
 
-/** Mark open positions and close any that hit an exit rule. */
-export async function managePositions(portfolio, config, { signal } = {}) {
+/**
+ * Mark open positions and close any that hit an exit rule.
+ *
+ * Exits go through the executor, so a live position is sold on chain rather
+ * than merely removed from the ledger.
+ */
+export async function managePositions(portfolio, config, { signal, executor } = {}) {
   const open = portfolio.openPositions;
-  if (open.length === 0) return { marked: 0, closed: [] };
+  if (open.length === 0) return { marked: 0, closed: [], failedExits: [] };
 
   const prices = await dex.pricesForTokens(config.chain, open.map((p) => p.address), { signal });
   const closed = [];
+  const failedExits = [];
   const now = Date.now();
 
   for (const position of open) {
@@ -144,19 +161,27 @@ export async function managePositions(portfolio, config, { signal } = {}) {
     }
     portfolio.mark(position.address, quote.priceUsd);
     const signalResult = portfolio.exitSignal(position, quote.priceUsd, now);
-    if (signalResult.exit) {
-      const record = portfolio.close(position.address, {
-        priceUsd: quote.priceUsd,
-        liquidityUsd: quote.liquidityUsd,
-        reason: signalResult.reason,
-        now,
-      });
-      if (record) closed.push(record);
+    if (!signalResult.exit) continue;
+
+    const result = await executor.sell(position, {
+      priceUsd: quote.priceUsd,
+      liquidityUsd: quote.liquidityUsd,
+      reason: signalResult.reason,
+      token: quote.pair ? dex.normalizePair(quote.pair, now) : undefined,
+      signal,
+    });
+
+    if (result.ok) closed.push(result.trade);
+    else {
+      // A position we cannot exit stays open and is reported — silently
+      // dropping it from the ledger would be worse than the failure itself.
+      failedExits.push({ symbol: position.symbol, address: position.address, reason: result.reason, detail: result.detail });
+      log.error(`could not exit ${position.symbol}: ${result.reason}`);
     }
   }
 
   portfolio.save();
-  return { marked: prices.size, closed };
+  return { marked: prices.size, closed, failedExits };
 }
 
 /**
@@ -166,13 +191,14 @@ export async function managePositions(portfolio, config, { signal } = {}) {
  */
 export async function runCycle(
   config,
-  { signal, anthropic, dryRun = false, portfolio, onProgress = () => {} } = {},
+  { signal, anthropic, dryRun = false, portfolio, executor, onProgress = () => {} } = {},
 ) {
   const started = Date.now();
   const book = portfolio ?? new Portfolio(config.dataDirAbsolute, config.risk);
+  const orders = executor ?? createExecutor(config, { portfolio: book });
 
   onProgress('managing', { open: book.openPositions.length });
-  const managed = await managePositions(book, config, { signal });
+  const managed = await managePositions(book, config, { signal, executor: orders });
   for (const trade of managed.closed) {
     log.info(
       `closed ${trade.symbol}: ${(trade.pnlPct * 100).toFixed(1)}% ($${trade.pnlUsd.toFixed(2)}) — ${trade.exitReason}`,
@@ -197,6 +223,7 @@ export async function runCycle(
 
   onProgress('trading', { entries: results.filter((r) => r.decision.action === ACTIONS.ENTER).length });
   const opened = [];
+  const rejectedOrders = [];
   for (const result of results) {
     if (result.decision.action !== ACTIONS.ENTER) continue;
     if (dryRun) {
@@ -208,11 +235,23 @@ export async function runCycle(
       log.debug(`no room for ${result.token.symbol} (position limit or pool too thin)`);
       continue;
     }
-    const position = book.open(result.token, {
+
+    const filled = await orders.buy(result.token, {
       sizeUsd: size,
       score: result.decision.score,
       reason: result.decision.reasons.join('; '),
+      signal,
     });
+
+    if (!filled.ok) {
+      // Refusals are normal — a guard limit, a missing route, a bad quote.
+      // Record them so the operator can see why nothing was bought.
+      rejectedOrders.push({ symbol: result.token.symbol, reason: filled.reason, detail: filled.detail });
+      log.debug(`order for ${result.token.symbol} not filled: ${filled.reason}`);
+      continue;
+    }
+
+    const position = filled.position;
     if (position) {
       opened.push(position);
       log.info(
@@ -241,9 +280,12 @@ export async function runCycle(
     durationMs: Date.now() - started,
     candidates: candidates.length,
     analyzed: results.length,
+    mode: orders.mode,
     results,
     opened,
+    rejectedOrders,
     closed: managed.closed,
+    failedExits: managed.failedExits ?? [],
     portfolio: book,
   };
 }

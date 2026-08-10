@@ -135,7 +135,7 @@ function testConfig(dataDir, overrides = {}) {
     {
       dataDir,
       solana: { rpcUrl: 'https://rpc.test/' },
-      discovery: { sources: ['token-profiles'] },
+      discovery: { sources: ['token-profiles'], venues: ['*'] },
       ...overrides,
     },
     { ANTHROPIC_API_KEY: 'test-key' },

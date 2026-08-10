@@ -12,7 +12,11 @@ export const BOT_ROOT = path.resolve(here, '..');
 export const DEFAULTS = {
   chain: 'solana',
 
-  /** Paper trading only. Live execution is deliberately not implemented. */
+  /**
+   * 'paper' simulates every fill. 'live' signs and sends real transactions —
+   * and additionally requires the arm phrase and MEMEBOT_LIVE_ARMED=true, so
+   * flipping this alone changes nothing.
+   */
   mode: 'paper',
 
   discovery: {
@@ -20,6 +24,13 @@ export const DEFAULTS = {
     sources: ['token-profiles', 'token-boosts', 'top-boosts'],
     /** Extra search terms fed to DexScreener's pair search. */
     searchTerms: [],
+    /**
+     * Venues to trade. Defaults to the pump.fun family: the bonding curve
+     * itself plus PumpSwap, where those tokens land after graduating.
+     * Use ['*'] for every venue, or ['launchpads'] for every launchpad.
+     * See src/venues/index.js for the full list.
+     */
+    venues: ['pumpfun', 'pumpswap'],
     /** Hard cap on tokens enriched per cycle, to stay inside API quotas. */
     maxTokensPerCycle: 60,
   },
@@ -39,6 +50,26 @@ export const DEFAULTS = {
     requireMintAuthorityRevoked: true,
     /** Solana: reject tokens whose freeze authority is still live. */
     requireFreezeAuthorityRevoked: true,
+
+    /**
+     * Per-venue relaxations, merged over the values above.
+     *
+     * A bonding-curve token minutes after launch has a few thousand dollars on
+     * the curve and no trading history. Judged by the AMM thresholds it fails
+     * every time — which would make a launchpad-focused bot scan nothing. These
+     * are looser on purpose, and the risk is meant to be carried by smaller
+     * position sizes rather than by pretending the token is safer than it is.
+     */
+    venueOverrides: {
+      curve: {
+        minLiquidityUsd: 4_000,
+        minPairAgeMinutes: 2,
+        maxPairAgeHours: 72,
+        minVolume24hUsd: 3_000,
+        maxMarketCapToLiquidity: 120,
+        maxVolumeToLiquidity: 150,
+      },
+    },
   },
 
   momentum: {
@@ -92,6 +123,45 @@ export const DEFAULTS = {
 
   watch: {
     intervalSeconds: 180,
+  },
+
+  /**
+   * Live execution. Every limit here is enforced by TradeGuard, outside the
+   * strategy, and none of it applies in paper mode.
+   */
+  execution: {
+    /** Must equal the exact arm phrase (see execute/guard.js) to allow live trades. */
+    armPhrase: '',
+    /** Path to a Solana keypair file. SOLANA_PRIVATE_KEY takes precedence. */
+    keypairPath: '',
+
+    /** Hard caps. These are the numbers that decide the worst case. */
+    maxTradeUsd: 25,
+    maxDailySpendUsd: 100,
+    maxTradesPerDay: 10,
+    minSecondsBetweenTrades: 60,
+    /** Never spend below this much SOL — it pays for the transactions that exit. */
+    minSolReserve: 0.05,
+
+    /** Entry slippage budget. Bonding-curve tokens move fast; 300bps = 3%. */
+    maxSlippageBps: 300,
+    /** Exits get a wider budget: being unable to sell is worse than a bad price. */
+    exitSlippageBps: 900,
+    priorityFeeSol: 0.0001,
+
+    /** Creating this file in the data directory halts live trading immediately. */
+    killSwitchFile: 'STOP',
+
+    /** Optional mint filters. An allowlist, if non-empty, is exclusive. */
+    allowMints: [],
+    denyMints: [],
+
+    jupiterBaseUrl: 'https://lite-api.jup.ag/swap/v1',
+    pumpPortalBaseUrl: 'https://pumpportal.fun/api',
+    commitment: 'confirmed',
+    confirmTimeoutMs: 60_000,
+    /** Only used if the SOL price cannot be derived from the pair itself. */
+    fallbackSolPriceUsd: 0,
   },
 
   /**

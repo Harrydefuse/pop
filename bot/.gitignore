@@ -4,3 +4,9 @@ data/
 # Local overrides — may contain endpoints and keys.
 config.json
 .env
+
+# Signing keys must never be committed. Keep them outside the repo if you can.
+*.key
+keypair.json
+id.json
+wallet.json

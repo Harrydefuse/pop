@@ -1,14 +1,17 @@
 # memebot
 
-An AI-assisted memecoin scanner and **paper-trading** agent for Solana.
+An AI-assisted memecoin scanner and trading agent for Solana, focused on
+launchpads — it trades pump.fun bonding curves directly, not just the AMM pairs
+they graduate into.
 
-It watches new pools, throws out the ones that look like rugs, scores what's
-left on momentum, asks Claude whether the narrative is real, and — in
-simulation — sizes, opens and closes positions against live prices.
+It watches new launches, throws out the ones that look like rugs, scores what's
+left on momentum, asks Claude whether the narrative is real, then sizes, opens
+and closes positions against live prices.
 
-> **It does not trade real money.** Nothing in this repo handles a private key,
-> signs a transaction, or connects to a wallet. That is a deliberate design
-> decision, not an unfinished feature. See [Going live](#going-live).
+> **Paper trading is the default and the fallback.** Live execution is fully
+> wired, but it stays off unless five separate conditions are all satisfied, and
+> a misconfigured bot degrades to paper rather than trading unguarded. Read
+> [Live trading](#live-trading) before arming anything.
 
 ## Quick start
 
@@ -27,6 +30,7 @@ node src/cli.js analyze <token-addr>  # every check and signal for one token
 npm run watch                         # run continuously, paper-trade the signals
 npm run report                        # portfolio and closed-trade statistics
 npm run serve                         # run the loop + the API the dashboard reads
+node src/cli.js status                # execution mode, arming state, today's spend
 ```
 
 Without `ANTHROPIC_API_KEY` the bot still runs end to end; narrative scores fall
@@ -48,6 +52,20 @@ is roughly 1 in 10 of what discovery returns.
 
 DexScreener's token-profile and boost feeds, plus any search terms you add to
 `discovery.searchTerms`. Free, no API key.
+
+**Venues are a hard filter, not a score.** `discovery.venues` defaults to
+`['pumpfun', 'pumpswap']` — the bonding curve and the AMM those tokens graduate
+to. A token the bot cannot execute on is never analysed, because paying to score
+something unbuyable is waste. Widen with `['*']` for every venue or
+`['launchpads']` for every launchpad; the registry is `src/venues/index.js`.
+
+A token's venue also decides which safety thresholds apply. A bonding-curve
+token minutes after launch has a few thousand dollars on the curve and no
+trading history — judged by the AMM thresholds it fails every time, which would
+make a launchpad-focused bot scan nothing. `safety.venueOverrides.curve` relaxes
+depth and age for those and **only** those; the mint- and freeze-authority
+checks are never relaxed. The extra risk is meant to be carried by smaller
+position sizes, not by pretending the token is safer than it is.
 
 ### 2. Safety screen — the only stage that can veto
 
@@ -206,26 +224,89 @@ portfolio accounting; `test/engine.test.js` runs the whole pipeline —
 discovery through to a persisted paper trade — against stubbed HTTP and a
 stubbed Claude client, so no network or API key is needed.
 
-## Going live
+## Live trading
 
-This bot does not execute real trades, and adding that is not a small change.
-Before wiring in a signer, understand what you'd be taking on:
+The bot can sign and send real swaps. It routes by venue: **pump.fun bonding
+curves go through PumpPortal's local-transaction endpoint**, everything with a
+real pool goes through **Jupiter**. Either way the transaction is built by the
+venue's API, signed *in this process*, and submitted by us — the private key
+never leaves the machine and is never sent to any API.
 
-- **Key custody.** An unattended process holding a hot key is a standing target.
-  At minimum: a dedicated wallet funded only with what you can lose, keys in a
-  signer process separate from the strategy code, and a hard per-day spend cap
-  enforced outside the trading logic.
-- **Execution reality.** Real fills face MEV sandwiching, failed transactions
-  that still cost fees, and priority-fee auctions. Solana route quotes (Jupiter)
-  will tell you the real expected slippage before you commit — the simulation
-  here is an approximation.
-- **The screens are heuristics, not an audit.** They catch common failure
-  shapes. They cannot catch a novel exploit, a team that simply sells, or a
-  freshly-deployed contract with unusual logic.
-- **Validate on paper first.** Run `watch` for a few weeks, then read
-  `signals.jsonl` and `report`. If the strategy isn't profitable in simulation —
-  where fills are modelled optimistically and there's no MEV — it will not be
-  profitable live.
+### Arming it
 
-Memecoin trading loses money for most participants most of the time. Treat
-anything this produces as research, not advice.
+Live mode requires **all five** of these. Miss any one and the bot runs as paper
+instead — it does not crash, and it does not trade unguarded:
+
+1. `"mode": "live"` in `config.json`
+2. `execution.armPhrase` set to exactly `i-understand-this-spends-real-money`
+3. `MEMEBOT_LIVE_ARMED=true` in the environment
+4. a key, via `SOLANA_PRIVATE_KEY` or `execution.keypairPath`
+5. no kill-switch file present
+
+Three independent switches, deliberately: a stray config edit, a copied file, or
+a shell history replay cannot arm this on its own.
+
+```bash
+node src/cli.js status     # what mode you are actually in, and what's blocking live
+node src/cli.js stop       # engage the kill switch — halts live trading now
+node src/cli.js resume     # release it
+```
+
+`status` is the honest answer: it resolves the executor exactly as a real cycle
+would, so what it prints is what will happen.
+
+### The guard
+
+Every limit is enforced in `src/execute/guard.js`, **outside the strategy**, and
+every order passes through it before a transaction is built. That separation is
+the point — a bug in the scoring code, a bad model response, or a hostile token
+can make the strategy want something stupid, and none of them can move these
+numbers.
+
+| Limit | Default | Enforces |
+| --- | --- | --- |
+| `maxTradeUsd` | $25 | Worst case for a single bad entry |
+| `maxDailySpendUsd` | $100 | Worst case for a bad day. Tracked on disk, so a crash loop can't reset it |
+| `maxTradesPerDay` | 10 | Caps churn independently of spend |
+| `minSecondsBetweenTrades` | 60 | Stops a runaway loop |
+| `minSolReserve` | 0.05 SOL | Fees are paid in SOL — spend it all and you can't afford the transaction that *sells* |
+| `maxSlippageBps` | 300 | A quote whose own price impact exceeds this is never signed |
+| `exitSlippageBps` | 900 | Exits get a wider budget: a bad fill beats not being able to sell |
+| `allowMints` / `denyMints` | — | An allowlist, if non-empty, is exclusive |
+
+Spend is only recorded **after** a transaction confirms. A failed build or a
+failed send costs nothing against the daily budget.
+
+### What happens when things go wrong
+
+- **The quote is worse than the budget** → not signed, order refused.
+- **The transaction fails on chain** → reported as a failed order. No position is
+  recorded, no spend counted.
+- **The buy lands but the fill can't be parsed** → the kill switch engages. We
+  may now hold a token the ledger doesn't know about, and guessing would be worse
+  than stopping.
+- **An exit fails** → the kill switch engages and the position *stays on the
+  books*. Silently dropping a position we couldn't sell would be the worst
+  outcome available.
+
+Positions are recorded from the confirmed transaction's balance deltas, not from
+the quote — so the ledger holds the price you actually paid, including slippage
+and fees.
+
+### Before you arm it
+
+- **Validate the wire formats first.** The Jupiter and PumpPortal request shapes
+  follow their documented APIs but have **not** been exercised against the live
+  endpoints from this repo. Run one trade at a couple of dollars and check the
+  signature on a block explorer before raising any limit.
+- **PumpPortal is an unaffiliated third party.** Using it means trusting it to
+  build a correct transaction. The local endpoint means it never holds your keys,
+  but it does choose what you sign.
+- **Use a dedicated wallet** funded only with what you can lose. `chmod 600` the
+  keypair file — the loader refuses a group- or world-readable one.
+- **Paper first.** If the strategy isn't profitable in simulation, where fills are
+  modelled optimistically and there is no MEV, it will not be profitable live.
+
+Memecoin trading loses money for most participants most of the time. The screens
+here are heuristics over public data, not a contract audit — they cannot catch a
+novel exploit or a team that simply sells.
