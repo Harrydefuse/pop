@@ -1,0 +1,6 @@
+# Paper-trading state, signal log and trade log.
+data/
+
+# Local overrides — may contain endpoints and keys.
+config.json
+.env

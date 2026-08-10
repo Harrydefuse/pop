@@ -1,0 +1,31 @@
+{
+  "_comment": "Copy to config.json and edit. Anything omitted falls back to the defaults in src/config.js. Run `node src/cli.js config` to see the resolved result.",
+
+  "safety": {
+    "minLiquidityUsd": 25000,
+    "minVolume24hUsd": 50000,
+    "maxTop10HolderShare": 0.3
+  },
+
+  "scoring": {
+    "entryThreshold": 0.65,
+    "weights": { "safety": 0.4, "momentum": 0.35, "narrative": 0.25 }
+  },
+
+  "risk": {
+    "startingCashUsd": 1000,
+    "positionSizePct": 0.05,
+    "maxOpenPositions": 8,
+    "stopLossPct": 0.3,
+    "takeProfitPct": 0.8,
+    "maxHoldHours": 24
+  },
+
+  "discovery": {
+    "searchTerms": []
+  },
+
+  "watch": {
+    "intervalSeconds": 180
+  }
+}

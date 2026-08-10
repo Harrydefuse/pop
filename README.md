@@ -26,3 +26,13 @@ npm run lint      # oxlint
 ```
 
 All motion respects `prefers-reduced-motion`.
+
+## Also in this repo
+
+[`bot/`](./bot) — **memebot**, a standalone AI-assisted memecoin scanner and
+paper-trading agent for Solana. Unrelated to the landing page; it has its own
+`package.json`, dependencies and tests.
+
+```bash
+cd bot && npm install && npm run scan
+```

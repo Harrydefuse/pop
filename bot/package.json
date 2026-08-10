@@ -1,0 +1,23 @@
+{
+  "name": "memebot",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AI-assisted memecoin scanner, scorer and paper-trading agent",
+  "bin": {
+    "memebot": "./src/cli.js"
+  },
+  "scripts": {
+    "scan": "node src/cli.js scan",
+    "watch": "node src/cli.js watch",
+    "positions": "node src/cli.js positions",
+    "report": "node src/cli.js report",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
