@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { useBotStream } from './useBotStream.js'
+import { useIdeas } from './useIdeas.js'
 import { caret, clockTime, pct, pnlClass, signedPct, signedUsd, STAGE_LABELS, usd } from './format.js'
 import Panel from './components/Panel.jsx'
 import StatTile from './components/StatTile.jsx'
@@ -10,6 +11,7 @@ import DecisionFeed from './components/DecisionFeed.jsx'
 import ActivityLog from './components/ActivityLog.jsx'
 import ClosedTrades from './components/ClosedTrades.jsx'
 import ExecutionBanner from './components/ExecutionBanner.jsx'
+import TradeIdeas from './components/TradeIdeas.jsx'
 
 function Offline({ error }) {
   return (
@@ -68,6 +70,7 @@ function NextCycle({ nextCycleAt }) {
 
 export default function Dashboard() {
   const { connected, loading, error, state, feed, activity, equity, scanNow } = useBotStream()
+  const ideas = useIdeas()
   const [scanning, setScanning] = useState(false)
 
   if (loading) {
@@ -193,7 +196,21 @@ export default function Dashboard() {
         </section>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="space-y-4">
+          {/* min-w-0: a grid item defaults to min-width:auto, so one wide table
+              inside stretches the whole column past the viewport. */}
+          <div className="min-w-0 space-y-4">
+            <Panel
+              title="Trade ideas"
+              subtitle="Ranked setups from market structure — levels, entry, stop, targets, and the case against"
+            >
+              <TradeIdeas
+                result={ideas.result}
+                loading={ideas.loading}
+                error={ideas.error}
+                onRescan={ideas.rescan}
+              />
+            </Panel>
+
             <Panel
               title="Equity"
               subtitle={`${state.mode === 'live' ? 'Live portfolio' : 'Paper portfolio'} marked at live prices, one sample per cycle`}
@@ -213,7 +230,9 @@ export default function Dashboard() {
             </Panel>
           </div>
 
-          <div className="space-y-4">
+          {/* min-w-0: a grid item defaults to min-width:auto, so one wide table
+              inside stretches the whole column past the viewport. */}
+          <div className="min-w-0 space-y-4">
             <Panel title="Activity" subtitle={`Cycle every ${state.intervalSeconds}s`}>
               <ActivityLog entries={activity} />
             </Panel>

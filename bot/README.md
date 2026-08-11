@@ -174,6 +174,21 @@ page is same-origin and the event stream needs no CORS.
 | `GET /api/decisions` | Recent scored tokens |
 | `GET /api/positions` · `/api/trades` · `/api/signals` | Open, closed, and raw signal log |
 | `POST /api/scan` | Run a cycle now (the "scan now" button) |
+| `GET /api/ideas` | Cached trade ideas — setups, levels, drawings, write-ups |
+| `GET /api/ideas/pine?symbol=` | The Pine script for one cached idea |
+| `POST /api/ideas/scan` | Force a fresh ideas run |
+
+The **Trade ideas** panel draws each setup on an annotated candlestick chart —
+the structural levels, the entry, the stop, the targets, and risk shaded against
+reward so the two are compared as areas rather than as numbers — next to the
+factor list and the written case for and against. "Copy Pine script" hands you
+the same idea as a TradingView overlay.
+
+`/api/ideas` is cached and single-flight: one run costs a candle request per
+symbol plus a model call per write-up, so a stale result is served immediately
+while a refresh runs behind it, and simultaneous readers join the run in
+progress rather than starting their own. `top` is clamped server-side, because
+it is a count of billable model calls on an endpoint with no authentication.
 
 Updates are pushed over SSE; if the stream drops the page falls back to polling
 and keeps retrying, so a restarted bot reconnects on its own.
@@ -316,6 +331,62 @@ node src/cli.js pine strategy   > strategy.pine
 node src/cli.js pine oscillator > wwm.pine
 node src/cli.js pine screener   > alert.pine
 ```
+
+### Trade ideas: setups with levels, R:R and a written case
+
+`screen` tells you what is oversold. It does not tell you where to get in, where
+you are wrong, or whether the trade is worth taking. `ideas` does:
+
+```bash
+node src/cli.js ideas                      # scan the perpetual universe on 4h
+node src/cli.js ideas SOLUSDT ARBUSDT      # just these
+node src/cli.js ideas --interval 1h --top 3
+node src/cli.js pine idea SOLUSDT > sol.pine
+```
+
+Each idea is built in a fixed order, and everything mechanical runs before the
+model is asked anything:
+
+1. **Structure.** Fractal swing highs and lows, clustered into support and
+   resistance weighted by how many times price turned there and how recently.
+   Trend is read twice — a moving-average stack and the shape of the swings —
+   and reported as `mixed` unless both agree.
+2. **The setup.** Entry at the level rather than at market, stop beyond the
+   level by a fraction of ATR, targets at the next levels overhead or below,
+   and a size such that a stop-out costs a fixed percentage of the bankroll.
+3. **Confluence.** Six independent checks — trend, level quality, RSI, volume,
+   position in the range, reward-to-risk — each kept as a named factor you can
+   disagree with individually rather than folded into one opaque score.
+4. **The write-up.** Claude is given the computed numbers and asked to explain
+   the trade and to argue *against* it. It cannot introduce a price, an
+   indicator reading or an event that is not in the input, and it cannot change
+   the side, entry, stop or targets. Without an API key, or if the call fails,
+   the explanation is generated from the rules instead — the idea is never lost.
+
+**Most symbols produce no idea, and that is the point.** A setup is refused
+outright when there is no volatility estimate, no level to anchor to, when the
+entry is more than 1.5 ATR away (a watchlist item, not a trade), or when
+reward-to-risk is below 1.8. The CLI prints the rejection reasons in aggregate
+so you can see what was thrown away and why:
+
+```
+214 symbols · 4 setups qualified · 31 ranked too low · 179 produced no setup
+96   entry is 2.6 ATR away — too far to be actionable
+61   reward-to-risk 1.12 is below the 1.8 minimum
+22   no swing structure in this window — nothing to anchor a level to
+```
+
+Ranking weights factor agreement above payoff (0.65 / 0.35): a 5R setup one
+factor supports is a lottery ticket, a 2R setup everything agrees on is a trade.
+
+Every idea reports the **win rate it needs just to break even** — `1 / (1 + R)`,
+before fees. At 4.8R that is 17%; at 1.2R it is 45%. This number, not the
+thesis, is what decides whether a setup is worth taking.
+
+`pine idea <SYMBOL>` emits a Pine v6 overlay with that idea's exact levels,
+entry, stop and targets baked in as literals, risk and reward shaded, and the
+break-even win rate on the label — so the drawings land on your own TradingView
+chart through the supported path.
 
 ### Why not drive TradingView's interface
 

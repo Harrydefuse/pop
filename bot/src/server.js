@@ -12,6 +12,8 @@
 import http from 'node:http';
 
 import { readJsonl } from './store.js';
+import { createIdeaService } from './ideas/service.js';
+import { ideaScript } from './ta/pine.js';
 import { log } from './log.js';
 
 const SSE_HEADERS = {
@@ -47,7 +49,32 @@ function sendJson(response, status, body) {
   response.end(payload);
 }
 
-export function createServer(runner, { allowControl = true } = {}) {
+function sendText(response, status, body) {
+  response.writeHead(status, {
+    'content-type': 'text/plain; charset=utf-8',
+    'content-length': Buffer.byteLength(body),
+    'access-control-allow-origin': '*',
+  });
+  response.end(body);
+}
+
+/** Query parameters a client may use to shape an ideas run. */
+function ideaOptions(url) {
+  const symbols = url.searchParams.get('symbols');
+  const top = Number(url.searchParams.get('top'));
+  return {
+    interval: url.searchParams.get('interval') ?? '4h',
+    contains: url.searchParams.get('contains') ?? '',
+    ...(symbols ? { symbols: symbols.split(',').map((symbol) => symbol.trim().toUpperCase()).filter(Boolean) } : {}),
+    // Clamped, not trusted: `explainTop` is a count of billable model calls and
+    // this endpoint has no authentication.
+    ...(Number.isFinite(top) && top > 0 ? { explainTop: Math.min(top, 10) } : {}),
+  };
+}
+
+export function createServer(runner, { allowControl = true, ideas } = {}) {
+  const ideaService = ideas ?? createIdeaService(runner.config);
+
   /** @type {Set<import('node:http').ServerResponse>} */
   const clients = new Set();
 
@@ -122,6 +149,45 @@ export function createServer(runner, { allowControl = true } = {}) {
       if (route === '/api/signals') {
         const limit = Number(url.searchParams.get('limit') ?? 200);
         sendJson(response, 200, readJsonl(runner.config.dataDirAbsolute, 'signals.jsonl', { limit }).reverse());
+        return;
+      }
+
+      // Stale-while-revalidate: a scan costs one candle request per symbol and
+      // up to `explainTop` model calls, so a cached list is served immediately
+      // and refreshed behind the response. Only a cold cache makes anyone wait.
+      if (route === '/api/ideas') {
+        const snapshot = ideaService.peek();
+        if (snapshot) {
+          if (snapshot.stale) ideaService.refresh(ideaOptions(url));
+          sendJson(response, 200, { ...snapshot, running: ideaService.running, error: ideaService.lastError });
+          return;
+        }
+        ideaService.get(ideaOptions(url)).then(
+          (result) => sendJson(response, 200, { ...result, running: false, error: null }),
+          (error) => sendJson(response, 503, { error: error.message, ideas: [], scanned: 0 }),
+        );
+        return;
+      }
+
+      // The Pine script for one cached idea, ready to paste into TradingView.
+      if (route === '/api/ideas/pine') {
+        const symbol = (url.searchParams.get('symbol') ?? '').toUpperCase();
+        const idea = ideaService.peek()?.ideas.find((entry) => entry.symbol === symbol);
+        if (!idea) {
+          sendJson(response, 404, { error: `no cached idea for ${symbol || '(no symbol given)'}` });
+          return;
+        }
+        sendText(response, 200, ideaScript(idea));
+        return;
+      }
+
+      if (route === '/api/ideas/scan' && request.method === 'POST') {
+        if (!allowControl) {
+          sendJson(response, 403, { error: 'control endpoints disabled' });
+          return;
+        }
+        const started = ideaService.refresh({ ...ideaOptions(url), force: true });
+        sendJson(response, 202, { accepted: true, started, alreadyRunning: !started });
         return;
       }
 

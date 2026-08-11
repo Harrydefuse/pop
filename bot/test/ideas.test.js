@@ -19,6 +19,7 @@ import {
 import { breakEvenWinRate, buildSetup, confluence, drawings } from '../src/ideas/setup.js';
 import { _internals, explain } from '../src/ideas/rationale.js';
 import { analyseSymbol, findIdeas } from '../src/ideas/index.js';
+import { createIdeaService } from '../src/ideas/service.js';
 import { ideaScript } from '../src/ta/pine.js';
 
 /**
@@ -518,6 +519,93 @@ test('findIdeas uses the exchange universe when no symbols are given', async () 
 
   assert.equal(asked.quote, 'USDC');
   assert.equal(asked.contains, 'PEPE');
+});
+
+// ── the cached service behind the API ────────────────────────────────────────
+
+test('a fresh cache is served without touching the exchange again', async () => {
+  let runs = 0;
+  const service = createIdeaService({}, { find: async () => ({ ideas: [], scanned: ++runs }), ttlMs: 60_000 });
+
+  await service.get();
+  await service.get();
+  assert.equal(runs, 1);
+});
+
+test('concurrent callers join the run in flight rather than starting a second', async () => {
+  let runs = 0;
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const service = createIdeaService({}, {
+    find: async () => { runs += 1; await gate; return { ideas: [], scanned: runs }; },
+  });
+
+  const both = Promise.all([service.get(), service.get(), service.get()]);
+  assert.equal(service.running, true);
+  release();
+  const results = await both;
+
+  assert.equal(runs, 1, 'three callers, one scan');
+  assert.ok(results.every((result) => result.scanned === 1));
+});
+
+test('a stale cache triggers a refresh but is still served meanwhile', async () => {
+  let clock = 0;
+  let runs = 0;
+  const service = createIdeaService({}, {
+    find: async () => ({ ideas: [], scanned: ++runs }),
+    ttlMs: 1000,
+    now: () => clock,
+  });
+
+  await service.get();
+  clock = 5000;
+
+  const stale = service.peek();
+  assert.equal(stale.stale, true, 'age is reported so the UI can say so');
+  assert.equal(stale.ageMs, 5000);
+  assert.equal(stale.scanned, 1, 'the old result is still readable');
+
+  await service.get();
+  assert.equal(runs, 2, 'the expired cache did trigger a rescan');
+});
+
+test('a failed run leaves the previous ideas readable', async () => {
+  let fail = false;
+  let clock = 0;
+  const service = createIdeaService({}, {
+    find: async () => {
+      if (fail) throw new Error('exchange unreachable');
+      return { ideas: [{ symbol: 'AUSDT' }], scanned: 1 };
+    },
+    ttlMs: 1000,
+    now: () => clock,
+  });
+
+  await service.get();
+  fail = true;
+  clock = 5000;
+
+  await assert.rejects(service.get(), /exchange unreachable/);
+  assert.equal(service.peek().ideas.length, 1, 'stale ideas beat no ideas');
+  assert.match(service.lastError.message, /exchange unreachable/);
+});
+
+test('a background refresh never becomes an unhandled rejection', async () => {
+  const service = createIdeaService({}, { find: async () => { throw new Error('boom'); } });
+
+  assert.equal(service.refresh(), true);
+  assert.equal(service.refresh(), false, 'a second refresh does not stack');
+  // Settle the in-flight run; the failure must land on lastError, not on the
+  // process. An unhandled rejection here would take the server down.
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.match(service.lastError.message, /boom/);
+});
+
+test('peek never starts work', () => {
+  const service = createIdeaService({}, { find: async () => assert.fail('peek must not scan') });
+  assert.equal(service.peek(), null);
+  assert.equal(service.running, false);
 });
 
 // ── rationale ────────────────────────────────────────────────────────────────

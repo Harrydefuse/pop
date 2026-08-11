@@ -50,6 +50,7 @@ Futures research (independent of the memecoin bot):
   screen               Scan perpetual futures for RSI + volume-surge conditions
   backtest <SYMBOL>    Backtest those conditions with costs and no lookahead
   pine [which]         Emit Pine Script: strategy | oscillator | screener
+                       or: pine idea <SYMBOL> — one idea's levels on your chart
 
 Live trading:
   status               Execution mode, arming state, wallet and today's spend

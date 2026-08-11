@@ -119,8 +119,8 @@ function makeRunner() {
 }
 
 /** Boot the server on an ephemeral port and hand back a fetch helper. */
-async function withServer(runner, fn) {
-  const server = createServer(runner);
+async function withServer(runner, fn, options = {}) {
+  const server = createServer(runner, options);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
@@ -325,4 +325,135 @@ test('a disconnected stream client does not break broadcasting', async () => {
     assert.equal(runner.cycleCount, 1);
     assert.ok(server.clientCount <= 1);
   });
+});
+
+// ── trade ideas ──────────────────────────────────────────────────────────────
+
+/**
+ * A stand-in for the real ideas service. The scan itself is covered in
+ * ideas.test.js; what matters here is that the routes never trigger an
+ * unbounded amount of work on a request from an unauthenticated browser.
+ */
+function fakeIdeaService(overrides = {}) {
+  const idea = {
+    symbol: 'TESTUSDT',
+    interval: '4h',
+    rank: 0.8,
+    setup: { side: 'long', entry: 100, stop: 97, targets: [110, 120], riskReward: 3.3 },
+    structure: { price: 101, levels: [{ price: 98, touches: 3 }] },
+  };
+  const snapshot = { ideas: [idea], scanned: 12, interval: '4h', ageMs: 0, stale: false };
+  return {
+    calls: [],
+    peek: () => snapshot,
+    running: false,
+    lastError: null,
+    async get() { return snapshot; },
+    refresh(options) { this.calls.push(options); return true; },
+    ...overrides,
+  };
+}
+
+test('GET /api/ideas serves the cached run without scanning', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService();
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await request(`${base}/api/ideas`);
+    const payload = JSON.parse(body);
+
+    assert.equal(status, 200);
+    assert.equal(payload.ideas.length, 1);
+    assert.equal(payload.scanned, 12);
+    assert.deepEqual(ideas.calls, [], 'a fresh cache triggers no work');
+  }, { ideas });
+});
+
+test('a stale cache is served immediately and refreshed behind the response', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService({
+    peek: () => ({ ideas: [], scanned: 3, ageMs: 900_000, stale: true }),
+  });
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await request(`${base}/api/ideas?interval=1h`);
+
+    assert.equal(status, 200);
+    assert.equal(JSON.parse(body).stale, true, 'the client is told the data is old');
+    assert.equal(ideas.calls.length, 1, 'and a refresh was kicked off');
+    assert.equal(ideas.calls[0].interval, '1h');
+  }, { ideas });
+});
+
+test('a cold cache waits, and a failing scan is a 503 rather than a hang', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService({
+    peek: () => null,
+    get: async () => { throw new Error('exchange unreachable'); },
+  });
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await request(`${base}/api/ideas`);
+    assert.equal(status, 503);
+    assert.match(JSON.parse(body).error, /exchange unreachable/);
+  }, { ideas });
+});
+
+test('explainTop from the query string is clamped', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService({ peek: () => ({ ideas: [], stale: true }) });
+
+  await withServer(runner, async (base) => {
+    // Each unit of explainTop is a billable model call on an unauthenticated
+    // endpoint, so an absurd value must not be passed through.
+    await request(`${base}/api/ideas?top=5000`);
+    assert.equal(ideas.calls[0].explainTop, 10);
+  }, { ideas });
+});
+
+test('GET /api/ideas/pine returns a pasteable script for a cached idea', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService();
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await request(`${base}/api/ideas/pine?symbol=testusdt`);
+
+    assert.equal(status, 200);
+    assert.match(body, /@version=6/);
+    assert.match(body, /TESTUSDT long setup/);
+    assert.match(body, /100\.00000/, 'the entry is baked into the script');
+  }, { ideas });
+});
+
+test('asking for the pine of an unknown symbol is a 404, not a fresh scan', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService();
+
+  await withServer(runner, async (base) => {
+    const { status } = await request(`${base}/api/ideas/pine?symbol=NOPEUSDT`);
+    assert.equal(status, 404);
+    assert.deepEqual(ideas.calls, []);
+  }, { ideas });
+});
+
+test('POST /api/ideas/scan is refused when control endpoints are disabled', async () => {
+  const { runner } = makeRunner();
+  const ideas = fakeIdeaService();
+
+  await withServer(runner, async (base) => {
+    const { status } = await request(`${base}/api/ideas/scan`, { method: 'POST' });
+    assert.equal(status, 403);
+    assert.deepEqual(ideas.calls, [], 'no scan is started by a refused request');
+  }, { ideas, allowControl: false });
+});
+
+test('POST /api/ideas/scan forces a refresh and reports whether one started', async () => {
+  const { runner } = makeRunner();
+  const busy = fakeIdeaService({ refresh: () => false });
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await request(`${base}/api/ideas/scan`, { method: 'POST' });
+    assert.equal(status, 202);
+    assert.equal(JSON.parse(body).alreadyRunning, true, 'a second click joins the run in flight');
+  }, { ideas: busy });
 });
