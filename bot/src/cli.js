@@ -23,6 +23,8 @@ import { fetchCandles, screen } from './ta/screener.js';
 import { backtest, rsiVolumeSignal } from './ta/backtest.js';
 import { requiredSampleSize } from './ta/stats.js';
 import { screenerAlertScript, strategyScript, whaleMomentumScript } from './ta/pine.js';
+import { findIdeas } from './ideas/index.js';
+import { ideaScript } from './ta/pine.js';
 import { collectOutcomes, loadOutcomes } from './evaluate/outcomes.js';
 import { report as calibrationReport } from './evaluate/calibration.js';
 import { readJsonl } from './store.js';
@@ -44,6 +46,7 @@ Commands:
   reset                Wipe the paper portfolio and start fresh
 
 Futures research (independent of the memecoin bot):
+  ideas [SYMBOLS...]   Ranked trade setups with levels, R:R and the reasoning
   screen               Scan perpetual futures for RSI + volume-surge conditions
   backtest <SYMBOL>    Backtest those conditions with costs and no lookahead
   pine [which]         Emit Pine Script: strategy | oscillator | screener
@@ -66,6 +69,7 @@ Options:
   --contains <text>    screen: only symbols whose ticker contains this
   --bars <n>           backtest: candles of history to pull (default 1000)
   --horizon <hours>    evaluate: how long after a signal to measure (default 24)
+  --top <n>            ideas: how many to write up in full (default 5)
   --out <file>         pine: write to a file instead of stdout
   --verbose            Debug logging
   --quiet              Warnings and errors only
@@ -97,7 +101,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.replace(/^--?/, '');
-    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out', 'horizon'].includes(key);
+    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out', 'horizon', 'top'].includes(key);
     if (takesValue) {
       args.flags[key] = argv[i + 1];
       i += 1;
@@ -389,6 +393,78 @@ async function cmdReport(config, args) {
   log.print('');
 }
 
+async function cmdIdeas(config, args) {
+  const interval = args.flags.interval ?? '4h';
+  const symbols = args._.slice(1).map((symbol) => symbol.toUpperCase());
+  const explainTop = Number(args.flags.top ?? 5);
+
+  log.info(symbols.length ? `analysing ${symbols.join(', ')} on ${interval}…` : `scanning perpetuals on ${interval}…`);
+
+  const result = await findIdeas(config, {
+    symbols: symbols.length ? symbols : undefined,
+    interval,
+    contains: args.flags.contains ?? '',
+    explainTop,
+  });
+
+  if (args.flags.json) {
+    // Candles are dropped: useful to the chart, noise in a terminal pipe.
+    log.print(JSON.stringify({ ...result, ideas: result.ideas.map(({ candles: _candles, ...rest }) => rest) }, null, 2));
+    return;
+  }
+
+  log.print(
+    `\n${color.dim}${result.scanned} symbols · ${result.ideas.length} setups qualified · ${result.belowThreshold} ranked too low · ${result.rejected.length} produced no setup${color.reset}`,
+  );
+
+  if (result.ideas.length === 0) {
+    log.print(
+      `\nNo setups today. That is the normal outcome — most symbols have no level worth trading against.\n${color.dim}Common reasons:${color.reset}`,
+    );
+    const reasons = new Map();
+    for (const entry of result.rejected) reasons.set(entry.reason, (reasons.get(entry.reason) ?? 0) + 1);
+    for (const [reason, count] of [...reasons].sort((a, b) => b[1] - a[1]).slice(0, 5)) {
+      log.print(`  ${padEnd(String(count), 4)} ${reason}`);
+    }
+    log.print('');
+    return;
+  }
+
+  for (const [index, idea] of result.ideas.entries()) {
+    const { setup, structure, confluence: factors, rationale } = idea;
+    const tint = setup.side === 'long' ? color.green : color.red;
+
+    log.print(
+      `\n${color.bold}${index + 1}. ${idea.symbol}${color.reset}  ${tint}${setup.side.toUpperCase()}${color.reset}  ${color.dim}${idea.interval} · rank ${idea.rank.toFixed(2)} · ${factors.supporting}/${factors.total} factors agree${color.reset}`,
+    );
+    log.print(
+      `   Entry ${setup.entry.toPrecision(6)}   Stop ${setup.stop.toPrecision(6)}   Targets ${setup.targets.map((t) => t.toPrecision(6)).join(' → ')}`,
+    );
+    log.print(
+      `   ${color.bold}${setup.riskReward.toFixed(2)}R${color.reset}  ${color.dim}needs a ${(setup.breakEvenWinRate * 100).toFixed(0)}% win rate to break even · size ${setup.positionSize.quantity.toPrecision(4)} (${usd(setup.positionSize.notionalUsd)})${color.reset}`,
+    );
+
+    if (rationale) {
+      log.print(`\n   ${rationale.thesis}`);
+      for (const point of rationale.supporting ?? []) log.print(`   ${color.green}+${color.reset} ${point}`);
+      for (const point of rationale.against ?? []) log.print(`   ${color.yellow}−${color.reset} ${point}`);
+      log.print(`   ${color.dim}Invalidated if: ${rationale.invalidation}${color.reset}`);
+      log.print(
+        `   ${color.dim}Conviction: ${rationale.conviction}${rationale.generated ? '' : ` (${rationale.note})`}${color.reset}`,
+      );
+    }
+
+    log.print(
+      `   ${color.dim}Levels: ${structure.levels.map((level) => `${level.price.toPrecision(5)}(${level.touches}x)`).join('  ')}${color.reset}`,
+    );
+    log.print(`   ${color.dim}Draw on TradingView: node src/cli.js pine idea ${idea.symbol}${color.reset}`);
+  }
+
+  log.print(
+    `\n${color.dim}A setup is a plan, not a prediction. Every one of these can fail; the stop is where you find out.${color.reset}\n`,
+  );
+}
+
 async function cmdEvaluate(config, args) {
   const horizonHours = Number(args.flags.horizon ?? 24);
 
@@ -603,7 +679,24 @@ async function cmdBacktest(config, args) {
   );
 }
 
-function cmdPine(config, args) {
+async function emitIdeaScript(config, symbol, interval, args) {
+  const result = await findIdeas(config, { symbols: [symbol], interval, explainTop: 0 });
+  const idea = result.ideas[0];
+  if (!idea) {
+    const why = result.rejected[0]?.reason ?? 'no qualifying setup';
+    throw new Error(`no setup for ${symbol} on ${interval}: ${why}`);
+  }
+
+  const source = ideaScript(idea);
+  if (args.flags.out) {
+    fs.writeFileSync(args.flags.out, source);
+    log.print(`Wrote ${symbol} setup to ${args.flags.out}`);
+    return;
+  }
+  log.print(source);
+}
+
+async function cmdPine(config, args) {
   const criteria = criteriaFrom(args);
   const which = (args._[1] ?? 'strategy').toLowerCase();
 
@@ -613,8 +706,15 @@ function cmdPine(config, args) {
     screener: () => screenerAlertScript(criteria),
   };
 
+  // `pine idea <SYMBOL>` is async — it has to analyse the symbol first.
+  if (which === 'idea') {
+    const symbol = (args._[2] ?? '').toUpperCase();
+    if (!symbol) throw new Error('usage: pine idea <SYMBOL>');
+    return emitIdeaScript(config, symbol, criteria.interval, args);
+  }
+
   const build = scripts[which];
-  if (!build) throw new Error(`unknown script "${which}" — choose: ${Object.keys(scripts).join(', ')}`);
+  if (!build) throw new Error(`unknown script "${which}" — choose: ${Object.keys(scripts).join(', ')}, idea`);
 
   const source = build();
   if (args.flags.out) {
@@ -713,6 +813,7 @@ const COMMANDS = {
   report: cmdReport,
   config: (config) => cmdConfig(config),
   reset: (config) => cmdReset(config),
+  ideas: cmdIdeas,
   evaluate: cmdEvaluate,
   screen: cmdScreen,
   backtest: cmdBacktest,

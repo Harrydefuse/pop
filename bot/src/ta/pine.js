@@ -202,3 +202,78 @@ if hit
          syminfo.ticker, rsiValue, volRatio), alert.freq_once_per_bar_close)
 `;
 }
+
+/**
+ * Draw one specific idea's levels on a TradingView chart.
+ *
+ * This is the bridge. I cannot draw on your chart for you — but the levels,
+ * entry, stop and targets are all just numbers, and a Pine overlay renders them
+ * exactly where the analysis put them. Paste it, and the chart shows the same
+ * picture the dashboard does.
+ *
+ * The values are baked in as inputs rather than recomputed, so what you see is
+ * the idea as it was generated, not a moving recalculation that quietly drifts
+ * away from the write-up.
+ */
+export function ideaScript(idea) {
+  const { symbol, interval, setup, structure } = idea;
+  const long = setup.side === 'long';
+  const price = (value) => Number(value).toPrecision(8);
+
+  const levelLines = structure.levels
+    .map((level, index) => {
+      const kind = level.price < structure.price ? 'support' : 'resistance';
+      return `lvl${index} = input.float(${price(level.price)}, "${kind} · ${level.touches} touches", group = "Structure")`;
+    })
+    .join('\n');
+
+  const levelPlots = structure.levels
+    .map((level, index) => {
+      const kind = level.price < structure.price ? 'support' : 'resistance';
+      const colour = kind === 'support' ? 'color.new(color.teal, 40)' : 'color.new(color.maroon, 40)';
+      return `plot(lvl${index}, title = "Level ${index + 1}", color = ${colour}, style = plot.style_linebr, linewidth = 1)`;
+    })
+    .join('\n');
+
+  return `${HEADER(`${symbol} ${interval} — ${setup.side.toUpperCase()} setup`)}
+//
+// Generated for ${symbol} on ${interval} at ${price(structure.price)}.
+// Levels are fixed values, not recalculated — this is the idea as written up.
+//@version=6
+indicator("${symbol} ${setup.side} setup (memebot)", overlay = true)
+
+entryPrice = input.float(${price(setup.entry)},     "Entry",    group = "Trade")
+stopPrice  = input.float(${price(setup.stop)},      "Stop",     group = "Trade")
+target1    = input.float(${price(setup.targets[0])}, "Target 1", group = "Trade")
+${setup.targets[1] ? `target2    = input.float(${price(setup.targets[1])}, "Target 2", group = "Trade")` : 'target2    = float(na)'}
+
+${levelLines}
+
+// ── Trade levels ─────────────────────────────────────────────────────────────
+entryLine  = plot(entryPrice, title = "Entry",    color = color.new(color.orange, 0), linewidth = 2)
+stopLine   = plot(stopPrice,  title = "Stop",     color = color.new(color.red, 0),    linewidth = 2)
+target1Ln  = plot(target1,    title = "Target 1", color = color.new(color.green, 0),  linewidth = 2)
+plot(target2, title = "Target 2", color = color.new(color.green, 45), linewidth = 1)
+
+// Risk shaded against reward, so the ratio is visible rather than asserted.
+fill(entryLine, stopLine,  color = color.new(color.red, 88),   title = "Risk")
+fill(entryLine, target1Ln, color = color.new(color.green, 88), title = "Reward")
+
+// ── Structure ────────────────────────────────────────────────────────────────
+${levelPlots}
+
+// ── Label ────────────────────────────────────────────────────────────────────
+if barstate.islast
+    label.new(bar_index + 3, entryPrice,
+         text  = "${setup.side.toUpperCase()} · ${setup.riskReward.toFixed(2)}R\\nneeds ${(setup.breakEvenWinRate * 100).toFixed(0)}% win rate",
+         style = label.style_label_left,
+         color = color.new(${long ? 'color.teal' : 'color.maroon'}, 15),
+         textcolor = color.white,
+         size  = size.small)
+
+alertcondition(ta.crossunder(close, stopPrice), title = "Stop breached",
+     message = "${symbol}: price closed through the stop — idea invalidated")
+alertcondition(ta.crossover(close, target1),    title = "Target 1 reached",
+     message = "${symbol}: first target reached")
+`;
+}
