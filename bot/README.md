@@ -31,6 +31,7 @@ npm run watch                         # run continuously, paper-trade the signal
 npm run report                        # portfolio and closed-trade statistics
 npm run serve                         # run the loop + the API the dashboard reads
 node src/cli.js status                # execution mode, arming state, today's spend
+node src/cli.js evaluate              # did the scores predict anything?
 
 # Futures research — unrelated to the memecoin bot, see below
 node src/cli.js screen                # RSI + volume-surge scan across perps
@@ -212,6 +213,7 @@ Everything is written to `bot/data/` (git-ignored):
 | --- | --- |
 | `portfolio.json` | Cash, open positions, cooldowns, closed trades |
 | `signals.jsonl` | Every scored token, one JSON object per line |
+| `outcomes.jsonl` | Forward returns for signals past the horizon — the labelled dataset |
 | `trades.jsonl` | Append-only open/close log |
 
 `signals.jsonl` is the useful one: it's a labelled dataset of what the bot saw
@@ -224,7 +226,7 @@ outcomes rather than intuition.
 npm test
 ```
 
-116 tests, none of which need a network or an API key.
+137 tests, none of which need a network or an API key.
 
 | Suite | Covers |
 | --- | --- |
@@ -233,11 +235,72 @@ npm test
 | `server` | Runner events and the API contract the dashboard depends on |
 | `execution` | Every guard limit independently, plus build → sign → send → read-fill |
 | `ta` | Indicators against hand-computed values, statistics, and the backtester's three rules |
+| `evaluate` | Rank correlation, calibration bands, and the survivorship-bias reporting |
 
 The indicator tests use expectations worked out by hand rather than snapshots of
 this code's own output — a snapshot would happily lock in a wrong formula, and
 RSI has a well-known wrong variant (plain EMA instead of Wilder smoothing) that
 survives a loose eyeball check.
+
+## Did the scores actually predict anything?
+
+The weights in `scoring.weights` start as guesses. `evaluate` checks them
+against what happened next, so they stop being guesses.
+
+```bash
+node src/cli.js evaluate                  # 24h horizon
+node src/cli.js evaluate --horizon 6
+```
+
+Every scored token is already logged to `signals.jsonl` with the price at the
+moment it was scored. `evaluate` looks those tokens up again once the horizon
+has passed, records the forward return to `outcomes.jsonl`, and reports:
+
+```
+BAND         N     MEDIAN     MEAN       WIN RATE    RANGE
+0.40–0.50    12    1.8%       -5.4%      58%         -70% … 44%
+0.50–0.60    13    -16.2%     5.4%       38%         -53% … 193%
+0.60–0.70    18    12.4%      56.9%      67%         -32% … 533%
+
+Rank correlation with forward return (Spearman)
+  Composite score      0.279    meaningful
+  Momentum             0.270    meaningful
+  Narrative            0.156    not distinguishable from zero
+  Without narrative    0.301    meaningful
+
+  Narrative lift       -0.022
+```
+
+Three deliberate choices in how this reports:
+
+**Mean and median side by side.** A wide gap between them is itself the
+finding: it means one token carried the band. A report showing only the mean
+would call that band profitable.
+
+**Spearman, not Pearson.** Memecoin returns are violently heavy-tailed. One
++900% token will drag a Pearson correlation wherever it happens to sit and
+manufacture a relationship out of a single lucky trade. Ranks are immune.
+
+**Tokens that vanish are counted, not dropped.** A token that rugged, or whose
+pair disappeared from the API, is exactly the outcome that matters most — and
+the one most likely to go missing. They are logged as unmeasurable and the
+report states the share and the direction of the bias, because silently
+discarding them makes any strategy look good.
+
+### Acting on it
+
+- **Bands not monotonic** → the composite is not ranking correctly. Adjust the
+  weights and re-measure; do not tune on fewer than ~30 outcomes.
+- **Narrative lift near zero or negative** → the model is not earning its API
+  spend. The report distinguishes *redundant* (it predicts, but agrees with the
+  mechanical screens) from *not predictive*, because the fix differs: the first
+  is a weight to lower, the second is a signal to rethink.
+- **A component "not distinguishable from zero"** → its correlation is inside
+  the noise for this sample size. Not evidence it is useless; evidence you do
+  not yet know.
+
+`evaluate` never tunes anything automatically. Fitting weights to a few dozen
+outcomes is how you overfit to one week of one market.
 
 ## Futures research tools
 

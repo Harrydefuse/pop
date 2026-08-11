@@ -23,6 +23,8 @@ import { fetchCandles, screen } from './ta/screener.js';
 import { backtest, rsiVolumeSignal } from './ta/backtest.js';
 import { requiredSampleSize } from './ta/stats.js';
 import { screenerAlertScript, strategyScript, whaleMomentumScript } from './ta/pine.js';
+import { collectOutcomes, loadOutcomes } from './evaluate/outcomes.js';
+import { report as calibrationReport } from './evaluate/calibration.js';
 import { readJsonl } from './store.js';
 import { ageString, pct, usd } from './util.js';
 
@@ -37,6 +39,7 @@ Commands:
   serve                Run the loop and expose the local API the dashboard reads
   positions            Show open paper positions and their live P&L
   report               Portfolio summary, closed-trade stats and recent signals
+  evaluate             Did the scores predict anything? Calibration and attribution
   config               Print the resolved configuration
   reset                Wipe the paper portfolio and start fresh
 
@@ -62,6 +65,7 @@ Options:
   --vol <x>            screen/backtest volume multiple of average (default 3)
   --contains <text>    screen: only symbols whose ticker contains this
   --bars <n>           backtest: candles of history to pull (default 1000)
+  --horizon <hours>    evaluate: how long after a signal to measure (default 24)
   --out <file>         pine: write to a file instead of stdout
   --verbose            Debug logging
   --quiet              Warnings and errors only
@@ -93,7 +97,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.replace(/^--?/, '');
-    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out'].includes(key);
+    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out', 'horizon'].includes(key);
     if (takesValue) {
       args.flags[key] = argv[i + 1];
       i += 1;
@@ -385,6 +389,91 @@ async function cmdReport(config, args) {
   log.print('');
 }
 
+async function cmdEvaluate(config, args) {
+  const horizonHours = Number(args.flags.horizon ?? 24);
+
+  log.info(`measuring signals at least ${horizonHours}h old…`);
+  const collected = await collectOutcomes(config, { horizonHours }).catch((error) => {
+    log.warn(`could not fetch current prices: ${error.message}`);
+    return { measured: [], missing: [], skipped: 0 };
+  });
+
+  const { measured, unmeasurable } = loadOutcomes(config);
+  const result = calibrationReport(measured, {
+    weights: config.scoring.weights,
+    unmeasurable: unmeasurable.length,
+  });
+
+  if (args.flags.json) {
+    log.print(JSON.stringify({ ...result, newlyMeasured: collected.measured.length }, null, 2));
+    return;
+  }
+
+  if (result.samples === 0) {
+    log.print(
+      `\nNothing to evaluate yet. ${collected.reason ?? 'Run the bot for at least one horizon, then try again.'}\n`,
+    );
+    return;
+  }
+
+  log.print(
+    `\n${color.bold}Score calibration${color.reset} ${color.dim}· ${result.samples} measured outcomes · +${collected.measured.length} this run · ${horizonHours}h horizon${color.reset}`,
+  );
+  log.print(
+    `\n${color.bold}${[padEnd('BAND', 12), padEnd('N', 5), padEnd('MEDIAN', 10), padEnd('MEAN', 10), padEnd('WIN RATE', 11), 'RANGE'].join(' ')}${color.reset}`,
+  );
+  log.print(color.dim + '─'.repeat(72) + color.reset);
+
+  for (const band of result.calibration) {
+    if (band.count === 0) {
+      log.print(`${padEnd(band.band, 12)} ${color.dim}—${color.reset}`);
+      continue;
+    }
+    const tint = band.medianReturn >= 0 ? color.green : color.red;
+    log.print(
+      [
+        padEnd(band.band, 12),
+        padEnd(String(band.count), 5),
+        padEnd(`${tint}${pct(band.medianReturn)}${color.reset}`, 10),
+        padEnd(pct(band.meanReturn), 10),
+        padEnd(pct(band.winRate, 0), 11),
+        `${color.dim}${pct(band.worst, 0)} … ${pct(band.best, 0)}${color.reset}`,
+      ].join(' '),
+    );
+  }
+
+  if (result.attribution) {
+    const { attribution } = result;
+    const line = (label, entry) =>
+      log.print(
+        `  ${padEnd(label, 20)} ${padEnd(entry.r === null ? '—' : entry.r.toFixed(3), 8)} ${
+          entry.meaningful ? `${color.green}meaningful${color.reset}` : `${color.dim}not distinguishable from zero${color.reset}`
+        }`,
+      );
+
+    log.print(`\n${color.bold}Rank correlation with forward return${color.reset} ${color.dim}(Spearman)${color.reset}`);
+    line('Composite score', attribution.composite);
+    line('Safety', attribution.safety);
+    line('Momentum', attribution.momentum);
+    line('Narrative', attribution.narrative);
+    line('Without narrative', attribution.withoutNarrative);
+
+    if (attribution.narrativeLift !== null) {
+      const lift = attribution.narrativeLift;
+      const tint = lift > 0.02 ? color.green : lift < -0.02 ? color.red : color.yellow;
+      log.print(
+        `\n  Narrative lift       ${tint}${lift >= 0 ? '+' : ''}${lift.toFixed(3)}${color.reset} ${color.dim}(how much the model improves ranking over the mechanical screens)${color.reset}`,
+      );
+    }
+  }
+
+  if (result.notes.length) {
+    log.print(`\n${color.bold}Read this before acting on the table${color.reset}`);
+    for (const note of result.notes) log.print(`  ${color.yellow}·${color.reset} ${note}`);
+  }
+  log.print('');
+}
+
 /** Shared screen/backtest criteria, so the two always agree. */
 function criteriaFrom(args) {
   return {
@@ -624,6 +713,7 @@ const COMMANDS = {
   report: cmdReport,
   config: (config) => cmdConfig(config),
   reset: (config) => cmdReset(config),
+  evaluate: cmdEvaluate,
   screen: cmdScreen,
   backtest: cmdBacktest,
   pine: cmdPine,
