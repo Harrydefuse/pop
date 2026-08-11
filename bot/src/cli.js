@@ -5,6 +5,7 @@
  * Paper trading is the default and the fallback. Live execution exists but is
  * off unless every arming condition in `status` is satisfied; see execute/guard.js.
  */
+import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 import { loadConfig } from './config.js';
@@ -18,10 +19,14 @@ import { ARM_PHRASE, TradeGuard } from './execute/guard.js';
 import { createExecutor } from './execute/index.js';
 import { loadWallet } from './execute/wallet.js';
 import { venueFor } from './venues/index.js';
+import { fetchCandles, screen } from './ta/screener.js';
+import { backtest, rsiVolumeSignal } from './ta/backtest.js';
+import { requiredSampleSize } from './ta/stats.js';
+import { screenerAlertScript, strategyScript, whaleMomentumScript } from './ta/pine.js';
 import { readJsonl } from './store.js';
 import { ageString, pct, usd } from './util.js';
 
-const USAGE = `memebot — memecoin scanner and paper-trading agent
+const USAGE = `memebot — memecoin trading agent and futures research tools
 
 Usage: node src/cli.js <command> [options]
 
@@ -35,6 +40,11 @@ Commands:
   config               Print the resolved configuration
   reset                Wipe the paper portfolio and start fresh
 
+Futures research (independent of the memecoin bot):
+  screen               Scan perpetual futures for RSI + volume-surge conditions
+  backtest <SYMBOL>    Backtest those conditions with costs and no lookahead
+  pine [which]         Emit Pine Script: strategy | oscillator | screener
+
 Live trading:
   status               Execution mode, arming state, wallet and today's spend
   stop                 Engage the kill switch — halts live trading immediately
@@ -43,11 +53,16 @@ Live trading:
 Options:
   --dry-run            Analyse and report, but never open a position
   --limit <n>          Rows to display (default 15)
-  --interval <sec>     Override the watch interval
+  --interval <v>       watch: seconds between cycles · screen/backtest: timeframe (4h)
   --port <n>           serve: API port (default 7331)
   --host <addr>        serve: bind address (default 127.0.0.1)
   --no-loop            serve: serve stored state without scanning
   --json               Emit machine-readable JSON instead of a table
+  --rsi-below <n>      screen/backtest RSI threshold (default 30)
+  --vol <x>            screen/backtest volume multiple of average (default 3)
+  --contains <text>    screen: only symbols whose ticker contains this
+  --bars <n>           backtest: candles of history to pull (default 1000)
+  --out <file>         pine: write to a file instead of stdout
   --verbose            Debug logging
   --quiet              Warnings and errors only
   -h, --help           This message
@@ -78,7 +93,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.replace(/^--?/, '');
-    const takesValue = ['limit', 'interval', 'port', 'host'].includes(key);
+    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out'].includes(key);
     if (takesValue) {
       args.flags[key] = argv[i + 1];
       i += 1;
@@ -370,6 +385,157 @@ async function cmdReport(config, args) {
   log.print('');
 }
 
+/** Shared screen/backtest criteria, so the two always agree. */
+function criteriaFrom(args) {
+  return {
+    interval: args.flags.interval ?? '4h',
+    rsiPeriod: 14,
+    rsiBelow: Number(args.flags['rsi-below'] ?? 30),
+    volumePeriod: 20,
+    minVolumeRatio: Number(args.flags.vol ?? 3),
+  };
+}
+
+async function cmdScreen(config, args) {
+  const criteria = criteriaFrom(args);
+  log.info(`screening perpetual futures on ${criteria.interval}…`);
+
+  const result = await screen({
+    ...criteria,
+    contains: args.flags.contains ?? '',
+    limit: 200,
+  });
+
+  if (args.flags.json) {
+    log.print(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  log.print(
+    `\n${color.bold}RSI < ${criteria.rsiBelow} and volume ≥ ${criteria.minVolumeRatio}x average${color.reset} ${color.dim}· ${criteria.interval} · ${result.scanned} symbols scanned${color.reset}`,
+  );
+
+  if (result.matches.length === 0) {
+    log.print(
+      `\nNothing matched. That is the normal result — both conditions at once is rare.\n${color.dim}Closest misses:${color.reset}`,
+    );
+    for (const near of result.nearMisses.slice(0, 5)) {
+      log.print(
+        `  ${padEnd(near.symbol, 14)} RSI ${padEnd(near.rsi?.toFixed(1) ?? '—', 6)} vol ${near.volumeRatio?.toFixed(2) ?? '—'}x`,
+      );
+    }
+    log.print('');
+    return;
+  }
+
+  log.print(
+    `\n${color.bold}${[padEnd('SYMBOL', 14), padEnd('RSI', 7), padEnd('VOL', 8), padEnd('VOL σ', 8), padEnd('PRICE', 12), 'BAR CHANGE'].join(' ')}${color.reset}`,
+  );
+  log.print(color.dim + '─'.repeat(70) + color.reset);
+  for (const match of result.matches) {
+    log.print(
+      [
+        padEnd(`${color.green}${match.symbol}${color.reset}`, 14),
+        padEnd(match.rsi.toFixed(1), 7),
+        padEnd(`${match.volumeRatio.toFixed(2)}x`, 8),
+        padEnd(match.volumeZ?.toFixed(1) ?? '—', 8),
+        padEnd(String(match.price), 12),
+        `${(match.priceChangePct * 100).toFixed(2)}%`,
+      ].join(' '),
+    );
+  }
+
+  if (result.failed.length) {
+    log.print(`\n${color.dim}${result.failed.length} symbols could not be read${color.reset}`);
+  }
+  log.print(
+    `\n${color.dim}A match is a condition being true, not a trade. Backtest it before acting:${color.reset}\n  node src/cli.js backtest ${result.matches[0].symbol}\n`,
+  );
+}
+
+async function cmdBacktest(config, args) {
+  const symbol = (args._[1] ?? '').toUpperCase();
+  if (!symbol) throw new Error('usage: backtest <SYMBOL>   e.g. backtest BTCUSDT');
+
+  const criteria = criteriaFrom(args);
+  const bars = Number(args.flags.bars ?? 1000);
+  log.info(`fetching ${bars} ${criteria.interval} candles for ${symbol}…`);
+
+  const candles = await fetchCandles(symbol, { interval: criteria.interval, limit: bars });
+  const signals = rsiVolumeSignal(candles, criteria);
+  const result = backtest(candles, signals, { symbol });
+
+  if (args.flags.json) {
+    log.print(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  const { stats, bootstrap, assumptions } = result;
+  log.print(`\n${color.bold}${symbol}${color.reset} ${color.dim}· ${candles.length} bars of ${criteria.interval} · RSI < ${criteria.rsiBelow}, volume ≥ ${criteria.minVolumeRatio}x${color.reset}`);
+
+  if (stats.trades === 0) {
+    log.print('\nNo trades. The conditions never co-occurred in this window.\n');
+    return;
+  }
+
+  const tint = stats.totalPnlUsd >= 0 ? color.green : color.red;
+  log.print(`\n${color.bold}Result${color.reset}`);
+  log.print(`  Trades          ${stats.trades}`);
+  log.print(`  Net P&L         ${tint}${usd(stats.totalPnlUsd)}${color.reset} on ${usd(10_000)} starting`);
+  log.print(`  Expectancy      ${usd(stats.expectancyUsd)} per trade`);
+  log.print(`  Profit factor   ${stats.profitFactor === null ? '∞ (no losses)' : stats.profitFactor.toFixed(2)}`);
+  log.print(`  Max drawdown    ${pct(stats.maxDrawdownPct ?? 0)}`);
+
+  log.print(`\n${color.bold}Win rate${color.reset}`);
+  log.print(`  Point estimate  ${pct(stats.winRate)}  (${stats.wins}/${stats.trades})`);
+  log.print(`  95% interval    ${pct(stats.winRateLow)} – ${pct(stats.winRateHigh)}`);
+  if (stats.breakEvenWinRate !== null) {
+    log.print(`  Break-even      ${pct(stats.breakEvenWinRate)} ${color.dim}(given this payoff ratio)${color.reset}`);
+  }
+
+  if (bootstrap) {
+    log.print(`\n${color.bold}If the same trades came in a different order${color.reset} ${color.dim}(${bootstrap.iterations} resamples)${color.reset}`);
+    log.print(`  5th percentile  ${usd(bootstrap.p05)}`);
+    log.print(`  Median          ${usd(bootstrap.median)}`);
+    log.print(`  95th percentile ${usd(bootstrap.p95)}`);
+    log.print(`  Chance of loss  ${pct(bootstrap.probabilityOfLoss)}`);
+  }
+
+  const verdictColor = stats.reliable ? color.green : color.yellow;
+  log.print(`\n${verdictColor}${stats.reliable ? 'Holds up' : 'Not established'}${color.reset}  ${stats.verdict}`);
+  if (!stats.reliable && stats.edgeOverBreakEven > 0) {
+    log.print(
+      `${color.dim}  At this edge you would need roughly ${requiredSampleSize(stats.edgeOverBreakEven)} trades to be confident.${color.reset}`,
+    );
+  }
+
+  log.print(
+    `\n${color.dim}Assumptions: fill at ${assumptions.fill}; ${(assumptions.feePct * 100).toFixed(3)}% fee and ${(assumptions.slippagePct * 100).toFixed(3)}% slippage each way; bars touching both stop and target ${assumptions.ambiguousBars}.${color.reset}\n`,
+  );
+}
+
+function cmdPine(config, args) {
+  const criteria = criteriaFrom(args);
+  const which = (args._[1] ?? 'strategy').toLowerCase();
+
+  const scripts = {
+    strategy: () => strategyScript(criteria),
+    oscillator: () => whaleMomentumScript({ momentumPeriod: criteria.rsiPeriod, volumePeriod: criteria.volumePeriod }),
+    screener: () => screenerAlertScript(criteria),
+  };
+
+  const build = scripts[which];
+  if (!build) throw new Error(`unknown script "${which}" — choose: ${Object.keys(scripts).join(', ')}`);
+
+  const source = build();
+  if (args.flags.out) {
+    fs.writeFileSync(args.flags.out, source);
+    log.print(`Wrote ${which} script to ${args.flags.out}`);
+    return;
+  }
+  log.print(source);
+}
+
 async function cmdStatus(config, args) {
   const guard = new TradeGuard(config);
   const status = guard.status();
@@ -458,6 +624,9 @@ const COMMANDS = {
   report: cmdReport,
   config: (config) => cmdConfig(config),
   reset: (config) => cmdReset(config),
+  screen: cmdScreen,
+  backtest: cmdBacktest,
+  pine: cmdPine,
   status: cmdStatus,
   stop: cmdStop,
   resume: cmdResume,

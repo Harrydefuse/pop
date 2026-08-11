@@ -31,6 +31,11 @@ npm run watch                         # run continuously, paper-trade the signal
 npm run report                        # portfolio and closed-trade statistics
 npm run serve                         # run the loop + the API the dashboard reads
 node src/cli.js status                # execution mode, arming state, today's spend
+
+# Futures research — unrelated to the memecoin bot, see below
+node src/cli.js screen                # RSI + volume-surge scan across perps
+node src/cli.js backtest BTCUSDT      # with costs, no lookahead, confidence intervals
+node src/cli.js pine oscillator       # Pine Script for TradingView
 ```
 
 Without `ANTHROPIC_API_KEY` the bot still runs end to end; narrative scores fall
@@ -219,10 +224,100 @@ outcomes rather than intuition.
 npm test
 ```
 
-40 tests. The unit tests cover the scoring maths, safety heuristics and
-portfolio accounting; `test/engine.test.js` runs the whole pipeline —
-discovery through to a persisted paper trade — against stubbed HTTP and a
-stubbed Claude client, so no network or API key is needed.
+116 tests, none of which need a network or an API key.
+
+| Suite | Covers |
+| --- | --- |
+| `analysis` · `portfolio` | Scoring maths, safety heuristics, ledger accounting |
+| `engine` | The whole pipeline, discovery through to a persisted trade, on stubbed HTTP |
+| `server` | Runner events and the API contract the dashboard depends on |
+| `execution` | Every guard limit independently, plus build → sign → send → read-fill |
+| `ta` | Indicators against hand-computed values, statistics, and the backtester's three rules |
+
+The indicator tests use expectations worked out by hand rather than snapshots of
+this code's own output — a snapshot would happily lock in a wrong formula, and
+RSI has a well-known wrong variant (plain EMA instead of Wilder smoothing) that
+survives a loose eyeball check.
+
+## Futures research tools
+
+Independent of the memecoin bot: a screener, an honest backtester, and Pine
+Script generation for TradingView. These share no state with the trading agent —
+they are research, not execution.
+
+```bash
+node src/cli.js screen                       # RSI < 30 AND volume >= 3x, across all USDT perps
+node src/cli.js screen --contains BTC --interval 1h
+node src/cli.js backtest BTCUSDT --bars 1500
+node src/cli.js pine strategy   > strategy.pine
+node src/cli.js pine oscillator > wwm.pine
+node src/cli.js pine screener   > alert.pine
+```
+
+### Why not drive TradingView's interface
+
+"Find every contract where RSI is below 30 and volume is up 200%" is a data
+query. Scripting a charting UI to answer it is slow, breaks whenever the DOM
+changes, and TradingView's Terms of Use prohibit automated data collection. The
+screener here asks an exchange's public REST API instead: about a second for the
+whole perpetual universe, reproducible, and no account at risk.
+
+The supported way to get a strategy *onto* TradingView is a Pine script, which
+`pine` emits. The generated strategy uses the same rules and the same cost
+assumptions as the local engine, so TradingView's Strategy Tester becomes an
+independent check rather than a second, differently-wrong answer. If the two
+disagree materially, trust neither until you know why.
+
+### "+200%" is ambiguous — state which you mean
+
+It can mean twice the average or three times it. The CLI takes `--vol` as a
+plain multiple (`3` = three times) and the baseline SMA **includes the current
+bar**, matching TradingView's `ta.sma(volume, n)` idiom so the local screener and
+the emitted Pine agree. A 5x bar against a 20-bar baseline reads as roughly
+4.2x, not 5x, because the spike partly raises its own denominator.
+
+### What the backtester will not do
+
+Three rules, because breaking any of them invents an edge that isn't there:
+
+1. **No lookahead.** A signal on bar *i* fills at the open of bar *i+1*. Entering
+   at the close of the bar that produced the signal is the most common way to
+   manufacture a profitable backtest.
+2. **Costs always apply.** Taker fee plus slippage, both directions. A strategy
+   that only works at zero cost does not work.
+3. **Ambiguous bars resolve as the stop.** If a bar's range spans both the stop
+   and the target, you cannot know which came first. Assuming the good one is a
+   lie that compounds over a run.
+
+### Reading the output honestly
+
+Every backtest reports a **95% confidence interval on the win rate**, the win
+rate needed just to **break even** at that payoff ratio, and a **bootstrap** over
+resampled trade orders.
+
+This is the point of the module. A widely-shared post reports "9 trades, 83% hit
+rate" as evidence of a system. Run that through the Wilson interval and the true
+rate sits somewhere in **52%–96%** — a range that includes "barely better than a
+coin flip". The engine says so in words:
+
+```
+Not established  9 trades is too few to conclude anything. The 95% confidence
+interval on the win rate is 52%–96%, which is consistent with both a real edge
+and luck.
+```
+
+`reliable` only becomes true at 30+ trades with a lower bound above 50%. Even
+then it is evidence about the period tested, not a forecast.
+
+### The "whale activity" oscillator
+
+`pine oscillator` emits a momentum oscillator weighted by large directional
+flow — but be clear about what that is. **Pine cannot see wallets, order books,
+or individual fills.** The only footprint a large participant leaves on a chart
+is volume unusual for that symbol, so the script uses a volume z-score signed by
+bar direction as a *proxy*. A burst of retail activity looks identical. Real
+whale tracking needs on-chain or trade-level data, which no Pine script can
+reach. The generated file says this at the top, so it travels with the script.
 
 ## Live trading
 
