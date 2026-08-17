@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import Icon from './Icon'
 import { useGame } from '../game/useGame'
 
@@ -12,10 +12,17 @@ const KIND = {
 }
 
 function Toast({ t, onDone }) {
+  // `onDone` is a fresh closure on every parent render, and the world-boss tick
+  // re-renders this tree every 3.2s — keying the effect on it restarted the
+  // dismiss timer forever, so toasts never expired. Key on the id instead and
+  // reach the latest callback through a ref.
+  const latest = useRef(onDone)
+  latest.current = onDone
+
   useEffect(() => {
-    const id = setTimeout(onDone, 3400)
+    const id = setTimeout(() => latest.current(), 3400)
     return () => clearTimeout(id)
-  }, [onDone])
+  }, [t.id])
 
   const meta = KIND[t.kind] ?? KIND.xp
   const color = t.color ?? meta.color

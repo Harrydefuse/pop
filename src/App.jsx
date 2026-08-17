@@ -21,13 +21,21 @@ const PITCH = [
   ['KEEP THE GAMES', 'You do not have to quit gaming to get your life on track. Do both, on purpose.'],
 ]
 
-function DesktopPitch() {
+function DesktopPitch({ onExit }) {
   return (
     <aside className="hidden pitch:flex flex-col justify-center max-w-[400px] pr-10">
+      {onExit && (
+        <button
+          onClick={onExit}
+          className="font-pixel text-[9px] text-ink-faint hover:text-neon self-start mb-6 min-h-[44px] flex items-center"
+        >
+          ← BACK TO SITE
+        </button>
+      )}
       <div className="font-pixel text-[34px] leading-none">
         LEVEL <span className="text-neon">100</span>
       </div>
-      <div className="font-pixel text-[9px] text-ink-faint mt-4 tracking-widest">FITNESS RPG FOR GAMERS</div>
+      <div className="font-pixel text-[9px] text-ink-faint mt-4 tracking-widest">FITNESS RPG</div>
 
       <p className="text-[15px] text-ink-dim mt-7 leading-relaxed">
         A fitness app that treats your body like a character sheet. Verified workouts pay out XP, stats, loot and pets —
@@ -92,11 +100,11 @@ function Device() {
   )
 }
 
-export default function App() {
+export default function App({ onExit }) {
   return (
     <GameProvider>
       <div className="min-h-[100dvh] w-full flex items-center justify-center bg-void device:p-8">
-        <DesktopPitch />
+        <DesktopPitch onExit={onExit} />
         <Device />
       </div>
     </GameProvider>

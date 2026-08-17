@@ -1,0 +1,705 @@
+/* ============================================================================
+   LVL100 — marketing site
+   Scoped under .site so none of this collides with the app's Tailwind theme.
+   Strategy: Committed. A violet-tinted off-white carries most of the page and
+   two fully drenched violet folds interrupt it, where the game's world takes
+   over. Warmth comes from the amber signal and the copy, never from a cream
+   background.
+   ========================================================================== */
+
+/* Self-hosted variable faces (latin subset). Keeping them local means no
+   render-blocking CDN round-trip, no FOUT, and no silent fallback to a system
+   sans if fonts.gstatic.com is unreachable. */
+@font-face {
+  font-family: 'Gabarito';
+  src: url('/fonts/gabarito.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Onest';
+  src: url('/fonts/onest.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/pressstart2p.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.site {
+  /* ---- ground & ink ---------------------------------------------------- */
+  --bg: oklch(0.972 0.014 305);
+  --bg-sink: oklch(0.945 0.019 305); /* recessed band */
+  --surface: oklch(0.998 0.004 305);
+  --ink: oklch(0.235 0.055 300); /* deep aubergine, never pure black */
+  --ink-2: oklch(0.435 0.045 300); /* muted body — still clears 4.5:1 */
+  --ink-3: oklch(0.532 0.045 300); /* captions — still clears 4.5:1 on --bg */
+  --hair: oklch(0.885 0.022 305);
+
+  /* ---- brand ----------------------------------------------------------- */
+  --brand: oklch(0.53 0.21 300); /* violet for text and buttons on light */
+  --brand-ink: oklch(0.36 0.17 300); /* violet text needing more weight */
+  --brand-bright: oklch(0.7 0.19 303); /* the app's neon — dark folds only */
+  --brand-wash: oklch(0.93 0.045 305);
+
+  /* ---- drenched folds -------------------------------------------------- */
+  --deep: oklch(0.245 0.085 300);
+  --deep-2: oklch(0.305 0.09 300);
+  --deep-hair: oklch(0.375 0.075 300);
+  --on-deep: oklch(0.965 0.02 305);
+  --on-deep-2: oklch(0.8 0.045 305);
+
+  /* ---- signals (semantic, separate from the accent) -------------------- */
+  --amber: oklch(0.8 0.155 75);
+  --amber-ink: oklch(0.52 0.12 62); /* amber that works as text on light */
+  --lime: oklch(0.86 0.19 130);
+  --lime-ink: oklch(0.5 0.14 135);
+  --void: oklch(0.14 0.03 300); /* the app's own ground, for device frames */
+
+  /* ---- type ------------------------------------------------------------ */
+  --display: 'Gabarito', ui-sans-serif, system-ui, sans-serif;
+  --body: 'Onest', ui-sans-serif, system-ui, sans-serif;
+  --pixel: 'Press Start 2P', ui-monospace, monospace;
+
+  /* ---- rhythm ---------------------------------------------------------- */
+  --gut: clamp(1.25rem, 5vw, 3rem);
+  --fold: clamp(4.5rem, 11vw, 9rem);
+  --max: 74rem;
+
+  /* ---- semantic z-index scale ------------------------------------------ */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 20;
+  --z-nav: 30;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1); /* ease-out-expo-ish */
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.site *,
+.site *::before,
+.site *::after {
+  box-sizing: border-box;
+}
+
+.site :focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------- type ---- */
+/* Gabarito never appears below 1.25rem and never under 600, so it can't be
+   mistaken for the body face. That keeps the two sans on separate jobs. */
+.site h1,
+.site h2,
+.site h3,
+.site .display {
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.028em; /* floor is -0.04em */
+  text-wrap: balance;
+  margin: 0;
+  color: var(--ink);
+}
+
+.site h1 {
+  font-size: clamp(2.75rem, 1.6rem + 5.6vw, 5.75rem); /* ceiling under 6rem */
+}
+.site h2 {
+  font-size: clamp(2rem, 1.35rem + 2.9vw, 3.6rem);
+}
+.site h3 {
+  font-size: clamp(1.3rem, 1.1rem + 0.9vw, 1.75rem);
+  letter-spacing: -0.018em;
+  font-weight: 700;
+}
+
+.site p {
+  margin: 0;
+  max-width: 68ch;
+  text-wrap: pretty;
+  color: var(--ink-2);
+}
+
+.site .lede {
+  font-size: clamp(1.125rem, 1.02rem + 0.5vw, 1.4rem);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* The pixel face is a motif, not a text face: labels and numerals only. */
+.site .pix {
+  font-family: var(--pixel);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  line-height: 1.9;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------- layout ---- */
+.site .wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gut);
+}
+
+.site section {
+  padding-block: var(--fold);
+}
+
+.site .sink {
+  background: var(--bg-sink);
+}
+
+/* Drenched folds — the game's own world takes the whole surface. */
+.site .deep {
+  background: var(--deep);
+  color: var(--on-deep-2);
+  position: relative;
+  overflow: hidden;
+}
+.site .deep h2,
+.site .deep h3,
+.site .deep .display {
+  color: var(--on-deep);
+}
+.site .deep p {
+  color: var(--on-deep-2);
+}
+.site .deep::before {
+  /* faint pixel grid, the app's own backdrop motif */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+  pointer-events: none;
+}
+.site .deep > * {
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+/* --------------------------------------------------------------- nav ----- */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--hair);
+}
+.site-nav .bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 4rem;
+}
+.site-nav .spacer { flex: 1; }
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.55rem;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.mark .hundred { color: var(--brand); }
+
+/* ------------------------------------------------------------ buttons ---- */
+.btn {
+  --btn-bg: var(--brand);
+  --btn-ink: oklch(0.99 0.01 305);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0.8rem 1.4rem;
+  border: 2px solid var(--btn-bg);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    background 0.18s var(--ease);
+  box-shadow: 0 2px 0 0 var(--brand-ink);
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 0 var(--brand-ink);
+}
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 0 var(--brand-ink);
+}
+.btn.ghost {
+  --btn-bg: transparent;
+  --btn-ink: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 0 var(--ink);
+}
+.btn.ghost:hover {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: 0 5px 0 0 var(--ink);
+}
+.btn.on-deep {
+  --btn-bg: var(--amber);
+  --btn-ink: oklch(0.24 0.06 62);
+  box-shadow: 0 2px 0 0 oklch(0.55 0.13 62);
+}
+.btn.on-deep:hover { box-shadow: 0 5px 0 0 oklch(0.55 0.13 62); }
+.btn.sm { min-height: 2.75rem; padding: 0.55rem 1rem; font-size: 0.95rem; }
+
+/* --------------------------------------------------------------- hero ---- */
+.hero {
+  padding-block: clamp(2rem, 4.5vw, 3.75rem) var(--fold);
+}
+.hero-grid {
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 4.5rem);
+  align-items: center;
+}
+@media (min-width: 62rem) {
+  .hero-grid { grid-template-columns: 1.05fr 0.95fr; }
+}
+
+.hero h1 .soft { color: var(--brand-ink); display: block; }
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+}
+.hero-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ink-3);
+}
+
+/* ---- the live mechanic that stands in for a hero image ---------------- */
+.rig {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 8px 8px 0 0 var(--brand-wash);
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.rig-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 0.9rem;
+}
+.rig-lv {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 2.4rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.rig-lv span { color: var(--brand); }
+
+.meter {
+  position: relative;
+  height: 1.4rem;
+  background: var(--bg-sink);
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  background: var(--brand);
+  transition: width 0.75s var(--ease);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.22) 0 6px,
+    transparent 6px 12px
+  );
+}
+.meter-ticks {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(90deg, transparent 0 11px, rgba(0, 0, 0, 0.16) 11px 12px);
+  pointer-events: none;
+}
+
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  border: 2px solid var(--hair);
+  background: var(--surface);
+  border-radius: 2px;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.pick:hover { border-color: var(--brand); transform: translateY(-1px); }
+.pick .gain { color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+
+.rig-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+.stat-row { display: flex; flex-direction: column; gap: 0.3rem; }
+.stat-row .k {
+  font-family: var(--pixel);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+.stat-row .v {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s var(--ease);
+}
+.stat-row .v.bumped { color: var(--lime-ink); }
+.stat-val { display: flex; align-items: baseline; gap: 0.4rem; }
+.gained {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--lime-ink);
+  font-variant-numeric: tabular-nums;
+  animation: gained-rise 0.9s var(--ease) both;
+}
+@keyframes gained-rise {
+  0% { opacity: 0; transform: translateY(6px); }
+  25% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gained { animation: none; opacity: 1; }
+}
+
+.stat-bar {
+  height: 0.4rem;
+  background: var(--bg-sink);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.stat-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transition: width 0.6s var(--ease);
+}
+
+/* ------------------------------------------------------------- steps ----- */
+/* Numbered exactly once on the site, because this genuinely is a sequence:
+   the order is the information. */
+.steps {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  counter-reset: step;
+}
+@media (min-width: 52rem) {
+  .steps { grid-template-columns: repeat(3, 1fr); }
+}
+.step { display: flex; flex-direction: column; gap: 0.7rem; }
+.step::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--pixel);
+  font-size: 1.1rem;
+  color: var(--brand);
+  line-height: 1;
+}
+.step .bar {
+  height: 3px;
+  background: var(--brand);
+  width: 2.5rem;
+}
+
+/* ------------------------------------------------------- device frames --- */
+.device {
+  background: var(--void);
+  border: 3px solid var(--ink);
+  border-radius: 6px;
+  padding: 0.4rem;
+  box-shadow: 10px 10px 0 0 rgba(0, 0, 0, 0.18);
+  max-width: 22rem;
+  width: 100%;
+}
+.deep .device { border-color: var(--deep-hair); }
+.device img { display: block; width: 100%; height: auto; border-radius: 3px; }
+
+.shots {
+  display: flex;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+.shots .device { flex: 0 0 15rem; }
+@media (min-width: 62rem) {
+  .shots .device { flex: 1 1 0; max-width: none; }
+}
+
+/* --------------------------------------------------------- split rows ---- */
+.split {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+@media (min-width: 62rem) {
+  .split { grid-template-columns: 1fr 1fr; }
+  .split.flip > *:first-child { order: 2; }
+}
+
+.stack { display: flex; flex-direction: column; gap: 1.25rem; align-items: flex-start; }
+.stack.wide { gap: 1.75rem; }
+
+/* ------------------------------------------------------------- chest ----- */
+/* A rising staircase, not seven floating bars: the columns share a baseline so
+   the shape itself says "this is worth more the longer you leave it". */
+.ladder {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+  width: 100%;
+  align-items: end;
+  border-bottom: 2px solid var(--deep-hair);
+  padding-bottom: 0.55rem;
+}
+.rung {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  align-items: center;
+  height: 9rem;
+  padding: 0.4rem 0.2rem 0;
+  border: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  border-radius: 3px 3px 0 0;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.rung .cap {
+  width: 100%;
+  background: var(--deep-hair);
+  border-radius: 2px 2px 0 0;
+  transition: background 0.3s var(--ease), transform 0.3s var(--ease);
+  transform-origin: bottom;
+}
+.rung .d {
+  font-family: var(--pixel);
+  font-size: 0.55rem;
+  color: var(--on-deep-2);
+}
+.rung:hover .cap { background: var(--on-deep-2); }
+.rung.lit .cap { background: var(--amber); }
+.rung[aria-pressed='true'] {
+  border-color: var(--amber);
+  background: rgba(255, 255, 255, 0.07);
+}
+.rung[aria-pressed='true'] .d { color: var(--amber); }
+
+.readout {
+  border: 2px solid var(--deep-hair);
+  border-radius: 3px;
+  padding: 1.1rem 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+  background: rgba(0, 0, 0, 0.22);
+}
+.readout .big {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+  color: var(--amber);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------- pets ---- */
+.pet-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.75rem, 2.5vw, 2rem);
+}
+.pet-cell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 5.5rem;
+}
+.pet-art {
+  display: grid;
+  place-items: center;
+  height: 7rem; /* clears the 1.32x scale a level-100 sprite renders at */
+  width: 100%;
+}
+.pet-cell figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.pet-cell .pix { color: var(--on-deep); }
+.pet-tier {
+  font-size: 0.78rem;
+  color: var(--on-deep-2);
+  opacity: 0.85;
+}
+
+/* -------------------------------------------------------------- facts ---- */
+.facts {
+  display: grid;
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  overflow: hidden;
+}
+@media (min-width: 48rem) {
+  .facts { grid-template-columns: repeat(3, 1fr); }
+}
+.fact {
+  background: var(--surface);
+  padding: clamp(1.25rem, 3vw, 1.9rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.fact .n {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2rem, 1.5rem + 2vw, 2.9rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--brand-ink);
+  font-variant-numeric: tabular-nums;
+}
+.fact p { font-size: 0.95rem; }
+
+/* ------------------------------------------------------------- quotes ---- */
+.plain-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.plain-list li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  color: var(--ink-2);
+}
+.deep .plain-list li { color: var(--on-deep-2); }
+.plain-list .tick { color: var(--lime-ink); font-weight: 700; }
+.deep .plain-list .tick { color: var(--lime); }
+
+/* ------------------------------------------------------------ closing ---- */
+/* Darker than --brand on purpose: at the brand's own lightness, white body copy
+   only reaches 4.0:1. This ground carries it past 4.5:1 without going muddy. */
+/* Every selector here carries the `.site` prefix so it outranks `.site .lede`
+   (0,2,0). Without it, the dark body colour wins on a dark ground. */
+.site .close-cta {
+  background: oklch(0.47 0.2 300);
+  text-align: center;
+}
+.site .close-cta h2,
+.site .close-cta p,
+.site .close-cta .lede {
+  color: oklch(0.99 0.01 305);
+}
+.site .close-cta p { margin-inline: auto; }
+.site .close-cta .btn {
+  --btn-bg: oklch(0.99 0.01 305);
+  --btn-ink: oklch(0.36 0.17 300);
+  border-color: oklch(0.99 0.01 305);
+  box-shadow: 0 2px 0 0 oklch(0.72 0.1 300);
+}
+.site .close-cta .btn:hover { box-shadow: 0 5px 0 0 oklch(0.72 0.1 300); }
+
+.site-foot {
+  border-top: 1px solid var(--hair);
+  padding-block: 2.5rem;
+  font-size: 0.9rem;
+  color: var(--ink-3);
+}
+.site-foot a { color: var(--brand-ink); }
+
+/* -------------------------------------------------------------- motion --- */
+/* Content is visible by default. The from-state only applies once JS has
+   marked the document ready, so a headless render or a hidden tab still
+   ships the full page rather than a blank one. */
+.js-motion .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+}
+.js-motion .reveal.in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s var(--ease),
+    transform 0.7s var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site *,
+  .site *::before,
+  .site *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* The reveal becomes an instant appearance, not a removal. */
+  .js-motion .reveal { opacity: 1; transform: none; }
+  .btn:hover, .pick:hover { transform: none; }
+}
