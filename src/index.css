@@ -1,11 +1,18 @@
 @import 'tailwindcss';
 
+/* The framed-device presentation needs vertical room, not just width. A phone in
+   landscape is wide enough to trip `sm:` but far too short to host a 860px
+   frame, so both breakpoints gate on height as well and short viewports get the
+   full-bleed app instead. */
+@custom-variant device (@media (min-width: 640px) and (min-height: 720px));
+@custom-variant pitch (@media (min-width: 1024px) and (min-height: 720px));
+
 @theme {
   /* LVL100 — neon arcade palette */
   --color-void: #07060d; /* app background, near-black violet */
   --color-panel: #120d20; /* card surface */
   --color-panel-2: #1a1230; /* raised surface / rows */
-  --color-line: #2e2145; /* hairline border */
+  --color-line: #3a2a57; /* hairline border */
   --color-line-hot: #4c3378; /* border on active/hover */
 
   --color-neon: #a855f7; /* primary purple */
@@ -15,9 +22,11 @@
   --color-gold: #fbbf24; /* currency, legendary */
   --color-danger: #f43f5e; /* boss / warnings */
 
-  --color-ink: #f2ecff;
-  --color-ink-dim: #a394c4;
-  --color-ink-faint: #6b5f88;
+  /* All three clear 4.5:1 on every surface in this app — captions are set as
+     small as 9px, so "muted" can never mean "below the contrast floor". */
+  --color-ink: #f2ecff; /* 16.5:1 on panel */
+  --color-ink-dim: #a394c4; /* 6.9:1 on panel */
+  --color-ink-faint: #8b7dae; /* 4.8:1 on panel */
 
   /* rarity ladder — matches the pet-collection art */
   --color-r-common: #b8bfcc;
@@ -54,6 +63,30 @@ body {
 ::selection {
   background: var(--color-neon);
   color: #0a0612;
+}
+
+/* Browsers default <button> to the arrow cursor, and every control in this app
+   is a button. Opt them all back in, and kill the 300ms mobile tap delay. */
+button,
+[role='button'],
+label,
+summary {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Fixed top/bottom chrome must clear the notch and the gesture home indicator.
+   These resolve to 0 anywhere without safe areas, so they are safe globally. */
+.pad-safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+.pad-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 :focus-visible {

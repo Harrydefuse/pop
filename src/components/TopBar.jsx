@@ -14,9 +14,15 @@ export default function TopBar({ onOpenProfile, onOpenAxis }) {
   const streak = streakTier(p.streak)
 
   return (
-    <header className="relative z-20 border-b border-line bg-[#0d0918]/95 backdrop-blur px-3 pt-3 pb-2.5">
+    <header className="relative z-20 border-b border-line bg-[#0d0918]/95 backdrop-blur px-3 pb-2.5 pad-safe-top">
       <div className="flex items-center gap-2.5">
-        <button onClick={onOpenProfile} className="shrink-0" aria-label="Open character sheet">
+        {/* 38px of avatar, 44px of hit area — padding expands the target without
+            changing the visual size. */}
+        <button
+          onClick={onOpenProfile}
+          className="shrink-0 active:brightness-125 grid place-items-center w-11 h-11 -m-[3px]"
+          aria-label="Open character sheet"
+        >
           <Avatar av={p.avatar} size={38} ring={cls.color} />
         </button>
 
@@ -49,7 +55,7 @@ export default function TopBar({ onOpenProfile, onOpenAxis }) {
           </div>
           <button
             onClick={onOpenAxis}
-            className="grid place-items-center w-8 h-8 border border-cyan bg-[#0c1a20] hover:brightness-125"
+            className="grid place-items-center w-11 h-11 border border-cyan bg-[#0c1a20] hover:brightness-125 active:brightness-150"
             style={{ boxShadow: '0 0 14px -6px var(--color-cyan)' }}
             aria-label="Open AXIS coach"
             title="AXIS coach"

@@ -36,14 +36,22 @@ function LogSheet({ activity, onClose }) {
   return (
     <Modal open onClose={onClose} title={activity.name.toUpperCase()} accent="var(--color-cyan)">
       <div className="flex items-center gap-3">
-        <button onClick={dec} className="font-pixel text-[14px] w-11 h-11 border border-line-hot text-ink hover:border-cyan hover:text-cyan">
+        <button
+          onClick={dec}
+          aria-label={`Decrease by ${step} ${activity.unit}`}
+          className="font-pixel text-[14px] w-11 h-11 border border-line-hot text-ink hover:border-cyan hover:text-cyan active:brightness-125"
+        >
           −
         </button>
         <div className="flex-1 text-center">
           <div className="font-pixel text-[20px] text-cyan tabular-nums">{amount}</div>
           <div className="font-pixel text-[7px] text-ink-faint mt-1.5">{activity.unit.toUpperCase()}</div>
         </div>
-        <button onClick={inc} className="font-pixel text-[14px] w-11 h-11 border border-line-hot text-ink hover:border-cyan hover:text-cyan">
+        <button
+          onClick={inc}
+          aria-label={`Increase by ${step} ${activity.unit}`}
+          className="font-pixel text-[14px] w-11 h-11 border border-line-hot text-ink hover:border-cyan hover:text-cyan active:brightness-125"
+        >
           +
         </button>
       </div>

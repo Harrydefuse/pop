@@ -23,7 +23,7 @@ const PITCH = [
 
 function DesktopPitch() {
   return (
-    <aside className="hidden lg:flex flex-col justify-center max-w-[400px] pr-10">
+    <aside className="hidden pitch:flex flex-col justify-center max-w-[400px] pr-10">
       <div className="font-pixel text-[34px] leading-none">
         LEVEL <span className="text-neon">100</span>
       </div>
@@ -64,18 +64,23 @@ function Device() {
   const questsOpen = state.dailies.some((q) => q.progress < q.goal)
 
   return (
-    <div className="relative w-full sm:w-[400px] h-[100dvh] sm:h-[calc(100vh-64px)] sm:max-h-[860px] flex flex-col overflow-hidden bg-void border-line sm:border-2 scanlines">
+    <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 scanlines">
       {!state.onboarded && <Onboarding />}
 
       <TopBar onOpenProfile={() => setTab('hero')} onOpenAxis={() => setAxis(true)} />
 
       <main className="flex-1 overflow-y-auto scroll-thin arcade-bg">
-        {tab === 'home' && <Home setTab={setTab} setArenaTab={setArenaTab} />}
-        {tab === 'train' && <Train setTab={setTab} />}
-        {tab === 'arena' && <Arena tab={arenaTab} setTab={setArenaTab} />}
-        {tab === 'guild' && <Guild />}
-        {tab === 'hero' && <Hero />}
-        <div className="h-4" />
+        {/* Caps the measure when the app runs full-bleed on a wide, short
+            viewport (landscape phone) — cards stay readable instead of
+            stretching edge to edge. No-op inside the 400px frame. */}
+        <div className="mx-auto w-full max-w-[520px]">
+          {tab === 'home' && <Home setTab={setTab} setArenaTab={setArenaTab} />}
+          {tab === 'train' && <Train setTab={setTab} />}
+          {tab === 'arena' && <Arena tab={arenaTab} setTab={setArenaTab} />}
+          {tab === 'guild' && <Guild />}
+          {tab === 'hero' && <Hero />}
+          <div className="h-4" />
+        </div>
       </main>
 
       <TabBar tab={tab} setTab={setTab} badges={{ home: questsOpen ? 1 : 0 }} />
@@ -90,7 +95,7 @@ function Device() {
 export default function App() {
   return (
     <GameProvider>
-      <div className="min-h-[100dvh] w-full flex items-center justify-center bg-void sm:p-8">
+      <div className="min-h-[100dvh] w-full flex items-center justify-center bg-void device:p-8">
         <DesktopPitch />
         <Device />
       </div>

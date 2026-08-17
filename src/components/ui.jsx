@@ -53,14 +53,15 @@ const BTN_VARIANTS = {
 }
 
 export function Btn({ children, variant = 'primary', size = 'md', className = '', full, ...rest }) {
+  // Every size clears the 44px touch minimum; only type scale and padding vary.
   const sizes = {
-    sm: 'text-[8px] px-2.5 py-2',
-    md: 'text-[9px] px-3.5 py-2.5',
-    lg: 'text-[10px] px-4 py-3.5',
+    sm: 'text-[8px] px-2.5 py-2 min-h-[44px]',
+    md: 'text-[9px] px-3.5 py-2.5 min-h-[44px]',
+    lg: 'text-[10px] px-4 py-3.5 min-h-[48px]',
   }
   return (
     <button
-      className={`font-pixel border transition-all duration-150 active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-y-0 ${BTN_VARIANTS[variant]} ${sizes[size]} ${full ? 'w-full' : ''} ${className}`}
+      className={`font-pixel border transition-all duration-150 active:translate-y-px active:brightness-110 disabled:opacity-40 disabled:active:translate-y-0 disabled:active:brightness-100 ${BTN_VARIANTS[variant]} ${sizes[size]} ${full ? 'w-full' : ''} ${className}`}
       {...rest}
     >
       {children}
@@ -186,7 +187,11 @@ export function Modal({ open, onClose, title, children, accent = 'var(--color-ne
           <span className="font-pixel text-[9px]" style={{ color: accent }}>
             {title}
           </span>
-          <button onClick={onClose} className="font-pixel text-[9px] text-ink-faint hover:text-danger px-1">
+          <button
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="font-pixel text-[9px] text-ink-faint hover:text-danger active:brightness-125 grid place-items-center w-11 h-11 -mr-3 -my-3"
+          >
             ✕
           </button>
         </div>

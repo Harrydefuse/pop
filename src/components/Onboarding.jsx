@@ -101,7 +101,7 @@ export default function Onboarding() {
                   <button
                     key={c}
                     onClick={() => setSkin(c)}
-                    className="w-8 h-8 border-2"
+                    className="w-11 h-11 border-2 active:brightness-125"
                     style={{ background: c, borderColor: skin === c ? 'var(--color-neon)' : 'var(--color-line)' }}
                     aria-label={`Skin ${c}`}
                   />
@@ -113,7 +113,7 @@ export default function Onboarding() {
                   <button
                     key={c}
                     onClick={() => setHair(c)}
-                    className="w-8 h-8 border-2"
+                    className="w-11 h-11 border-2 active:brightness-125"
                     style={{ background: c, borderColor: hair === c ? 'var(--color-neon)' : 'var(--color-line)' }}
                     aria-label={`Hair ${c}`}
                   />

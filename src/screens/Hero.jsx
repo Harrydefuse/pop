@@ -348,15 +348,13 @@ function Pets() {
                   key={base.id}
                   onClick={() => owned && setPet(owned.id)}
                   disabled={!owned}
-                  className="text-center"
+                  aria-pressed={!!isActive}
+                  aria-label={owned ? `Set ${base.name} as active pet` : `${base.name} — locked`}
+                  className="text-center active:brightness-125"
                 >
-                  <RarityFrame
-                    rarity={base.rarity}
-                    size={72}
-                    active={isActive}
-                    className="mx-auto"
-                    onClick={owned ? () => setPet(owned.id) : undefined}
-                  >
+                  {/* The frame is decorative here — the wrapping button owns the
+                      interaction, so it must not carry a second click handler. */}
+                  <RarityFrame rarity={base.rarity} size={72} active={isActive} className="mx-auto">
                     {owned ? (
                       <PetView refId={base.id} level={owned.level} size={58} />
                     ) : (
@@ -562,7 +560,7 @@ export default function Hero() {
           <button
             key={k}
             onClick={() => setView(k)}
-            className="font-pixel text-[6px] py-2.5 border-r border-line last:border-0"
+            className="font-pixel text-[6px] py-2.5 min-h-[44px] border-r border-line last:border-0 transition-colors active:brightness-125"
             style={{
               color: view === k ? '#12081f' : 'var(--color-ink-faint)',
               background: view === k ? 'var(--color-neon)' : 'transparent',

@@ -21,7 +21,7 @@ function Segments({ value, onChange }) {
         <button
           key={s.key}
           onClick={() => onChange(s.key)}
-          className="font-pixel text-[7px] py-2.5 transition-colors border-r border-line last:border-0"
+          className="font-pixel text-[7px] py-2.5 min-h-[44px] transition-colors border-r border-line last:border-0 active:brightness-125"
           style={{
             color: value === s.key ? '#12081f' : 'var(--color-ink-faint)',
             background: value === s.key ? 'var(--color-neon)' : 'transparent',

@@ -97,7 +97,12 @@ function Post({ p }) {
           )}
 
           <div className="flex items-center gap-4 mt-3">
-            <button onClick={() => like(p.id)} className="flex items-center gap-1.5">
+            <button
+              onClick={() => like(p.id)}
+              aria-label={liked ? 'Remove like' : 'Like post'}
+              aria-pressed={liked}
+              className="flex items-center gap-1.5 min-h-[44px] pr-3 -my-2 active:brightness-125"
+            >
               <Icon name="heart" size={11} color={liked ? 'var(--color-danger)' : 'var(--color-ink-faint)'} />
               <span className="font-mono text-[11px]" style={{ color: liked ? 'var(--color-danger)' : 'var(--color-ink-faint)' }}>
                 {fmt(p.likes)}
@@ -195,7 +200,7 @@ export default function Guild() {
           <button
             key={k}
             onClick={() => setView(k)}
-            className="font-pixel text-[8px] py-2.5 border-r border-line last:border-0"
+            className="font-pixel text-[8px] py-2.5 min-h-[44px] border-r border-line last:border-0 transition-colors active:brightness-125"
             style={{
               color: view === k ? '#12081f' : 'var(--color-ink-faint)',
               background: view === k ? 'var(--color-neon)' : 'transparent',
@@ -215,7 +220,7 @@ export default function Guild() {
               <button
                 key={c.id}
                 onClick={() => setChannel(c.id)}
-                className="font-pixel text-[7px] px-2.5 py-2 border whitespace-nowrap shrink-0 transition-colors"
+                className="font-pixel text-[7px] px-3 min-h-[44px] border whitespace-nowrap shrink-0 transition-colors active:brightness-125"
                 style={{
                   color: channel === c.id ? 'var(--color-neon)' : 'var(--color-ink-faint)',
                   borderColor: channel === c.id ? 'var(--color-neon)' : 'var(--color-line)',
