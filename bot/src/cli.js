@@ -5,6 +5,7 @@
  * Paper trading is the default and the fallback. Live execution exists but is
  * off unless every arming condition in `status` is satisfied; see execute/guard.js.
  */
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -24,6 +25,7 @@ import { backtest, rsiVolumeSignal } from './ta/backtest.js';
 import { requiredSampleSize } from './ta/stats.js';
 import { screenerAlertScript, strategyScript, whaleMomentumScript } from './ta/pine.js';
 import { findIdeas } from './ideas/index.js';
+import { messageTemplate } from './tradingview/index.js';
 import { ideaScript } from './ta/pine.js';
 import { collectOutcomes, loadOutcomes } from './evaluate/outcomes.js';
 import { report as calibrationReport } from './evaluate/calibration.js';
@@ -51,6 +53,7 @@ Futures research (independent of the memecoin bot):
   backtest <SYMBOL>    Backtest those conditions with costs and no lookahead
   pine [which]         Emit Pine Script: strategy | oscillator | screener
                        or: pine idea <SYMBOL> — one idea's levels on your chart
+  tradingview          Wire TradingView alerts back to this bot (--secret to generate one)
 
 Live trading:
   status               Execution mode, arming state, wallet and today's spend
@@ -71,6 +74,8 @@ Options:
   --bars <n>           backtest: candles of history to pull (default 1000)
   --horizon <hours>    evaluate: how long after a signal to measure (default 24)
   --top <n>            ideas: how many to write up in full (default 5)
+  --secret             tradingview: generate a new webhook secret
+  --event <name>       tradingview: which event the message template raises
   --out <file>         pine: write to a file instead of stdout
   --verbose            Debug logging
   --quiet              Warnings and errors only
@@ -102,7 +107,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.replace(/^--?/, '');
-    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out', 'horizon', 'top'].includes(key);
+    const takesValue = ['limit', 'interval', 'port', 'host', 'rsi-below', 'vol', 'contains', 'bars', 'out', 'horizon', 'top', 'event'].includes(key);
     if (takesValue) {
       args.flags[key] = argv[i + 1];
       i += 1;
@@ -777,6 +782,66 @@ async function cmdStatus(config, args) {
   log.print('');
 }
 
+/**
+ * Everything needed to wire a TradingView alert to this bot, printed once.
+ *
+ * The setup has three parts that must agree — a reachable URL, a secret, and
+ * the JSON in the alert box — and getting any one of them wrong fails silently
+ * on TradingView's side. So this prints all three together, filled in.
+ */
+function cmdTradingview(config, args) {
+  const settings = config.tradingview ?? {};
+
+  if (args.flags.secret) {
+    // Generated here rather than chosen by hand: a webhook secret that has to
+    // survive being on the public internet should not be a memorable one.
+    const secret = crypto.randomBytes(32).toString('base64url');
+    log.print(`\nAdd this to your environment, then restart the bot:\n`);
+    log.print(`  export MEMEBOT_TRADINGVIEW_SECRET='${secret}'\n`);
+    log.print(
+      `${color.yellow}This is a credential.${color.reset} Anyone who has it can post alerts to your bot.\n` +
+        `Keep it out of config.json, out of git, and out of any .pine file you share.\n`,
+    );
+    return;
+  }
+
+  const recent = readJsonl(config.dataDirAbsolute, 'tradingview.jsonl', { limit: 10 }).reverse();
+
+  log.print(`\n${color.bold}TradingView webhook${color.reset}`);
+  log.print(`  Enabled          ${settings.enabled ? `${color.green}yes${color.reset}` : `${color.dim}no — set MEMEBOT_TRADINGVIEW_ENABLED=true${color.reset}`}`);
+  log.print(`  Secret           ${settings.secret ? `${color.green}set${color.reset}` : `${color.red}missing${color.reset} — run \`tradingview --secret\``}`);
+  log.print(`  Listening on     http://${config.server.host}:${config.server.port}/api/tradingview`);
+  log.print(`  Source allowlist ${settings.allowSourceIps?.length ? settings.allowSourceIps.join(', ') : `${color.dim}any (secret only)${color.reset}`}`);
+  log.print(`  Alerts received  ${recent.length ? `${recent.length} recent, last ${recent[0].firedAt}` : 'none yet'}`);
+
+  if (config.server.host === '127.0.0.1') {
+    log.print(
+      `\n${color.yellow}TradingView cannot reach 127.0.0.1.${color.reset} Their servers call you, so the\n` +
+        `endpoint needs a public HTTPS URL — a tunnel (cloudflared, ngrok, tailscale funnel)\n` +
+        `pointed at this port is the usual answer. Terminate TLS there: the secret travels\n` +
+        `in the request body, so plain HTTP puts it on the wire in clear text.\n\n` +
+        `Do NOT simply set server.host to 0.0.0.0 — the other routes on this port have no\n` +
+        `authentication at all and would be exposed with it.`,
+    );
+  }
+
+  log.print(`\n${color.bold}Paste this into the alert's Message box${color.reset}`);
+  log.print(messageTemplate({ event: args.flags.event ?? 'idea.entry', secret: settings.secret ?? undefined }));
+
+  log.print(`\n${color.bold}Steps${color.reset}`);
+  log.print('  1. node src/cli.js pine idea <SYMBOL> > idea.pine');
+  log.print('  2. TradingView → Pine Editor → paste → Add to chart');
+  log.print('  3. Right-click the chart → Add alert → Condition: the script, then the');
+  log.print('     alert you want (entry touched, stop breached, target reached)');
+  log.print('  4. Notifications tab → Webhook URL → your public https URL + /api/tradingview');
+  log.print('  5. Message box → the JSON above');
+
+  log.print(
+    `\n${color.dim}Alerts are recorded and shown on the dashboard. They do not place orders:\n` +
+      `an inbound request from the internet is not permitted to spend money.${color.reset}\n`,
+  );
+}
+
 function cmdStop(config) {
   const guard = new TradeGuard(config);
   const file = guard.engageKillSwitch('cli');
@@ -819,6 +884,7 @@ const COMMANDS = {
   screen: cmdScreen,
   backtest: cmdBacktest,
   pine: cmdPine,
+  tradingview: cmdTradingview,
   status: cmdStatus,
   stop: cmdStop,
   resume: cmdResume,

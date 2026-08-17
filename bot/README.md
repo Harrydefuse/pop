@@ -177,6 +177,8 @@ page is same-origin and the event stream needs no CORS.
 | `GET /api/ideas` | Cached trade ideas — setups, levels, drawings, write-ups |
 | `GET /api/ideas/pine?symbol=` | The Pine script for one cached idea |
 | `POST /api/ideas/scan` | Force a fresh ideas run |
+| `POST /api/tradingview` | Inbound alert webhook — authenticated, the only public route |
+| `GET /api/tradingview/alerts` | Alerts received, with accept/reject counters |
 
 The **Trade ideas** panel draws each setup on an annotated candlestick chart —
 the structural levels, the entry, the stop, the targets, and risk shaded against
@@ -387,6 +389,66 @@ thesis, is what decides whether a setup is worth taking.
 entry, stop and targets baked in as literals, risk and reward shaded, and the
 break-even win rate on the label — so the drawings land on your own TradingView
 chart through the supported path.
+
+### Connecting to TradingView
+
+The connection is two one-way links, and both are supported paths — nothing here
+drives their interface or scrapes their data.
+
+**Out:** `pine idea <SYMBOL>` and `pine strategy|oscillator|screener` emit scripts
+you paste into the Pine Editor. The drawings land on your own chart.
+
+**In:** the scripts carry `alertcondition()`s. Create an alert on one, point its
+webhook at this bot, and TradingView's servers POST when it fires:
+
+```bash
+node src/cli.js tradingview --secret     # generate one, then export it
+export MEMEBOT_TRADINGVIEW_SECRET='…'
+export MEMEBOT_TRADINGVIEW_ENABLED=true
+node src/cli.js tradingview              # prints the URL, the JSON, and the steps
+node src/cli.js serve
+```
+
+Alerts show up in the dashboard's TradingView panel as they arrive and append to
+`data/tradingview.jsonl`.
+
+**Alerts do not place orders.** They are recorded and displayed, and that is the
+end of the path. An inbound HTTP request from the public internet must not be
+one hop from signing a transaction, so the inbox has no executor and no way to
+reach one. Anything that acts on an alert has to go through the same arming,
+caps and kill switch as every other order.
+
+#### What this endpoint has to survive
+
+It is the only route in the codebase a stranger is meant to reach, and it has to
+be publicly reachable to work at all. So:
+
+- **A shared secret, compared in constant time.** TradingView alerts cannot set
+  custom HTTP headers, so the secret travels in the body — which is why the
+  endpoint needs TLS in front of it. Over plain HTTP it is on the wire in clear
+  text on every fire. It is read from `MEMEBOT_TRADINGVIEW_SECRET` and nowhere
+  else: a secret written into `config.json` is ignored rather than honoured,
+  because that file is one `git add` from being public.
+- **No secret means closed, never open.** An unconfigured webhook refuses
+  everything instead of accepting anonymous callers.
+- **A 16 KB body cap enforced while the body streams**, not after it is
+  buffered.
+- **A freshness window and replay suppression**, so a captured alert cannot be
+  posted back an hour later, and so TradingView's own retries record once.
+  Future-dated alerts are refused too — otherwise one would sit in the dedupe
+  cache and suppress the real thing.
+- **A strict shape check.** Unknown event types are rejected rather than passed
+  through; free text is truncated; a plain-text alert is refused outright
+  because it carries no secret and cannot be authenticated.
+- **Rejections answer 2xx** where a retry cannot help. TradingView retries on
+  non-2xx, and a malformed body will be just as malformed on the fifth attempt.
+  A bad secret is the exception — it answers 401 so a misconfigured alert shows
+  up in TradingView's delivery log, where its owner can see it.
+
+> **Do not put `server.host` on `0.0.0.0` to make this reachable.** The other
+> routes on that port have no authentication and can trigger a scan. Run a
+> tunnel (cloudflared, ngrok, tailscale funnel) that terminates TLS and forwards
+> to loopback instead.
 
 ### Why not drive TradingView's interface
 

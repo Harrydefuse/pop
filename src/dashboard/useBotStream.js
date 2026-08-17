@@ -11,6 +11,8 @@ const EMPTY = {
   feed: [],
   activity: [],
   equity: [],
+  alerts: [],
+  alertStats: null,
 }
 
 /**
@@ -26,9 +28,15 @@ export function useBotStream({ pollMs = 15_000 } = {}) {
 
   const loadSnapshot = useCallback(async () => {
     try {
-      const response = await fetch(`${API}/api/state`)
-      if (!response.ok) throw new Error(`api returned ${response.status}`)
-      const payload = await response.json()
+      const [stateResponse, alertsResponse] = await Promise.all([
+        fetch(`${API}/api/state`),
+        // Alerts arrive over SSE once connected; this is the initial fill, and
+        // a failure here must not blank the whole dashboard.
+        fetch(`${API}/api/tradingview/alerts?limit=20`).catch(() => null),
+      ])
+      if (!stateResponse.ok) throw new Error(`api returned ${stateResponse.status}`)
+      const payload = await stateResponse.json()
+      const inbox = alertsResponse?.ok ? await alertsResponse.json() : null
       if (!mountedRef.current) return
       setData((previous) => ({
         ...previous,
@@ -38,6 +46,8 @@ export function useBotStream({ pollMs = 15_000 } = {}) {
         feed: payload.feed ?? [],
         activity: payload.activity ?? [],
         equity: payload.equity ?? [],
+        alerts: inbox?.alerts ?? previous.alerts,
+        alertStats: inbox ? { ...inbox, alerts: undefined } : previous.alertStats,
       }))
     } catch (error) {
       if (!mountedRef.current) return
@@ -86,6 +96,11 @@ export function useBotStream({ pollMs = 15_000 } = {}) {
       source.addEventListener('activity', (event) => {
         const entry = JSON.parse(event.data)
         setData((previous) => ({ ...previous, activity: [entry, ...previous.activity].slice(0, 60) }))
+      })
+
+      source.addEventListener('tradingview:alert', (event) => {
+        const alert = JSON.parse(event.data)
+        setData((previous) => ({ ...previous, alerts: [alert, ...previous.alerts].slice(0, 40) }))
       })
 
       // Positions change on open/close; refresh the authoritative snapshot.

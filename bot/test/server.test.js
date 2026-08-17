@@ -5,6 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { EventEmitter } from 'node:events';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
@@ -456,4 +457,120 @@ test('POST /api/ideas/scan forces a refresh and reports whether one started', as
     assert.equal(status, 202);
     assert.equal(JSON.parse(body).alreadyRunning, true, 'a second click joins the run in flight');
   }, { ideas: busy });
+});
+
+// ── the TradingView webhook ──────────────────────────────────────────────────
+
+/** POST a raw body, which the JSON routes above never need to do. */
+function post(url, body) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(url, { method: 'POST', headers: { 'content-type': 'text/plain' } }, (res) => {
+      let text = '';
+      res.on('data', (chunk) => (text += chunk));
+      res.on('end', () => resolve({ status: res.statusCode, body: text }));
+    });
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
+function fakeInbox(overrides = {}) {
+  return {
+    events: new EventEmitter(),
+    recent: [{ event: 'idea.entry', symbol: 'SOLUSDT', price: 212.4, firedAt: '2026-08-17T12:00:00.000Z' }],
+    stats: { accepted: 1, rejected: 0, duplicates: 0, enabled: true, configured: true },
+    received: [],
+    receive(body, meta) {
+      this.received.push({ body, meta });
+      return { status: 200, body: { accepted: true } };
+    },
+    ...overrides,
+  };
+}
+
+test('POST /api/tradingview hands the body and peer address to the inbox', async () => {
+  const { runner } = makeRunner();
+  const inbox = fakeInbox();
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await post(`${base}/api/tradingview`, '{"secret":"s","symbol":"SOLUSDT"}');
+
+    assert.equal(status, 200);
+    assert.equal(JSON.parse(body).accepted, true);
+    assert.equal(inbox.received.length, 1);
+    assert.equal(inbox.received[0].body, '{"secret":"s","symbol":"SOLUSDT"}');
+    assert.ok(inbox.received[0].meta.address, 'the source address is passed through for the allowlist');
+  }, { inbox });
+});
+
+test('an oversized body is cut off mid-stream, not buffered then measured', async () => {
+  const { runner } = makeRunner();
+  const inbox = fakeInbox();
+
+  await withServer(runner, async (base) => {
+    // 2 MB against a 16 KB cap. The point is that the inbox is never reached:
+    // this endpoint faces the internet, so the ceiling has to bite while the
+    // body is still arriving.
+    const { status } = await post(`${base}/api/tradingview`, 'x'.repeat(2 * 1024 * 1024)).catch(() => ({ status: 413 }));
+
+    assert.equal(status, 413);
+    assert.equal(inbox.received.length, 0);
+  }, { inbox });
+});
+
+test('the webhook route only answers POST', async () => {
+  const { runner } = makeRunner();
+  const inbox = fakeInbox();
+
+  await withServer(runner, async (base) => {
+    const { status } = await request(`${base}/api/tradingview`);
+    assert.equal(status, 404, 'a GET must not be mistaken for an alert');
+    assert.equal(inbox.received.length, 0);
+  }, { inbox });
+});
+
+test('an accepted alert is broadcast to stream clients', async () => {
+  const { runner } = makeRunner();
+  const inbox = fakeInbox();
+
+  await withServer(runner, async (base) => {
+    const frames = await new Promise((resolve, reject) => {
+      let text = '';
+      const req = http.get(`${base}/api/stream`, (res) => {
+        res.on('data', (chunk) => {
+          text += chunk;
+          // The snapshot frame is proof the client is registered; emitting any
+          // earlier would broadcast to nobody and hang waiting for the echo.
+          if (text.includes('event: snapshot') && !text.includes('tradingview')) {
+            inbox.events.emit('alert', { event: 'idea.entry', symbol: 'SOLUSDT' });
+          }
+          if (text.includes('tradingview:alert')) {
+            // The stream is open until the socket dies, and server.close() waits
+            // on it — an undestroyed request here hangs the whole suite.
+            req.destroy();
+            resolve(text);
+          }
+        });
+      });
+      req.on('error', reject);
+    });
+
+    assert.match(frames, /event: tradingview:alert/);
+    assert.match(frames, /SOLUSDT/);
+  }, { inbox });
+});
+
+test('GET /api/tradingview/alerts returns recent alerts and counters', async () => {
+  const { runner } = makeRunner();
+  const inbox = fakeInbox();
+
+  await withServer(runner, async (base) => {
+    const { status, body } = await request(`${base}/api/tradingview/alerts`);
+    const payload = JSON.parse(body);
+
+    assert.equal(status, 200);
+    assert.equal(payload.alerts.length, 1);
+    assert.equal(payload.configured, true);
+    assert.equal(payload.accepted, 1);
+  }, { inbox });
 });

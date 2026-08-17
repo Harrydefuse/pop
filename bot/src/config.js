@@ -173,6 +173,29 @@ export const DEFAULTS = {
     host: '127.0.0.1',
   },
 
+  /**
+   * Inbound TradingView alerts (see src/tradingview/).
+   *
+   * `secret` is intentionally absent from these defaults and cannot be set in
+   * config.json — it comes from MEMEBOT_TRADINGVIEW_SECRET and nowhere else, so
+   * it never lands in a file that gets committed. Without it the webhook
+   * refuses every request rather than accepting anonymous ones.
+   */
+  tradingview: {
+    enabled: false,
+    /** Reject an alert whose own timestamp is older than this. */
+    maxAgeMinutes: 10,
+    /** Suppress a repeat of the same event on the same bar for this long. */
+    dedupeMinutes: 30,
+    /**
+     * Optional source-IP allowlist. Empty means "any source with the secret".
+     * TRADINGVIEW_IPS in src/tradingview/alerts.js holds their published list,
+     * but it changes without notice — a stale allowlist drops real alerts
+     * silently, so this is opt-in rather than the default.
+     */
+    allowSourceIps: [],
+  },
+
   solana: {
     rpcUrl: 'https://api.mainnet-beta.solana.com',
   },
@@ -248,6 +271,11 @@ export function loadConfig(overrides = {}, env = process.env) {
 
   // A couple of settings have conventional env names of their own.
   if (env.SOLANA_RPC_URL) config = merge(config, { solana: { rpcUrl: env.SOLANA_RPC_URL } });
+
+  // The webhook secret is env-only, and applied after config.json so a secret
+  // written into that file can never take effect — it would be a credential
+  // sitting in the repo, and silently honouring it would reward the mistake.
+  config.tradingview = { ...config.tradingview, secret: env.MEMEBOT_TRADINGVIEW_SECRET ?? null };
   if (!env.ANTHROPIC_API_KEY && !env.ANTHROPIC_AUTH_TOKEN) {
     config = merge(config, { narrative: { enabled: false, disabledReason: 'no ANTHROPIC_API_KEY' } });
   }

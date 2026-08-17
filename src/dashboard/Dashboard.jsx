@@ -12,6 +12,7 @@ import ActivityLog from './components/ActivityLog.jsx'
 import ClosedTrades from './components/ClosedTrades.jsx'
 import ExecutionBanner from './components/ExecutionBanner.jsx'
 import TradeIdeas from './components/TradeIdeas.jsx'
+import AlertFeed from './components/AlertFeed.jsx'
 
 function Offline({ error }) {
   return (
@@ -69,7 +70,7 @@ function NextCycle({ nextCycleAt }) {
 }
 
 export default function Dashboard() {
-  const { connected, loading, error, state, feed, activity, equity, scanNow } = useBotStream()
+  const { connected, loading, error, state, feed, activity, equity, alerts, alertStats, scanNow } = useBotStream()
   const ideas = useIdeas()
   const [scanning, setScanning] = useState(false)
 
@@ -233,6 +234,13 @@ export default function Dashboard() {
           {/* min-w-0: a grid item defaults to min-width:auto, so one wide table
               inside stretches the whole column past the viewport. */}
           <div className="min-w-0 space-y-4">
+            <Panel
+              title="TradingView"
+              subtitle="Alerts fired by your charts — recorded, never auto-traded"
+            >
+              <AlertFeed alerts={alerts} stats={alertStats} />
+            </Panel>
+
             <Panel title="Activity" subtitle={`Cycle every ${state.intervalSeconds}s`}>
               <ActivityLog entries={activity} />
             </Panel>

@@ -13,6 +13,8 @@ import http from 'node:http';
 
 import { readJsonl } from './store.js';
 import { createIdeaService } from './ideas/service.js';
+import { createAlertInbox } from './tradingview/index.js';
+import { MAX_BODY_BYTES } from './tradingview/alerts.js';
 import { ideaScript } from './ta/pine.js';
 import { log } from './log.js';
 
@@ -58,6 +60,31 @@ function sendText(response, status, body) {
   response.end(body);
 }
 
+/**
+ * Read a request body with a hard ceiling.
+ *
+ * The cap is enforced while streaming, not after: buffering an unbounded body
+ * and then measuring it is how a single request exhausts memory on a host that
+ * is, by necessity, exposed to the internet for this endpoint to work at all.
+ */
+function readBody(request, limit) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    request.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error('body too large'));
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    request.on('error', reject);
+  });
+}
+
 /** Query parameters a client may use to shape an ideas run. */
 function ideaOptions(url) {
   const symbols = url.searchParams.get('symbols');
@@ -72,8 +99,9 @@ function ideaOptions(url) {
   };
 }
 
-export function createServer(runner, { allowControl = true, ideas } = {}) {
+export function createServer(runner, { allowControl = true, ideas, inbox } = {}) {
   const ideaService = ideas ?? createIdeaService(runner.config);
+  const alertInbox = inbox ?? createAlertInbox(runner.config);
 
   /** @type {Set<import('node:http').ServerResponse>} */
   const clients = new Set();
@@ -94,6 +122,8 @@ export function createServer(runner, { allowControl = true, ideas } = {}) {
   for (const event of FORWARDED) {
     runner.on(event, (payload) => broadcast(event, payload ?? {}));
   }
+
+  alertInbox.events.on('alert', (alert) => broadcast('tradingview:alert', alert));
 
   const server = http.createServer((request, response) => {
     const url = new URL(request.url, 'http://localhost');
@@ -149,6 +179,27 @@ export function createServer(runner, { allowControl = true, ideas } = {}) {
       if (route === '/api/signals') {
         const limit = Number(url.searchParams.get('limit') ?? 200);
         sendJson(response, 200, readJsonl(runner.config.dataDirAbsolute, 'signals.jsonl', { limit }).reverse());
+        return;
+      }
+
+      // The one route the outside world is meant to reach. Everything it needs
+      // to defend itself lives in the inbox; the server's job is to hand it the
+      // body and the peer address and get out of the way.
+      if (route === '/api/tradingview' && request.method === 'POST') {
+        readBody(request, MAX_BODY_BYTES)
+          .then((body) => {
+            const result = alertInbox.receive(body, { address: request.socket.remoteAddress });
+            sendJson(response, result.status, result.body);
+          })
+          .catch(() => sendJson(response, 413, { error: 'body too large' }));
+        return;
+      }
+
+      if (route === '/api/tradingview/alerts') {
+        sendJson(response, 200, {
+          ...alertInbox.stats,
+          alerts: alertInbox.recent.slice(0, Number(url.searchParams.get('limit') ?? 50)),
+        });
         return;
       }
 
