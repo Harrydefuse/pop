@@ -4,6 +4,7 @@ import Icon from './Icon'
 import { RARITY } from '../game/config'
 import { useGame } from '../game/useGame'
 import { fmtFull } from '../game/engine'
+import { DAILY_CHEST } from '../game/config'
 
 export default function RewardModal() {
   const { state, dismissReward } = useGame()
@@ -17,12 +18,12 @@ export default function RewardModal() {
   const accent = RARITY[best].color
 
   return (
-    <Modal open onClose={dismissReward} title={`${reward.tier.name} CHEST`} accent={accent}>
+    <Modal open onClose={dismissReward} title={DAILY_CHEST.name} accent={accent}>
       <div className="text-center">
         <div className="loot-pop inline-grid place-items-center">
-          <Icon name="chest" size={54} color={reward.tier.color} />
+          <Icon name="chest" size={54} color="var(--color-gold)" />
         </div>
-        <div className="font-pixel text-[8px] text-ink-faint mt-3">SEALED {reward.tier.day} DAY{reward.tier.day > 1 ? 'S' : ''}</div>
+        <div className="font-pixel text-[8px] text-ink-faint mt-3">TODAY&apos;S PULL</div>
         <div className="flex items-center justify-center gap-1.5 mt-2.5">
           <Icon name="core" size={13} color="var(--color-gold)" />
           <span className="font-pixel text-[13px] text-gold">+{fmtFull(reward.cores)}</span>
@@ -41,7 +42,7 @@ export default function RewardModal() {
             </RarityFrame>
             <div className="min-w-0 flex-1">
               <div className="font-pixel text-[9px] truncate" style={{ color: RARITY[d.rarity].color }}>
-                {d.kind === 'pet' ? d.name : d.name.replace(`${RARITY[d.rarity].label} `, '')}
+                {d.name}
               </div>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <RarityTag rarity={d.rarity} />

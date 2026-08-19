@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './site.css'
 import { PetView, BossArt } from '../components/Sprites'
-import { ACTIVITIES, CHEST_TIERS, RARITY, STATS } from '../game/config'
+import { ACTIVITIES, DAILY_CHEST, RARITY, RARITY_ORDER, STATS } from '../game/config'
 import { grantXp, resolveActivity, statLevel, xpToNext } from '../game/engine'
 import { BOSS } from '../game/data'
 
@@ -172,36 +172,27 @@ function LiveRig() {
 
 /* ----------------------------------------------------------------- chest --- */
 
-function ChestLadder() {
-  const [day, setDay] = useState(3)
-  const tier = CHEST_TIERS[day - 1]
-
+function ChestOdds() {
   return (
     <div className="stack wide" style={{ width: '100%' }}>
-      <div className="ladder" role="group" aria-label="Days the chest stays sealed">
-        {CHEST_TIERS.map((t) => (
-          <button
-            key={t.day}
-            className={`rung${t.day <= day ? ' lit' : ''}`}
-            aria-pressed={t.day === day}
-            aria-label={`Day ${t.day} — ${t.name}`}
-            onClick={() => setDay(t.day)}
-          >
-            <span className="cap" style={{ height: `${0.6 + t.day * 0.85}rem` }} />
-            <span className="d">{t.day}</span>
-          </button>
-        ))}
+      <div className="readout" style={{ width: '100%' }}>
+        <span className="pix" style={{ color: 'var(--on-deep-2)' }}>
+          {DAILY_CHEST.name}
+        </span>
+        <span className="big">{DAILY_CHEST.rolls} pulls a day</span>
+        <span style={{ color: 'var(--on-deep-2)' }}>{DAILY_CHEST.note}</span>
       </div>
 
-      <div className="readout" aria-live="polite" style={{ width: '100%' }}>
-        <span className="pix" style={{ color: 'var(--on-deep-2)' }}>
-          Sealed {day} day{day > 1 ? 's' : ''}
-        </span>
-        <span className="big">{tier.name}</span>
-        <span style={{ color: 'var(--on-deep-2)' }}>
-          {tier.cores.toLocaleString()} cores · {tier.rolls} roll{tier.rolls > 1 ? 's' : ''} · nothing
-          below <strong style={{ color: RARITY[tier.floor].color }}>{RARITY[tier.floor].label}</strong>
-        </span>
+      <div className="odds">
+        {RARITY_ORDER.map((k) => (
+          <div className="odd" key={k}>
+            <span className="odd-bar" style={{ background: RARITY[k].color, height: `${18 + RARITY[k].weight * 1.1}px` }} />
+            <span className="odd-pct" style={{ color: RARITY[k].color }}>
+              {RARITY[k].weight}%
+            </span>
+            <span className="odd-name">{RARITY[k].label}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -394,19 +385,18 @@ export default function Site({ onEnterApp }) {
         <section className="deep" style={{ background: 'var(--deep-2)' }}>
           <div className="wrap split flip">
             <div className="reveal">
-              <ChestLadder />
+              <ChestOdds />
             </div>
             <div className="stack reveal">
-              <h2>The good stuff goes to whoever can wait.</h2>
+              <h2>Every day is a real chance at something great.</h2>
               <p className="lede">
-                Clear your three daily quests and a chest seals shut. Every further day you leave it
-                alone, it climbs a tier. Step through the days and watch what patience is worth.
+                Get your twenty minutes in and a chest unlocks. Open it and anything can come out —
+                there is no tier to climb first and no bad-luck floor to grind past.
               </p>
               <p>
-                You can open it whenever you like — opening early never wastes anything, it just costs
-                you the tiers above. Drop rates are fixed and published: 60% common through 1%
-                legendary. Sealing raises the floor, not the odds. There is no way to pay for a better
-                roll, because there is no shop.
+                The rates are fixed and published: 60% common through 1% legendary, the same on your
+                first day as your five hundredth. There is no way to pay for a better roll, because
+                there is no shop.
               </p>
             </div>
           </div>

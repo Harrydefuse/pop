@@ -386,6 +386,26 @@ const HERO_GRID = [
   '...ooooo.ooooo..',
 ]
 
+
+// ------------------------------------------------------- GEAR WORN ON THE HERO
+// Same 16x24 frame as the hero, mostly transparent, so each piece lines up with
+// the body when stacked on top. 'A' takes the item's rarity colour at render
+// time — that is what makes a legendary visibly legendary on the character.
+const EMPTY = '................'
+const layer = (rows) => {
+  const grid = Array.from({ length: 24 }, () => EMPTY)
+  for (const [y, cells] of Object.entries(rows)) grid[y] = cells
+  return { w: 16, h: 24, palette: { o: '#0d0a16', A: '#a855f7' }, grid }
+}
+
+export const GEAR_OVERLAYS = {
+  head: layer({ 3: '...AAAAAAAAAA...', 4: '..AA........AA..', 5: '..AA........AA..' }),
+  hands: layer({ 13: '.AAA........AAA.', 14: '.AAA........AAA.' }),
+  feet: layer({ 22: '...AAAAA.AAAAA..', 23: '...AAAAA.AAAAA..' }),
+  wrist: layer({ 12: '............AAA.' }),
+  charm: layer({ 10: '.......AA.......', 11: '.......AA.......' }),
+}
+
 export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7') {
   return {
     w: 16,

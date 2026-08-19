@@ -5,12 +5,11 @@ const TABS = [
   { key: 'hero', label: 'HERO', icon: 'person' },
   { key: 'arena', label: 'BOSS', icon: 'skull' },
   { key: 'friends', label: 'FRIENDS', icon: 'trophy' },
-  { key: 'guild', label: 'GUILD', icon: 'chat' },
 ]
 
 export default function TabBar({ tab, setTab, badges = {} }) {
   return (
-    <nav className="relative z-20 border-t border-line bg-[#0d0918]/95 backdrop-blur grid grid-cols-5 pad-safe-bottom">
+    <nav className="relative z-20 border-t border-line bg-[#0d0918]/95 backdrop-blur grid grid-cols-4 pad-safe-bottom">
       {TABS.map((t) => {
         const active = tab === t.key
         return (

@@ -4,7 +4,7 @@
 import {
   ACTIVITIES,
   DAILY_SLOTS,
-  CHEST_TIERS,
+  DAILY_CHEST,
   CLASSES,
   MAX_LEVEL,
   RANKS,
@@ -134,32 +134,24 @@ function weightedRarity(rng, floorKey = 'common') {
   return pool[0]
 }
 
-export function chestTier(daysSealed) {
-  const idx = Math.min(CHEST_TIERS.length - 1, Math.max(0, daysSealed - 1))
-  return CHEST_TIERS[idx]
-}
-
 /**
- * Rolls the contents of a sealed chest. `catalog` supplies the pool of gear and
- * pets that can drop; rng is injectable so results can be replayed in tests.
+ * Rolls the daily chest. The floor is always common and the ceiling always
+ * legendary, so every single day carries a real chance of something great.
  */
-export function rollChest(daysSealed, catalog, rng = Math.random) {
-  const tier = chestTier(daysSealed)
+export function rollDailyChest(catalog, rng = Math.random) {
   const drops = []
-  for (let i = 0; i < tier.rolls; i++) {
-    const rarity = weightedRarity(rng, tier.floor)
-    // 1 in 6 rolls is a pet egg rather than gear, and only above rare.
+  for (let i = 0; i < DAILY_CHEST.rolls; i++) {
+    const rarity = weightedRarity(rng, 'common')
     const petEligible = catalog.pets.filter((p) => p.rarity === rarity)
     if (petEligible.length && rng() < 0.16) {
       const pet = petEligible[Math.floor(rng() * petEligible.length)]
       drops.push({ kind: 'pet', rarity, ref: pet.id, name: pet.name })
       continue
     }
-    const gearPool = catalog.gear
-    const base = gearPool[Math.floor(rng() * gearPool.length)]
-    drops.push({ kind: 'gear', rarity, ref: base.id, name: `${RARITY[rarity].label} ${base.name}` })
+    const base = catalog.gear[Math.floor(rng() * catalog.gear.length)]
+    drops.push({ kind: 'gear', rarity, ref: base.id, name: base.name })
   }
-  return { tier, cores: tier.cores, drops }
+  return { cores: DAILY_CHEST.cores, drops }
 }
 
 // -------------------------------------------------------------------- activities

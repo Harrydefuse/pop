@@ -2,12 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Btn, Chip, Modal } from './ui'
 import Icon from './Icon'
 import { useGame } from '../game/useGame'
-import { STATS } from '../game/config'
+import { DAILY_CHEST, STATS } from '../game/config'
 import { BOSS } from '../game/data'
 import {
   balanceRatio,
   balanceVerdict,
-  chestTier,
   classById,
   fmt,
   nextStreakTier,
@@ -34,11 +33,10 @@ function answer(q, state) {
   const ratio = balanceRatio(p.week.activeMinutes, p.week.gamingHours)
   const verdict = balanceVerdict(ratio)
   const { rank, next } = rankFor(powerScore(p))
-  const tier = chestTier(Math.max(1, state.chest.sealedDays))
   const streakNext = nextStreakTier(p.streak)
 
   if (/task|daily|today|three|slot/.test(text)) {
-    return `Three a day, and only three.\n\nMOVE — 20 minutes of anything active, a walk counts. This is the one that seals your chest.\nSHARPEN — 20 minutes on aim training or a VOD review.\nBUILD — a gym session, some mobility, or a proper sleep.\n\nYou have ${3 - openQuests.length} of 3 done.`
+    return `Three a day, and only three.\n\nACTIVE — 20 minutes of anything active, a walk counts. This is the one that unlocks your chest.\nAIM — 20 minutes on an aim trainer or a VOD review.\nRECOVER — a gym session, some mobility, or a proper sleep.\n\nYou have ${3 - openQuests.length} of 3 done.`
   }
 
   if (/train|workout|session|what should i do|weakest/.test(text)) {
@@ -53,7 +51,7 @@ function answer(q, state) {
               ? '20 minutes of mobility and an early night — your recovery stat is the one dragging'
               : '20 minutes of aim training and a walk. Focus climbs on consistency, not intensity'
     const openNames = openQuests.map((d) => slotById(d.id).name).join(' and ')
-    return `Your weakest stat is ${weakest.key} at level ${weakest.lv}, against ${strongest.key} at ${strongest.lv}. Today I would do ${suggestion}.\n\nYour ${cls.name} passive is "${cls.passive.label}", so that is where your XP goes furthest.${openQuests.length ? `\n\nStill open today: ${openNames}. MOVE is the one that seals your chest.` : '\n\nAll three done today. Nothing left to chase.'}`
+    return `Your weakest stat is ${weakest.key} at level ${weakest.lv}, against ${strongest.key} at ${strongest.lv}. Today I would do ${suggestion}.\n\nYour ${cls.name} passive is "${cls.passive.label}", so that is where your XP goes furthest.${openQuests.length ? `\n\nStill open today: ${openNames}. ACTIVE is the one that unlocks your chest.` : '\n\nAll three done today. Nothing left to chase.'}`
   }
 
   if (/rank|climb|power|leaderboard/.test(text)) {
@@ -66,10 +64,9 @@ function answer(q, state) {
     return `This week: ${Math.round(p.week.activeMinutes)} active minutes against ${p.week.gamingHours} hours in game. That reads ${verdict.label}.\n\n${verdict.note}. For the record, LVL100 never asks you to play less — the balanced band is roughly 30 to 70 active minutes per gaming hour. Stack a session before your queue and the ratio fixes itself.`
   }
 
-  if (/chest|reward|loot|open/.test(text)) {
-    return state.chest.sealedDays > 0
-      ? `Your chest is sealed ${state.chest.sealedDays} day${state.chest.sealedDays > 1 ? 's' : ''} — that is ${tier.name}, worth ${fmt(tier.cores)} cores and ${tier.rolls} roll${tier.rolls > 1 ? 's' : ''} at a ${tier.floor} floor.\n\nIf you can hold it to day 7 you hit the Mythic Vault: 900 cores, four rolls, epic floor. Opening early never wastes anything, it just costs you the tiers above.`
-      : 'No chest sealed right now. Finish MOVE — 20 minutes of anything active — and one seals. Every further day you move without opening it bumps the tier.'
+  if (/chest|reward|loot|open|pull|drop/.test(text)) {
+    const ready = state.chest.unlocked && !state.chest.openedToday
+    return `${ready ? "Today's chest is unlocked and waiting." : state.chest.openedToday ? 'You already opened today\u2019s chest — a fresh one lands tomorrow.' : 'No chest yet. Finish ACTIVE — 20 minutes of anything — and it unlocks.'}\n\nOne chest a day, ${DAILY_CHEST.rolls} pulls, and every pull can roll anything: 60% common, 25% uncommon, 10% rare, 4% epic, 1% legendary. Those odds are identical on day one and day five hundred, and nothing you can buy changes them.`
   }
 
   if (/streak|miss|shield|skip/.test(text)) {
@@ -93,7 +90,7 @@ function answer(q, state) {
   }
 
   if (/hurt|pain|injur|sore|tired/.test(text)) {
-    return 'Sore is normal, sharp is not. If something is sharp, joint-located, or worse the day after, skip it and log mobility instead — that still keeps your streak and still seals the chest.\n\nI am a rules engine reading your save file, not a clinician. Anything that persists past a week is a physio question, not an app question.'
+    return 'Sore is normal, sharp is not. If something is sharp, joint-located, or worse the day after, skip it and log mobility instead — that still keeps your streak going.\n\nI am a rules engine reading your save file, not a clinician. Anything that persists past a week is a physio question, not an app question.'
   }
 
   return `I read your character sheet, so ask me something it can answer. Right now: level ${p.level}, ${rank.name}, ${p.streak}-day streak, weakest stat ${weakest.key}, ${openQuests.length} of 3 tasks left, balance ${verdict.label.toLowerCase()}.\n\nTry "what should I train today", "how do I rank up", "am I gaming too much", or "explain the chest".`

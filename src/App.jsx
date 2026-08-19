@@ -11,7 +11,6 @@ import Icon from './components/Icon'
 import Home from './screens/Home'
 import Friends from './screens/Friends'
 import Arena from './screens/Arena'
-import Guild from './screens/Guild'
 import Hero from './screens/Hero'
 
 const PITCH = [
@@ -83,7 +82,6 @@ function Device() {
         <div className="mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home setTab={setTab} />}
           {tab === 'arena' && <Arena />}
-          {tab === 'guild' && <Guild />}
           {tab === 'friends' && <Friends />}
           {tab === 'hero' && <Hero />}
           <div className="h-4" />

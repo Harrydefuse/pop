@@ -703,3 +703,34 @@
   .js-motion .reveal { opacity: 1; transform: none; }
   .btn:hover, .pick:hover { transform: none; }
 }
+
+/* ------------------------------------------------------------ chest odds ---- */
+.odds {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+  align-items: end;
+}
+.odd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+.odd-bar {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+}
+.odd-pct {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.odd-name {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--on-deep-2);
+}

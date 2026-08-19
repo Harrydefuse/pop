@@ -345,7 +345,7 @@ export const INITIAL_STATE = {
     },
     week: { activeMinutes: 214, gamingHours: 11.5, km: 13.4, sessions: 4 },
   },
-  chest: { sealedDays: 3, readyToday: false, lastOpened: null },
+  chest: { unlocked: true, openedToday: false },
   dailies: freshDailies(),
   links: { health: [], games: [] },
   feed: FEED,

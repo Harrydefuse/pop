@@ -2,9 +2,9 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, INITIAL_STATE, freshDailies } from './data'
 import { DAILY_SLOTS, RARITY } from './config'
-import { bestLoadout, grantPetXp, grantXp, minutesOf, resolveActivity, rollChest, stoneProgress } from './engine'
+import { bestLoadout, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v3' // v3: three fixed daily slots
+const SAVE_KEY = 'lvl100.save.v4' // v4: one chest a day, any rarity
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -135,17 +135,12 @@ function applyLog(state, { activityId, amount, verified, source }) {
     next = toast(next, { kind: 'pet', title: `${petLeveled.name} → LV ${petLeveled.level}`, body: 'Your pet levelled up' })
   }
 
-  // The MOVE slot is the gate: move today and the chest gains a day. The other
-  // two pay XP but are not a toll on the reward loop.
-  const moveDone = next.dailies.find((d) => d.id === 'move')?.done
-  if (moveDone && !next.chest.fedToday) {
-    const sealedDays = Math.min(7, next.chest.sealedDays + 1)
-    next = { ...next, chest: { ...next.chest, sealedDays, fedToday: true } }
-    next = toast(next, {
-      kind: 'chest',
-      title: 'CHEST SEALED',
-      body: `Day ${sealedDays}. Leave it shut and it climbs a tier.`,
-    })
+  // Moving unlocks today's chest. There is no ladder to climb any more — one
+  // chest a day, and every open can roll anything.
+  const activeDone = next.dailies.find((d) => d.id === 'active')?.done
+  if (activeDone && !next.chest.unlocked && !next.chest.openedToday) {
+    next = { ...next, chest: { ...next.chest, unlocked: true } }
+    next = toast(next, { kind: 'chest', title: 'CHEST UNLOCKED', body: 'Open it whenever you like.' })
   }
 
   const allDone = next.dailies.every((d) => d.done)
@@ -216,8 +211,8 @@ function reducer(state, action) {
     }
 
     case 'openChest': {
-      const days = Math.max(1, state.chest.sealedDays)
-      const result = rollChest(days, CATALOG)
+      if (!state.chest.unlocked || state.chest.openedToday) return state
+      const result = rollDailyChest(CATALOG)
       let next = { ...state, player: { ...state.player, cores: state.player.cores + result.cores } }
 
       const inventory = [...next.player.inventory]
@@ -236,9 +231,8 @@ function reducer(state, action) {
           })
         } else {
           const base = CATALOG.pets.find((p) => p.id === d.ref)
-          const owned = pets.find((p) => p.ref === base.id)
-          if (owned) {
-            // Duplicate pets convert to cores rather than clutter the roster.
+          if (pets.some((p) => p.ref === base.id)) {
+            // A duplicate companion converts to cores rather than clutter the roster.
             next = { ...next, player: { ...next.player, cores: next.player.cores + 300 } }
             d.duplicate = true
           } else {
@@ -255,13 +249,12 @@ function reducer(state, action) {
         }
       }
 
-      next = {
+      return {
         ...next,
         player: { ...next.player, inventory, pets },
-        chest: { sealedDays: 0, fedToday: false, lastOpened: Date.now() },
+        chest: { unlocked: false, openedToday: true },
         lastReward: result,
       }
-      return next
     }
 
     case 'dismissReward':
@@ -375,7 +368,7 @@ function reducer(state, action) {
         ...state,
         dailies: freshDailies(),
         perfectToday: false,
-        chest: { ...state.chest, fedToday: false },
+        chest: { unlocked: false, openedToday: false },
         player: { ...state.player, streak: state.player.streak + 1 },
       }
 

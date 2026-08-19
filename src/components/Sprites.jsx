@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { BOSS_SPRITE, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE, heroSprite } from '../game/sprites'
+import { BOSS_SPRITE, GEAR_OVERLAYS, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE, heroSprite } from '../game/sprites'
 import { RARITY } from '../game/config'
 import { petStage } from '../game/engine'
 import { GEAR_CATALOG } from '../game/data'
@@ -38,10 +38,31 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
   )
 }
 
-/** Full-body character for the loadout screen. */
-export function HeroView({ av = {}, height = 150, className = '' }) {
-  const sprite = heroSprite(av.skin, av.hair, av.shirt)
-  return <PixelSprite sprite={sprite} size={Math.round((height * 16) / 24)} className={className} />
+/**
+ * Full-body character with whatever is equipped drawn onto the body. Overlays
+ * share the hero's 16x24 frame, so stacking them lines the gear up exactly and
+ * a rarity colour reads straight off the character.
+ */
+export function HeroView({ av = {}, equipped = {}, height = 150, className = '' }) {
+  const width = Math.round((height * 16) / 24)
+  return (
+    <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
+      <PixelSprite sprite={heroSprite(av.skin, av.hair, av.shirt)} size={width} />
+      {Object.entries(equipped).map(([slot, item]) => {
+        const overlay = GEAR_OVERLAYS[slot]
+        if (!overlay || !item) return null
+        return (
+          <PixelSprite
+            key={slot}
+            sprite={overlay}
+            size={width}
+            accent={RARITY[item.rarity].color}
+            className="absolute inset-0"
+          />
+        )
+      })}
+    </div>
+  )
 }
 
 export function StoneIcon({ color, size = 22, dim }) {

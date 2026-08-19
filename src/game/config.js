@@ -232,27 +232,29 @@ export const ACTIVITIES = [
   },
 ]
 
-// Three slots a day, and only three. Each one states its own minimum in plain
-// words, so "did I do today's?" is answerable at a glance rather than by
-// reading three near-identical progress bars.
+// Three slots a day, and only three. Names are one word so a card can stay
+// small; the detail (what counts, the minimum) lives behind a tap rather than
+// on the surface.
 export const DAILY_SLOTS = [
   {
-    id: 'move',
-    name: 'MOVE',
-    lead: 'Get outside',
-    rule: '20 minutes minimum. A walk counts.',
+    id: 'active',
+    name: 'ACTIVE',
+    rule: '20 minutes of anything active',
+    detail: 'A walk counts. So does a run, a ride, a class or a kickabout.',
+    examples: 'Walk · Run · Ride · HIIT · Sport',
     minMinutes: 20,
     accepts: ['walk', 'run', 'ride', 'hiit', 'sport'],
     xp: 120,
     color: '#4ade80',
     icon: 'boot',
-    sealsChest: true,
+    unlocksChest: true,
   },
   {
-    id: 'sharpen',
-    name: 'SHARPEN',
-    lead: 'Work on your game',
-    rule: '20 minutes minimum. Aim trainer or VOD review.',
+    id: 'aim',
+    name: 'AIM',
+    rule: '20 minutes on your game',
+    detail: 'Aim trainer or reviewing a VOD. Both build the same thing.',
+    examples: 'Aim trainer · VOD review',
     minMinutes: 20,
     accepts: ['aim', 'vod'],
     xp: 90,
@@ -260,10 +262,11 @@ export const DAILY_SLOTS = [
     icon: 'crosshair',
   },
   {
-    id: 'build',
-    name: 'BUILD',
-    lead: 'Build or recover',
-    rule: 'A gym session, some mobility, or a proper sleep.',
+    id: 'recover',
+    name: 'RECOVER',
+    rule: 'Gym, mobility or sleep',
+    detail: 'Anything that builds you back up. Sleep counts as training here.',
+    examples: 'Gym · Mobility · Sleep',
     minMinutes: 0,
     accepts: ['lift', 'mobility', 'sleep'],
     xp: 100,
@@ -285,17 +288,14 @@ export const STREAK_TIERS = [
   { days: 100, mult: 1.5, label: 'Ascended' },
 ]
 
-// Sealed chest: the delayed-gratification core loop. Every day you leave it
-// sealed it gains a tier; opening early is always allowed but forfeits the rest.
-export const CHEST_TIERS = [
-  { day: 1, name: 'BRONZE', cores: 40, rolls: 1, floor: 'common', color: '#b07a4a' },
-  { day: 2, name: 'IRON', cores: 90, rolls: 1, floor: 'common', color: '#94a3b8' },
-  { day: 3, name: 'SILVER', cores: 160, rolls: 2, floor: 'uncommon', color: '#c5cdd8' },
-  { day: 4, name: 'GOLD', cores: 260, rolls: 2, floor: 'uncommon', color: '#fbbf24' },
-  { day: 5, name: 'PRISM', cores: 400, rolls: 3, floor: 'rare', color: '#5eead4' },
-  { day: 6, name: 'VOID', cores: 600, rolls: 3, floor: 'rare', color: '#818cf8' },
-  { day: 7, name: 'MYTHIC VAULT', cores: 900, rolls: 4, floor: 'epic', color: '#f59e0b' },
-]
+// One chest a day, unlocked by moving. Every open can roll anything — the pull
+// is the reward, not a ladder you have to keep climbing.
+export const DAILY_CHEST = {
+  name: 'DAILY CHEST',
+  cores: 220,
+  rolls: 2,
+  note: 'Any rarity, every single day.',
+}
 
 export const EQUIP_SLOTS = [
   { key: 'head', name: 'Headset', icon: 'headset' },
