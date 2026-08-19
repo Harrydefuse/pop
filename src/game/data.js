@@ -96,7 +96,7 @@ const NAMES = [
   ['Wren', 'wren.runs'],
 ]
 
-const CLASS_IDS = ['duelist', 'juggernaut', 'ranger', 'arcanist', 'vanguard']
+const CLASS_IDS = ['strider', 'juggernaut', 'ironstride', 'adept']
 const PET_IDS = ['pup', 'pup', 'turbo', 'turbo', 'frost', 'ember', 'zeus']
 
 function makeFriend(i, power, extra = {}) {
@@ -112,7 +112,12 @@ function makeFriend(i, power, extra = {}) {
     streak: [3, 12, 41, 7, 88, 19, 2, 130, 26, 5, 61, 14, 33, 9][i % 14],
     weeklyKm: [12, 41, 8, 26, 63, 19, 4, 88, 31, 15, 52, 22, 37, 11][i % 14],
     bossKm: [22.4, 61.8, 9.2, 38.5, 84.1, 27.3, 4.6, 112.7, 44.9, 16.2, 70.5, 30.1, 51.8, 12.9][i % 14],
-    avatar: { seed: i, skin: AVATAR_SKINS[i % AVATAR_SKINS.length], hair: AVATAR_HAIR[i % AVATAR_HAIR.length] },
+    avatar: {
+      seed: i,
+      skin: AVATAR_SKINS[i % AVATAR_SKINS.length],
+      hair: AVATAR_HAIR[i % AVATAR_HAIR.length],
+      hairLength: i % 2 ? 'long' : 'short',
+    },
     status: ['training', 'in-game', 'offline', 'in-game', 'training'][i % 5],
     game: ['Valorant', 'CS2', 'Fortnite', 'League', 'Overwatch 2'][i % 5],
     ...extra,
@@ -304,14 +309,15 @@ export const INITIAL_STATE = {
   player: {
     name: 'ROOKIE',
     handle: 'newchallenger',
-    classId: 'duelist',
+    classId: 'ironstride',
     level: 27,
     xp: 640,
     streak: 23,
     shields: 1,
     cores: 1840,
     stats: { STR: 9200, END: 12400, AGI: 7600, VIT: 10100, FOCUS: 5400 },
-    avatar: { seed: 0, skin: AVATAR_SKINS[1], hair: AVATAR_HAIR[1], shirt: '#a855f7' },
+    avatar: { seed: 0, skin: AVATAR_SKINS[1], hair: AVATAR_HAIR[0], hairLength: 'short', shirt: '#a855f7' },
+    games: [],
     equipped: { head: 'i1', hands: 'i2', feet: 'i3', wrist: null, charm: null },
     inventory: [
       { id: 'i1', ref: 'headset', name: 'Headset', slot: 'head', rarity: 'rare', level: 4, stats: { FOCUS: 3, VIT: 1 } },

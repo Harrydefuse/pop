@@ -1,49 +1,84 @@
 import { useState } from 'react'
 import { Btn, Chip, Panel } from './ui'
 import Icon from './Icon'
-import Avatar from './Avatar'
-import { PetView } from './Sprites'
+import { HeroView, PetView } from './Sprites'
 import { useGame } from '../game/useGame'
-import { CLASSES } from '../game/config'
-import { GAME_ACCOUNTS, HEALTH_PROVIDERS } from '../game/data'
+import { CLASSES, GAME_CATALOG, GAME_GENRES } from '../game/config'
+import { HEALTH_PROVIDERS } from '../game/data'
 import { AVATAR_HAIR, AVATAR_SKINS } from '../game/sprites'
 import { alpha } from '../game/color'
 
-const PITCH = [
-  ['TRACK IT ALL', 'Every rep, kilometre and hour of sleep becomes a number that goes up.'],
-  ['1% A DAY', 'In the gym and in your queue. Small, boring, compounding.'],
-  ['KEEP THE GAMES', 'This is not a detox app. Play as much as you want — just move too.'],
-  ['SHOW UP DAILY', 'Streaks, chests and friends who notice when you go quiet.'],
-]
+const STEPS = ['YOU', 'CLASS', 'GAMES', 'SYNC']
+
+function Progress({ step }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {STEPS.map((label, i) => (
+        <div key={label} className="flex-1">
+          <div className="h-1" style={{ background: i <= step - 1 ? 'var(--color-neon)' : 'var(--color-line)' }} />
+          <div
+            className="font-pixel text-[6px] mt-1.5"
+            style={{ color: i <= step - 1 ? 'var(--color-neon)' : 'var(--color-ink-faint)' }}
+          >
+            {label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** A colour swatch big enough to hit, with the selection shown by a ring. */
+function Swatch({ color, selected, onClick, label }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={selected}
+      className="w-11 h-11 border-2 active:brightness-125"
+      style={{
+        background: color,
+        borderColor: selected ? 'var(--color-ink)' : 'var(--color-line)',
+        boxShadow: selected ? '0 0 0 2px var(--color-neon)' : undefined,
+      }}
+    />
+  )
+}
 
 export default function Onboarding() {
   const { onboard } = useGame()
   const [step, setStep] = useState(0)
+
   const [name, setName] = useState('')
   const [handle, setHandle] = useState('')
-  const [classId, setClassId] = useState('duelist')
   const [skin, setSkin] = useState(AVATAR_SKINS[1])
-  const [hair, setHair] = useState(AVATAR_HAIR[1])
-  const [seed, setSeed] = useState(0)
-  const [health, setHealth] = useState([])
+  const [hair, setHair] = useState(AVATAR_HAIR[0])
+  const [hairLength, setHairLength] = useState('short')
+  const [classId, setClassId] = useState('ironstride')
   const [games, setGames] = useState([])
+  const [health, setHealth] = useState([])
 
   const cls = CLASSES.find((c) => c.id === classId)
-  const shirt = cls.color
+  const toggle = (list, set, id) => set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
 
-  const toggle = (list, setList, id) =>
-    setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
+  const preview = { skin, hair, hairLength, shirt: cls.color }
 
   return (
     <div className="absolute inset-0 z-50 bg-void arcade-bg overflow-y-auto scroll-thin">
       <div className="min-h-full flex flex-col p-4">
+        {step > 0 && (
+          <div className="mb-5">
+            <Progress step={step} />
+          </div>
+        )}
+
         {/* ------------------------------------------------------------ intro */}
         {step === 0 && (
           <div className="flex-1 flex flex-col justify-center text-center">
             <div className="font-pixel text-[26px] leading-none">
               LEVEL <span className="text-neon">100</span>
             </div>
-            <div className="font-pixel text-[8px] text-ink-faint mt-3">FITNESS RPG FOR GAMERS</div>
+            <div className="font-pixel text-[8px] text-ink-faint mt-3">A FITNESS APP THAT PAYS YOU IN LOOT</div>
 
             <div className="flex justify-center gap-1 my-7">
               <PetView refId="pup" level={1} size={44} />
@@ -53,75 +88,87 @@ export default function Onboarding() {
               <PetView refId="zeus" level={100} size={44} />
             </div>
 
-            <div className="space-y-2 text-left">
-              {PITCH.map(([t, d]) => (
-                <Panel key={t} className="p-2.5" corners={false}>
-                  <div className="font-pixel text-[8px] text-neon">{t}</div>
-                  <div className="text-[11px] text-ink-dim mt-1.5">{d}</div>
-                </Panel>
-              ))}
-            </div>
+            <p className="text-[12px] text-ink-dim leading-relaxed px-2">
+              Three small things a day. Every day you move, a chest unlocks — and every chest can roll
+              anything.
+            </p>
 
-            <Btn full size="lg" className="mt-6" onClick={() => setStep(1)}>
-              CREATE CHARACTER
+            <Btn full size="lg" className="mt-7" onClick={() => setStep(1)}>
+              MAKE YOUR CHARACTER
             </Btn>
           </div>
         )}
 
-        {/* --------------------------------------------------------- identity */}
+        {/* ------------------------------------------------------ 1. the look */}
         {step === 1 && (
           <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon mt-2">WHO ARE YOU?</div>
-            <div className="text-[11px] text-ink-dim mt-2">Pick a name your friends will see on the board.</div>
+            <div className="font-pixel text-[11px] text-neon">WHO ARE YOU?</div>
 
-            <div className="flex justify-center my-6">
-              <Avatar av={{ seed, skin, hair, shirt }} size={96} ring={shirt} />
+            <div className="flex justify-center my-5">
+              <div
+                className="grid place-items-center px-4 py-2 border"
+                style={{ borderColor: cls.color, background: 'rgba(0,0,0,0.25)' }}
+              >
+                <HeroView av={preview} height={150} />
+              </div>
             </div>
 
-            <label className="font-pixel text-[7px] text-ink-faint">DISPLAY NAME</label>
+            <label className="font-pixel text-[7px] text-ink-faint" htmlFor="ob-name">
+              NAME
+            </label>
             <input
+              id="ob-name"
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, 14))}
               placeholder="ROOKIE"
-              className="w-full bg-panel border border-line p-3 mt-1.5 font-pixel text-[10px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
+              className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-pixel text-[10px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
-            <label className="font-pixel text-[7px] text-ink-faint mt-4">HANDLE</label>
+            <label className="font-pixel text-[7px] text-ink-faint mt-3.5" htmlFor="ob-handle">
+              HANDLE
+            </label>
             <input
+              id="ob-handle"
               value={handle}
               onChange={(e) => setHandle(e.target.value.replace(/\s/g, '').slice(0, 18))}
               placeholder="newchallenger"
-              className="w-full bg-panel border border-line p-3 mt-1.5 font-mono text-[12px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
+              className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-mono text-[12px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
-            <div className="mt-5">
-              <div className="font-pixel text-[7px] text-ink-faint mb-2">SKIN</div>
-              <div className="flex gap-2 flex-wrap">
-                {AVATAR_SKINS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setSkin(c)}
-                    className="w-11 h-11 border-2 active:brightness-125"
-                    style={{ background: c, borderColor: skin === c ? 'var(--color-neon)' : 'var(--color-line)' }}
-                    aria-label={`Skin ${c}`}
-                  />
-                ))}
-              </div>
-              <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">HAIR</div>
-              <div className="flex gap-2 flex-wrap">
-                {AVATAR_HAIR.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setHair(c)}
-                    className="w-11 h-11 border-2 active:brightness-125"
-                    style={{ background: c, borderColor: hair === c ? 'var(--color-neon)' : 'var(--color-line)' }}
-                    aria-label={`Hair ${c}`}
-                  />
-                ))}
-              </div>
-              <Btn size="sm" variant="ghost" className="mt-4" onClick={() => setSeed((s) => s + 1)}>
-                SHUFFLE BUILD
-              </Btn>
+            <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">HAIR</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['short', 'SHORT'],
+                ['long', 'LONG'],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setHairLength(id)}
+                  aria-pressed={hairLength === id}
+                  className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+                  style={{
+                    color: hairLength === id ? '#0b0715' : 'var(--color-ink-dim)',
+                    background: hairLength === id ? 'var(--color-neon)' : 'transparent',
+                    borderColor: hairLength === id ? 'var(--color-neon)' : 'var(--color-line)',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">SKIN</div>
+            <div className="flex gap-2 flex-wrap">
+              {AVATAR_SKINS.map((c) => (
+                <Swatch key={c} color={c} selected={skin === c} onClick={() => setSkin(c)} label={`Skin ${c}`} />
+              ))}
+            </div>
+
+            <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">HAIR COLOUR</div>
+            <div className="flex gap-2 flex-wrap">
+              {AVATAR_HAIR.map((c) => (
+                <Swatch key={c} color={c} selected={hair === c} onClick={() => setHair(c)} label={`Hair ${c}`} />
+              ))}
             </div>
 
             <div className="flex gap-2 mt-auto pt-6">
@@ -135,42 +182,51 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* ------------------------------------------------------------ class */}
+        {/* --------------------------------------------------- 2. your class */}
         {step === 2 && (
           <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon mt-2">PICK YOUR CLASS</div>
+            <div className="font-pixel text-[11px] text-neon">HOW DO YOU TRAIN?</div>
             <div className="text-[11px] text-ink-dim mt-2">
-              Your class is the game you main crossed with the training you actually do. The bonus is small on purpose —
-              no class is a wrong pick.
+              Pick what you already do most. The bonus is small on purpose, and everything still counts
+              whichever you choose.
             </div>
 
             <div className="space-y-2 mt-4">
               {CLASSES.map((c) => {
-                const active = classId === c.id
+                const on = classId === c.id
                 return (
-                  <button key={c.id} onClick={() => setClassId(c.id)} className="w-full text-left">
+                  <button key={c.id} onClick={() => setClassId(c.id)} className="w-full text-left active:brightness-125">
                     <Panel
                       className="p-3"
                       corners={false}
-                      style={{
-                        borderColor: active ? c.color : 'var(--color-line)',
-                        background: active ? alpha(c.color, 10) : undefined,
-                      }}
+                      style={{ borderColor: on ? c.color : 'var(--color-line)', background: on ? alpha(c.color, 12) : undefined }}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-pixel text-[10px]" style={{ color: c.color }}>
-                          {c.name}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="grid place-items-center w-11 h-11 shrink-0 border"
+                          style={{ borderColor: c.color, background: on ? c.color : 'transparent' }}
+                        >
+                          <Icon name={c.icon} size={20} color={on ? '#0b0715' : c.color} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-pixel text-[10px]" style={{ color: c.color }}>
+                            {c.name}
+                          </div>
+                          <div className="text-[11px] text-ink-dim mt-1">{c.tagline}</div>
+                        </div>
                         <Chip color={c.color}>{c.affinity}</Chip>
                       </div>
-                      <div className="text-[11px] text-ink-dim mt-2">{c.tagline}</div>
-                      <div className="font-mono text-[10px] text-ink-faint mt-1.5">{c.games.join(' · ')}</div>
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <Icon name="spark" size={9} color={c.color} />
-                        <span className="text-[11px]" style={{ color: c.color }}>
-                          {c.passive.label}
-                        </span>
-                      </div>
+                      {on && (
+                        <div className="mt-2.5 pt-2.5 border-t border-line">
+                          <div className="text-[11px] text-ink-dim">{c.blurb}</div>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <Icon name="spark" size={9} color={c.color} />
+                            <span className="text-[11px]" style={{ color: c.color }}>
+                              {c.passive.label}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </Panel>
                   </button>
                 )
@@ -188,24 +244,72 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* ------------------------------------------------------------ links */}
+        {/* --------------------------------------------------- 3. your games */}
         {step === 3 && (
           <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon mt-2">CONNECT</div>
+            <div className="font-pixel text-[11px] text-neon">WHAT DO YOU PLAY?</div>
             <div className="text-[11px] text-ink-dim mt-2">
-              A health source is what makes your numbers real — without one, everything you log counts at half rate and
-              never touches a leaderboard.
+              Pick as many as you like. This is how we&apos;ll suggest friends and set up challenges for
+              the games you actually play — skip it if you&apos;d rather not.
             </div>
 
-            <div className="font-pixel text-[7px] text-ink-faint mt-5 mb-2">HEALTH</div>
-            <div className="space-y-1.5">
+            <div className="mt-4 space-y-3.5">
+              {GAME_GENRES.map((genre) => (
+                <div key={genre}>
+                  <div className="font-pixel text-[6px] text-ink-faint mb-2">{genre.toUpperCase()}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {GAME_CATALOG.filter((g) => g.genre === genre).map((g) => {
+                      const on = games.includes(g.id)
+                      return (
+                        <button
+                          key={g.id}
+                          onClick={() => toggle(games, setGames, g.id)}
+                          aria-pressed={on}
+                          className="text-[11px] px-2.5 min-h-[44px] border transition-colors active:brightness-125"
+                          style={{
+                            color: on ? '#0b0715' : 'var(--color-ink-dim)',
+                            background: on ? 'var(--color-cyan)' : 'transparent',
+                            borderColor: on ? 'var(--color-cyan)' : 'var(--color-line)',
+                          }}
+                        >
+                          {g.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 mt-auto pt-6">
+              <Btn variant="ghost" onClick={() => setStep(2)}>
+                BACK
+              </Btn>
+              <Btn className="flex-1" onClick={() => setStep(4)}>
+                {games.length ? `NEXT · ${games.length} PICKED` : 'SKIP'}
+              </Btn>
+            </div>
+          </div>
+        )}
+
+        {/* -------------------------------------------------------- 4. sync */}
+        {step === 4 && (
+          <div className="flex-1 flex flex-col">
+            <div className="font-pixel text-[11px] text-neon">CONNECT</div>
+            <div className="text-[11px] text-ink-dim mt-2">
+              A health source is what makes your numbers real. Without one, everything you log counts at
+              half rate and never touches a leaderboard.
+            </div>
+
+            <div className="space-y-1.5 mt-4">
               {HEALTH_PROVIDERS.map((h) => {
                 const on = health.includes(h.id)
                 return (
                   <button
                     key={h.id}
                     onClick={() => toggle(health, setHealth, h.id)}
-                    className="w-full flex items-center gap-2.5 border p-2.5 text-left"
+                    aria-pressed={on}
+                    className="w-full flex items-center gap-2.5 border p-2.5 text-left min-h-[44px] active:brightness-125"
                     style={{ borderColor: on ? h.color : 'var(--color-line)' }}
                   >
                     <Icon name={on ? 'check' : 'link'} size={12} color={on ? h.color : 'var(--color-ink-faint)'} />
@@ -218,29 +322,21 @@ export default function Onboarding() {
               })}
             </div>
 
-            <div className="font-pixel text-[7px] text-ink-faint mt-5 mb-2">GAMES · OPTIONAL</div>
-            <div className="space-y-1.5">
-              {GAME_ACCOUNTS.map((g) => {
-                const on = games.includes(g.id)
-                return (
-                  <button
-                    key={g.id}
-                    onClick={() => toggle(games, setGames, g.id)}
-                    className="w-full flex items-center gap-2.5 border p-2.5 text-left"
-                    style={{ borderColor: on ? g.color : 'var(--color-line)' }}
-                  >
-                    <Icon name={on ? 'check' : 'link'} size={12} color={on ? g.color : 'var(--color-ink-faint)'} />
-                    <span className="font-pixel text-[8px] flex-1" style={{ color: on ? g.color : 'var(--color-ink-dim)' }}>
-                      {g.name.toUpperCase()}
-                    </span>
-                    <span className="text-[10px] text-ink-faint truncate max-w-[45%]">{g.titles}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <Panel className="p-3 mt-4" corners={false}>
+              <div className="flex items-center gap-3">
+                <HeroView av={preview} height={72} />
+                <div className="min-w-0">
+                  <div className="font-pixel text-[9px]">{name.trim().toUpperCase() || 'ROOKIE'}</div>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <Chip color={cls.color}>{cls.name}</Chip>
+                    {!!games.length && <Chip color="var(--color-cyan)">{games.length} GAMES</Chip>}
+                  </div>
+                </div>
+              </div>
+            </Panel>
 
             <div className="flex gap-2 mt-auto pt-6">
-              <Btn variant="ghost" onClick={() => setStep(2)}>
+              <Btn variant="ghost" onClick={() => setStep(3)}>
                 BACK
               </Btn>
               <Btn
@@ -250,13 +346,13 @@ export default function Onboarding() {
                     name: (name.trim() || 'ROOKIE').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
                     classId,
-                    avatar: { seed, skin, hair, shirt },
-                    health,
+                    avatar: { seed: 0, skin, hair, hairLength, shirt: cls.color },
                     games,
+                    health,
                   })
                 }
               >
-                ENTER LVL100
+                START PLAYING
               </Btn>
             </div>
           </div>

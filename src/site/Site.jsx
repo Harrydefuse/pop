@@ -11,7 +11,7 @@ const DEMO_PLAYER = {
   level: 12,
   xp: 220,
   streak: 6,
-  classId: 'ranger',
+  classId: 'strider',
   stats: { STR: 1400, END: 2600, AGI: 1100, VIT: 1900, FOCUS: 700 },
   pets: [],
   activePetId: null,

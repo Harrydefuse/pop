@@ -192,8 +192,8 @@ function reducer(state, action) {
         {
           ...state,
           onboarded: true,
-          player: { ...state.player, name, handle, classId, avatar: { ...state.player.avatar, ...avatar } },
-          links: { health, games },
+          player: { ...state.player, name, handle, classId, avatar: { ...state.player.avatar, ...avatar }, games },
+          links: { ...state.links, health },
         },
         { kind: 'level', title: `WELCOME, ${name.toUpperCase()}`, body: 'Character created. Go earn something.' },
       )

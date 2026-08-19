@@ -47,7 +47,7 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   const width = Math.round((height * 16) / 24)
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
-      <PixelSprite sprite={heroSprite(av.skin, av.hair, av.shirt)} size={width} />
+      <PixelSprite sprite={heroSprite(av.skin, av.hair, av.shirt, av.hairLength)} size={width} />
       {Object.entries(equipped).map(([slot, item]) => {
         const overlay = GEAR_OVERLAYS[slot]
         if (!overlay || !item) return null

@@ -25,53 +25,51 @@ export const STATS = [
 
 export const STAT_KEYS = STATS.map((s) => s.key)
 
-// Class = the game you main crossed with the training you actually do. The
-// passive is deliberately small (a nudge, not a meta) so no class is mandatory.
+// Class is how you actually train, not which game you play — the games you
+// enjoy are captured separately, because the two rarely line up. Passives are
+// deliberately small (a nudge, not a meta) so no class is a wrong pick.
 export const CLASSES = [
   {
-    id: 'duelist',
-    name: 'DUELIST',
-    tagline: 'Tac-shooter mains who train explosive',
-    games: ['Valorant', 'CS2', 'Apex'],
-    affinity: 'AGI',
-    color: '#f43f5e',
-    passive: { label: '+12% XP from HIIT & sprint work', type: 'xp', tags: ['hiit', 'sprint'], value: 0.12 },
+    id: 'strider',
+    name: 'STRIDER',
+    tagline: 'Runners, riders, rowers',
+    blurb: 'You measure a good week in kilometres.',
+    affinity: 'END',
+    color: '#22d3ee',
+    icon: 'boot',
+    passive: { label: '+12% XP from running and riding', type: 'xp', tags: ['run', 'ride'], value: 0.12 },
   },
   {
     id: 'juggernaut',
     name: 'JUGGERNAUT',
-    tagline: 'Fighting-game & tank players who move weight',
-    games: ['Tekken 8', 'SF6', 'WoW'],
+    tagline: 'Barbells, dumbbells, the squat rack',
+    blurb: 'If it is heavy, you want to pick it up.',
     affinity: 'STR',
-    color: '#fb923c',
-    passive: { label: '+12% XP from lifting sessions', type: 'xp', tags: ['lift'], value: 0.12 },
+    color: '#f43f5e',
+    icon: 'dumbbell',
+    passive: { label: '+12% XP from gym sessions', type: 'xp', tags: ['lift'], value: 0.12 },
   },
   {
-    id: 'ranger',
-    name: 'RANGER',
-    tagline: 'Battle-royale players who go long',
-    games: ['Fortnite', 'Warzone', 'PUBG'],
-    affinity: 'END',
-    color: '#22d3ee',
-    passive: { label: '+12% XP from distance work', type: 'xp', tags: ['run', 'ride'], value: 0.12 },
+    id: 'ironstride',
+    name: 'IRONSTRIDE',
+    tagline: 'Lifts heavy and still runs',
+    blurb: 'Leg day and a 10k in the same week.',
+    affinity: 'AGI',
+    color: '#c084fc', // brighter than the base neon so 7px labels clear 4.5:1 on a tint
+    icon: 'bolt',
+    // Smaller bonus across two disciplines rather than a big one on a single
+    // lane: the hybrid trades depth for breadth, exactly like the training does.
+    passive: { label: '+8% XP from lifting and distance', type: 'xp', tags: ['lift', 'run', 'ride'], value: 0.08 },
   },
   {
-    id: 'arcanist',
-    name: 'ARCANIST',
-    tagline: 'MOBA & MMO players who prioritise recovery',
-    games: ['League', 'Dota 2', 'FFXIV'],
+    id: 'adept',
+    name: 'ADEPT',
+    tagline: 'Calisthenics, yoga, pilates, walking',
+    blurb: 'Your body is the only equipment you need.',
     affinity: 'VIT',
-    color: '#38bdf8',
-    passive: { label: '+12% XP from mobility & recovery', type: 'xp', tags: ['mobility', 'recovery'], value: 0.12 },
-  },
-  {
-    id: 'vanguard',
-    name: 'VANGUARD',
-    tagline: 'Hero-shooter generalists who train everything',
-    games: ['Overwatch 2', 'Marvel Rivals', 'The Finals'],
-    affinity: 'FOCUS',
-    color: '#a855f7',
-    passive: { label: '+6% XP from every source', type: 'xp', tags: ['*'], value: 0.06 },
+    color: '#4ade80',
+    icon: 'lotus',
+    passive: { label: '+12% XP from bodyweight and mobility', type: 'xp', tags: ['mobility'], value: 0.12 },
   },
 ]
 
@@ -190,6 +188,19 @@ export const ACTIVITIES = [
     icon: 'lotus',
   },
   {
+    id: 'bodyweight',
+    name: 'Calisthenics / Pilates',
+    tag: 'mobility',
+    unit: 'min',
+    per: 15,
+    minPerUnit: 1,
+    xp: 55,
+    stats: { STR: 3, AGI: 3, VIT: 1 },
+    step: 5,
+    default: 30,
+    icon: 'hold',
+  },
+  {
     id: 'sleep',
     name: 'Sleep',
     tag: 'recovery',
@@ -266,9 +277,9 @@ export const DAILY_SLOTS = [
     name: 'RECOVER',
     rule: 'Gym, mobility or sleep',
     detail: 'Anything that builds you back up. Sleep counts as training here.',
-    examples: 'Gym · Mobility · Sleep',
+    examples: 'Gym · Calisthenics · Mobility · Sleep',
     minMinutes: 0,
-    accepts: ['lift', 'mobility', 'sleep'],
+    accepts: ['lift', 'bodyweight', 'mobility', 'sleep'],
     xp: 100,
     color: '#fbbf24',
     icon: 'dumbbell',
@@ -372,3 +383,40 @@ export function upgradeCost(item) {
   const r = RARITY[item.rarity]
   return Math.round(60 * Math.pow(item.level, 1.35) * r.mult)
 }
+
+
+// The games someone actually plays, captured at sign-up. This is social data,
+// not an account link: it drives friend suggestions and game-specific
+// challenges later, so it needs a genre rather than a login.
+export const GAME_CATALOG = [
+  { id: 'valorant', name: 'Valorant', genre: 'Tac shooter' },
+  { id: 'cs2', name: 'CS2', genre: 'Tac shooter' },
+  { id: 'r6', name: 'Rainbow Six', genre: 'Tac shooter' },
+  { id: 'overwatch', name: 'Overwatch 2', genre: 'Hero shooter' },
+  { id: 'rivals', name: 'Marvel Rivals', genre: 'Hero shooter' },
+  { id: 'thefinals', name: 'The Finals', genre: 'Hero shooter' },
+  { id: 'fortnite', name: 'Fortnite', genre: 'Battle royale' },
+  { id: 'warzone', name: 'Warzone', genre: 'Battle royale' },
+  { id: 'apex', name: 'Apex Legends', genre: 'Battle royale' },
+  { id: 'pubg', name: 'PUBG', genre: 'Battle royale' },
+  { id: 'lol', name: 'League of Legends', genre: 'MOBA' },
+  { id: 'dota', name: 'Dota 2', genre: 'MOBA' },
+  { id: 'deadlock', name: 'Deadlock', genre: 'MOBA' },
+  { id: 'wow', name: 'World of Warcraft', genre: 'MMO' },
+  { id: 'ffxiv', name: 'Final Fantasy XIV', genre: 'MMO' },
+  { id: 'osrs', name: 'Old School RuneScape', genre: 'MMO' },
+  { id: 'rocketleague', name: 'Rocket League', genre: 'Sports' },
+  { id: 'eafc', name: 'EA FC', genre: 'Sports' },
+  { id: 'nba2k', name: 'NBA 2K', genre: 'Sports' },
+  { id: 'tekken', name: 'Tekken 8', genre: 'Fighting' },
+  { id: 'sf6', name: 'Street Fighter 6', genre: 'Fighting' },
+  { id: 'smash', name: 'Smash Bros', genre: 'Fighting' },
+  { id: 'minecraft', name: 'Minecraft', genre: 'Sandbox' },
+  { id: 'gta', name: 'GTA', genre: 'Sandbox' },
+  { id: 'roblox', name: 'Roblox', genre: 'Sandbox' },
+  { id: 'eldenring', name: 'Elden Ring', genre: 'Single player' },
+  { id: 'destiny', name: 'Destiny 2', genre: 'Looter shooter' },
+  { id: 'poe', name: 'Path of Exile', genre: 'Looter shooter' },
+]
+
+export const GAME_GENRES = [...new Set(GAME_CATALOG.map((g) => g.genre))]

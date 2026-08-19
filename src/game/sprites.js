@@ -319,7 +319,7 @@ const AVATAR_A = [
   '...oooooo...',
   '..ohhhhhho..',
   '.ohhhhhhhho.',
-  '.ohsssssssho.',
+  '.ohssssssho.',
   '.oskssskkso.',
   '.osssssssso.',
   '.ossskkssso.',
@@ -330,27 +330,17 @@ const AVATAR_A = [
   '.oaaaaaaaao.',
 ]
 
-const AVATAR_B = [
-  '...oooooo...',
-  '..ohhhhhho..',
-  '.ohhhhhhhho.',
-  '.ohhsssshho.',
-  '.oskssskkso.',
-  '.osssssssso.',
-  '.ossskkssso.',
-  '..osssssso..',
-  '..o.ssss.o..',
-  '.oaaaaaaaao.',
-  '.oaaaaaaaao.',
-  '.oaaaaaaaao.',
-]
+/** Long hair falls down both sides of the bust; short keeps the base outline. */
+const AVATAR_LONG = AVATAR_A.map((row, y) =>
+  y >= 3 && y <= 8 ? 'h' + row.slice(1, 11) + 'h' : row,
+)
 
-export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7') {
+export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7', hairLength = 'short') {
   return {
     w: 12,
     h: 12,
     palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt },
-    grid: seed % 2 === 0 ? AVATAR_A : AVATAR_B,
+    grid: hairLength === 'long' ? AVATAR_LONG : AVATAR_A,
   }
 }
 
@@ -406,12 +396,22 @@ export const GEAR_OVERLAYS = {
   charm: layer({ 10: '.......AA.......', 11: '.......AA.......' }),
 }
 
-export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7') {
+/**
+ * The long-hair build is derived from the short one rather than drawn twice, so
+ * the face, body and gear alignment can never drift between the two.
+ */
+const HERO_LONG = HERO_GRID.map((row, y) => {
+  if (y >= 4 && y <= 9) return 'ohh' + row.slice(3, 13) + 'hho'
+  if (y === 10) return 'oh' + row.slice(2, 14) + 'ho'
+  return row
+})
+
+export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7', hairLength = 'short') {
   return {
     w: 16,
     h: 24,
     palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt, t: '#2b2440', b: '#171226' },
-    grid: HERO_GRID,
+    grid: hairLength === 'long' ? HERO_LONG : HERO_GRID,
   }
 }
 
