@@ -3,6 +3,7 @@
 
 import {
   ACTIVITIES,
+  DAILY_SLOTS,
   CHEST_TIERS,
   CLASSES,
   MAX_LEVEL,
@@ -234,15 +235,35 @@ export function petStage(level) {
   return { idx: 0, name: 'HATCHLING', scale: 0.9, aura: false }
 }
 
+/** How many minutes of effort an amount of an activity represents. */
+export function minutesOf(act, amount) {
+  return (act.minPerUnit ?? 0) * amount
+}
+
+export function slotById(id) {
+  return DAILY_SLOTS.find((s) => s.id === id) ?? DAILY_SLOTS[0]
+}
+
+/**
+ * Picks the strongest item per slot. Rarity multiplies everything, so a
+ * legendary at level 1 can still beat a common at level 5 — this compares the
+ * same score the character sheet displays rather than raw level.
+ */
+export function itemScore(item) {
+  const base = Object.values(item.stats).reduce((a, b) => a + b, 0)
+  return base * RARITY[item.rarity].mult * (1 + (item.level - 1) * 0.35)
+}
+
+export function bestLoadout(inventory) {
+  const best = {}
+  for (const item of inventory) {
+    const cur = best[item.slot]
+    if (!cur || itemScore(item) > itemScore(cur)) best[item.slot] = item
+  }
+  return Object.fromEntries(Object.entries(best).map(([slot, item]) => [slot, item.id]))
+}
+
 // ----------------------------------------------------------------------- quests
-
-export function questProgressPct(q) {
-  return Math.min(1, q.progress / q.goal)
-}
-
-export function questsComplete(quests) {
-  return quests.filter((q) => q.progress >= q.goal).length
-}
 
 // ----------------------------------------------------------------------- stones
 

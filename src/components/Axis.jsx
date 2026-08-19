@@ -13,6 +13,7 @@ import {
   nextStreakTier,
   powerScore,
   rankFor,
+  slotById,
   statLevel,
 } from '../game/engine'
 
@@ -29,14 +30,18 @@ function answer(q, state) {
   const ranked = STATS.map((s) => ({ ...s, lv: statLevel(p.stats[s.key]) })).sort((a, b) => a.lv - b.lv)
   const weakest = ranked[0]
   const strongest = ranked[ranked.length - 1]
-  const openQuests = state.dailies.filter((d) => d.progress < d.goal)
+  const openQuests = state.dailies.filter((d) => !d.done)
   const ratio = balanceRatio(p.week.activeMinutes, p.week.gamingHours)
   const verdict = balanceVerdict(ratio)
   const { rank, next } = rankFor(powerScore(p))
   const tier = chestTier(Math.max(1, state.chest.sealedDays))
   const streakNext = nextStreakTier(p.streak)
 
-  if (/train|today|workout|session|what should i do/.test(text)) {
+  if (/task|daily|today|three|slot/.test(text)) {
+    return `Three a day, and only three.\n\nMOVE — 20 minutes of anything active, a walk counts. This is the one that seals your chest.\nSHARPEN — 20 minutes on aim training or a VOD review.\nBUILD — a gym session, some mobility, or a proper sleep.\n\nYou have ${3 - openQuests.length} of 3 done.`
+  }
+
+  if (/train|workout|session|what should i do|weakest/.test(text)) {
     const suggestion =
       weakest.key === 'STR'
         ? 'a 40-minute lifting session — 5×5 on a squat or press variation'
@@ -47,7 +52,8 @@ function answer(q, state) {
             : weakest.key === 'VIT'
               ? '20 minutes of mobility and an early night — your recovery stat is the one dragging'
               : '20 minutes of aim training and a walk. Focus climbs on consistency, not intensity'
-    return `Your weakest stat is ${weakest.key} at level ${weakest.lv}, against ${strongest.key} at ${strongest.lv}. Today I would do ${suggestion}.\n\nYour ${cls.name} passive is "${cls.passive.label}", so that is where your XP goes furthest.${openQuests.length ? `\n\nYou still have ${openQuests.length} daily quest${openQuests.length > 1 ? 's' : ''} open — clearing them seals your chest another day.` : ''}`
+    const openNames = openQuests.map((d) => slotById(d.id).name).join(' and ')
+    return `Your weakest stat is ${weakest.key} at level ${weakest.lv}, against ${strongest.key} at ${strongest.lv}. Today I would do ${suggestion}.\n\nYour ${cls.name} passive is "${cls.passive.label}", so that is where your XP goes furthest.${openQuests.length ? `\n\nStill open today: ${openNames}. MOVE is the one that seals your chest.` : '\n\nAll three done today. Nothing left to chase.'}`
   }
 
   if (/rank|climb|power|leaderboard/.test(text)) {
@@ -63,7 +69,7 @@ function answer(q, state) {
   if (/chest|reward|loot|open/.test(text)) {
     return state.chest.sealedDays > 0
       ? `Your chest is sealed ${state.chest.sealedDays} day${state.chest.sealedDays > 1 ? 's' : ''} — that is ${tier.name}, worth ${fmt(tier.cores)} cores and ${tier.rolls} roll${tier.rolls > 1 ? 's' : ''} at a ${tier.floor} floor.\n\nIf you can hold it to day 7 you hit the Mythic Vault: 900 cores, four rolls, epic floor. Opening early never wastes anything, it just costs you the tiers above.`
-      : 'No chest sealed right now. Clear all three dailies and one seals automatically. Every day you clear afterwards without opening it bumps the tier.'
+      : 'No chest sealed right now. Finish MOVE — 20 minutes of anything active — and one seals. Every further day you move without opening it bumps the tier.'
   }
 
   if (/streak|miss|shield|skip/.test(text)) {
@@ -90,10 +96,10 @@ function answer(q, state) {
     return 'Sore is normal, sharp is not. If something is sharp, joint-located, or worse the day after, skip it and log mobility instead — that still keeps your streak and still seals the chest.\n\nI am a rules engine reading your save file, not a clinician. Anything that persists past a week is a physio question, not an app question.'
   }
 
-  return `I read your character sheet, so ask me something it can answer. Right now: level ${p.level}, ${rank.name}, ${p.streak}-day streak, weakest stat ${weakest.key}, ${openQuests.length} quests open, balance ${verdict.label.toLowerCase()}.\n\nTry "what should I train today", "how do I rank up", "am I gaming too much", or "explain the chest".`
+  return `I read your character sheet, so ask me something it can answer. Right now: level ${p.level}, ${rank.name}, ${p.streak}-day streak, weakest stat ${weakest.key}, ${openQuests.length} of 3 tasks left, balance ${verdict.label.toLowerCase()}.\n\nTry "what should I train today", "how do I rank up", "am I gaming too much", or "explain the chest".`
 }
 
-const PROMPTS = ['What should I train today?', 'How do I rank up?', 'Am I gaming too much?', 'Explain the chest']
+const PROMPTS = ['What should I train today?', "What are today's three?", 'How do I rank up?', 'Explain the chest']
 
 export default function Axis({ open, onClose }) {
   const { state } = useGame()

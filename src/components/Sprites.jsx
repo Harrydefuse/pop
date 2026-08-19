@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { BOSS_SPRITE, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE } from '../game/sprites'
+import { BOSS_SPRITE, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE, heroSprite } from '../game/sprites'
 import { RARITY } from '../game/config'
 import { petStage } from '../game/engine'
 import { GEAR_CATALOG } from '../game/data'
@@ -36,6 +36,12 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
       />
     </div>
   )
+}
+
+/** Full-body character for the loadout screen. */
+export function HeroView({ av = {}, height = 150, className = '' }) {
+  const sprite = heroSprite(av.skin, av.hair, av.shirt)
+  return <PixelSprite sprite={sprite} size={Math.round((height * 16) / 24)} className={className} />
 }
 
 export function StoneIcon({ color, size = 22, dim }) {

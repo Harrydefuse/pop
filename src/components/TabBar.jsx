@@ -1,11 +1,11 @@
 import Icon from './Icon'
 
 const TABS = [
-  { key: 'home', label: 'HOME', icon: 'home' },
-  { key: 'train', label: 'TRAIN', icon: 'dumbbell' },
-  { key: 'arena', label: 'ARENA', icon: 'trophy' },
-  { key: 'guild', label: 'GUILD', icon: 'chat' },
+  { key: 'home', label: 'TODAY', icon: 'home' },
   { key: 'hero', label: 'HERO', icon: 'person' },
+  { key: 'arena', label: 'BOSS', icon: 'skull' },
+  { key: 'friends', label: 'FRIENDS', icon: 'trophy' },
+  { key: 'guild', label: 'GUILD', icon: 'chat' },
 ]
 
 export default function TabBar({ tab, setTab, badges = {} }) {

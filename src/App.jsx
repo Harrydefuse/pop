@@ -9,7 +9,7 @@ import Onboarding from './components/Onboarding'
 import Axis from './components/Axis'
 import Icon from './components/Icon'
 import Home from './screens/Home'
-import Train from './screens/Train'
+import Friends from './screens/Friends'
 import Arena from './screens/Arena'
 import Guild from './screens/Guild'
 import Hero from './screens/Hero'
@@ -66,10 +66,9 @@ function DesktopPitch({ onExit }) {
 function Device() {
   const { state } = useGame()
   const [tab, setTab] = useState('home')
-  const [arenaTab, setArenaTab] = useState('friends')
   const [axis, setAxis] = useState(false)
 
-  const questsOpen = state.dailies.some((q) => q.progress < q.goal)
+  const questsOpen = state.dailies.some((d) => !d.done)
 
   return (
     <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 scanlines">
@@ -82,10 +81,10 @@ function Device() {
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}
         <div className="mx-auto w-full max-w-[520px]">
-          {tab === 'home' && <Home setTab={setTab} setArenaTab={setArenaTab} />}
-          {tab === 'train' && <Train setTab={setTab} />}
-          {tab === 'arena' && <Arena tab={arenaTab} setTab={setArenaTab} />}
+          {tab === 'home' && <Home setTab={setTab} />}
+          {tab === 'arena' && <Arena />}
           {tab === 'guild' && <Guild />}
+          {tab === 'friends' && <Friends />}
           {tab === 'hero' && <Hero />}
           <div className="h-4" />
         </div>

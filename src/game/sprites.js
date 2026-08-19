@@ -354,5 +354,46 @@ export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt
   }
 }
 
+
+// ------------------------------------------------------------------ THE HERO
+// A full-body 16x24 character for the loadout screen. The 12x12 avatar is a
+// head-and-shoulders bust — fine in a list row, but it crops to a face at the
+// size the paper doll needs, so the hero gets its own taller sprite.
+const HERO_GRID = [
+  '.....oooooo.....',
+  '....ohhhhhhoo...',
+  '...ohhhhhhhho...',
+  '...ohhhhhhhho...',
+  '...ohssssssho...',
+  '...ohskssksho...',
+  '...ohssssssho...',
+  '...ohssoossho...',
+  '....ossssso.....',
+  '.....osso.......',
+  '..ooaaaaaaaaoo..',
+  '.osoaaaaaaaaoso.',
+  '.osoaaaaaaaaoso.',
+  '.osoaaaaaaaaoso.',
+  '.osoaaaaaaaaoso.',
+  '..ooaaaaaaaaoo..',
+  '...oaaaaaaaao...',
+  '...otttttttto...',
+  '...otttttttto...',
+  '...ottto.ottto..',
+  '...ottto.ottto..',
+  '...ottto.ottto..',
+  '...obbbo.obbbo..',
+  '...ooooo.ooooo..',
+]
+
+export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7') {
+  return {
+    w: 16,
+    h: 24,
+    palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt, t: '#2b2440', b: '#171226' },
+    grid: HERO_GRID,
+  }
+}
+
 export const AVATAR_SKINS = ['#f2cfa0', '#e8b48a', '#c68642', '#8d5524', '#5c3317', '#ffdbac']
 export const AVATAR_HAIR = ['#2b1a10', '#7c3aed', '#22d3ee', '#f43f5e', '#fbbf24', '#f2ecff', '#4ade80']

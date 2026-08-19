@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, INITIAL_STATE, freshDailies } from './data'
-import { RARITY } from './config'
-import { grantPetXp, grantXp, resolveActivity, rollChest, stoneProgress } from './engine'
+import { DAILY_SLOTS, RARITY } from './config'
+import { bestLoadout, grantPetXp, grantXp, minutesOf, resolveActivity, rollChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v2'
+const SAVE_KEY = 'lvl100.save.v3' // v3: three fixed daily slots
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -35,14 +35,23 @@ function toast(state, t) {
   return { ...state, toasts: [...state.toasts, { id: nextId('t'), ...t }] }
 }
 
-/** Advances daily quests off the back of a logged activity. */
-function bumpDailies(dailies, act, amount, verified) {
-  return dailies.map((q) => {
-    let add = 0
-    if (q.id === 'd1' && verified) add = 1
-    if (q.id === 'd2' && act.id === 'steps') add = amount
-    if (q.id === 'd3' && (act.id === 'aim' || act.id === 'mobility')) add = amount
-    return add ? { ...q, progress: Math.min(q.goal, q.progress + add) } : q
+/**
+ * Credits a logged activity to whichever slot accepts it. Everything is
+ * measured in minutes so one slot can hold one honest minimum regardless of
+ * whether it was filled by a walk, a run or a ride.
+ */
+function bumpDailies(dailies, act, amount) {
+  const mins = minutesOf(act, amount)
+  return dailies.map((d) => {
+    const slot = DAILY_SLOTS.find((s) => s.id === d.id)
+    if (!slot || !slot.accepts.includes(act.id)) return d
+    const minutes = Math.round((d.minutes + mins) * 10) / 10
+    return {
+      ...d,
+      minutes,
+      done: d.done || minutes >= slot.minMinutes,
+      loggedAs: d.loggedAs ?? act.name,
+    }
   })
 }
 
@@ -97,7 +106,7 @@ function applyLog(state, { activityId, amount, verified, source }) {
       week,
       cores: player.cores + result.cores,
     },
-    dailies: bumpDailies(state.dailies, act, amount, verified),
+    dailies: bumpDailies(state.dailies, act, amount),
     world: { ...state.world, bossKm: state.world.bossKm + result.bossDamage },
     log: [
       {
@@ -126,19 +135,23 @@ function applyLog(state, { activityId, amount, verified, source }) {
     next = toast(next, { kind: 'pet', title: `${petLeveled.name} → LV ${petLeveled.level}`, body: 'Your pet levelled up' })
   }
 
-  // Seal the chest one more day once every daily is done
-  const allDone = next.dailies.every((q) => q.progress >= q.goal)
-  if (allDone && !next.chest.fedToday) {
+  // The MOVE slot is the gate: move today and the chest gains a day. The other
+  // two pay XP but are not a toll on the reward loop.
+  const moveDone = next.dailies.find((d) => d.id === 'move')?.done
+  if (moveDone && !next.chest.fedToday) {
     const sealedDays = Math.min(7, next.chest.sealedDays + 1)
-    next = {
-      ...next,
-      chest: { ...next.chest, sealedDays, fedToday: true },
-    }
+    next = { ...next, chest: { ...next.chest, sealedDays, fedToday: true } }
     next = toast(next, {
       kind: 'chest',
-      title: 'DAILIES CLEARED',
-      body: `Chest sealed to day ${sealedDays}. Leave it to grow.`,
+      title: 'CHEST SEALED',
+      body: `Day ${sealedDays}. Leave it shut and it climbs a tier.`,
     })
+  }
+
+  const allDone = next.dailies.every((d) => d.done)
+  if (allDone && !next.perfectToday) {
+    next = { ...next, perfectToday: true, player: { ...next.player, cores: next.player.cores + 250 } }
+    next = toast(next, { kind: 'level', title: 'ALL THREE DONE', body: '+250 cores for a full day' })
   }
 
   // Stones are checked last so a single session can complete one
@@ -161,7 +174,7 @@ function syntheticSync(links) {
     { activityId: 'run', amount: +(3 + Math.random() * 6).toFixed(1) },
     { activityId: 'lift', amount: Math.round((3 + Math.random() * 4) * 1000) },
     { activityId: 'hiit', amount: 10 + Math.round(Math.random() * 4) * 5 },
-    { activityId: 'steps', amount: 4000 + Math.round(Math.random() * 8000) },
+    { activityId: 'walk', amount: 15 + Math.round(Math.random() * 6) * 5 },
     { activityId: 'sleep', amount: +(6 + Math.random() * 2.5).toFixed(1) },
     { activityId: 'mobility', amount: 10 + Math.round(Math.random() * 4) * 5 },
     { activityId: 'ride', amount: Math.round(8 + Math.random() * 24) },
@@ -263,6 +276,14 @@ function reducer(state, action) {
       }
     }
 
+    case 'equipBest': {
+      const equipped = { ...state.player.equipped, ...bestLoadout(state.player.inventory) }
+      return toast(
+        { ...state, player: { ...state.player, equipped } },
+        { kind: 'gear', title: 'BEST GEAR ON', body: 'Highest-scoring item in every slot' },
+      )
+    }
+
     case 'unequip':
       return {
         ...state,
@@ -353,6 +374,7 @@ function reducer(state, action) {
       return {
         ...state,
         dailies: freshDailies(),
+        perfectToday: false,
         chest: { ...state.chest, fedToday: false },
         player: { ...state.player, streak: state.player.streak + 1 },
       }
@@ -396,6 +418,7 @@ export function GameProvider({ children }) {
       openChest: () => dispatch({ type: 'openChest' }),
       dismissReward: () => dispatch({ type: 'dismissReward' }),
       equip: (itemId) => dispatch({ type: 'equip', itemId }),
+      equipBest: () => dispatch({ type: 'equipBest' }),
       unequip: (slot) => dispatch({ type: 'unequip', slot }),
       upgrade: (itemId, cost) => dispatch({ type: 'upgrade', itemId, cost }),
       setPet: (petId) => dispatch({ type: 'setPet', petId }),

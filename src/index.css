@@ -61,6 +61,7 @@
   --color-line-hot: #4c3378; /* border on active/hover */
 
   --color-neon: #a855f7; /* primary purple */
+  --color-neon-bright: #c084fc; /* violet that still clears 4.5:1 on the tinted "you" row */
   --color-neon-dim: #6d28d9;
   --color-cyan: #22d3ee; /* secondary signal */
   --color-lime: #a3e635; /* success / gains */

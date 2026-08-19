@@ -2,6 +2,7 @@
 // empty RPG demo tells you nothing about whether the systems feel good.
 
 import { AVATAR_HAIR, AVATAR_SKINS } from './sprites'
+import { DAILY_SLOTS } from './config'
 
 // ------------------------------------------------------------------- catalogues
 
@@ -110,6 +111,7 @@ function makeFriend(i, power, extra = {}) {
     petId: PET_IDS[i % PET_IDS.length],
     streak: [3, 12, 41, 7, 88, 19, 2, 130, 26, 5, 61, 14, 33, 9][i % 14],
     weeklyKm: [12, 41, 8, 26, 63, 19, 4, 88, 31, 15, 52, 22, 37, 11][i % 14],
+    bossKm: [22.4, 61.8, 9.2, 38.5, 84.1, 27.3, 4.6, 112.7, 44.9, 16.2, 70.5, 30.1, 51.8, 12.9][i % 14],
     avatar: { seed: i, skin: AVATAR_SKINS[i % AVATAR_SKINS.length], hair: AVATAR_HAIR[i % AVATAR_HAIR.length] },
     status: ['training', 'in-game', 'offline', 'in-game', 'training'][i % 5],
     game: ['Valorant', 'CS2', 'Fortnite', 'League', 'Overwatch 2'][i % 5],
@@ -130,13 +132,6 @@ export const FRIENDS = [
   makeFriend(9, 880),
 ]
 
-export const GLOBAL_TOP = [
-  makeFriend(10, 12400, { name: 'Halcyon', handle: 'halcyon.hp', country: 'SE' }),
-  makeFriend(11, 11870, { country: 'JP' }),
-  makeFriend(12, 11240, { country: 'BR' }),
-  makeFriend(13, 10990, { country: 'US' }),
-  makeFriend(4, 10510, { country: 'DE' }),
-]
 
 // ------------------------------------------------------------------- world boss
 
@@ -148,11 +143,13 @@ export const BOSS = {
   goalKm: 1000000,
   startKm: 618420, // community progress at app open; ticks up live
   endsAt: Date.now() + 1000 * 60 * 60 * 24 * 9,
+  // Everything here is season-exclusive: it is only ever granted to players who
+  // put damage on this boss, and it never returns.
   rewards: [
-    { at: 0.25, name: 'Raider banner', kind: 'banner', done: true },
-    { at: 0.5, name: '1,500 cores + Titan title', kind: 'title', done: true },
-    { at: 0.75, name: 'Epic gear cache', kind: 'gear', done: false },
-    { at: 1, name: 'TITANSLAYER pet + animated frame', kind: 'pet', done: false },
+    { at: 0.25, name: 'Raider banner', kind: 'banner' },
+    { at: 0.5, name: 'Titan title + 1,500 cores', kind: 'title' },
+    { at: 0.75, name: 'Epic gear cache', kind: 'gear' },
+    { at: 1, name: 'TITANSLAYER pet', kind: 'pet' },
   ],
   personalTiers: [
     { km: 10, reward: '200 cores' },
@@ -161,59 +158,6 @@ export const BOSS = {
     { km: 100, reward: 'Titanslayer title' },
   ],
 }
-
-// ------------------------------------------------------------------- challenges
-
-export const CHALLENGES = [
-  {
-    id: 'wk-1',
-    scope: 'WEEKLY',
-    name: 'THE GAUNTLET',
-    desc: 'Run 20 km across the week',
-    goal: 20,
-    unit: 'km',
-    progress: 13.4,
-    reward: '900 cores + Silver chest',
-    endsIn: '2d 4h',
-    entrants: 18420,
-  },
-  {
-    id: 'wk-2',
-    scope: 'WEEKLY',
-    name: 'IRON DISCIPLINE',
-    desc: 'Move 40,000 kg of total volume',
-    goal: 40000,
-    unit: 'kg',
-    progress: 31200,
-    reward: 'Epic grip roll',
-    endsIn: '2d 4h',
-    entrants: 9310,
-  },
-  {
-    id: 'mo-1',
-    scope: 'MONTHLY',
-    name: 'NO ZERO DAYS',
-    desc: 'Log a verified activity on 26 of 31 days',
-    goal: 26,
-    unit: 'days',
-    progress: 19,
-    reward: 'Legendary pet egg',
-    endsIn: '11d',
-    entrants: 41200,
-  },
-  {
-    id: 'duo-1',
-    scope: 'DUO',
-    name: 'RUN IT BACK',
-    desc: 'You + Kestrel: 30 km combined',
-    goal: 30,
-    unit: 'km',
-    progress: 22.1,
-    reward: 'Soul stone progress ×2',
-    endsIn: '18h',
-    entrants: 2,
-  },
-]
 
 // ----------------------------------------------------------------- achievements
 
@@ -345,14 +289,11 @@ export const COACHES = [
   },
 ]
 
-// ------------------------------------------------------------------ daily quests
+// -------------------------------------------------------------------- dailies
 
+/** One entry per slot, every day. Presentation lives in DAILY_SLOTS. */
 export function freshDailies() {
-  return [
-    { id: 'd1', name: 'MOVE', desc: 'Log any verified activity', goal: 1, progress: 0, xp: 120, unit: 'session' },
-    { id: 'd2', name: 'STEPS', desc: 'Hit 8,000 steps', goal: 8000, progress: 0, xp: 90, unit: 'steps' },
-    { id: 'd3', name: 'FOCUS', desc: '15 min aim training or mobility', goal: 15, progress: 0, xp: 80, unit: 'min' },
-  ]
+  return DAILY_SLOTS.map((s) => ({ id: s.id, minutes: 0, done: false, loggedAs: null }))
 }
 
 // ----------------------------------------------------------------- initial save
