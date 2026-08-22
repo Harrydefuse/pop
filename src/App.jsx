@@ -10,13 +10,13 @@ import Axis from './components/Axis'
 import Icon from './components/Icon'
 import Home from './screens/Home'
 import Friends from './screens/Friends'
-import Arena from './screens/Arena'
+import Boss from './screens/Boss'
 import Hero from './screens/Hero'
 
 const PITCH = [
-  ['TRACK PROGRESS', 'Reps, kilometres, sleep and aim time all become stats you can watch climb.'],
-  ['STAY MOTIVATED', 'Friends, leaderboards and a streak that notices when you go quiet.'],
-  ['1% EVERY DAY', 'In the gym and in your queue. Small, boring, compounding.'],
+  ['IT IS A GAME', 'Nine bosses, three acts, an ending. Fitness is the controller, not the point.'],
+  ['MOVE TO LEVEL UP', 'Every session you log is XP, loot and damage on whatever is in your way.'],
+  ['YOUR OWN RUN', 'Personal bosses gate your story. World raids are where everyone turns up at once.'],
   ['KEEP THE GAMES', 'You do not have to quit gaming to get your life on track. Do both, on purpose.'],
 ]
 
@@ -37,8 +37,8 @@ function DesktopPitch({ onExit }) {
       <div className="font-pixel text-[9px] text-ink-faint mt-4 tracking-widest">FITNESS RPG</div>
 
       <p className="text-[15px] text-ink-dim mt-7 leading-relaxed">
-        A fitness app that treats your body like a character sheet. Verified workouts pay out XP, stats, loot and pets —
-        and your gaming stays in the picture instead of being the thing you feel guilty about.
+        An RPG you play by moving. Verified workouts pay out XP, stats, loot and pets, and the whole thing runs as a
+        story mode — so getting fitter is not the goal you grind towards, it is how you finish the game.
       </p>
 
       <div className="mt-8 space-y-4">
@@ -81,7 +81,7 @@ function Device() {
             stretching edge to edge. No-op inside the 400px frame. */}
         <div className="mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home setTab={setTab} />}
-          {tab === 'arena' && <Arena />}
+          {tab === 'arena' && <Boss />}
           {tab === 'friends' && <Friends />}
           {tab === 'hero' && <Hero />}
           <div className="h-4" />

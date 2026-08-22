@@ -12,7 +12,12 @@ import { minutesOf, resolveActivity } from '../game/engine'
  */
 export default function LogSheet({ title, accepts, accent = 'var(--color-cyan)', minMinutes = 0, onClose }) {
   const { state, log } = useGame()
-  const options = useMemo(() => ACTIVITIES.filter((a) => accepts.includes(a.id)), [accepts])
+  // The caller's order is preserved, so a boss can float its weakness to the
+  // front of the list instead of burying it in catalogue order.
+  const options = useMemo(
+    () => (accepts ? accepts.map((id) => ACTIVITIES.find((a) => a.id === id)).filter(Boolean) : ACTIVITIES),
+    [accepts],
+  )
   const [activity, setActivity] = useState(options[0])
   const [amount, setAmount] = useState(options[0].default)
   const linked = state.links.health.length > 0

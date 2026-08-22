@@ -15,6 +15,7 @@ import {
   STREAK_TIERS,
   UNVERIFIED_XP_MULT,
 } from './config'
+import { CAMPAIGN, WEAK_MULT } from './campaign'
 
 // ------------------------------------------------------------------ progression
 
@@ -154,6 +155,57 @@ export function rollDailyChest(catalog, rng = Math.random) {
     drops.push({ kind: 'gear', rarity, ref: base.id, name: base.name })
   }
   return { cores: DAILY_CHEST.cores, drops }
+}
+
+// ------------------------------------------------------------------- campaign
+// The story ladder. There is no separate campaign currency and no second kind
+// of session: the XP a workout is already worth is the damage it deals, so the
+// player never has to choose between levelling and progressing the story.
+
+/**
+ * Where the player is standing. `current` is the boss in front of them — the
+ * first one they have not beaten and do have the level for.
+ */
+export function campaignState(player, campaign) {
+  const defeated = campaign?.defeated ?? []
+  const damage = campaign?.damage ?? 0
+  const remaining = CAMPAIGN.filter((b) => !defeated.includes(b.id))
+  const current = remaining.find((b) => player.level >= b.level) ?? null
+  const locked = remaining.find((b) => player.level < b.level) ?? null
+  return {
+    defeated,
+    damage,
+    current,
+    locked,
+    cleared: CAMPAIGN.length - remaining.length,
+    total: CAMPAIGN.length,
+    pct: current ? Math.min(1, damage / current.hp) : 0,
+    finished: remaining.length === 0,
+    // A boss you have the level for but have not reached yet is "ahead", not
+    // "locked" — the difference is what makes the path feel walkable.
+    gatedBy: !current && locked ? locked.level - player.level : 0,
+  }
+}
+
+/** What one logged session does to a boss. Its XP, doubled on the weakness. */
+export function bossHit(boss, act, xp) {
+  if (!boss) return { damage: 0, weak: false }
+  const weak = Boolean(boss.weak && act.tag === boss.weak)
+  return { damage: Math.round(xp * (weak ? WEAK_MULT : 1)), weak }
+}
+
+/** Per-boss state for the path list: cleared / fighting / ahead / locked. */
+export function bossStatus(boss, player, campaign) {
+  if ((campaign?.defeated ?? []).includes(boss.id)) return 'cleared'
+  if (player.level < boss.level) return 'locked'
+  const { current } = campaignState(player, campaign)
+  return current && current.id === boss.id ? 'fighting' : 'ahead'
+}
+
+/** Rough days left at the player's recent pace — the "how far in am I" number. */
+export function bossEta(boss, damage, xpPerDay) {
+  if (!boss || xpPerDay <= 0) return null
+  return Math.max(1, Math.ceil((boss.hp - damage) / xpPerDay))
 }
 
 // -------------------------------------------------------------------- activities

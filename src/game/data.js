@@ -370,6 +370,9 @@ export const INITIAL_STATE = {
     ],
     activePetId: 'p_pup',
     stones: ['reality'],
+    // Titles are the visible receipt for a boss kill — the one reward that is
+    // not a number and cannot be rolled for.
+    titles: ['Early Riser', 'Off The Couch', 'Deliberate', 'Ironbound'],
     lifetime: {
       volume: 61400, // kg lifted
       distance: 412, // km
@@ -381,6 +384,9 @@ export const INITIAL_STATE = {
     },
     week: { activeMinutes: 214, gamingHours: 11.5, km: 13.4, sessions: 4 },
   },
+  // Four acts of the story already behind this demo character, mid-fight with
+  // THE WALL — enough of the path filled in to see where it goes.
+  campaign: { defeated: ['wraith', 'couch', 'doomscroll', 'ironjaw'], damage: 3140 },
   chest: { unlocked: true, openedToday: false },
   dailies: freshDailies(),
   links: { health: [], games: [] },

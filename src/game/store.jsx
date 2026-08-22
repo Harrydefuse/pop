@@ -2,9 +2,9 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, INITIAL_STATE, freshDailies } from './data'
 import { DAILY_SLOTS, RARITY } from './config'
-import { bestLoadout, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
+import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v4' // v4: one chest a day, any rarity
+const SAVE_KEY = 'lvl100.save.v5' // v5: story-mode campaign replaces the arena
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -53,6 +53,86 @@ function bumpDailies(dailies, act, amount) {
       loggedAs: d.loggedAs ?? act.name,
     }
   })
+}
+
+/**
+ * Hands over a defeated boss's drop. Campaign rewards are guaranteed — the
+ * rarity is written into the boss, not rolled — because a story beat you earned
+ * by turning up for a week should never come back a common.
+ */
+function grantBossReward(state, boss) {
+  const r = boss.reward
+  const drops = []
+  let player = { ...state.player, cores: state.player.cores + r.cores }
+
+  if (r.gear) {
+    const base = CATALOG.gear[Math.floor(Math.random() * CATALOG.gear.length)]
+    player = {
+      ...player,
+      inventory: [
+        ...player.inventory,
+        { id: nextId('i'), ref: base.id, name: base.name, slot: base.slot, rarity: r.gear, level: 1, stats: base.stats },
+      ],
+    }
+    drops.push({ kind: 'gear', rarity: r.gear, ref: base.id, name: base.name })
+  }
+
+  if (r.pet) {
+    const base = CATALOG.pets.find((p) => p.id === r.pet)
+    if (player.pets.some((p) => p.ref === base.id)) {
+      player = { ...player, cores: player.cores + 500 }
+      drops.push({ kind: 'pet', rarity: base.rarity, ref: base.id, name: base.name, duplicate: true })
+    } else {
+      player = {
+        ...player,
+        pets: [...player.pets, { id: nextId('p_'), ref: base.id, name: base.name, rarity: base.rarity, stat: base.stat, level: 1, xp: 0 }],
+      }
+      drops.push({ kind: 'pet', rarity: base.rarity, ref: base.id, name: base.name })
+    }
+  }
+
+  if (r.title && !player.titles.includes(r.title)) {
+    player = { ...player, titles: [...player.titles, r.title] }
+  }
+
+  return {
+    ...state,
+    player,
+    lastReward: { kind: 'boss', boss: boss.id, bossName: boss.name, title: r.title, cores: r.cores, drops },
+  }
+}
+
+/**
+ * Every session lands on whichever boss the player is standing in front of.
+ * This is the whole reframe: you are not logging exercise, you are hitting the
+ * thing between you and the next chapter.
+ */
+function applyBossDamage(state, act, xp) {
+  const { current } = campaignState(state.player, state.campaign)
+  if (!current) return state
+
+  const { damage, weak } = bossHit(current, act, xp)
+  if (damage <= 0) return state
+
+  const total = state.campaign.damage + damage
+  if (total < current.hp) {
+    let next = { ...state, campaign: { ...state.campaign, damage: total } }
+    if (weak) {
+      next = toast(next, {
+        kind: 'boss',
+        title: `WEAKNESS · ${damage} DMG`,
+        body: `${current.name} takes double from ${act.name.toLowerCase()}`,
+      })
+    }
+    return next
+  }
+
+  let next = {
+    ...state,
+    campaign: { ...state.campaign, defeated: [...state.campaign.defeated, current.id], damage: 0 },
+  }
+  next = toast(next, { kind: 'boss', title: `${current.name} DOWN`, body: current.title })
+  return grantBossReward(next, current)
 }
 
 function applyLog(state, { activityId, amount, verified, source }) {
@@ -148,6 +228,8 @@ function applyLog(state, { activityId, amount, verified, source }) {
     next = { ...next, perfectToday: true, player: { ...next.player, cores: next.player.cores + 250 } }
     next = toast(next, { kind: 'level', title: 'ALL THREE DONE', body: '+250 cores for a full day' })
   }
+
+  next = applyBossDamage(next, act, result.xp)
 
   // Stones are checked last so a single session can complete one
   const earned = stoneProgress(next.player).filter((s) => s.pct >= 1 && !s.earned)

@@ -2,9 +2,44 @@ import { useState } from 'react'
 import { Bar, Btn, Modal, Panel } from '../components/ui'
 import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
+import { BossArt } from '../components/Sprites'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
-import { streakTier } from '../game/engine'
+import { actById } from '../game/campaign'
+import { campaignState, streakTier } from '../game/engine'
+import { alpha } from '../game/color'
+
+/**
+ * The through-line of the whole app. Today is where you play; this strip is the
+ * standing reminder that none of it is bookkeeping — every session lands on the
+ * thing between you and the next chapter.
+ */
+function Target({ onOpen }) {
+  const { state } = useGame()
+  const c = campaignState(state.player, state.campaign)
+  if (!c.current) return null
+  const act = actById(c.current.act)
+
+  return (
+    <button onClick={onOpen} className="w-full text-left active:brightness-125">
+      <Panel corners={false} className="p-2.5" style={{ borderColor: alpha(act.color, 50) }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 grid place-items-center shrink-0 border" style={{ borderColor: act.color }}>
+            <BossArt sprite={c.current.sprite} size={26} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-pixel text-[7px] text-ink-faint">TODAY LANDS ON</div>
+            <div className="font-pixel text-[9px] mt-1 truncate" style={{ color: act.color }}>
+              {c.current.name}
+            </div>
+            <Bar pct={c.pct} color="var(--color-danger)" height={3} className="mt-1.5" />
+          </div>
+          <span className="font-mono text-[11px] text-danger shrink-0">{Math.round(c.pct * 100)}%</span>
+        </div>
+      </Panel>
+    </button>
+  )
+}
 
 /**
  * A slot is a single small row: colour, name, state. Everything else — what
@@ -111,7 +146,7 @@ function SlotSheet({ slot, state, onClose, onLog }) {
   )
 }
 
-export default function Home() {
+export default function Home({ setTab }) {
   const { state, openChest } = useGame()
   const [openSlot, setOpenSlot] = useState(null)
   const [logging, setLogging] = useState(null)
@@ -124,6 +159,8 @@ export default function Home() {
 
   return (
     <div className="p-3 space-y-3">
+      <Target onOpen={() => setTab('arena')} />
+
       {/* ------------------------------------------------------ streak strip */}
       <Panel corners={false} className="p-2.5">
         <div className="flex items-center gap-2.5">

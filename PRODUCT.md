@@ -21,17 +21,23 @@ people quit fitness apps because logging a workout produces a number and nothing
 
 ## Product Purpose
 
-LVL100 converts verified physical activity into character progression — XP, stats, loot, pets, rank
-and a shared world event. Health-provider verification is what makes the progression mean anything;
-anyone can type a number, so typed numbers pay half and never touch a leaderboard.
+LVL100 is a game, not a tracker with points bolted on. Activity is the controller: verified physical
+effort is the only input, and everything it drives — levels, rank, stats, loot, pets, skins — is
+game progression. The spine is a story mode. Nine bosses across three acts, each gated behind a
+level, each taking damage from the sessions you log, each dropping something you cannot get any
+other way. World raids exist and everyone fights them together, but they are side content. The main
+line is your own run through the game, and it has an ending.
 
-Success is the streak: people opening it on day 40 because the chest is worth more than it was on
-day 3, not because a notification guilted them.
+Health-provider verification is what makes any of it mean anything; anyone can type a number, so
+typed numbers pay half and never touch a leaderboard.
+
+Success is the streak: people opening it on day 40 because they are four thousand HP into THE WALL,
+not because a notification guilted them.
 
 ## Positioning
 
-The fitness app you don't have to quit gaming for — where the reward for training is the kind of
-reward you already care about.
+A game you play by moving. You do not have to quit gaming to get your life on track — this is the
+one where getting fitter is how you finish the game.
 
 ## Marketing surface
 
