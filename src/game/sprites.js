@@ -945,7 +945,7 @@ export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt
 // A full-body 16x24 character for the loadout screen. The 12x12 avatar is a
 // head-and-shoulders bust — fine in a list row, but it crops to a face at the
 // size the paper doll needs, so the hero gets its own taller sprite.
-// The base character, transcribed from art/DEFAUYLT MAN.png. The source is a
+// The base character, transcribed from art/hero.png. The source is a
 // soft-edged render rather than a true pixel export, so it was reconstructed:
 // quantised to a small palette, then sampled by dominant colour per cell, which
 // keeps the edges hard instead of muddy. See tools/png2grid.py.
