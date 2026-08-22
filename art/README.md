@@ -29,5 +29,4 @@ notes:
   overlays (head, hands, feet, wrist, charm) need redrawing to match — they
   are painted onto the same frame as the body.
 
-Run `python3 png2grid.py art/hero.png` from the sprite scratchpad to produce
-the grid.
+Transcribe with `python3 tools/png2grid.py art/hero.png`.
