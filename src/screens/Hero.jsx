@@ -56,7 +56,7 @@ function ItemSheet({ item, onClose }) {
           className="grid place-items-center w-16 h-16 shrink-0 border-2"
           style={{ borderColor: color, background: alpha(color, 22) }}
         >
-          <GearIcon refId={item.ref} rarity={item.rarity} size={40} />
+          <GearIcon slot={item.slot} set={item.set} size={40} />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -287,7 +287,7 @@ export default function Hero() {
                   label={`${i.name}, ${RARITY[i.rarity].label}, level ${i.level}`}
                   onClick={() => setOpenItem(i)}
                 >
-                  <GearIcon refId={i.ref} rarity={i.rarity} size={30} />
+                  <GearIcon slot={i.slot} set={i.set} size={30} />
                 </Tile>
               ))}
             </div>

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
-import { BOSS, CATALOG, INITIAL_STATE, freshDailies } from './data'
-import { DAILY_SLOTS, RARITY } from './config'
+import { BOSS, CATALOG, INITIAL_STATE, freshDailies, gearPiece } from './data'
+import { DAILY_SLOTS, EQUIP_SLOTS, RARITY, setForRarity } from './config'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v5' // v5: story-mode campaign replaces the arena
+const SAVE_KEY = 'lvl100.save.v6' // v6: armour sets replace the accessory slots
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -66,15 +66,12 @@ function grantBossReward(state, boss) {
   let player = { ...state.player, cores: state.player.cores + r.cores }
 
   if (r.gear) {
-    const base = CATALOG.gear[Math.floor(Math.random() * CATALOG.gear.length)]
-    player = {
-      ...player,
-      inventory: [
-        ...player.inventory,
-        { id: nextId('i'), ref: base.id, name: base.name, slot: base.slot, rarity: r.gear, level: 1, stats: base.stats },
-      ],
-    }
-    drops.push({ kind: 'gear', rarity: r.gear, ref: base.id, name: base.name })
+    // Boss drops are always a piece of the set that matches their rarity, so a
+    // kill visibly moves you toward a matching suit rather than a random tint.
+    const slot = EQUIP_SLOTS[Math.floor(Math.random() * EQUIP_SLOTS.length)].key
+    const piece = gearPiece(slot, setForRarity(r.gear).id)
+    player = { ...player, inventory: [...player.inventory, { id: nextId('i'), ...piece, level: 1 }] }
+    drops.push({ kind: 'gear', ...piece })
   }
 
   if (r.pet) {
@@ -301,16 +298,7 @@ function reducer(state, action) {
       const pets = [...next.player.pets]
       for (const d of result.drops) {
         if (d.kind === 'gear') {
-          const base = CATALOG.gear.find((g) => g.id === d.ref)
-          inventory.push({
-            id: nextId('i'),
-            ref: base.id,
-            name: base.name,
-            slot: base.slot,
-            rarity: d.rarity,
-            level: 1,
-            stats: base.stats,
-          })
+          inventory.push({ id: nextId('i'), ...gearPiece(d.slot, d.set), level: 1 })
         } else {
           const base = CATALOG.pets.find((p) => p.id === d.ref)
           if (pets.some((p) => p.ref === base.id)) {

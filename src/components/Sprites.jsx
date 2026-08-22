@@ -1,13 +1,9 @@
 import PixelSprite from './PixelSprite'
-import { BOSS_SPRITES, CAMPAIGN_SPRITES, GEAR_OVERLAYS, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE, heroSprite } from '../game/sprites'
-import { RARITY } from '../game/config'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CAMPAIGN_SPRITES, GEAR_OVERLAYS, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
-import { GEAR_CATALOG } from '../game/data'
 
-export function GearIcon({ refId, rarity = 'common', size = 34 }) {
-  const base = GEAR_CATALOG.find((g) => g.id === refId)
-  const sprite = GEAR_SPRITES[base?.sprite ?? 'charm']
-  return <PixelSprite sprite={sprite} size={size} accent={RARITY[rarity].color} />
+export function GearIcon({ slot, set = 'leather', size = 34 }) {
+  return <PixelSprite sprite={armourSprite(slot, set)} size={size} />
 }
 
 /**
@@ -57,9 +53,8 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
         return (
           <PixelSprite
             key={slot}
-            sprite={overlay}
+            sprite={{ ...overlay, palette: ARMOUR_PALETTES[item.set] ?? ARMOUR_PALETTES.leather }}
             size={width}
-            accent={RARITY[item.rarity].color}
             className="absolute inset-0"
           />
         )

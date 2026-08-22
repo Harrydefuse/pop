@@ -2,7 +2,7 @@
 // empty RPG demo tells you nothing about whether the systems feel good.
 
 import { AVATAR_HAIR, AVATAR_SKINS, HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
-import { DAILY_SLOTS } from './config'
+import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, SLOT_STATS, armourSet } from './config'
 
 // ------------------------------------------------------------------- catalogues
 
@@ -66,13 +66,23 @@ export const PET_CATALOG = [
   },
 ]
 
-export const GEAR_CATALOG = [
-  { id: 'headset', name: 'Headset', slot: 'head', sprite: 'headset', stats: { FOCUS: 3, VIT: 1 } },
-  { id: 'grips', name: 'Grips', slot: 'hands', sprite: 'glove', stats: { STR: 4 } },
-  { id: 'runners', name: 'Runners', slot: 'feet', sprite: 'shoe', stats: { END: 3, AGI: 2 } },
-  { id: 'band', name: 'Band', slot: 'wrist', sprite: 'band', stats: { VIT: 3, END: 1 } },
-  { id: 'charm', name: 'Charm', slot: 'charm', sprite: 'charm', stats: { FOCUS: 2, AGI: 2 } },
-]
+/**
+ * Gear is generated, not listed: every slot exists in every set, so the catalog
+ * is the cross product rather than thirty hand-written rows.
+ */
+export function gearPiece(slot, setId) {
+  const set = armourSet(setId)
+  const meta = EQUIP_SLOTS.find((s) => s.key === slot) ?? EQUIP_SLOTS[0]
+  return {
+    slot,
+    set: set.id,
+    rarity: set.rarity,
+    name: `${set.short} ${meta.name}`,
+    stats: SLOT_STATS[slot] ?? SLOT_STATS.chest,
+  }
+}
+
+export const GEAR_CATALOG = ARMOUR_SETS.flatMap((set) => EQUIP_SLOTS.map((s) => gearPiece(s.key, set.id)))
 
 export const CATALOG = { pets: PET_CATALOG, gear: GEAR_CATALOG }
 
@@ -356,20 +366,18 @@ export const INITIAL_STATE = {
     stats: { STR: 9200, END: 12400, AGI: 7600, VIT: 10100, FOCUS: 5400 },
     avatar: { seed: 0, skin: SKIN_BASE, hair: HAIR_BASE, hairLength: 'short', shirt: TUNIC },
     games: [],
-    equipped: { head: 'i1', hands: 'i2', feet: 'i3', wrist: null, charm: null },
+    equipped: { helm: 'i1', chest: 'i2', legs: 'i3', gloves: 'i4', boots: 'i5', shield: 'i6' },
+    // A mixed kit, the way a real run looks part-way through: mostly iron, one
+    // lucky bone piece, and the leathers you started in still on your feet.
     inventory: [
-      { id: 'i1', ref: 'headset', name: 'Headset', slot: 'head', rarity: 'rare', level: 4, stats: { FOCUS: 3, VIT: 1 } },
-      { id: 'i2', ref: 'grips', name: 'Grips', slot: 'hands', rarity: 'uncommon', level: 6, stats: { STR: 4 } },
-      {
-        id: 'i3',
-        ref: 'runners',
-        name: 'Runners',
-        slot: 'feet',
-        rarity: 'epic',
-        level: 3,
-        stats: { END: 3, AGI: 2 },
-      },
-      { id: 'i4', ref: 'band', name: 'Band', slot: 'wrist', rarity: 'common', level: 2, stats: { VIT: 3, END: 1 } },
+      { id: 'i1', ...gearPiece('helm', 'iron'), level: 3 },
+      { id: 'i2', ...gearPiece('chest', 'iron'), level: 4 },
+      { id: 'i3', ...gearPiece('legs', 'iron'), level: 2 },
+      { id: 'i4', ...gearPiece('gloves', 'bone'), level: 3 },
+      { id: 'i5', ...gearPiece('boots', 'leather'), level: 6 },
+      { id: 'i6', ...gearPiece('shield', 'iron'), level: 1 },
+      { id: 'i7', ...gearPiece('chest', 'leather'), level: 5 },
+      { id: 'i8', ...gearPiece('helm', 'leather'), level: 2 },
     ],
     pets: [
       { id: 'p_pup', ref: 'pup', name: 'PUP', rarity: 'common', stat: 'VIT', level: 27, xp: 0 },

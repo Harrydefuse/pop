@@ -308,13 +308,52 @@ export const DAILY_CHEST = {
   note: 'Any rarity, every single day.',
 }
 
+// Six armour slots — a full set, the way an RPG does it. The old five were gym
+// accessories (headset, grips, runners) which never looked like loot.
 export const EQUIP_SLOTS = [
-  { key: 'head', name: 'Headset', icon: 'headset' },
-  { key: 'hands', name: 'Grips', icon: 'glove' },
-  { key: 'feet', name: 'Runners', icon: 'shoe' },
-  { key: 'wrist', name: 'Band', icon: 'band' },
-  { key: 'charm', name: 'Charm', icon: 'charm' },
+  { key: 'helm', name: 'Helm', icon: 'helm' },
+  { key: 'chest', name: 'Chest', icon: 'chest' },
+  { key: 'legs', name: 'Legs', icon: 'legs' },
+  { key: 'gloves', name: 'Gauntlets', icon: 'gloves' },
+  { key: 'boots', name: 'Boots', icon: 'boots' },
+  { key: 'shield', name: 'Shield', icon: 'shield' },
 ]
+
+/** What each slot is good for. Rarity and level scale these in gearBonuses. */
+export const SLOT_STATS = {
+  helm: { FOCUS: 3, VIT: 1 },
+  chest: { VIT: 4, STR: 1 },
+  legs: { END: 3, STR: 2 },
+  gloves: { STR: 4, AGI: 1 },
+  boots: { AGI: 3, END: 2 },
+  shield: { VIT: 3, FOCUS: 2 },
+}
+
+/**
+ * Rarity and set are the same thing, deliberately. A legendary drop is always a
+ * Gilded piece, so the colour of the frame and the look of the item agree — and
+ * chasing legendaries means chasing a set you can actually picture.
+ */
+export const ARMOUR_SETS = [
+  { id: 'leather', name: "Traveller's Leathers", short: 'Leather', rarity: 'common',
+    blurb: 'What everyone starts in. Soft, quiet, does the job.' },
+  { id: 'iron', name: 'Ironguard', short: 'Iron', rarity: 'uncommon',
+    blurb: 'Heavy, honest plate. Dents rather than breaks.' },
+  { id: 'bone', name: 'Bonewrought', short: 'Bone', rarity: 'rare',
+    blurb: 'Pale and light. Cut from something that used to walk.' },
+  { id: 'verdant', name: 'Verdant Mail', short: 'Verdant', rarity: 'epic',
+    blurb: 'Still growing. Warm to the touch after a long day.' },
+  { id: 'gilded', name: 'Gilded Regalia', short: 'Gilded', rarity: 'legendary',
+    blurb: 'Absurd, impractical, and worth every kilometre.' },
+]
+
+export function setForRarity(rarity) {
+  return ARMOUR_SETS.find((s) => s.rarity === rarity) ?? ARMOUR_SETS[0]
+}
+
+export function armourSet(id) {
+  return ARMOUR_SETS.find((s) => s.id === id) ?? ARMOUR_SETS[0]
+}
 
 // Six long-horizon milestones. Deliberately measured in months, not days —
 // these are the things you cannot buy, rush or fake.

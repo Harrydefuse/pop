@@ -228,107 +228,157 @@ export const DRAKE = {
 
 export const PET_SPRITES = { pup: PUP, turbo: TURBO, frost: FROST, ember: EMBER, zeus: ZEUS, tuskling: TUSKLING, drake: DRAKE }
 
-// ------------------------------------------------------------------- EQUIPMENT
-// 12x12 gear icons. 'A' is the accent colour and gets swapped per rarity at
-// render time so one grid serves all five tiers of an item.
-const GEAR_PAL = { o: '#0d0a16', s: '#5b6478', h: '#8f9bb3', A: '#a855f7', d: '#2a2438' }
+// ------------------------------------------------------------------- ARMOUR
+// Armour is drawn once per slot in neutral palette slots and recoloured per
+// set, which is how thirty pieces of gear cost six drawings. Palette keys:
+// o outline, d dark, m mid, l light, A trim, s strap.
+const ARMOUR_SHAPES = {
+  helm: [
+      '.........oo.........',
+      '........oAAoo.......',
+      '.......omAAmmo......',
+      '......omlAAllmo.....',
+      '.....olllAAllllo....',
+      '....olllllllllllo...',
+      '...omlllllllllllmo..',
+      '...omlllllllllllmo..',
+      '...ommlllllllllmmo..',
+      '...omdoooddooodmmo..',
+      '...omdoooddooodmmo..',
+      '...omddddddddddmo...',
+      '...ommmmmddmmmmmo...',
+      '...ommdmddddmdmmo...',
+      '...ommdmddddmdmmo...',
+      '...ommmmmddmmmmmo...',
+      '....oddddddddddo....',
+      '.....osssssssso.....',
+      '......oooooooo......',
+      '....................',
+  ],
+  chest: [
+      '....................',
+      '..ooo...oooo...ooo..',
+      '.ommmoooddddooommmo.',
+      'olllldmmddddmmdllllo',
+      'mmmmmdmmddddmmdmmmmm',
+      'mmmmmdmmlmmlmmdmmmmm',
+      'mmmmmdmllllllmdmmmmm',
+      'ommmmdmllllllmdmmmmo',
+      '.ommmdmllllllmdmmmo.',
+      '..ooodmmlmmlmmdooo..',
+      '.....ommmmmmmmo.....',
+      '.....oddddddddo.....',
+      '.....ommmmmmmmo.....',
+      '.....oddddddddo.....',
+      '.....ommmmmmmmo.....',
+      '....oommmmmmmmoo....',
+      '...osssssAAssssso...',
+      '...osssssAAssssso...',
+      '....ooddddddddoo....',
+      '.....oddddddddo.....',
+  ],
+  legs: [
+      '....................',
+      '....oooooooooooo....',
+      '...osssssAAssssso...',
+      '...osssssAAssssso...',
+      '..omllllmoomllllmo..',
+      '..ommmmmmoommmmmmo..',
+      '..oddddddooddddddo..',
+      '..ommmmmmoommmmmmo..',
+      '..oddddddooddddddo..',
+      '..ommmmmmoommmmmmo..',
+      '...ommmmmoommmmmo...',
+      '...omllmmoomllmmo...',
+      '...omllmmoomllmmo...',
+      '...omllmmoomllmmo...',
+      '...omllmmoomllmmo...',
+      '...omllmmoomllmmo...',
+      '...omllmmoomllmmo...',
+      '...ommmmmoommmmmo...',
+      '...odddddoodddddo...',
+      '....ooooo..ooooo....',
+  ],
+  boots: [
+      '....................',
+      '..ooooo.....ooooo...',
+      '.odddddo...odddddo..',
+      '.ossssso...ossssso..',
+      '.omllmmo...omllmmo..',
+      '.omllmmo...omllmmo..',
+      '.omllmmo...omllmmo..',
+      '.omllmmo...omllmmo..',
+      '.ossssso...ossssso..',
+      '.omllmmo...omllmmo..',
+      '.omllmmo...omllmmo..',
+      'oomllmmo..oomllmmo..',
+      'AAllllmmooAAllllmmo.',
+      'AAllllmmooAAllllmmo.',
+      'AAllllmmooAAllllmmo.',
+      'AAmmmmddooAAmmmmddo.',
+      'AAmmmmddooAAmmmmddo.',
+      'ssssssssoosssssssso.',
+      'oooooooo..oooooooo..',
+      '....................',
+  ],
+  gloves: [
+      '....................',
+      '....................',
+      '...ooo.......ooo....',
+      '..odmdo.....odmdo...',
+      '.oldldlo...oldldlo..',
+      'omldldlmo.omldldlmo.',
+      'omldldlmo.omldldlmo.',
+      'ommdmdmmo.ommdmdmmo.',
+      'lmmdmdmmo.ommdmdmmlo',
+      'mmmdmdmmo.ommdmdmmmo',
+      'mmmdmdmmo.ommdmdmmmo',
+      'mmmmmmmmo.ommmmmmmmo',
+      'ommmmmmmo.ommmmmmmo.',
+      'odddddddo.odddddddo.',
+      'sssssssssossssssssso',
+      'sAAAAAAAsosAAAAAAAso',
+      'sAAAAAAAsosAAAAAAAso',
+      'sssssssssossssssssso',
+      'ooooooooo.ooooooooo.',
+      '....................',
+  ],
+  shield: [
+      '....................',
+      '...oooooooooooooo...',
+      '..oddddddddddddddo..',
+      '..oddllllllllllddo..',
+      '..oddllllllllllddo..',
+      '..oddmmmmAAAmmmddo..',
+      '..oddmmmAAAAAmmddo..',
+      '..oddmmAAAAAAAmddo..',
+      '..oddmmAAAAlAAmddo..',
+      '..oddmmAAAAAAAmddo..',
+      '..oddmmmAAAAAmmddo..',
+      '..oddmmmmAAAmmmddo..',
+      '...odmmmmAAmmmmdo...',
+      '....odmmmAAmmmdo....',
+      '.....odmmAAmmdo.....',
+      '......odmAAmdo......',
+      '.......odmmdo.......',
+      '........oddo........',
+      '.........oo.........',
+      '....................',
+  ],
+}
 
-export const GEAR_SPRITES = {
-  headset: {
-    w: 12,
-    h: 12,
-    palette: GEAR_PAL,
-    grid: [
-      '....oooo....',
-      '..oosssoo...',
-      '.ossAAAsso..',
-      '.osoAAAoso..',
-      'osso...osso.',
-      'osAo...oAso.',
-      'osAo...oAso.',
-      'osAo...oAso.',
-      'osso...osso.',
-      '.oo.....oAo.',
-      '.........oAo',
-      '..........oo',
-    ],
-  },
-  glove: {
-    w: 12,
-    h: 12,
-    palette: GEAR_PAL,
-    grid: [
-      '..oo.oo.oo..',
-      '.oAAoAAoAAo.',
-      '.oAAoAAoAAo.',
-      'ooAAAAAAAAo.',
-      'oAAAAAAAAAo.',
-      'oAAAAAAAAAo.',
-      'oAAsssssAAo.',
-      'oAAAAAAAAAo.',
-      '.oAAAAAAAo..',
-      '..ohhhhho...',
-      '..ohhhhho...',
-      '...ooooo....',
-    ],
-  },
-  shoe: {
-    w: 12,
-    h: 12,
-    palette: GEAR_PAL,
-    grid: [
-      '............',
-      '...oooo.....',
-      '..oAAAoo....',
-      '..oAAAAoo...',
-      '..oAAAAAoo..',
-      '..oAAsAAAoo.',
-      '.ooAAAAAAAo.',
-      'oAAAAAAAAAo.',
-      'ohhhhhhhhho.',
-      'ossssssssso.',
-      '.ooooooooo..',
-      '............',
-    ],
-  },
-  band: {
-    w: 12,
-    h: 12,
-    palette: GEAR_PAL,
-    grid: [
-      '............',
-      '..oooooooo..',
-      '.osssssssso.',
-      '.osAAAAAAso.',
-      'oosAAAAAAsoo',
-      'oAoAAddAAoAo',
-      'oAoAAddAAoAo',
-      'oosAAAAAAsoo',
-      '.osAAAAAAso.',
-      '.osssssssso.',
-      '..oooooooo..',
-      '............',
-    ],
-  },
-  charm: {
-    w: 12,
-    h: 12,
-    palette: GEAR_PAL,
-    grid: [
-      '.....oo.....',
-      '....oAAo....',
-      '....oAAo....',
-      '...oooooo...',
-      '..oAAAAAAo..',
-      '.oAAAAAAAAo.',
-      '.oAAAhAAAAo.',
-      '.oAAAAAAAAo.',
-      '..oAAAAAAo..',
-      '...oAAAAo...',
-      '....oAAo....',
-      '.....oo.....',
-    ],
-  },
+export const ARMOUR_PALETTES = {
+  leather: { o: '#150e0a', d: '#5c3a22', m: '#7d5233', l: '#a06b45', A: '#c9a227', s: '#3a2415' },
+  iron: { o: '#10131a', d: '#4a515e', m: '#6b7280', l: '#98a1ae', A: '#c3c9d4', s: '#2a2f38' },
+  bone: { o: '#191512', d: '#8a8272', m: '#b5ad9b', l: '#ded7c6', A: '#6f6656', s: '#3a352c' },
+  verdant: { o: '#0b1a18', d: '#1f6b60', m: '#35a294', l: '#6fd7c6', A: '#d9b451', s: '#113330' },
+  gilded: { o: '#2a1c05', d: '#8a6410', m: '#c9971d', l: '#f0c14b', A: '#fff0b0', s: '#4a3208' },
+}
+
+/** One slot + one set = one sprite, built on demand. */
+export function armourSprite(slot, set = 'leather') {
+  const grid = ARMOUR_SHAPES[slot] ?? ARMOUR_SHAPES.chest
+  return { w: 20, h: 20, palette: ARMOUR_PALETTES[set] ?? ARMOUR_PALETTES.leather, grid }
 }
 
 // ----------------------------------------------------------------- STONE / GEM
@@ -1016,18 +1066,24 @@ const HERO_GRID = [
 // Same 16x24 frame as the hero, mostly transparent, so each piece lines up with
 // the body when stacked on top. 'A' takes the item's rarity colour at render
 // time — that is what makes a legendary visibly legendary on the character.
-const layer = (rows) => {
+/**
+ * Worn armour shares the body's frame so stacking lines it up exactly, and it
+ * carries the set's own palette rather than a flat rarity tint — putting plate
+ * on turns the character into a knight instead of colouring him in.
+ */
+const worn = (rows) => {
   const grid = Array.from({ length: HERO_GRID.length }, () => '.'.repeat(HERO_GRID[0].length))
   for (const [y, cells] of Object.entries(rows)) grid[y] = cells
-  return { w: HERO_GRID[0].length, h: HERO_GRID.length, palette: { o: '#0d0a16', A: '#a855f7' }, grid }
+  return { w: HERO_GRID[0].length, h: HERO_GRID.length, grid }
 }
 
 export const GEAR_OVERLAYS = {
-  head: layer({ 13: '...........AAAAAAAAAAAA.........', 14: '...........AAAAAAAAAAAA.........', 15: '.AAA........................AAA.', 16: 'AAA.........................AAA.', 17: 'AAA.........................AAA.', 18: '....AAA...................AAA...', 19: '...AAA....................AAA...' }),
-  hands: layer({ 39: '....AAA..................AAA....', 40: '...AAAA...................AAA...', 41: '...AAAA...................AAA...', 42: '...AAAA..................AAAA...', 43: '...AAAA....A.............AAAA...', 44: '...AAA.....................AA...' }),
-  feet: layer({ 51: '........AAAAAAAA.AAAAAAAAA......', 52: '..........AA..........A.........', 53: '..........AAA........AA.........', 54: '..........AAA.......AAA.........', 55: '.........AAAAA.....AAAAA........', 56: '........AAAAAA.....AAAAAA.......', 57: '.......AAAAAA.......AAAAAA......' }),
-  wrist: layer({ 37: '.........................AAA....', 38: '.........................AAA....' }),
-  charm: layer({ 26: '..............AAAA..............', 27: '..............AAAA..............' }),
+  helm: worn({ 6: '...............AA...............', 7: '...............AA...............', 8: '......dllllllllAAlllllllld......', 9: '......dllllllllAAlllllllld......', 10: '.....dlllllllllAAllllllllld.....', 11: '.....dmmmmmmmmmmmmmmmmmmmmd.....', 12: '.....dmmmmmmmmmmmmmmmmmmmmd.....', 13: '....dmmmmmmmmmmmmmmmmmmmmmmd....', 14: '....dmmmmmmmmmmmmmmmmmmmmmmd....', 15: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 16: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 17: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 18: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 19: '...dmoooooooooooooooooooooomd...', 20: '...dmoooooooooooooooooooooomd...', 21: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 22: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 23: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 24: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 25: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 26: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 27: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 28: '...dmmmmmmmmmmmddmmmmmmmmmmmd...' }),
+  chest: worn({ 28: '.......llll.dlllllllldllll......', 29: '......mmmm..dmmmmmmmmd.mmmm.....', 30: '......mmmm..dmmmmmmmmd..mmmm....', 31: '............dmmmmmmmmd..........', 32: '............dmmmmmmmmd..........', 33: '............dmmmmmmmmd..........', 34: '............dmmmmmmmmd..........', 35: '............dmmmmmmmmd..........', 36: '............dmmmmmmmmd..........', 37: '............dmmmmmmmmd..........', 38: '............dmmmmmmmmd..........', 39: '............dmmmmmmmmd..........', 40: '............dmmmmmmmmd..........', 41: '............dmmmmmmmmd..........', 42: '............dmmmmmmmmd..........', 43: '............ssssAsssss..........', 44: '............ssssAsssss..........' }),
+  legs: worn({ 45: '...lll..dllllllllllllllld.lll...', 46: '........dmmmmmmmmmmmmmmmd.......', 47: '........dmmmmmmmmmmmmmmmd.......', 48: '.......dmmmmmmmmmmmmmmmmmd......', 49: '.......dmmmmmmmd.dmmmmmmmd......', 50: '.......dmmmmmmmd.dmmmmmmmd......', 51: '........dddddddd.ddddddddd......' }),
+  gloves: worn({ 40: '...dlld...................lll...', 41: '...dmmd...................mmm...', 42: '...dmmd..................dmmd...', 43: '...dmmd....m.............dmmd...', 44: '...ddd.....................dd...' }),
+  boots: worn({ 51: '........dlllllld.dllllllld......', 52: '........dmmmmmmd.dmmmmmmd.......', 53: '.........dmmmd....dmmmmmd.......', 54: '.........dmmmd.....dmmmmd.......', 55: '........dmmmmmd...dmmmmmd.......', 56: '.......dmmmmmmd...dmmmmmmd......', 57: '......dddddddd.....dddddddd.....' }),
+  shield: worn({ 30: 'dddddddd........................', 31: 'dmmmmmmd........................', 32: 'dmmmmmmd........................', 33: 'dmmmmmmd........................', 34: 'dmmAAmmd........................', 35: 'dmmAAmmd........................', 36: 'dmmAAmmd........................', 37: 'dmmmmmmd........................', 38: 'dmmmmmmd........................', 39: '.dmmmmd.........................', 40: '..dmmd..........................', 41: '...dd...........................' }),
 }
 
 /**

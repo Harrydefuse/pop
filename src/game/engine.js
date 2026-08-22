@@ -14,6 +14,8 @@ import {
   STONES,
   STREAK_TIERS,
   UNVERIFIED_XP_MULT,
+  EQUIP_SLOTS,
+  setForRarity,
 } from './config'
 import { CAMPAIGN, WEAK_MULT } from './campaign'
 
@@ -151,8 +153,10 @@ export function rollDailyChest(catalog, rng = Math.random) {
       drops.push({ kind: 'pet', rarity, ref: pet.id, name: pet.name })
       continue
     }
-    const base = catalog.gear[Math.floor(rng() * catalog.gear.length)]
-    drops.push({ kind: 'gear', rarity, ref: base.id, name: base.name })
+    // Rarity picks the set, so the frame colour and the armour always agree.
+    const slot = EQUIP_SLOTS[Math.floor(rng() * EQUIP_SLOTS.length)].key
+    const set = setForRarity(rarity)
+    drops.push({ kind: 'gear', rarity, slot, set: set.id, name: `${set.short} ${EQUIP_SLOTS.find((s) => s.key === slot).name}` })
   }
   return { cores: DAILY_CHEST.cores, drops }
 }
