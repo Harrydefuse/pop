@@ -2,8 +2,9 @@ import PixelSprite from './PixelSprite'
 import { ARMOUR_PALETTES, BOSS_SPRITES, CAMPAIGN_SPRITES, GEAR_OVERLAYS, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
 
-export function GearIcon({ slot, set = 'leather', size = 34 }) {
-  return <PixelSprite sprite={armourSprite(slot, set)} size={size} />
+/** `kind` is the slot for every piece except the offhand, which is a choice. */
+export function GearIcon({ slot, kind, set = 'leather', size = 34 }) {
+  return <PixelSprite sprite={armourSprite(kind ?? slot, set)} size={size} />
 }
 
 /**
@@ -48,7 +49,7 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
     <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
       <PixelSprite sprite={body} size={width} />
       {Object.entries(equipped).map(([slot, item]) => {
-        const overlay = GEAR_OVERLAYS[slot]
+        const overlay = GEAR_OVERLAYS[item?.kind ?? slot]
         if (!overlay || !item) return null
         return (
           <PixelSprite

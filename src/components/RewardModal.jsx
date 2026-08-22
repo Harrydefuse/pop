@@ -57,7 +57,7 @@ function Drops({ drops }) {
           style={{ animationDelay: `${120 + i * 90}ms` }}
         >
           <RarityFrame rarity={d.rarity} size={46}>
-            {d.kind === 'pet' ? <PetView refId={d.ref} level={1} size={38} /> : <GearIcon slot={d.slot} set={d.set} size={28} />}
+            {d.kind === 'pet' ? <PetView refId={d.ref} level={1} size={38} /> : <GearIcon slot={d.slot} kind={d.side ?? d.slot} set={d.set} size={28} />}
           </RarityFrame>
           <div className="min-w-0 flex-1">
             <div className="font-pixel text-[9px] truncate" style={{ color: RARITY[d.rarity].color }}>

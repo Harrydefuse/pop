@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, INITIAL_STATE, freshDailies, gearPiece } from './data'
-import { DAILY_SLOTS, EQUIP_SLOTS, RARITY, setForRarity } from './config'
+import { DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, setForRarity } from './config'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
 const SAVE_KEY = 'lvl100.save.v6' // v6: armour sets replace the accessory slots
@@ -69,7 +69,8 @@ function grantBossReward(state, boss) {
     // Boss drops are always a piece of the set that matches their rarity, so a
     // kill visibly moves you toward a matching suit rather than a random tint.
     const slot = EQUIP_SLOTS[Math.floor(Math.random() * EQUIP_SLOTS.length)].key
-    const piece = gearPiece(slot, setForRarity(r.gear).id)
+    const side = OFFHAND_KINDS[Math.floor(Math.random() * OFFHAND_KINDS.length)].id
+    const piece = gearPiece(slot, setForRarity(r.gear).id, side)
     player = { ...player, inventory: [...player.inventory, { id: nextId('i'), ...piece, level: 1 }] }
     drops.push({ kind: 'gear', ...piece })
   }
@@ -298,7 +299,7 @@ function reducer(state, action) {
       const pets = [...next.player.pets]
       for (const d of result.drops) {
         if (d.kind === 'gear') {
-          inventory.push({ id: nextId('i'), ...gearPiece(d.slot, d.set), level: 1 })
+          inventory.push({ id: nextId('i'), ...gearPiece(d.slot, d.set, d.side), level: 1 })
         } else {
           const base = CATALOG.pets.find((p) => p.id === d.ref)
           if (pets.some((p) => p.ref === base.id)) {

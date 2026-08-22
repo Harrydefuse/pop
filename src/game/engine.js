@@ -15,6 +15,7 @@ import {
   STREAK_TIERS,
   UNVERIFIED_XP_MULT,
   EQUIP_SLOTS,
+  OFFHAND_KINDS,
   setForRarity,
 } from './config'
 import { CAMPAIGN, WEAK_MULT } from './campaign'
@@ -156,7 +157,10 @@ export function rollDailyChest(catalog, rng = Math.random) {
     // Rarity picks the set, so the frame colour and the armour always agree.
     const slot = EQUIP_SLOTS[Math.floor(rng() * EQUIP_SLOTS.length)].key
     const set = setForRarity(rarity)
-    drops.push({ kind: 'gear', rarity, slot, set: set.id, name: `${set.short} ${EQUIP_SLOTS.find((s) => s.key === slot).name}` })
+    // The offhand rolls a side as well as a set, so it can drop either.
+    const side = slot === 'offhand' ? OFFHAND_KINDS[Math.floor(rng() * OFFHAND_KINDS.length)] : null
+    const label = side ? side.name : EQUIP_SLOTS.find((s) => s.key === slot).name
+    drops.push({ kind: 'gear', rarity, slot, set: set.id, side: side?.id, name: `${set.short} ${label}` })
   }
   return { cores: DAILY_CHEST.cores, drops }
 }

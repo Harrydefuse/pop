@@ -2,7 +2,7 @@
 // empty RPG demo tells you nothing about whether the systems feel good.
 
 import { AVATAR_HAIR, AVATAR_SKINS, HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
-import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, SLOT_STATS, armourSet } from './config'
+import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, SLOT_STATS, armourSet, offhandKind } from './config'
 
 // ------------------------------------------------------------------- catalogues
 
@@ -70,19 +70,28 @@ export const PET_CATALOG = [
  * Gear is generated, not listed: every slot exists in every set, so the catalog
  * is the cross product rather than thirty hand-written rows.
  */
-export function gearPiece(slot, setId) {
+export function gearPiece(slot, setId, kind) {
   const set = armourSet(setId)
   const meta = EQUIP_SLOTS.find((s) => s.key === slot) ?? EQUIP_SLOTS[0]
+  // Only the offhand has a choice of kind; every other slot is its own kind.
+  const k = slot === 'offhand' ? offhandKind(kind ?? 'shield') : null
   return {
     slot,
+    kind: k ? k.id : slot,
     set: set.id,
     rarity: set.rarity,
-    name: `${set.short} ${meta.name}`,
-    stats: SLOT_STATS[slot] ?? SLOT_STATS.chest,
+    name: `${set.short} ${k ? k.name : meta.name}`,
+    stats: k ? k.stats : (SLOT_STATS[slot] ?? SLOT_STATS.chest),
   }
 }
 
-export const GEAR_CATALOG = ARMOUR_SETS.flatMap((set) => EQUIP_SLOTS.map((s) => gearPiece(s.key, set.id)))
+export const GEAR_CATALOG = ARMOUR_SETS.flatMap((set) =>
+  EQUIP_SLOTS.flatMap((s) =>
+    s.key === 'offhand'
+      ? OFFHAND_KINDS.map((k) => gearPiece(s.key, set.id, k.id))
+      : [gearPiece(s.key, set.id)],
+  ),
+)
 
 export const CATALOG = { pets: PET_CATALOG, gear: GEAR_CATALOG }
 
@@ -366,7 +375,7 @@ export const INITIAL_STATE = {
     stats: { STR: 9200, END: 12400, AGI: 7600, VIT: 10100, FOCUS: 5400 },
     avatar: { seed: 0, skin: SKIN_BASE, hair: HAIR_BASE, hairLength: 'short', shirt: TUNIC },
     games: [],
-    equipped: { helm: 'i1', chest: 'i2', legs: 'i3', gloves: 'i4', boots: 'i5', shield: 'i6' },
+    equipped: { helm: 'i1', chest: 'i2', legs: 'i3', gloves: 'i4', boots: 'i5', offhand: 'i6' },
     // A mixed kit, the way a real run looks part-way through: mostly iron, one
     // lucky bone piece, and the leathers you started in still on your feet.
     inventory: [
@@ -375,9 +384,10 @@ export const INITIAL_STATE = {
       { id: 'i3', ...gearPiece('legs', 'iron'), level: 2 },
       { id: 'i4', ...gearPiece('gloves', 'bone'), level: 3 },
       { id: 'i5', ...gearPiece('boots', 'leather'), level: 6 },
-      { id: 'i6', ...gearPiece('shield', 'iron'), level: 1 },
+      { id: 'i6', ...gearPiece('offhand', 'iron', 'shield'), level: 1 },
       { id: 'i7', ...gearPiece('chest', 'leather'), level: 5 },
       { id: 'i8', ...gearPiece('helm', 'leather'), level: 2 },
+      { id: 'i9', ...gearPiece('offhand', 'bone', 'sword'), level: 2 },
     ],
     pets: [
       { id: 'p_pup', ref: 'pup', name: 'PUP', rarity: 'common', stat: 'VIT', level: 27, xp: 0 },

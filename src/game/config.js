@@ -316,7 +316,7 @@ export const EQUIP_SLOTS = [
   { key: 'legs', name: 'Legs', icon: 'legs' },
   { key: 'gloves', name: 'Gauntlets', icon: 'gloves' },
   { key: 'boots', name: 'Boots', icon: 'boots' },
-  { key: 'shield', name: 'Shield', icon: 'shield' },
+  { key: 'offhand', name: 'Offhand', icon: 'shield' },
 ]
 
 /** What each slot is good for. Rarity and level scale these in gearBonuses. */
@@ -326,7 +326,21 @@ export const SLOT_STATS = {
   legs: { END: 3, STR: 2 },
   gloves: { STR: 4, AGI: 1 },
   boots: { AGI: 3, END: 2 },
-  shield: { VIT: 3, FOCUS: 2 },
+  offhand: { VIT: 3, FOCUS: 2 },
+}
+
+/**
+ * The offhand takes either, and the two pull in opposite directions — hold the
+ * line or push the pace. It is the one slot where the choice is yours rather
+ * than just "whichever number is bigger".
+ */
+export const OFFHAND_KINDS = [
+  { id: 'shield', name: 'Shield', stats: { VIT: 3, FOCUS: 2 }, blurb: 'Take the hit. Steadier, harder to knock off a streak.' },
+  { id: 'sword', name: 'Sword', stats: { STR: 3, AGI: 2 }, blurb: 'Take the shot. Hits harder, leaves you open.' },
+]
+
+export function offhandKind(id) {
+  return OFFHAND_KINDS.find((k) => k.id === id) ?? OFFHAND_KINDS[0]
 }
 
 /**
