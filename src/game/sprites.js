@@ -1,3 +1,5 @@
+import { shade } from './color'
+
 // Hand-authored pixel art. Each sprite is a grid of single characters plus a
 // palette mapping character -> colour ('.' is always transparent). Grids are
 // rendered to SVG rects by <PixelSprite/>, so they scale to any size crisply.
@@ -1000,13 +1002,37 @@ const HERO_LONG = HERO_GRID.map((row, y) => {
   return row
 })
 
+/**
+ * The hero's palette is generated, not written down.
+ *
+ * Shaded character art uses a ramp per material — a few tones of hair, of skin,
+ * of cloth — but the player only ever picks one colour for each. RAMPS maps
+ * every palette slot to the material it belongs to and how far off the base it
+ * sits, so one picked colour fills the whole ramp and drop-in art can be
+ * annotated instead of recoloured by hand.
+ *
+ * Offsets are percentages toward white (positive) or black (negative).
+ */
+const HERO_RAMPS = {
+  skin: { s: 0 },
+  hair: { h: 0 },
+  tunic: { a: 0 },
+}
+
+/** Slots that never change with the player's choices. */
+const HERO_FIXED = { o: '#0d0a16', k: '#141018', t: '#4a331f', b: '#5c4326' }
+
+export function heroPalette(skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC) {
+  const palette = { ...HERO_FIXED }
+  for (const [key, off] of Object.entries(HERO_RAMPS.skin)) palette[key] = shade(skin, off)
+  for (const [key, off] of Object.entries(HERO_RAMPS.hair)) palette[key] = shade(hair, off)
+  for (const [key, off] of Object.entries(HERO_RAMPS.tunic)) palette[key] = shade(shirt, off)
+  return palette
+}
+
 export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC, hairLength = 'short') {
-  return {
-    w: 16,
-    h: 24,
-    palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt, t: '#4a331f', b: '#5c4326' },
-    grid: hairLength === 'long' ? HERO_LONG : HERO_GRID,
-  }
+  const grid = hairLength === 'long' ? HERO_LONG : HERO_GRID
+  return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
 }
 
 /** The base character's tunic. Onboarding does not offer a shirt colour, so

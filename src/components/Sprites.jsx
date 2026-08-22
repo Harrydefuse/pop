@@ -44,10 +44,13 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
  * a rarity colour reads straight off the character.
  */
 export function HeroView({ av = {}, equipped = {}, height = 150, className = '' }) {
-  const width = Math.round((height * 16) / 24)
+  // Aspect comes off the sprite rather than a constant, so dropping in art at a
+  // different resolution does not need every call site changed.
+  const body = heroSprite(av.skin, av.hair, av.shirt, av.hairLength)
+  const width = Math.round((height * body.w) / body.h)
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
-      <PixelSprite sprite={heroSprite(av.skin, av.hair, av.shirt, av.hairLength)} size={width} />
+      <PixelSprite sprite={body} size={width} />
       {Object.entries(equipped).map(([slot, item]) => {
         const overlay = GEAR_OVERLAYS[slot]
         if (!overlay || !item) return null
