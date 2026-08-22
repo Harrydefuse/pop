@@ -3,13 +3,12 @@ import Icon from './Icon'
 const TABS = [
   { key: 'home', label: 'TODAY', icon: 'home' },
   { key: 'hero', label: 'HERO', icon: 'person' },
-  { key: 'arena', label: 'BOSS', icon: 'skull' },
   { key: 'friends', label: 'FRIENDS', icon: 'trophy' },
 ]
 
 export default function TabBar({ tab, setTab, badges = {} }) {
   return (
-    <nav className="relative z-20 border-t border-line bg-[#0d0918]/95 backdrop-blur grid grid-cols-4 pad-safe-bottom">
+    <nav className="relative z-20 border-t border-line bg-[#0d0918]/95 backdrop-blur grid grid-cols-3 pad-safe-bottom">
       {TABS.map((t) => {
         const active = tab === t.key
         return (

@@ -5,7 +5,7 @@ import { HeroView, PetView } from './Sprites'
 import { useGame } from '../game/useGame'
 import { CLASSES, GAME_CATALOG, GAME_GENRES } from '../game/config'
 import { HEALTH_PROVIDERS } from '../game/data'
-import { AVATAR_HAIR, AVATAR_SKINS } from '../game/sprites'
+import { AVATAR_HAIR, AVATAR_SKINS, TUNIC } from '../game/sprites'
 import { alpha } from '../game/color'
 
 const STEPS = ['YOU', 'CLASS', 'GAMES', 'SYNC']
@@ -61,7 +61,9 @@ export default function Onboarding() {
   const cls = CLASSES.find((c) => c.id === classId)
   const toggle = (list, set, id) => set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
 
-  const preview = { skin, hair, hairLength, shirt: cls.color }
+  // The tunic is the base character's, not the class colour — class is already
+  // spelled out in text, and the hero should look like the hero.
+  const preview = { skin, hair, hairLength, shirt: TUNIC }
 
   return (
     <div className="absolute inset-0 z-50 bg-void arcade-bg overflow-y-auto scroll-thin">
@@ -346,7 +348,7 @@ export default function Onboarding() {
                     name: (name.trim() || 'ROOKIE').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
                     classId,
-                    avatar: { seed: 0, skin, hair, hairLength, shirt: cls.color },
+                    avatar: { seed: 0, skin, hair, hairLength, shirt: TUNIC },
                     games,
                     health,
                   })

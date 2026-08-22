@@ -1,7 +1,7 @@
 // Seed content + the starting save. The app ships "lived in" on purpose: an
 // empty RPG demo tells you nothing about whether the systems feel good.
 
-import { AVATAR_HAIR, AVATAR_SKINS } from './sprites'
+import { AVATAR_HAIR, AVATAR_SKINS, TUNIC } from './sprites'
 import { DAILY_SLOTS } from './config'
 
 // ------------------------------------------------------------------- catalogues
@@ -46,6 +46,14 @@ export const PET_CATALOG = [
     stat: 'STR',
     species: 'Storm lion',
     blurb: 'One in a hundred. Roars when you PB.',
+  },
+  {
+    id: 'drake',
+    name: 'DRAKE',
+    rarity: 'legendary',
+    stat: 'AGI',
+    species: 'Hearth drake',
+    blurb: 'Hatched by a fire and never left. Fits in a rucksack, thinks it does not.',
   },
   {
     id: 'tuskling',
@@ -346,7 +354,7 @@ export const INITIAL_STATE = {
     shields: 1,
     cores: 1840,
     stats: { STR: 9200, END: 12400, AGI: 7600, VIT: 10100, FOCUS: 5400 },
-    avatar: { seed: 0, skin: AVATAR_SKINS[1], hair: AVATAR_HAIR[0], hairLength: 'short', shirt: '#a855f7' },
+    avatar: { seed: 0, skin: AVATAR_SKINS[1], hair: AVATAR_HAIR[0], hairLength: 'short', shirt: TUNIC },
     games: [],
     equipped: { head: 'i1', hands: 'i2', feet: 'i3', wrist: null, charm: null },
     inventory: [
@@ -372,7 +380,7 @@ export const INITIAL_STATE = {
     stones: ['reality'],
     // Titles are the visible receipt for a boss kill — the one reward that is
     // not a number and cannot be rolled for.
-    titles: ['Early Riser', 'Off The Couch', 'Deliberate', 'Ironbound'],
+    titles: [],
     lifetime: {
       volume: 61400, // kg lifted
       distance: 412, // km
@@ -384,9 +392,9 @@ export const INITIAL_STATE = {
     },
     week: { activeMinutes: 214, gamingHours: 11.5, km: 13.4, sessions: 4 },
   },
-  // Four acts of the story already behind this demo character, mid-fight with
-  // THE WALL — enough of the path filled in to see where it goes.
-  campaign: { defeated: ['wraith', 'couch', 'doomscroll', 'ironjaw'], damage: 3140 },
+  // The demo opens where a new player does: in front of the first boss on the
+  // road, part-way in, with the rest of the path visible behind it.
+  campaign: { defeated: [], damage: 240 },
   chest: { unlocked: true, openedToday: false },
   dailies: freshDailies(),
   links: { health: [], games: [] },

@@ -23,7 +23,7 @@ people quit fitness apps because logging a workout produces a number and nothing
 
 LVL100 is a game, not a tracker with points bolted on. Activity is the controller: verified physical
 effort is the only input, and everything it drives — levels, rank, stats, loot, pets, skins — is
-game progression. The spine is a story mode. Nine bosses across three acts, each gated behind a
+game progression. The spine is a story mode. Ten bosses across three acts, each gated behind a
 level, each taking damage from the sessions you log, each dropping something you cannot get any
 other way. World raids exist and everyone fights them together, but they are side content. The main
 line is your own run through the game, and it has an ending.
@@ -33,6 +33,9 @@ typed numbers pay half and never touch a leaderboard.
 
 Success is the streak: people opening it on day 40 because they are four thousand HP into THE WALL,
 not because a notification guilted them.
+
+The app has three tabs and no boss tab. Your own bosses open off TODAY, because that is where the
+sessions come from; the world raid lives under FRIENDS, because it is something you do with people.
 
 ## Positioning
 

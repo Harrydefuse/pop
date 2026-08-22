@@ -188,7 +188,43 @@ export const TUSKLING = {
   ],
 }
 
-export const PET_SPRITES = { pup: PUP, turbo: TURBO, frost: FROST, ember: EMBER, zeus: ZEUS, tuskling: TUSKLING }
+// Legendary companion. Front-facing like the rest of the roster so it sits in the
+// collection grid as a set, and it wears the LVL100 band the same as every pet.
+export const DRAKE = {
+  w: 16,
+  h: 16,
+  palette: {
+    o: '#1b2a1c',
+    g: '#4f7a3c',
+    l: '#79a85c',
+    d: '#3f5f34',
+    y: '#efe3b8',
+    k: '#141018',
+    w: '#9dc776',
+    H: '#191a2e',
+    N: '#f2ecff',
+  },
+  grid: [
+    '................',
+    '..o.........o...',
+    '.oyo.......oyo..',
+    '.oygo.....ogyo..',
+    '..oggooooooggo..',
+    '..oHHHHHHHHHHo..',
+    '..oHNHNNHNNHHo..',
+    'doggllllllllggod',
+    'dwoglkllllklgowd',
+    'dwogllllllllgowd',
+    '.doggllwwllggod.',
+    '...oggllllggo...',
+    '..oggyyyyyyggo..',
+    '.oggyyyyyyyyggo.',
+    '..oggyyyyyyggo..',
+    '...oggo..oggo...',
+  ],
+}
+
+export const PET_SPRITES = { pup: PUP, turbo: TURBO, frost: FROST, ember: EMBER, zeus: ZEUS, tuskling: TUSKLING, drake: DRAKE }
 
 // ------------------------------------------------------------------- EQUIPMENT
 // 12x12 gear icons. 'A' is the accent colour and gets swapped per rarity at
@@ -800,7 +836,73 @@ export const LVL100_SPRITE = {
   ],
 }
 
-export const CAMPAIGN_SPRITES = { wraith: WRAITH_SPRITE, doomscroll: DOOMSCROLL_SPRITE, ironjaw: IRONJAW_SPRITE, wall: WALL_SPRITE, nox: NOX_SPRITE, mirror: MIRROR_SPRITE, backslide: BACKSLIDE_SPRITE, lvl100: LVL100_SPRITE }
+// Act I opens on a slab of moving rock: crested skull, sunk red eyes, a grin of
+// broken teeth, bronze cuffs and a sash. Every limb is cut from the torso by a
+// hard dark channel, because at one grey it would read as a single boulder.
+export const GOLEM_SPRITE = {
+  w: 34,
+  h: 42,
+  palette: {
+    o: '#12151c',
+    s: '#5a6472',
+    S: '#79838f',
+    d: '#3d4550',
+    k: '#242a33',
+    e: '#e01b3c',
+    E: '#ff5f76',
+    t: '#e8eaf0',
+    g: '#a97f34',
+    G: '#d6a852',
+    b: '#8a6a42',
+    n: '#22332a',
+  },
+  grid: [
+    '...........ooooooooooo............',
+    '..........oSSSSSSSSSSSo...........',
+    '........ooSSSSSSSSSSSSSoo.........',
+    '.......oSSSSSSSSSSSSSSSSSo........',
+    '.......oSSSSSSSSSSSSSSSSSo........',
+    '.......oSSSSSSSSSSSSSSSSSo........',
+    '......odddddddddddddddddddo.......',
+    '......odddddddddddddddddddo.......',
+    '......osskkkkkkssskkkkkksso.......',
+    '......osskeEEekssskeEEeksso.......',
+    '......osseeeekkssskkeeeesso.......',
+    '.......oskkkkkkdddkkkkkkso........',
+    '.......osssssssdddssssssso........',
+    '...ooooosktktktktktktktksoooooo...',
+    '..oSSSSSstttttttttttttttsoSSSSSo..',
+    '.oSSSSSSstktktktktktktktsSSSSSSSo.',
+    'oSSSSSSSsssssssssssssssssSSSSSSSSo',
+    'sSSSSSSSSksSSSSSsSSSSSsskSSSSSSSSs',
+    'sdddSSSSSkSSSSSSdSSSSSSskSSSSSddds',
+    'sdddSSSSSkSSSSSSdSSSSSSSkSSSSSddds',
+    'sdddSSSSskSSSSSSdSSSSSSSksSSSSddds',
+    'sdssssssskSSSSSSdSSSSSSSksssssssds',
+    'odddssssskSSSSSSdSSSSSSsksssssdddo',
+    '.oddsssssksSddddddddddssksssssddo.',
+    '.oddssssskssddssssssddssksssssddo.',
+    '.oddssssskssddssssssddssksssssddo.',
+    '.oddssssskssddsGGGssddssksssssddo.',
+    '.oGGGGGGGkssddGGgGGsddsskGGGGGGGo.',
+    '.ogsssssgkbbbbGgggGbbbbbkgsssssgo.',
+    '.ossssssskbbbbGGgGGbbbbbkssssssso.',
+    'ossdddddskonnnnGGGbnnnnoksdddddsso',
+    'osssssssskonnnnbbbbnnnnoksssssssso',
+    'ossssssssksssssskkssssssksssssssso',
+    '.ossssssskSSSsddkkddsSSSkssssssso.',
+    '..osssssokSSSsddkkddsSSSkossssso..',
+    '...ooooookSSSsddkkddsSSSkoooooo...',
+    '........okssssddkkddssssko........',
+    '.......osksssssskksssssskso.......',
+    '.......osssssssskksssssssso.......',
+    '.......osksksksskksskskskso.......',
+    '.......oddddddddkkddddddddo.......',
+    '........oooooooooooooooooo........',
+  ],
+}
+
+export const CAMPAIGN_SPRITES = { golem: GOLEM_SPRITE, wraith: WRAITH_SPRITE, doomscroll: DOOMSCROLL_SPRITE, ironjaw: IRONJAW_SPRITE, wall: WALL_SPRITE, nox: NOX_SPRITE, mirror: MIRROR_SPRITE, backslide: BACKSLIDE_SPRITE, lvl100: LVL100_SPRITE }
 
 export const BOSS_SPRITES = { 'couch-titan': BOSS_SPRITE, ogre: OGRE_SPRITE }
 
@@ -827,7 +929,7 @@ const AVATAR_LONG = AVATAR_A.map((row, y) =>
   y >= 3 && y <= 8 ? 'h' + row.slice(1, 11) + 'h' : row,
 )
 
-export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7', hairLength = 'short') {
+export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC, hairLength = 'short') {
   return {
     w: 12,
     h: 12,
@@ -842,29 +944,29 @@ export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt
 // head-and-shoulders bust — fine in a list row, but it crops to a face at the
 // size the paper doll needs, so the hero gets its own taller sprite.
 const HERO_GRID = [
-  '.....oooooo.....',
-  '....ohhhhhhoo...',
-  '...ohhhhhhhho...',
-  '...ohhhhhhhho...',
-  '...ohssssssho...',
-  '...ohskssksho...',
-  '...ohssssssho...',
-  '...ohssoossho...',
-  '....ossssso.....',
-  '.....osso.......',
+  '....o..o..o.....',
+  '...ohoohoohho...',
+  '..ohhhhhhhhhho..',
+  '..ohhhhhhhhhho..',
+  '..ohhhhhhhhhho..',
+  '..ohhssssssho...',
+  '..ohsssssssho...',
+  '..ohskssssksho..',
+  '..ohssssssssho..',
+  '...ossssssso....',
+  '.....ossso......',
   '..ooaaaaaaaaoo..',
-  '.osoaaaaaaaaoso.',
+  '.oaoaaaaaaaaoao.',
   '.osoaaaaaaaaoso.',
   '.osoaaaaaaaaoso.',
   '.osoaaaaaaaaoso.',
   '..ooaaaaaaaaoo..',
-  '...oaaaaaaaao...',
+  '...obbbbbbbbo...',
   '...otttttttto...',
-  '...otttttttto...',
   '...ottto.ottto..',
   '...ottto.ottto..',
   '...ottto.ottto..',
-  '...obbbo.obbbo..',
+  '...ossso.ossso..',
   '...ooooo.ooooo..',
 ]
 
@@ -898,14 +1000,18 @@ const HERO_LONG = HERO_GRID.map((row, y) => {
   return row
 })
 
-export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = '#a855f7', hairLength = 'short') {
+export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC, hairLength = 'short') {
   return {
     w: 16,
     h: 24,
-    palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt, t: '#2b2440', b: '#171226' },
+    palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt, t: '#4a331f', b: '#5c4326' },
     grid: hairLength === 'long' ? HERO_LONG : HERO_GRID,
   }
 }
 
+/** The base character's tunic. Onboarding does not offer a shirt colour, so
+ *  this is what every hero wears until gear covers it. */
+export const TUNIC = '#8a8055'
+
 export const AVATAR_SKINS = ['#f2cfa0', '#e8b48a', '#c68642', '#8d5524', '#5c3317', '#ffdbac']
-export const AVATAR_HAIR = ['#2b1a10', '#7c3aed', '#22d3ee', '#f43f5e', '#fbbf24', '#f2ecff', '#4ade80']
+export const AVATAR_HAIR = ['#6b4226', '#2b1a10', '#7c3aed', '#22d3ee', '#f43f5e', '#fbbf24', '#f2ecff', '#4ade80']

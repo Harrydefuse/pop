@@ -3,6 +3,7 @@ import { Bar, Btn, Modal, Panel } from '../components/ui'
 import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { BossArt } from '../components/Sprites'
+import CampaignSheet from '../components/CampaignSheet'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
 import { actById } from '../game/campaign'
@@ -17,29 +18,47 @@ import { alpha } from '../game/color'
 function Target({ onOpen }) {
   const { state } = useGame()
   const c = campaignState(state.player, state.campaign)
-  if (!c.current) return null
-  const act = actById(c.current.act)
+  const boss = c.current ?? c.locked
+  if (!boss) return null
+  const act = actById(boss.act)
+  const live = Boolean(c.current)
 
   return (
     <button onClick={onOpen} className="w-full text-left active:brightness-125">
-      <Panel corners={false} className="p-2.5" style={{ borderColor: alpha(act.color, 50) }}>
+      <Panel corners={false} className="p-2.5" style={{ borderColor: alpha(act.color, 55) }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 grid place-items-center shrink-0 border" style={{ borderColor: act.color }}>
-            <BossArt sprite={c.current.sprite} size={26} />
+          <div className="w-11 h-11 grid place-items-center shrink-0 border" style={{ borderColor: act.color }}>
+            <BossArt
+              sprite={boss.sprite}
+              size={28}
+              style={live ? undefined : { filter: 'grayscale(1) brightness(0.45)', opacity: 0.7 }}
+            />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[7px] text-ink-faint">TODAY LANDS ON</div>
+            <div className="font-pixel text-[7px] text-ink-faint">{live ? 'TODAY LANDS ON' : 'NEXT BOSS'}</div>
             <div className="font-pixel text-[9px] mt-1 truncate" style={{ color: act.color }}>
-              {c.current.name}
+              {boss.name}
             </div>
-            <Bar pct={c.pct} color="var(--color-danger)" height={3} className="mt-1.5" />
+            {live ? (
+              <Bar pct={c.pct} color="var(--color-danger)" height={3} className="mt-1.5" />
+            ) : (
+              <div className="text-[10px] text-ink-faint mt-1">Opens at level {boss.level}</div>
+            )}
           </div>
-          <span className="font-mono text-[11px] text-danger shrink-0">{Math.round(c.pct * 100)}%</span>
+          <span className="flex items-center gap-1.5 shrink-0">
+            {live && (
+              <span className="font-mono text-[11px]" style={{ color: act.color }}>
+                {Math.round(c.pct * 100)}%
+              </span>
+            )}
+            <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
+          </span>
         </div>
       </Panel>
     </button>
   )
 }
+
 
 /**
  * A slot is a single small row: colour, name, state. Everything else — what
@@ -146,10 +165,11 @@ function SlotSheet({ slot, state, onClose, onLog }) {
   )
 }
 
-export default function Home({ setTab }) {
+export default function Home() {
   const { state, openChest } = useGame()
   const [openSlot, setOpenSlot] = useState(null)
   const [logging, setLogging] = useState(null)
+  const [campaign, setCampaign] = useState(false)
   const p = state.player
   const streak = streakTier(p.streak)
   const doneCount = state.dailies.filter((d) => d.done).length
@@ -159,7 +179,7 @@ export default function Home({ setTab }) {
 
   return (
     <div className="p-3 space-y-3">
-      <Target onOpen={() => setTab('arena')} />
+      <Target onOpen={() => setCampaign(true)} />
 
       {/* ------------------------------------------------------ streak strip */}
       <Panel corners={false} className="p-2.5">
@@ -232,6 +252,8 @@ export default function Home({ setTab }) {
           }}
         />
       )}
+
+      {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
 
       {logging && (
         <LogSheet

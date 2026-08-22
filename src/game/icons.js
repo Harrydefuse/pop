@@ -184,6 +184,17 @@ export const ICONS = {
     '....AAAA',
     '.....AA.',
   ]),
+  // Affordance marker for rows that open into something else.
+  chevron: g([
+    '..AA....',
+    '...AA...',
+    '....AA..',
+    '.....AA.',
+    '.....AA.',
+    '....AA..',
+    '...AA...',
+    '..AA....',
+  ]),
   play: g([
     'AAAAAAAA',
     'A......A',

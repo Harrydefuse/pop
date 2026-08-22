@@ -5,6 +5,39 @@ import Avatar from '../components/Avatar'
 import { useGame } from '../game/useGame'
 import { FRIENDS } from '../game/data'
 import { classById, xpToNext } from '../game/engine'
+import WorldRaid from '../components/WorldRaid'
+
+/**
+ * The world raid lives here rather than in a tab of its own: it is a thing you
+ * do with other people, so it belongs next to the people.
+ */
+function ModeSwitch({ mode, setMode }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {[
+        ['squad', 'YOUR SQUAD'],
+        ['raid', 'WORLD RAID'],
+      ].map(([id, label]) => {
+        const on = mode === id
+        return (
+          <button
+            key={id}
+            onClick={() => setMode(id)}
+            aria-pressed={on}
+            className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+            style={{
+              borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
+              background: on ? 'var(--color-neon)' : 'transparent',
+              color: on ? '#0b0715' : 'var(--color-ink-faint)',
+            }}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 /**
  * Ranked by level, not by power. Level only moves when you show up, so the
@@ -13,6 +46,7 @@ import { classById, xpToNext } from '../game/engine'
  */
 export default function Friends() {
   const { state } = useGame()
+  const [mode, setMode] = useState('squad')
   const p = state.player
   const [added, setAdded] = useState([])
   const [query, setQuery] = useState('')
@@ -61,8 +95,18 @@ export default function Friends() {
     setQuery('')
   }
 
+  if (mode === 'raid') {
+    return (
+      <div className="p-3 space-y-3">
+        <ModeSwitch mode={mode} setMode={setMode} />
+        <WorldRaid />
+      </div>
+    )
+  }
+
   return (
     <div className="p-3 space-y-3.5">
+      <ModeSwitch mode={mode} setMode={setMode} />
       <Panel className="p-3.5" accent="var(--color-neon)">
         <div className="font-pixel text-[10px] text-neon">YOUR CIRCLE</div>
         <div className="text-[11px] text-ink-dim mt-2 leading-snug">

@@ -10,11 +10,10 @@ import Axis from './components/Axis'
 import Icon from './components/Icon'
 import Home from './screens/Home'
 import Friends from './screens/Friends'
-import Boss from './screens/Boss'
 import Hero from './screens/Hero'
 
 const PITCH = [
-  ['IT IS A GAME', 'Nine bosses, three acts, an ending. Fitness is the controller, not the point.'],
+  ['IT IS A GAME', 'Ten bosses, three acts, an ending. Fitness is the controller, not the point.'],
   ['MOVE TO LEVEL UP', 'Every session you log is XP, loot and damage on whatever is in your way.'],
   ['YOUR OWN RUN', 'Personal bosses gate your story. World raids are where everyone turns up at once.'],
   ['KEEP THE GAMES', 'You do not have to quit gaming to get your life on track. Do both, on purpose.'],
@@ -80,8 +79,7 @@ function Device() {
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}
         <div className="mx-auto w-full max-w-[520px]">
-          {tab === 'home' && <Home setTab={setTab} />}
-          {tab === 'arena' && <Boss />}
+          {tab === 'home' && <Home />}
           {tab === 'friends' && <Friends />}
           {tab === 'hero' && <Hero />}
           <div className="h-4" />

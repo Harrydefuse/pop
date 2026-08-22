@@ -222,7 +222,7 @@ export default function Hero() {
 
         {/* Gear is drawn onto the body, and the pet stands beside them. */}
         <div className="flex items-end justify-center gap-4 mt-3">
-          <HeroView av={{ ...p.avatar, shirt: cls.color }} equipped={worn} height={168} />
+          <HeroView av={p.avatar} equipped={worn} height={168} />
           {pet && (
             <button onClick={() => setOpenPet(pet)} className="text-center shrink-0 active:brightness-125">
               <PetView refId={pet.ref} level={pet.level} size={76} float />
