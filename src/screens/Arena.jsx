@@ -20,6 +20,7 @@ export default function Arena() {
   const mine = p.lifetime.bossKm
   const daysLeft = Math.max(0, Math.round((BOSS.endsAt - Date.now()) / 86400000))
   const nextTier = BOSS.personalTiers.find((t) => t.km > mine)
+  const petReward = BOSS.rewards.find((r) => r.kind === 'pet')
 
   const damageBoard = useMemo(
     () =>
@@ -36,7 +37,7 @@ export default function Arena() {
         <Chip color="var(--color-danger)" className="mb-3">
           {BOSS.subtitle} · {daysLeft} DAYS LEFT
         </Chip>
-        <BossArt size={168} className="mx-auto" />
+        <BossArt sprite={BOSS.sprite} size={168} className="mx-auto" />
         <div className="font-pixel text-[12px] text-danger mt-2">{BOSS.name}</div>
 
         <div className="mt-3.5">
@@ -61,8 +62,8 @@ export default function Arena() {
           <div className="min-w-0 flex-1">
             <div className="font-pixel text-[10px] text-lime">GO FOR A RUN OR A WALK</div>
             <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">
-              Every kilometre you cover is a kilometre off its health. A walk counts the same as a run
-              — it just takes longer.
+              Every kilometre you cover is a kilometre off {BOSS.name}. A walk counts the same as a
+              run — it just takes longer.
             </div>
           </div>
         </div>
@@ -89,11 +90,11 @@ export default function Arena() {
       <Panel className="p-3.5" accent="var(--color-gold)">
         <SectionTitle color="var(--color-gold)">WHAT YOU&apos;RE PLAYING FOR</SectionTitle>
         <div className="flex items-center gap-3">
-          <PetView refId="zeus" level={100} size={64} float />
+          <PetView refId={petReward?.ref ?? 'zeus'} level={100} size={64} float />
           <div className="min-w-0">
-            <div className="font-pixel text-[9px] text-gold">TITANSLAYER</div>
+            <div className="font-pixel text-[9px] text-gold">{petReward?.name ?? 'SEASON REWARD'}</div>
             <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">
-              A banner and a pet handed only to players who put damage on this boss before the season
+              A banner and a pet handed only to players who put damage on {BOSS.name} before the season
               closes. They never come back, and there is no other way to get them.
             </div>
           </div>

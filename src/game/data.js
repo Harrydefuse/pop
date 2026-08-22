@@ -47,6 +47,15 @@ export const PET_CATALOG = [
     species: 'Storm lion',
     blurb: 'One in a hundred. Roars when you PB.',
   },
+  {
+    id: 'tuskling',
+    name: 'TUSKLING',
+    rarity: 'legendary',
+    stat: 'END',
+    species: 'Ogre cub',
+    blurb: 'Grimtusk\u2019s cub. Only walks with people who kept walking.',
+    seasonal: 'ogre',
+  },
 ]
 
 export const GEAR_CATALOG = [
@@ -140,29 +149,50 @@ export const FRIENDS = [
 
 // ------------------------------------------------------------------- world boss
 
-export const BOSS = {
-  id: 'couch-titan',
-  name: 'THE COUCH TITAN',
-  subtitle: 'Season 1 · World Raid',
-  lore: 'It feeds on abandoned New Year resolutions. Every kilometre the community moves takes a chunk out of it.',
-  goalKm: 1000000,
-  startKm: 618420, // community progress at app open; ticks up live
-  endsAt: Date.now() + 1000 * 60 * 60 * 24 * 9,
-  // Everything here is season-exclusive: it is only ever granted to players who
-  // put damage on this boss, and it never returns.
-  rewards: [
-    { at: 0.25, name: 'Raider banner', kind: 'banner' },
-    { at: 0.5, name: 'Titan title + 1,500 cores', kind: 'title' },
-    { at: 0.75, name: 'Epic gear cache', kind: 'gear' },
-    { at: 1, name: 'TITANSLAYER pet', kind: 'pet' },
-  ],
-  personalTiers: [
-    { km: 10, reward: '200 cores' },
-    { km: 25, reward: 'Raid weapon skin' },
-    { km: 50, reward: 'Epic chest' },
-    { km: 100, reward: 'Titanslayer title' },
-  ],
-}
+const SEASONS = [
+  {
+    id: 'couch-titan',
+    sprite: 'couch-titan',
+    name: 'THE COUCH TITAN',
+    subtitle: 'Season 1 · World Raid',
+    lore: 'It fed on abandoned New Year resolutions. Beaten by the community in nine days.',
+    goalKm: 1000000,
+    startKm: 1000000,
+    endsAt: Date.now() - 1000 * 60 * 60 * 24 * 30,
+    active: false,
+    rewards: [],
+    personalTiers: [],
+  },
+  {
+    id: 'ogre',
+    sprite: 'ogre',
+    name: 'GRIMTUSK',
+    subtitle: 'Season 2 · World Raid',
+    // Named for the thing every training plan runs into. It is an obstacle, not
+    // a verdict on the player — the app never uses shame as a motivator.
+    lore: 'The plateau made flesh. It squats on the road at the exact point most people stop, and it only moves when enough of us walk straight at it.',
+    goalKm: 1200000,
+    startKm: 214860,
+    endsAt: Date.now() + 1000 * 60 * 60 * 24 * 23,
+    active: true,
+    rewards: [
+      { at: 0.25, name: 'Grimtusk banner', kind: 'banner' },
+      { at: 0.5, name: 'Plateau-Breaker title + 1,500 cores', kind: 'title' },
+      { at: 0.75, name: 'Epic gear cache', kind: 'gear' },
+      { at: 1, name: 'TUSKLING pet', kind: 'pet', ref: 'tuskling' },
+    ],
+    personalTiers: [
+      { km: 10, reward: '200 cores' },
+      { km: 25, reward: 'Ogre-hide weapon skin' },
+      { km: 50, reward: 'Epic chest' },
+      { km: 100, reward: 'Grimtusk title' },
+    ],
+  },
+]
+
+/** The raid everything points at. Past seasons stay for the archive. */
+export const BOSS = SEASONS.find((b) => b.active)
+export const PAST_SEASONS = SEASONS.filter((b) => !b.active)
 
 // ----------------------------------------------------------------- achievements
 

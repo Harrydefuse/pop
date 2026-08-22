@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { BOSS_SPRITE, GEAR_OVERLAYS, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE, heroSprite } from '../game/sprites'
+import { BOSS_SPRITES, GEAR_OVERLAYS, GEAR_SPRITES, PET_SPRITES, STONE_SPRITE, heroSprite } from '../game/sprites'
 import { RARITY } from '../game/config'
 import { petStage } from '../game/engine'
 import { GEAR_CATALOG } from '../game/data'
@@ -69,6 +69,6 @@ export function StoneIcon({ color, size = 22, dim }) {
   return <PixelSprite sprite={STONE_SPRITE} size={size} accent={color} style={dim ? { opacity: 0.25, filter: 'grayscale(1)' } : undefined} />
 }
 
-export function BossArt({ size = 180, className = '' }) {
-  return <PixelSprite sprite={BOSS_SPRITE} size={size} className={className} />
+export function BossArt({ sprite = 'ogre', size = 180, className = '' }) {
+  return <PixelSprite sprite={BOSS_SPRITES[sprite] ?? BOSS_SPRITES.ogre} size={size} className={className} />
 }

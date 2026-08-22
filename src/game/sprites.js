@@ -153,7 +153,42 @@ export const ZEUS = {
   ],
 }
 
-export const PET_SPRITES = { pup: PUP, turbo: TURBO, frost: FROST, ember: EMBER, zeus: ZEUS }
+// ---------------------------------------------- TUSKLING (legendary, seasonal)
+// Grimtusk's cub. Only players who put damage on the Season 2 world raid ever
+// see one, so it wears the same greens and amber eyes as the boss it came from.
+export const TUSKLING = {
+  id: 'tuskling',
+  w: 16,
+  h: 16,
+  palette: {
+    ...PET_PAL_BASE,
+    g: '#5f8a3a', // skin
+    l: '#7fae4e', // lit
+    d: '#3d5c26', // shadow / ears
+    t: '#f0e9cf', // tusks
+    e: '#fbbf24', // amber eyes
+  },
+  grid: [
+    '................',
+    '...oooooooooo...',
+    '..oggggggggggo..',
+    'oddggggggggggddo',
+    'oddHHHHHHHHHHddo',
+    'oddHNHNNHNNHHddo',
+    'oddgllllllllgddo',
+    'oddgleklleklgddo',
+    'oddgllllllllgddo',
+    '.oggltkkkktlggo.',
+    '..oggllwwllggo..',
+    '...oggggggggo...',
+    '..ogllllllllgo..',
+    '..ogllllllllgo..',
+    '..oggggggggggo..',
+    '..oggo....oggo..',
+  ],
+}
+
+export const PET_SPRITES = { pup: PUP, turbo: TURBO, frost: FROST, ember: EMBER, zeus: ZEUS, tuskling: TUSKLING }
 
 // ------------------------------------------------------------------- EQUIPMENT
 // 12x12 gear icons. 'A' is the accent colour and gets swapped per rarity at
@@ -311,6 +346,74 @@ export const BOSS_SPRITE = {
     'oo................oo',
   ],
 }
+
+// --------------------------------------------------------------- OGRE BOSS --
+// Season 2's world boss. Bigger canvas than the pets because it carries a whole
+// screen: heavy brow, sunken amber eyes, tusks over the top lip, and a club
+// gripped in the right fist. Shaded with three greens rather than one so the
+// mass reads at the size the raid card shows it.
+export const OGRE_SPRITE = {
+  w: 36,
+  h: 39,
+  palette: {
+    o: '#101a0c', // outline
+    g: '#5f8a3a', // skin
+    l: '#7fae4e', // lit
+    d: '#3d5c26', // shadow
+    n: '#4c7230', // nose
+    e: '#fbbf24', // eye
+    k: '#0d1408', // socket
+    t: '#f0e9cf', // tusks and teeth
+    r: '#5e1c2b', // mouth
+    b: '#6b4326', // loincloth
+    w: '#7a5230', // club
+    W: '#96683e',
+    s: '#b9c0cc', // iron bands
+  },
+  grid: [
+    '....................................',
+    '...........................ooooooo..',
+    '..............ooooooo.....owwwwwwwo.',
+    '............oogggggggoo...owWWWWWwo.',
+    '..........oogglllllllggoo.owssssswo.',
+    '.........ogglllllllllllggoowWWWWWwo.',
+    '........oglllllllllllllllgowssssswo.',
+    '........oglllllllllllllllgowWWWWWwo.',
+    '......oogglllllllllllllllggwwwwwwwo.',
+    '.....ogggdddddddddddddddddgggwwwoo..',
+    '....oggggdddddddddddddddddggggwwo...',
+    '....oggggggkeekgggggkeekggggggwwo...',
+    '.....ogggggkkkkgnnngkkkkgggggwwwo...',
+    '......ooogttggggnnnggggttgooowwwo...',
+    '........ogttggggnnnggggttgo.owwwo...',
+    '.........ottrtrrtrrtrtrtto..owwwo...',
+    '....oooooottgggggggggggttoooowwwo...',
+    '...oggggggggggggggggggggggggowWwo...',
+    '..oggggggglllllllllllllllgggowWwogo.',
+    '..ogggggggggggggggggggggggggowWwogo.',
+    '.oggggggdgggggggggggggggggdgowWwogo.',
+    '.oggggggdgggggggggggggggggdgowWwogo.',
+    '.oggggggdggggglllllllgggggdgowWwogo.',
+    '.oggggggdgglllllllllllllggdgowWwogo.',
+    '.oggggggdllllllllllllllllldgowWwogo.',
+    '.oggggggdllllllllllllllllldgowWwogo.',
+    '.oggggggdllllllllllllllllldgowWwogo.',
+    '.oggggggdgglllllllllllllggdgodddddgo',
+    'oggggggggggggglllllllggggggggldddlgo',
+    'ogggggggggddddddddddddddddggdddddggo',
+    'ogggggggggbbbbbbbbbbbbbbbbogggggggo.',
+    '.ogggggggogggggggoogggggggoogggggo..',
+    '..ogggggoogggggggoogggggggo.ooooo...',
+    '...ooooo.ogdddddgoogdddddgo.........',
+    '.........ogdddddgoogdddddgo.........',
+    '........oogdddddgoogdddddgoo........',
+    '.......oggggggggggggggggggggo.......',
+    '.......oddddddddddddddddddddo.......',
+    '........oooooooooooooooooooo........',
+  ],
+}
+
+export const BOSS_SPRITES = { 'couch-titan': BOSS_SPRITE, ogre: OGRE_SPRITE }
 
 // --------------------------------------------------------------------- AVATARS
 // Compact 12x12 heads used for friends, leaderboard rows and feed posts. Two

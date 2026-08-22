@@ -142,7 +142,9 @@ export function rollDailyChest(catalog, rng = Math.random) {
   const drops = []
   for (let i = 0; i < DAILY_CHEST.rolls; i++) {
     const rarity = weightedRarity(rng, 'common')
-    const petEligible = catalog.pets.filter((p) => p.rarity === rarity)
+    // Seasonal pets are the world-raid reward. If the chest could roll one the
+    // reward would stop meaning anything, so they never enter the pool.
+    const petEligible = catalog.pets.filter((p) => p.rarity === rarity && !p.seasonal)
     if (petEligible.length && rng() < 0.16) {
       const pet = petEligible[Math.floor(rng() * petEligible.length)]
       drops.push({ kind: 'pet', rarity, ref: pet.id, name: pet.name })
