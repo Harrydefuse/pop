@@ -51,7 +51,7 @@ export default function Onboarding() {
 
   const [name, setName] = useState('')
   const [handle, setHandle] = useState('')
-  const [skin, setSkin] = useState(AVATAR_SKINS[1])
+  const [skin, setSkin] = useState(AVATAR_SKINS[0])
   const [hair, setHair] = useState(AVATAR_HAIR[0])
   const [hairLength, setHairLength] = useState('short')
   const [classId, setClassId] = useState('ironstride')

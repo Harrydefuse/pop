@@ -1,7 +1,7 @@
 // Seed content + the starting save. The app ships "lived in" on purpose: an
 // empty RPG demo tells you nothing about whether the systems feel good.
 
-import { AVATAR_HAIR, AVATAR_SKINS, TUNIC } from './sprites'
+import { AVATAR_HAIR, AVATAR_SKINS, HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
 import { DAILY_SLOTS } from './config'
 
 // ------------------------------------------------------------------- catalogues
@@ -354,7 +354,7 @@ export const INITIAL_STATE = {
     shields: 1,
     cores: 1840,
     stats: { STR: 9200, END: 12400, AGI: 7600, VIT: 10100, FOCUS: 5400 },
-    avatar: { seed: 0, skin: AVATAR_SKINS[1], hair: AVATAR_HAIR[0], hairLength: 'short', shirt: TUNIC },
+    avatar: { seed: 0, skin: SKIN_BASE, hair: HAIR_BASE, hairLength: 'short', shirt: TUNIC },
     games: [],
     equipped: { head: 'i1', hands: 'i2', feet: 'i3', wrist: null, charm: null },
     inventory: [

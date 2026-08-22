@@ -945,31 +945,70 @@ export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt
 // A full-body 16x24 character for the loadout screen. The 12x12 avatar is a
 // head-and-shoulders bust — fine in a list row, but it crops to a face at the
 // size the paper doll needs, so the hero gets its own taller sprite.
+// The base character, transcribed from art/DEFAUYLT MAN.png. The source is a
+// soft-edged render rather than a true pixel export, so it was reconstructed:
+// quantised to a small palette, then sampled by dominant colour per cell, which
+// keeps the edges hard instead of muddy. See tools/png2grid.py.
 const HERO_GRID = [
-  '....o..o..o.....',
-  '...ohoohoohho...',
-  '..ohhhhhhhhhho..',
-  '..ohhhhhhhhhho..',
-  '..ohhhhhhhhhho..',
-  '..ohhssssssho...',
-  '..ohsssssssho...',
-  '..ohskssssksho..',
-  '..ohssssssssho..',
-  '...ossssssso....',
-  '.....ossso......',
-  '..ooaaaaaaaaoo..',
-  '.oaoaaaaaaaaoao.',
-  '.osoaaaaaaaaoso.',
-  '.osoaaaaaaaaoso.',
-  '.osoaaaaaaaaoso.',
-  '..ooaaaaaaaaoo..',
-  '...obbbbbbbbo...',
-  '...otttttttto...',
-  '...ottto.ottto..',
-  '...ottto.ottto..',
-  '...ottto.ottto..',
-  '...ossso.ossso..',
-  '...ooooo.ooooo..',
+  '..........oooooooo..............',
+  '..........ohhhhjjJoo.ooo........',
+  '..........ohhhhjhJoo.ooo........',
+  '..oooooooooooHjhjhhHoojjo.......',
+  '...ohhhhhhhhhhhhhhhhhojjooooo...',
+  '...oooHhhhhhhhhhhhjhhjHHHhhoo...',
+  '....oohhjhhhhhhhhhJjhjHHohjJooo.',
+  '...oojhjHhhjjhhJJHHJjjjjJhhjjjjo',
+  '.oohhhjHhhhjjhhjJJhjhhhhhjhhooo.',
+  'oJhhhjHJhhhjjhjHHhhjhhhjhhjJooo.',
+  '.oooooJhhhhhhhHJJhhhjhHhhjhhjoo.',
+  '...oHHhhHjjjhjHhhhhhhHohhhhjhoo.',
+  '..oJHhhHHjjjjHohhjjhJoohhhhHJJJo',
+  '..oJJJHHHHjjHoohhjHHodojjHjHoHHo',
+  '..oJJHHHHHJHodoJJHHoSdooHHHHHooo',
+  '.oHHHoHHooooSSoHHooSSSSSoHHoHoo.',
+  'ooJHHoHHSossSSSHHoSSSSSSSHHoHoo.',
+  'ooooooHoSSssssSoodSssssSSoHoooo.',
+  '....ooHoSssoossSSsssoosssoHoo...',
+  '...ossoosssoosssssssoosssooso...',
+  '...ooSdhsssoosssssssoosssddSo...',
+  '...ooSdhsssoosssssssoosssddSo...',
+  '....oodoSsssssssssssssssSooo....',
+  '.....oooSsssssssssssssssSooo....',
+  '.......oodsssssssssssSdooo......',
+  '.........oodsssssssssdoo........',
+  '........ooooooDDDDDoooooo.......',
+  '........ooooooDDDDDoooooo.......',
+  '.......oBAbbodddddddobbbbo......',
+  '......obaaaaAoSsssoAAaaaaAo.....',
+  '......oaaaaaaAosSoAAaaaaaabo....',
+  '....ooAaabaaaaADDoaaaaAbaabo....',
+  '...ooBaaABaaaaAAoAaaaaBAAaabo...',
+  '...oAAaaboaaaaaaBAaaaaabbaaAo...',
+  '...oooBABoaaaaaaaaaaaaoBbAooo...',
+  '....oodABoaaaaaaaaaaaaooBAdo....',
+  '....oodoooAAaaaaaaaaaAoooodo....',
+  '...oSSSSoBAAAaaaaaaaAABooSSSo...',
+  '...osssdooBBbbAAAAAbbBBooSsso...',
+  '...osssoooootBAAAAAbbTToossso...',
+  '..oSsssooUuttoooooooooTooossSoo.',
+  '..ossssoooooobAAAAAAAABbooSssoo.',
+  '..ossssoouottoaAAAAAaAbbossssoo.',
+  '..ossDsooooDbooaaaaaAoooossDsoo.',
+  '..oddSooooTooooTooooooTToooSdoo.',
+  '...ooo..oTuooUUUUUTTuuUUo.ooo...',
+  '........oUtutuToooTttttuo.......',
+  '........outtttToooTttttto.......',
+  '.......oTttttuToooTtttuuoo......',
+  '.......oUttutuTo.oTtttuTTo......',
+  '.......oUtUUuTTo.oTTtuuUTo......',
+  '........ottoTUoo.ooTTUooTo......',
+  '........ooddoUoo.ooTTodoo.......',
+  '.........oSSSo....oooSdoo.......',
+  '.........osSSo.....oSSdoo.......',
+  '........osssSdo...odSssso.......',
+  '.......osssssdo...odssssso......',
+  '......oSSdssSo.....odsdSSSo.....',
+  '......ooooooo.......ooooooo.....',
 ]
 
 
@@ -977,30 +1016,85 @@ const HERO_GRID = [
 // Same 16x24 frame as the hero, mostly transparent, so each piece lines up with
 // the body when stacked on top. 'A' takes the item's rarity colour at render
 // time — that is what makes a legendary visibly legendary on the character.
-const EMPTY = '................'
 const layer = (rows) => {
-  const grid = Array.from({ length: 24 }, () => EMPTY)
+  const grid = Array.from({ length: HERO_GRID.length }, () => '.'.repeat(HERO_GRID[0].length))
   for (const [y, cells] of Object.entries(rows)) grid[y] = cells
-  return { w: 16, h: 24, palette: { o: '#0d0a16', A: '#a855f7' }, grid }
+  return { w: HERO_GRID[0].length, h: HERO_GRID.length, palette: { o: '#0d0a16', A: '#a855f7' }, grid }
 }
 
 export const GEAR_OVERLAYS = {
-  head: layer({ 3: '...AAAAAAAAAA...', 4: '..AA........AA..', 5: '..AA........AA..' }),
-  hands: layer({ 13: '.AAA........AAA.', 14: '.AAA........AAA.' }),
-  feet: layer({ 22: '...AAAAA.AAAAA..', 23: '...AAAAA.AAAAA..' }),
-  wrist: layer({ 12: '............AAA.' }),
-  charm: layer({ 10: '.......AA.......', 11: '.......AA.......' }),
+  head: layer({ 13: '...........AAAAAAAAAAAA.........', 14: '...........AAAAAAAAAAAA.........', 15: '.AAA........................AAA.', 16: 'AAA.........................AAA.', 17: 'AAA.........................AAA.', 18: '....AAA...................AAA...', 19: '...AAA....................AAA...' }),
+  hands: layer({ 39: '....AAA..................AAA....', 40: '...AAAA...................AAA...', 41: '...AAAA...................AAA...', 42: '...AAAA..................AAAA...', 43: '...AAAA....A.............AAAA...', 44: '...AAA.....................AA...' }),
+  feet: layer({ 51: '........AAAAAAAA.AAAAAAAAA......', 52: '..........AA..........A.........', 53: '..........AAA........AA.........', 54: '..........AAA.......AAA.........', 55: '.........AAAAA.....AAAAA........', 56: '........AAAAAA.....AAAAAA.......', 57: '.......AAAAAA.......AAAAAA......' }),
+  wrist: layer({ 37: '.........................AAA....', 38: '.........................AAA....' }),
+  charm: layer({ 26: '..............AAAA..............', 27: '..............AAAA..............' }),
 }
 
 /**
  * The long-hair build is derived from the short one rather than drawn twice, so
  * the face, body and gear alignment can never drift between the two.
  */
-const HERO_LONG = HERO_GRID.map((row, y) => {
-  if (y >= 4 && y <= 9) return 'ohh' + row.slice(3, 13) + 'hho'
-  if (y === 10) return 'oh' + row.slice(2, 14) + 'ho'
-  return row
-})
+const HERO_LONG = [
+  '..........oooooooo..............',
+  '..........ohhhhjjJoo.ooo........',
+  '..........ohhhhjhJoo.ooo........',
+  '..oooooooooooHjhjhhHoojjo.......',
+  '...ohhhhhhhhhhhhhhhhhojjooooo...',
+  '...oooHhhhhhhhhhhhjhhjHHHhhoo...',
+  '....oohhjhhhhhhhhhJjhjHHohjJooo.',
+  '...oojhjHhhjjhhJJHHJjjjjJhhjjjjo',
+  '.oohhhjHhhhjjhhjJJhjhhhhhjhhooo.',
+  'oJhhhjHJhhhjjhjHHhhjhhhjhhjJooo.',
+  '.oooooJhhhhhhhHJJhhhjhHhhjhhjoo.',
+  '...oHHhhHjjjhjHhhhhhhHohhhhjhoo.',
+  '..oJHhhHHjjjjHohhjjhJoohhhhHJJJo',
+  '..oJJJHHHHjjHoohhjHHodojjHjHoHHo',
+  '..oJJHHHHHJHodoJJHHoSdooHHHHHooo',
+  '.oHHHoHHooooSSoHHooSSSSSoHHoHoo.',
+  'ooJHHoHHSossSSSHHoSSSSSSSHHoHoo.',
+  'ooHhhoHoSSssssSoodSssssSSoHhhHo.',
+  '.oHhhoHoSssoossSSsssoosssoHhhHo.',
+  '.oHhhsoosssoosssssssoosssoohhHo.',
+  '.oHhhSdhsssoosssssssoosssddhhHo.',
+  '.oHhhSdhsssoosssssssoosssddhhHo.',
+  '.oHhhodoSsssssssssssssssSoohhHo.',
+  '.oHhhoooSsssssssssssssssSoohhHo.',
+  '.oHhho.oodsssssssssssSdoooohhHo.',
+  '.oHhho...oodsssssssssdoo..ohhHo.',
+  '.oHhho..ooooooDDDDDoooooo.ohhHo.',
+  '.oHhho..ooooooDDDDDoooooo.ohhHo.',
+  '..ohho.oBAbbodddddddobbbboohho..',
+  '..ohhoobaaaaAoSsssoAAaaaaAohho..',
+  '...oo.oaaaaaaAosSoAAaaaaaaboo...',
+  '....ooAaabaaaaADDoaaaaAbaabo....',
+  '...ooBaaABaaaaAAoAaaaaBAAaabo...',
+  '...oAAaaboaaaaaaBAaaaaabbaaAo...',
+  '...oooBABoaaaaaaaaaaaaoBbAooo...',
+  '....oodABoaaaaaaaaaaaaooBAdo....',
+  '....oodoooAAaaaaaaaaaAoooodo....',
+  '...oSSSSoBAAAaaaaaaaAABooSSSo...',
+  '...osssdooBBbbAAAAAbbBBooSsso...',
+  '...osssoooootBAAAAAbbTToossso...',
+  '..oSsssooUuttoooooooooTooossSoo.',
+  '..ossssoooooobAAAAAAAABbooSssoo.',
+  '..ossssoouottoaAAAAAaAbbossssoo.',
+  '..ossDsooooDbooaaaaaAoooossDsoo.',
+  '..oddSooooTooooTooooooTToooSdoo.',
+  '...ooo..oTuooUUUUUTTuuUUo.ooo...',
+  '........oUtutuToooTttttuo.......',
+  '........outtttToooTttttto.......',
+  '.......oTttttuToooTtttuuoo......',
+  '.......oUttutuTo.oTtttuTTo......',
+  '.......oUtUUuTTo.oTTtuuUTo......',
+  '........ottoTUoo.ooTTUooTo......',
+  '........ooddoUoo.ooTTodoo.......',
+  '.........oSSSo....oooSdoo.......',
+  '.........osSSo.....oSSdoo.......',
+  '........osssSdo...odSssso.......',
+  '.......osssssdo...odssssso......',
+  '......oSSdssSo.....odsdSSSo.....',
+  '......ooooooo.......ooooooo.....',
+]
 
 /**
  * The hero's palette is generated, not written down.
@@ -1014,15 +1108,16 @@ const HERO_LONG = HERO_GRID.map((row, y) => {
  * Offsets are percentages toward white (positive) or black (negative).
  */
 const HERO_RAMPS = {
-  skin: { s: 0 },
-  hair: { h: 0 },
-  tunic: { a: 0 },
+  skin: { s: 0, S: -17, d: -29, D: -54 },
+  hair: { h: 0, H: -29, j: -6, J: -21 },
+  tunic: { a: 0, A: -27, b: -40, B: -54 },
 }
 
 /** Slots that never change with the player's choices. */
-const HERO_FIXED = { o: '#0d0a16', k: '#141018', t: '#4a331f', b: '#5c4326' }
+/** Outline, trousers and belt — not offered as choices, so not derived. */
+const HERO_FIXED = { o: '#0a0604', t: '#522f17', T: '#371f10', u: '#4a2a15', U: '#412513' }
 
-export function heroPalette(skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC) {
+export function heroPalette(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC) {
   const palette = { ...HERO_FIXED }
   for (const [key, off] of Object.entries(HERO_RAMPS.skin)) palette[key] = shade(skin, off)
   for (const [key, off] of Object.entries(HERO_RAMPS.hair)) palette[key] = shade(hair, off)
@@ -1030,14 +1125,16 @@ export function heroPalette(skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC) {
   return palette
 }
 
-export function heroSprite(skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC, hairLength = 'short') {
+export function heroSprite(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short') {
   const grid = hairLength === 'long' ? HERO_LONG : HERO_GRID
   return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
 }
 
 /** The base character's tunic. Onboarding does not offer a shirt colour, so
  *  this is what every hero wears until gear covers it. */
-export const TUNIC = '#8a8055'
+export const TUNIC = '#ac8d5c'
+export const SKIN_BASE = '#f0b87b'
+export const HAIR_BASE = '#6d3c1c'
 
-export const AVATAR_SKINS = ['#f2cfa0', '#e8b48a', '#c68642', '#8d5524', '#5c3317', '#ffdbac']
-export const AVATAR_HAIR = ['#6b4226', '#2b1a10', '#7c3aed', '#22d3ee', '#f43f5e', '#fbbf24', '#f2ecff', '#4ade80']
+export const AVATAR_SKINS = [SKIN_BASE, '#f2cfa0', '#e8b48a', '#c68642', '#8d5524', '#5c3317', '#ffdbac']
+export const AVATAR_HAIR = [HAIR_BASE, '#2b1a10', '#7c3aed', '#22d3ee', '#f43f5e', '#fbbf24', '#f2ecff', '#4ade80']
