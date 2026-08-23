@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CAMPAIGN_SPRITES, GEAR_OVERLAYS, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CAMPAIGN_SPRITES, GEAR_OVERLAYS, HERO_CLOTHES, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
@@ -48,6 +48,13 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
       <PixelSprite sprite={body} size={width} />
+
+      {/* Clothes only where there is no armour, so nothing pokes out underneath. */}
+      {Object.entries(HERO_CLOTHES).map(([slot, grid]) =>
+        equipped[slot] ? null : (
+          <PixelSprite key={`c-${slot}`} sprite={{ ...body, grid }} size={width} className="absolute inset-0" />
+        ),
+      )}
       {Object.entries(equipped).map(([slot, item]) => {
         const overlay = GEAR_OVERLAYS[item?.kind ?? slot]
         if (!overlay || !item) return null
