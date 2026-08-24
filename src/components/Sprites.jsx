@@ -77,5 +77,12 @@ export function StoneIcon({ color, size = 22, dim }) {
 
 export function BossArt({ sprite = 'ogre', size = 180, className = '', style }) {
   const art = BOSS_SPRITES[sprite] ?? CAMPAIGN_SPRITES[sprite] ?? BOSS_SPRITES.ogre
-  return <PixelSprite sprite={art} size={size} className={className} style={style} />
+  // Fit to a square box rather than to width. Boss grids are all different
+  // shapes, and sizing by width alone made a wide boss tower over a tall one.
+  const fitted = art.h > art.w ? Math.round((size * art.w) / art.h) : size
+  return (
+    <span className={`inline-grid place-items-center ${className}`} style={{ width: size, height: size }}>
+      <PixelSprite sprite={art} size={fitted} style={style} />
+    </span>
+  )
 }

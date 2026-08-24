@@ -126,6 +126,45 @@ fresh.
 
 ---
 
+## 4. Bosses — **48 x 48**
+
+Export at **8x = 384 x 384**. Template: `templates/boss-48x48.png`, with the
+current Warden centred inside it for scale. `boss-blank.png` is empty.
+
+Square on purpose. Boss grids used to be 20x16, 28x30, 34x42 and 36x39, which
+meant a wide boss towered over a tall one at the same setting. Everything now
+fits to a square box, so one canvas keeps them consistent.
+
+- Fill most of the frame. A boss is the biggest thing on screen.
+- Transparent background, hard edges, same as everything else.
+
+Replacing one is just the file: name it after the boss (`warden.png`,
+`grimtusk.png`) and drop it in `art/`.
+
+---
+
+## 5. Chests and interface icons — **32 x 32**
+
+Same size and rules as equipment. Chests show at up to 92px, so 32 x 32 keeps
+them at the same pixel density as the rest of the game.
+
+---
+
+## Importing
+
+One command handles every case:
+
+```
+python3 tools/import_art.py art/your-file.png [width] [height] --name SPRITE_NAME
+```
+
+It detects whether the source is a clean pixel export or a soft render. Clean
+art is transcribed byte-for-byte. A soft render — anti-aliased edges, a glow,
+thousands of colours — is quantised and resampled, which is lossy, so hard
+edges are always worth it.
+
+---
+
 ## Existing files
 
 - **`hero.png`** — the current character, fully clothed. Everything was
