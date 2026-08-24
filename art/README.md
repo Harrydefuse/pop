@@ -65,15 +65,46 @@ Name them by slot so it is obvious which is which. Drop them anywhere in `art/`.
 
 ---
 
-## Character
+## 3. The character — **48 x 64**
 
-- **`hero.png`** — the character as drawn, fully clothed. The source everything
-  was reconstructed from.
-- **`templates/worn-body.png`** — the bare body. Armour is drawn onto this.
+Export at **8x = 384 x 512**. Template: `templates/character-48x64.png`.
 
-The character is stored as three layers: the body, its clothes, and armour.
-Clothes are only drawn where that slot has no armour, so equipping a breastplate
-stops the tunic being drawn and nothing pokes out underneath.
+Send **two files on this identical canvas**:
 
-To replace the body, paint over `templates/worn-body.png` at 256 x 472 and keep
-the pose and position identical.
+```
+character.png        the character as he should look by default, clothed
+character-bare.png   the same character, same pose, clothes removed
+```
+
+Both are needed. Armour is layered on top of a body, so there has to be a body
+underneath — without it, clothes show through at every edge. The game stores
+the character as three layers: body, clothes, armour. Clothes are drawn only
+where that slot has no armour, so equipping a breastplate simply stops the
+tunic being drawn.
+
+Rules:
+
+- **The two files must line up exactly.** Same pose, same position, same size.
+  Draw the clothed one, then remove the clothes for the second — do not redraw.
+- **The body should be about 32 wide and 56-60 tall**, standing on the bottom
+  guide line. The template shows the safe area. The extra width either side is
+  deliberate headroom for pauldrons, weapons and capes, which currently get
+  clipped.
+- Front on, arms down at the sides, feet apart. It is a paper doll, not a pose.
+- **Magenta `#ff00ff` is the background.** Transparent works too.
+- **Hard edges only.** No anti-aliasing, no glow, no drop shadow.
+
+The old canvas was 32 x 59 (`templates/worn-body.png`). That still works if you
+would rather not change size — say which you are drawing on and worn armour
+will be regenerated to match. 48 x 64 is the better canvas if you are starting
+fresh.
+
+---
+
+## Existing files
+
+- **`hero.png`** — the current character, fully clothed. Everything was
+  reconstructed from this.
+- **`templates/worn-body.png`** — the current bare body at 32 x 59.
+- **`templates/character-48x64.png`** — the roomier canvas, with the current
+  character centred inside it for scale.
