@@ -1,15 +1,42 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Bar, Btn, Modal, Panel } from '../components/ui'
 import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { BossArt, ChestArt } from '../components/Sprites'
 import CampaignSheet from '../components/CampaignSheet'
 import GiftReveal from '../components/GiftReveal'
+import MapSheet from '../components/MapSheet'
+import PixelMap from '../components/PixelMap'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
 import { actById } from '../game/campaign'
 import { campaignState, streakTier } from '../game/engine'
 import { alpha } from '../game/color'
+
+/** The city, as a strip. Tapping it opens tracking and the fog. */
+function CityCard({ onOpen }) {
+  const { state } = useGame()
+  const revealed = useMemo(() => new Set(state.explored ?? []), [state.explored])
+  const pct = revealed.size / (176 * 232)
+
+  return (
+    <button onClick={onOpen} className="w-full text-left active:brightness-125">
+      <Panel corners={false} className="p-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-11 h-11 shrink-0 border border-line overflow-hidden grid place-items-center">
+            <PixelMap width={44} height={58} revealed={revealed} className="!w-11" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-pixel text-[7px] text-ink-faint">YOUR CITY</div>
+            <div className="font-pixel text-[9px] text-lime mt-1">{(pct * 100).toFixed(1)}% EXPLORED</div>
+            <Bar pct={pct} color="var(--color-lime)" height={3} className="mt-1.5" />
+          </div>
+          <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
+        </div>
+      </Panel>
+    </button>
+  )
+}
 
 /**
  * The beta gift, sat at the very top until it is claimed. It is the first thing
@@ -202,6 +229,7 @@ export default function Home() {
   const [logging, setLogging] = useState(null)
   const [campaign, setCampaign] = useState(false)
   const [gift, setGift] = useState(false)
+  const [map, setMap] = useState(false)
   const p = state.player
   const streak = streakTier(p.streak)
   const doneCount = state.dailies.filter((d) => d.done).length
@@ -214,6 +242,8 @@ export default function Home() {
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <Target onOpen={() => setCampaign(true)} />
+
+      <CityCard onOpen={() => setMap(true)} />
 
       {/* ------------------------------------------------------ streak strip */}
       <Panel corners={false} className="p-2.5">
@@ -287,6 +317,8 @@ export default function Home() {
       )}
 
       {gift && <GiftReveal onClose={() => setGift(false)} />}
+
+      {map && <MapSheet onClose={() => setMap(false)} />}
 
       {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
 
