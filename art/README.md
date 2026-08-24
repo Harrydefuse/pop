@@ -1,48 +1,79 @@
-# Character art
+# Art
 
-## Files
+Everything here drops straight into the game. There are exactly **two sizes** to
+hit, and templates for both in `templates/`.
+
+---
+
+## 1. Equipment icons — **32 x 32**
+
+Export at **8x = 256 x 256**. This is what shows in the gear grid, the item
+sheet, the reward popup and the big unbox reveal.
+
+There are **six slots**:
+
+| Slot | What goes in it |
+| --- | --- |
+| `helm` | helmets, hoods, circlets |
+| `chest` | breastplates, robes, tunics |
+| `legs` | greaves, tassets, trousers |
+| `gloves` | gauntlets, bracers |
+| `boots` | boots, sabatons |
+| `offhand` | **either** a shield **or** a weapon — the player picks |
+
+Rules:
+
+- One item per file, **centred**, filling most of the frame.
+- **Magenta `#ff00ff` is the background.** Transparent works too.
+- **Hard edges only.** No anti-aliasing, no soft shadow, no glow, no drop
+  shadow. Every blurred edge pixel becomes another colour in the palette and
+  the art goes muddy at small sizes. This is the single most important rule.
+- Keep it under about 60 distinct colours.
+
+`templates/icon-blank.png` is an empty 256 x 256 canvas.
+`templates/icon-example-chest.png` and `icon-example-founder.png` show the
+framing and how much of the frame to fill.
+
+---
+
+## 2. Worn on the body — **32 x 59**
+
+Export at **8x = 256 x 472**. This is the same piece drawn **on the character**,
+so it lines up when equipped.
+
+- Paint directly onto `templates/worn-body.png`, which is the bare character.
+- **Do not move the body.** Head, shoulders, hands and feet must stay exactly
+  where they are.
+- Show **only the armour** in the final file — delete the body before exporting,
+  leaving magenta or transparent everywhere the armour is not.
+- Same hard-edges rule.
+
+This one is optional. Send icons alone and the game will still show the item
+everywhere except on the character; send the worn version too and it appears on
+the hero properly.
+
+---
+
+## What to send for one complete piece
+
+```
+chest-icon.png        256 x 256    the item on its own
+chest-worn.png        256 x 472    the same item on the body   (optional)
+```
+
+Name them by slot so it is obvious which is which. Drop them anywhere in `art/`.
+
+---
+
+## Character
 
 - **`hero.png`** — the character as drawn, fully clothed. The source everything
-  else was reconstructed from.
-- **`base-template.png`** — the **base body**: the same character with the tunic
-  and trousers stripped off. This is what armour is drawn onto.
+  was reconstructed from.
+- **`templates/worn-body.png`** — the bare body. Armour is drawn onto this.
 
-## Why there is a base body
+The character is stored as three layers: the body, its clothes, and armour.
+Clothes are only drawn where that slot has no armour, so equipping a breastplate
+stops the tunic being drawn and nothing pokes out underneath.
 
-Armour is layered onto the character, so there has to be a body underneath. If
-armour is painted over a clothed sprite, the clothes show through at every edge
-— a sleeve poking out from under a pauldron, a hem under a cuirass. So the
-character is stored as three things:
-
-1. **the body** (skin, face, hair)
-2. **clothes** (tunic, trousers) — drawn only where that slot has no armour
-3. **armour** — drawn per slot, over the body
-
-Put a breastplate on and the tunic is simply not drawn. Nothing to poke out.
-
-## Replacing the base body
-
-`base-template.png` is currently derived from `hero.png` automatically, which
-means the torso still has the tunic's slightly baggy outline. A hand-drawn body
-would be better. To replace it:
-
-- **Match the canvas exactly: 256 x 472**, which is a **32 x 59** grid at 8x
-  zoom. Every layer lives on this canvas.
-- **Do not move the character.** Head, shoulders, hands and feet must stay
-  exactly where they are, or armour drawn for the old body will not line up.
-  Easiest way: open `base-template.png` and paint over it.
-- Keep the **same pose** — front on, arms down at the sides, feet apart.
-- **Magenta `#ff00ff` is the background** in the template. Anything that colour
-  is treated as empty. Transparent works too.
-- **Hard edges only.** No anti-aliasing, no soft shadow, no glow.
-
-Sizes other than 32 x 59 are possible but not free: every armour piece and the
-worn-gear layers are positioned against this exact grid, so changing it means
-redrawing all of them. If there is a good reason to change it, say so before
-drawing rather than after.
-
-## Adding armour art
-
-Armour does not need to come from you — it is generated in-game from six
-silhouettes recoloured per set. If you want to draw a piece by hand it goes on
-the same 32 x 59 canvas, aligned to the body, with only that piece visible.
+To replace the body, paint over `templates/worn-body.png` at 256 x 472 and keep
+the pose and position identical.

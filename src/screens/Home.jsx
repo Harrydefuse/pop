@@ -20,8 +20,8 @@ function GiftCard({ onOpen }) {
     <button onClick={onOpen} className="gift-in w-full text-left active:brightness-125">
       <Panel className="p-3 relative overflow-hidden" accent="var(--color-gold)">
         <span
-          className="shine-sweep absolute top-0 left-0 h-full w-10 pointer-events-none"
-          style={{ background: 'linear-gradient(90deg, transparent, #ffffff30, transparent)' }}
+          className="shine-sweep absolute top-0 left-0 h-full w-14 pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, transparent, #ffe9a81f, transparent)' }}
           aria-hidden="true"
         />
         <div className="flex items-center gap-3">

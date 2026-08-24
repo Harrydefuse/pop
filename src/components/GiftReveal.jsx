@@ -112,10 +112,11 @@ export default function GiftReveal({ onClose }) {
             <div className="loot-rise relative">
               <div className="loot-spin relative overflow-hidden">
                 <PixelSprite sprite={armourSprite('founderChest')} size={128} />
-                {/* a sheen that travels across the plate */}
+                {/* A soft gloss rather than a white bar — a hard-edged line drawn
+                    over pixel art reads as a defect, not a highlight. */}
                 <span
-                  className="shine-sweep absolute top-0 left-0 h-full w-[26px] pointer-events-none"
-                  style={{ background: 'linear-gradient(90deg, transparent, #ffffffaa, transparent)' }}
+                  className="shine-sweep absolute top-0 left-0 h-full w-[52px] pointer-events-none"
+                  style={{ background: 'linear-gradient(90deg, transparent, #fff6d880, transparent)' }}
                   aria-hidden="true"
                 />
               </div>
