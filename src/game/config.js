@@ -361,6 +361,24 @@ export const ARMOUR_SETS = [
     blurb: 'Absurd, impractical, and worth every kilometre.' },
 ]
 
+/**
+ * The beta gift. It sits outside the set ladder on purpose — it cannot drop,
+ * cannot be rolled for, and will never be handed out again once the window
+ * closes, which is the only thing that makes a free item feel like a reward.
+ */
+export const FOUNDER_GIFT = {
+  id: 'founder-cuirass',
+  slot: 'chest',
+  kind: 'founderChest',
+  set: 'founder',
+  rarity: 'legendary',
+  name: "Founder's Cuirass",
+  title: 'BETA FOUNDER',
+  blurb: 'Given to everyone who signed up while LVL100 was still being built. It is not in the loot table and never will be.',
+  stats: { VIT: 6, STR: 3, FOCUS: 2 },
+  level: 1,
+}
+
 export function setForRarity(rarity) {
   return ARMOUR_SETS.find((s) => s.rarity === rarity) ?? ARMOUR_SETS[0]
 }

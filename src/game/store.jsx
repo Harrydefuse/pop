@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, INITIAL_STATE, freshDailies, gearPiece } from './data'
-import { DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, setForRarity } from './config'
+import { DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v6' // v6: armour sets replace the accessory slots
+const SAVE_KEY = 'lvl100.save.v7' // v7: the beta founder's gift
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -290,6 +290,21 @@ function reducer(state, action) {
       return next
     }
 
+    // The gift is claimed once, ever. It goes straight into the inventory so it
+    // can be tried on immediately rather than sitting in a claim queue.
+    case 'openGift': {
+      if (!state.gift.pending) return state
+      const item = { id: nextId('i'), ...FOUNDER_GIFT }
+      return toast(
+        {
+          ...state,
+          gift: { pending: false, opened: true },
+          player: { ...state.player, inventory: [...state.player.inventory, item], titles: [...state.player.titles, FOUNDER_GIFT.title] },
+        },
+        { kind: 'level', title: 'BETA FOUNDER', body: `${FOUNDER_GIFT.name} added to your gear` },
+      )
+    }
+
     case 'openChest': {
       if (!state.chest.unlocked || state.chest.openedToday) return state
       const result = rollDailyChest(CATALOG)
@@ -480,6 +495,7 @@ export function GameProvider({ children }) {
       log: (payload) => dispatch({ type: 'log', ...payload }),
       sync: () => dispatch({ type: 'sync' }),
       openChest: () => dispatch({ type: 'openChest' }),
+      openGift: () => dispatch({ type: 'openGift' }),
       dismissReward: () => dispatch({ type: 'dismissReward' }),
       equip: (itemId) => dispatch({ type: 'equip', itemId }),
       equipBest: () => dispatch({ type: 'equipBest' }),

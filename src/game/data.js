@@ -413,6 +413,8 @@ export const INITIAL_STATE = {
   // The demo opens where a new player does: in front of the first boss on the
   // road, part-way in, with the rest of the path visible behind it.
   campaign: { defeated: [], damage: 240 },
+  // Every beta player has one waiting the first time they open the app.
+  gift: { pending: true, opened: false },
   chest: { unlocked: true, openedToday: false },
   dailies: freshDailies(),
   links: { health: [], games: [] },

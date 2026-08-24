@@ -389,6 +389,49 @@ const ARMOUR_SHAPES = {
   ],
 }
 
+// The Founder's Cuirass — the beta gift, and the only piece of gear that is not
+// part of a set. Drawn larger than the standard 20x20 armour because it is a
+// showcase item: it gets a full-screen reveal, not just a slot in a grid.
+export const FOUNDER_CHEST = {
+  w: 28,
+  h: 24,
+  palette: {
+    o: '#080a0e',
+    d: '#22262e',
+    m: '#3c424c',
+    l: '#5e6674',
+    A: '#c08a1c',
+    s: '#f2ca55',
+    k: '#0d0f14',
+  },
+  grid: [
+    '..........oooooooo..........',
+    '...ooo...oAssssssAo...ooo...',
+    '..olllo..oAAkkkkAAo..olllo..',
+    'oolllllo.omlkkkklmo.ollllloo',
+    'AllllllloomlkkkklmoolllllllA',
+    'AlllllllmomlkkkklmomlllllllA',
+    'AlllllllmomllllllmomlllllllA',
+    'AmlllllmmosllllllsommlllllmA',
+    'AmmlllmmmoAsllllsAommmlllmmA',
+    'AmmmmmmmmomAsllsAmommmmmmmmA',
+    'ommmmmmmoommAssAmmoommmmmmmo',
+    'AsssssssAommmssmmmoAsssssssA',
+    'AAAAAAAAAommAkkAmmoAAAAAAAAA',
+    'odddddddoommAkkAmmoodddddddo',
+    'odddddddoommmAAmmmoodddddddo',
+    'odddddddoosmmmmmmsoodddddddo',
+    'odkkkkkdooAsmmmmsAoodkkkkkdo',
+    '.ooooooo.omAsmmsAmo.ooooooo.',
+    '.........ommAssAmmo.........',
+    '.........ommmAAmmmo.........',
+    '........oommmmmmmmoo........',
+    '.......oAAddddddddAAo.......',
+    '.......oAAAAAAAAAAAAo.......',
+    '........oodssssssdoo........',
+  ],
+}
+
 export const ARMOUR_PALETTES = {
   leather: { o: '#150e0a', d: '#5c3a22', m: '#7d5233', l: '#a06b45', A: '#c9a227', s: '#3a2415' },
   iron: { o: '#10131a', d: '#4a515e', m: '#6b7280', l: '#98a1ae', A: '#c3c9d4', s: '#2a2f38' },
@@ -398,7 +441,14 @@ export const ARMOUR_PALETTES = {
 }
 
 /** One slot + one set = one sprite, built on demand. */
+/** Palette used when the Founder's Cuirass is drawn on the body. */
+export const FOUNDER_PALETTE = FOUNDER_CHEST.palette
+
+/** Special pieces carry their own art and palette instead of a set recolour. */
+const SPECIAL_SPRITES = { founderChest: FOUNDER_CHEST }
+
 export function armourSprite(slot, set = 'leather') {
+  if (SPECIAL_SPRITES[slot]) return SPECIAL_SPRITES[slot]
   const grid = ARMOUR_SHAPES[slot] ?? ARMOUR_SHAPES.chest
   return { w: 20, h: 20, palette: ARMOUR_PALETTES[set] ?? ARMOUR_PALETTES.leather, grid }
 }
@@ -1101,12 +1151,13 @@ const worn = (rows) => {
 
 export const GEAR_OVERLAYS = {
   helm: worn({ 6: '...............AA...............', 7: '...............AA...............', 8: '......dllllllllAAlllllllld......', 9: '......dllllllllAAlllllllld......', 10: '.....dlllllllllAAllllllllld.....', 11: '.....dmmmmmmmmmmmmmmmmmmmmd.....', 12: '.....dmmmmmmmmmmmmmmmmmmmmd.....', 13: '....dmmmmmmmmmmmmmmmmmmmmmmd....', 14: '....dmmmmmmmmmmmmmmmmmmmmmmd....', 15: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 16: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 17: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 18: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 19: '...dmoooooooooooooooooooooomd...', 20: '...dmoooooooooooooooooooooomd...', 21: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 22: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 23: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 24: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 25: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 26: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 27: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 28: '...dmmmmmmmmmmmddmmmmmmmmmmmd...' }),
-  chest: worn({ 28: '.......llldllldddddllldlll......', 29: '......llllmmmmmmmmmmmmmllll.....', 30: '......dmmmmmmmmmmmmmmmmmmmmd....', 31: '....dmmmddddddddddddddddmmmd....', 32: '...dmmdmmmmmmmmmmmmmmmmmmdmmd...', 33: '...dm.dmmmmmmmmmmmmmmmmmmd.md...', 34: '...d..dddddddddddddddddddd..d...', 35: '.......dmmmmmmmmmmmmmmmmd.......', 36: '.......dmmmmmmmmmmmmmmmmd.......', 37: '......dddddddddddddddddddd......', 38: '......dmmmmmmmmmmmmmmmmmmd......', 39: '......dmmmmmmmmmmmmmmmmmmd......', 40: '.....ddddddddddddddddddddddd....', 41: '.....dmmmmmmmmmmmmmmmmmmmmmd....', 42: '.....dmmmmmmmmmmmmmmmmmmmmmd....', 43: '.....sssssssssssAAssssssssss....', 44: '.....sssssssssssAAssssssssss....' }),
+  chest: worn({ 28: '.......lllllllllllllllllll......', 29: '......llllmmmmmmmmmmmmmllll.....', 30: '......dmmmmmmmmmmmmmmmmmmmmd....', 31: '....dmmm.dddddddddddddddmmmd....', 32: '...dmm...dmmmmmmmmmmmmmd..mmd...', 33: '...dm....dmmmmmmmmmmmmmd...md...', 34: '...d.....ddddddddddddddd....d...', 35: '.........dmmmmmmmmmmmmmd........', 36: '.........dmmmmmmmmmmmmmd........', 37: '.........ddddddddddddddd........', 38: '.........dmmmmmmmmmmmmmd........', 39: '.........dmmmmmmmmmmmmmd........', 40: '.........ddddddddddddddd........', 41: '.........dmmmmmmmmmmmmmd........', 42: '.........dmmmmmmmmmmmmmd........', 43: '.........sssssssAAssssss........', 44: '.........sssssssAAssssss........' }),
   legs: worn({ 45: '...lll..dllllllllllllllld.lll...', 46: '........dmmmmmmmmmmmmmmmd.......', 47: '........dmmmmmmmmmmmmmmmd.......', 48: '.......dmmmmmmmmmmmmmmmmmd......', 49: '.......dmmmmmmmd.dmmmmmmmd......', 50: '.......dmmmmmmmd.dmmmmmmmd......', 51: '........dddddddd.ddddddddd......' }),
   gloves: worn({ 40: '...dlld...................lll...', 41: '...dmmd...................mmm...', 42: '...dmmd..................dmmd...', 43: '...dmmd....m.............dmmd...', 44: '...ddd.....................dd...' }),
   boots: worn({ 51: '........dlllllld.dllllllld......', 52: '........dmmmmmmd.dmmmmmmd.......', 53: '.........dmmmd....dmmmmmd.......', 54: '.........dmmmd.....dmmmmd.......', 55: '........dmmmmmd...dmmmmmd.......', 56: '.......dmmmmmmd...dmmmmmmd......', 57: '......dddddddd.....dddddddd.....' }),
   shield: worn({ 30: 'dddddddd........................', 31: 'dmmmmmmd........................', 32: 'dmmmmmmd........................', 33: 'dmmmmmmd........................', 34: 'dmmAAmmd........................', 35: 'dmmAAmmd........................', 36: 'dmmAAmmd........................', 37: 'dmmmmmmd........................', 38: 'dmmmmmmd........................', 39: '.dmmmmd.........................', 40: '..dmmd..........................', 41: '...dd...........................' }),
   sword: worn({ 17: '..........................mm....', 18: '.........................dlmd...', 19: '.........................dlmd...', 20: '.........................dlmd...', 21: '.........................dlmd...', 22: '.........................dlmd...', 23: '.........................dlmd...', 24: '.........................dlmd...', 25: '.........................dlmd...', 26: '.........................dlmd...', 27: '.........................dlmd...', 28: '.........................dlmd...', 29: '.........................dlmd...', 30: '.........................dlmd...', 31: '.........................dlmd...', 32: '.........................dlmd...', 33: '.........................dlmd...', 34: '.........................dlmd...', 35: '.........................dlmd...', 36: '.........................dlmd...', 37: '........................AAAAAA..', 38: '........................AAAAAA..', 39: '..........................ss....', 40: '..........................ss....', 41: '..........................ss....', 42: '..........................ss....', 43: '..........................ss....', 44: '..........................ss....', 45: '..........................ss....', 46: '..........................ss....' }),
+  founderChest: worn({ 28: '.......llAAAAAAAAAAAAAAAll......', 29: '......lllssssssssssssssslll.....', 30: '......dmmAmmmmmmmmmmmmmAmmmd....', 31: '....dmmm.AmmmmmmmmmmmmmAmmmd....', 32: '...dmm...AAmmmmmmmmmmmAA..mmd...', 33: '...dm....AmAmmmmmmmmmAmA...md...', 34: '...d.....AmmAmmmmmmmAmmA....d...', 35: '.........AmmmAmmssmAmmmA........', 36: '.........AmmmmAmssAmmmmA........', 37: '.........AmmmmmAssmmmmmA........', 38: '.........AAmmmmmAmmmmmAA........', 39: '.........AmAmmmmmmmmmAmA........', 40: '.........AmmAmmmmmmmAmmA........', 41: '.........AmmmAmmmmmAmmmA........', 42: '.........sssssssssssssss........', 43: '.........AAAAAAAAAAAAAAA........', 44: '.........sssssssssssssss........' }),
 }
 
 /**

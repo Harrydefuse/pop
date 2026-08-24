@@ -4,11 +4,42 @@ import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { BossArt } from '../components/Sprites'
 import CampaignSheet from '../components/CampaignSheet'
+import GiftReveal from '../components/GiftReveal'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
 import { actById } from '../game/campaign'
 import { campaignState, streakTier } from '../game/engine'
 import { alpha } from '../game/color'
+
+/**
+ * The beta gift, sat at the very top until it is claimed. It is the first thing
+ * a new player sees and it only ever appears once.
+ */
+function GiftCard({ onOpen }) {
+  return (
+    <button onClick={onOpen} className="gift-in w-full text-left active:brightness-125">
+      <Panel className="p-3 relative overflow-hidden" accent="var(--color-gold)">
+        <span
+          className="shine-sweep absolute top-0 left-0 h-full w-10 pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, transparent, #ffffff30, transparent)' }}
+          aria-hidden="true"
+        />
+        <div className="flex items-center gap-3">
+          <span className="gift-bob shrink-0">
+            <Icon name="chest" size={40} color="var(--color-gold)" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="font-pixel text-[9px] text-gold">BETA FOUNDER GIFT</div>
+            <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">
+              Free for everyone who signed up during the beta. One legendary, then it is gone.
+            </div>
+          </div>
+          <Icon name="chevron" size={11} color="var(--color-gold)" />
+        </div>
+      </Panel>
+    </button>
+  )
+}
 
 /**
  * The through-line of the whole app. Today is where you play; this strip is the
@@ -170,6 +201,7 @@ export default function Home() {
   const [openSlot, setOpenSlot] = useState(null)
   const [logging, setLogging] = useState(null)
   const [campaign, setCampaign] = useState(false)
+  const [gift, setGift] = useState(false)
   const p = state.player
   const streak = streakTier(p.streak)
   const doneCount = state.dailies.filter((d) => d.done).length
@@ -179,6 +211,8 @@ export default function Home() {
 
   return (
     <div className="p-3 space-y-3">
+      {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
+
       <Target onOpen={() => setCampaign(true)} />
 
       {/* ------------------------------------------------------ streak strip */}
@@ -252,6 +286,8 @@ export default function Home() {
           }}
         />
       )}
+
+      {gift && <GiftReveal onClose={() => setGift(false)} />}
 
       {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
 

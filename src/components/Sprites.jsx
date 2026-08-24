@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CAMPAIGN_SPRITES, GEAR_OVERLAYS, HERO_CLOTHES, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, FOUNDER_PALETTE, CAMPAIGN_SPRITES, GEAR_OVERLAYS, HERO_CLOTHES, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
@@ -61,7 +61,7 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
         return (
           <PixelSprite
             key={slot}
-            sprite={{ ...overlay, palette: ARMOUR_PALETTES[item.set] ?? ARMOUR_PALETTES.leather }}
+            sprite={{ ...overlay, palette: item.set === 'founder' ? FOUNDER_PALETTE : (ARMOUR_PALETTES[item.set] ?? ARMOUR_PALETTES.leather) }}
             size={width}
             className="absolute inset-0"
           />
