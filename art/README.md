@@ -24,7 +24,8 @@ There are **six slots**:
 Rules:
 
 - One item per file, **centred**, filling most of the frame.
-- **Magenta `#ff00ff` is the background.** Transparent works too.
+- **Transparent background.** Magenta `#ff00ff` is accepted too if your tool
+  makes that easier — both are detected and trimmed.
 - **Hard edges only.** No anti-aliasing, no soft shadow, no glow, no drop
   shadow. Every blurred edge pixel becomes another colour in the palette and
   the art goes muddy at small sizes. This is the single most important rule.
@@ -87,11 +88,12 @@ Rules:
 - **The two files must line up exactly.** Same pose, same position, same size.
   Draw the clothed one, then remove the clothes for the second — do not redraw.
 - **The body should be about 32 wide and 56-60 tall**, standing on the bottom
-  guide line. The template shows the safe area. The extra width either side is
-  deliberate headroom for pauldrons, weapons and capes, which currently get
+  bottom of the frame, with the character centred. The extra width either side
+  is deliberate headroom for pauldrons, weapons and capes, which currently get
   clipped.
 - Front on, arms down at the sides, feet apart. It is a paper doll, not a pose.
-- **Magenta `#ff00ff` is the background.** Transparent works too.
+- **Transparent background.** Magenta `#ff00ff` is accepted too if your tool
+  makes that easier — both are detected and trimmed.
 - **Hard edges only.** No anti-aliasing, no glow, no drop shadow.
 
 The old canvas was 32 x 59 (`templates/worn-body.png`). That still works if you
@@ -108,3 +110,6 @@ fresh.
 - **`templates/worn-body.png`** — the current bare body at 32 x 59.
 - **`templates/character-48x64.png`** — the roomier canvas, with the current
   character centred inside it for scale.
+
+Every template has a transparent background and contains nothing but the art,
+so it can be painted over directly.
