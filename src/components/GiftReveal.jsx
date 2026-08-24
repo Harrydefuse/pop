@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Btn } from './ui'
-import Icon from './Icon'
 import PixelSprite from './PixelSprite'
+import { ChestArt } from './Sprites'
 import { armourSprite } from '../game/sprites'
 import { FOUNDER_GIFT, RARITY } from '../game/config'
 import { useGame } from '../game/useGame'
@@ -99,10 +99,10 @@ export default function GiftReveal({ onClose }) {
 
           {phase !== 'revealed' ? (
             <div className={phase === 'opening' ? 'chest-rattle relative' : 'gift-bob relative'}>
-              <Icon name="chest" size={92} color="var(--color-gold)" />
+              <ChestArt size={104} />
               {phase === 'opening' && (
                 <span
-                  className="burst absolute inset-0 m-auto w-[92px] h-[92px] rounded-full pointer-events-none"
+                  className="burst absolute inset-0 m-auto w-[104px] h-[104px] rounded-full pointer-events-none"
                   style={{ background: `radial-gradient(circle, #fff, ${GOLD} 45%, transparent 70%)` }}
                   aria-hidden="true"
                 />

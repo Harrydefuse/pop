@@ -147,12 +147,21 @@ def main():
     gh = int(args[2]) if len(args) > 2 else gw
 
     w, h, px = png.read(path)
-    px = trim(px, w, h)
+
+    # If the source canvas is an exact multiple of the target grid, it was drawn
+    # on that grid — sample it where it sits. Trimming first would crop to the
+    # ink and then squash a non-square subject into a square box.
+    on_grid = gw and gh and w % gw == 0 and h % gh == 0 and w // gw == h // gh
+    if not on_grid:
+        px = trim(px, w, h)
     tw, th = len(px[0]), len(px)
     n = exact_block(px)
     exact = n > 1 and tw % n == 0 and th % n == 0
 
-    if exact and (gw is None or (tw // n, th // n) == (gw, gh)):
+    if on_grid and not exact:
+        cells = resample(px, gw, gh)
+        how = f'sampled on its own {w // gw}x grid, no crop'
+    elif exact and (gw is None or (tw // n, th // n) == (gw, gh)):
         cells = [[None if is_bg(px[y * n + n // 2][x * n + n // 2]) else px[y * n + n // 2][x * n + n // 2][:3]
                   for x in range(tw // n)] for y in range(th // n)]
         how = f'exact transcription (native pixel {n}px)'

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Bar, Btn, Modal, Panel } from '../components/ui'
 import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
-import { BossArt } from '../components/Sprites'
+import { BossArt, ChestArt } from '../components/Sprites'
 import CampaignSheet from '../components/CampaignSheet'
 import GiftReveal from '../components/GiftReveal'
 import { useGame } from '../game/useGame'
@@ -26,7 +26,7 @@ function GiftCard({ onOpen }) {
         />
         <div className="flex items-center gap-3">
           <span className="gift-bob shrink-0">
-            <Icon name="chest" size={40} color="var(--color-gold)" />
+            <ChestArt size={44} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="font-pixel text-[9px] text-gold">BETA FOUNDER GIFT</div>
@@ -240,11 +240,10 @@ export default function Home() {
 
       {/* ------------------------------------------------------------ chest */}
       <Panel className="p-3.5 text-center" accent={chestReady ? 'var(--color-gold)' : undefined}>
-        <Icon
-          name="chest"
-          size={44}
-          color={chestReady ? 'var(--color-gold)' : 'var(--color-ink-faint)'}
+        <ChestArt
+          size={52}
           className={`mx-auto ${chestReady ? 'float-soft' : ''}`}
+          style={chestReady ? undefined : { filter: 'grayscale(1) brightness(0.55)', opacity: 0.7 }}
         />
         <div
           className="font-pixel text-[10px] mt-2.5"

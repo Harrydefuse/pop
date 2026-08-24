@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, FOUNDER_PALETTE, CAMPAIGN_SPRITES, GEAR_OVERLAYS, HERO_CLOTHES, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, GEAR_OVERLAYS, HERO_CLOTHES, PET_SPRITES, STONE_SPRITE, armourSprite, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
@@ -71,6 +71,11 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   )
 }
 
+/** The treasure chest, drawn art rather than a UI glyph. */
+export function ChestArt({ size = 48, className = '', style }) {
+  return <PixelSprite sprite={CHEST_SPRITE} size={size} className={className} style={style} />
+}
+
 export function StoneIcon({ color, size = 22, dim }) {
   return <PixelSprite sprite={STONE_SPRITE} size={size} accent={color} style={dim ? { opacity: 0.25, filter: 'grayscale(1)' } : undefined} />
 }
@@ -81,7 +86,7 @@ export function BossArt({ sprite = 'ogre', size = 180, className = '', style }) 
   // shapes, and sizing by width alone made a wide boss tower over a tall one.
   const fitted = art.h > art.w ? Math.round((size * art.w) / art.h) : size
   return (
-    <span className={`inline-grid place-items-center ${className}`} style={{ width: size, height: size }}>
+    <span className={`grid place-items-center ${className}`} style={{ width: size, height: size }}>
       <PixelSprite sprite={art} size={fitted} style={style} />
     </span>
   )

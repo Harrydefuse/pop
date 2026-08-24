@@ -1,5 +1,5 @@
 import { Btn, Chip, Modal, RarityFrame, RarityTag } from './ui'
-import { BossArt, GearIcon, PetView } from './Sprites'
+import { BossArt, ChestArt, GearIcon, PetView } from './Sprites'
 import Icon from './Icon'
 import { DAILY_CHEST, RARITY } from '../game/config'
 import { actById, bossById } from '../game/campaign'
@@ -91,7 +91,7 @@ export default function RewardModal() {
     <Modal open onClose={dismissReward} title={DAILY_CHEST.name} accent={accent}>
       <div className="text-center">
         <div className="loot-pop inline-grid place-items-center">
-          <Icon name="chest" size={54} color="var(--color-gold)" />
+          <ChestArt size={60} />
         </div>
         <div className="font-pixel text-[8px] text-ink-faint mt-3">TODAY&apos;S PULL</div>
         <div className="flex items-center justify-center gap-1.5 mt-2.5">
