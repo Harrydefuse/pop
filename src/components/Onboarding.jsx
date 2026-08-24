@@ -1,14 +1,18 @@
 import { useState } from 'react'
-import { Btn, Chip, Panel } from './ui'
+import { Btn, Panel } from './ui'
 import Icon from './Icon'
 import { HeroView, PetView } from './Sprites'
 import { useGame } from '../game/useGame'
-import { CLASSES, GAME_CATALOG, GAME_GENRES } from '../game/config'
 import { HEALTH_PROVIDERS } from '../game/data'
 import { AVATAR_HAIR, AVATAR_SKINS, TUNIC } from '../game/sprites'
-import { alpha } from '../game/color'
 
-const STEPS = ['YOU', 'CLASS', 'GAMES', 'SYNC']
+const STEPS = ['YOU', 'SYNC']
+
+// Picking a class and listing the games you play are both out of the flow for
+// now. The player still carries a class so nothing downstream has to special
+// case it, and the game catalogue is still in config — both go back in as
+// their own step when we know what we want them to do.
+const DEFAULT_CLASS = 'ironstride'
 
 function Progress({ step }) {
   return (
@@ -54,15 +58,10 @@ export default function Onboarding() {
   const [skin, setSkin] = useState(AVATAR_SKINS[0])
   const [hair, setHair] = useState(AVATAR_HAIR[0])
   const [hairLength, setHairLength] = useState('short')
-  const [classId, setClassId] = useState('ironstride')
-  const [games, setGames] = useState([])
   const [health, setHealth] = useState([])
 
-  const cls = CLASSES.find((c) => c.id === classId)
   const toggle = (list, set, id) => set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
 
-  // The tunic is the base character's, not the class colour — class is already
-  // spelled out in text, and the hero should look like the hero.
   const preview = { skin, hair, hairLength, shirt: TUNIC }
 
   return (
@@ -109,7 +108,7 @@ export default function Onboarding() {
             <div className="flex justify-center my-5">
               <div
                 className="grid place-items-center px-4 py-2 border"
-                style={{ borderColor: cls.color, background: 'rgba(0,0,0,0.25)' }}
+                style={{ borderColor: 'var(--color-neon)', background: 'rgba(0,0,0,0.25)' }}
               >
                 <HeroView av={preview} height={150} />
               </div>
@@ -184,118 +183,8 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* --------------------------------------------------- 2. your class */}
+        {/* -------------------------------------------------------- 2. sync */}
         {step === 2 && (
-          <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon">HOW DO YOU TRAIN?</div>
-            <div className="text-[11px] text-ink-dim mt-2">
-              Pick what you already do most. The bonus is small on purpose, and everything still counts
-              whichever you choose.
-            </div>
-
-            <div className="space-y-2 mt-4">
-              {CLASSES.map((c) => {
-                const on = classId === c.id
-                return (
-                  <button key={c.id} onClick={() => setClassId(c.id)} className="w-full text-left active:brightness-125">
-                    <Panel
-                      className="p-3"
-                      corners={false}
-                      style={{ borderColor: on ? c.color : 'var(--color-line)', background: on ? alpha(c.color, 12) : undefined }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="grid place-items-center w-11 h-11 shrink-0 border"
-                          style={{ borderColor: c.color, background: on ? c.color : 'transparent' }}
-                        >
-                          <Icon name={c.icon} size={20} color={on ? '#0b0715' : c.color} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-pixel text-[10px]" style={{ color: c.color }}>
-                            {c.name}
-                          </div>
-                          <div className="text-[11px] text-ink-dim mt-1">{c.tagline}</div>
-                        </div>
-                        <Chip color={c.color}>{c.affinity}</Chip>
-                      </div>
-                      {on && (
-                        <div className="mt-2.5 pt-2.5 border-t border-line">
-                          <div className="text-[11px] text-ink-dim">{c.blurb}</div>
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            <Icon name="spark" size={9} color={c.color} />
-                            <span className="text-[11px]" style={{ color: c.color }}>
-                              {c.passive.label}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </Panel>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="flex gap-2 mt-auto pt-6">
-              <Btn variant="ghost" onClick={() => setStep(1)}>
-                BACK
-              </Btn>
-              <Btn className="flex-1" onClick={() => setStep(3)}>
-                NEXT
-              </Btn>
-            </div>
-          </div>
-        )}
-
-        {/* --------------------------------------------------- 3. your games */}
-        {step === 3 && (
-          <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon">WHAT DO YOU PLAY?</div>
-            <div className="text-[11px] text-ink-dim mt-2">
-              Pick as many as you like. This is how we&apos;ll suggest friends and set up challenges for
-              the games you actually play — skip it if you&apos;d rather not.
-            </div>
-
-            <div className="mt-4 space-y-3.5">
-              {GAME_GENRES.map((genre) => (
-                <div key={genre}>
-                  <div className="font-pixel text-[6px] text-ink-faint mb-2">{genre.toUpperCase()}</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {GAME_CATALOG.filter((g) => g.genre === genre).map((g) => {
-                      const on = games.includes(g.id)
-                      return (
-                        <button
-                          key={g.id}
-                          onClick={() => toggle(games, setGames, g.id)}
-                          aria-pressed={on}
-                          className="text-[11px] px-2.5 min-h-[44px] border transition-colors active:brightness-125"
-                          style={{
-                            color: on ? '#0b0715' : 'var(--color-ink-dim)',
-                            background: on ? 'var(--color-cyan)' : 'transparent',
-                            borderColor: on ? 'var(--color-cyan)' : 'var(--color-line)',
-                          }}
-                        >
-                          {g.name}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2 mt-auto pt-6">
-              <Btn variant="ghost" onClick={() => setStep(2)}>
-                BACK
-              </Btn>
-              <Btn className="flex-1" onClick={() => setStep(4)}>
-                {games.length ? `NEXT · ${games.length} PICKED` : 'SKIP'}
-              </Btn>
-            </div>
-          </div>
-        )}
-
-        {/* -------------------------------------------------------- 4. sync */}
-        {step === 4 && (
           <div className="flex-1 flex flex-col">
             <div className="font-pixel text-[11px] text-neon">CONNECT</div>
             <div className="text-[11px] text-ink-dim mt-2">
@@ -329,16 +218,15 @@ export default function Onboarding() {
                 <HeroView av={preview} height={72} />
                 <div className="min-w-0">
                   <div className="font-pixel text-[9px]">{name.trim().toUpperCase() || 'ROOKIE'}</div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <Chip color={cls.color}>{cls.name}</Chip>
-                    {!!games.length && <Chip color="var(--color-cyan)">{games.length} GAMES</Chip>}
+                  <div className="font-mono text-[11px] text-ink-faint mt-1.5 truncate">
+                    @{handle.trim() || 'newchallenger'}
                   </div>
                 </div>
               </div>
             </Panel>
 
             <div className="flex gap-2 mt-auto pt-6">
-              <Btn variant="ghost" onClick={() => setStep(3)}>
+              <Btn variant="ghost" onClick={() => setStep(1)}>
                 BACK
               </Btn>
               <Btn
@@ -347,9 +235,9 @@ export default function Onboarding() {
                   onboard({
                     name: (name.trim() || 'ROOKIE').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
-                    classId,
+                    classId: DEFAULT_CLASS,
                     avatar: { seed: 0, skin, hair, hairLength, shirt: TUNIC },
-                    games,
+                    games: [],
                     health,
                   })
                 }
