@@ -66,7 +66,30 @@ Name them by slot so it is obvious which is which. Drop them anywhere in `art/`.
 
 ---
 
-## 3. The character — **48 x 64**
+## 3. The character
+
+### Option A — send an outline (preferred)
+
+Draw the character as **closed line art** and the game will be painted inside
+it. The silhouette then comes from your drawing rather than from anything I
+invent, and the armour is measured off that same shape, so it lines up.
+
+- **Any grid size.** The tool detects it from the art, so draw at whatever feels
+  right — 48 x 64 is a good target but it is not a hard rule.
+- **Every shape must be closed.** A one-pixel gap in a line leaks the fill out
+  into the background and the region is lost.
+- **Draw a line between anything that should be a different colour.** Hair
+  against face, arm against torso, leg against leg. Each closed area becomes a
+  region I can paint separately — the more the outline separates, the less is
+  guesswork.
+- **Pure black lines on transparent** (or white). One pixel thick.
+- **Hard edges only.** No anti-aliasing — a soft line has no single edge and the
+  fill leaks through it.
+
+Transcribe with `python3 tools/outline_fill.py art/your-outline.png`, which
+reports every enclosed region and its position.
+
+### Option B — send finished art at **48 x 64**
 
 Export at **8x = 384 x 512**. Template: `templates/character-48x64.png`.
 
