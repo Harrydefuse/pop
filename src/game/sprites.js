@@ -485,6 +485,56 @@ export const ARMOUR_PALETTES = {
 }
 
 /** One slot + one set = one sprite, built on demand. */
+// The Founder's Cuirass — the beta gift, and the only piece of gear that is not
+// part of a set.
+export const FOUNDER_CHEST = {
+  w: 32,
+  h: 32,
+  palette: {
+    o: '#080a0e',
+    d: '#22262e',
+    m: '#3c424c',
+    l: '#5e6674',
+    A: '#c08a1c',
+    s: '#f2ca55',
+    k: '#0d0f14',
+  },
+  grid: [
+    '................................',
+    '................................',
+    '...........oooooooooo...........',
+    '....ooo...oAAssssssAAo...ooo....',
+    '..oollloo.oAAAkkkkAAAo.oollloo..',
+    '.omlllllmooAAAkkkkAAAoomlllllmo.',
+    'omlllllllmommlkkkklmmomlllllllmo',
+    'AmlllllllmommlkkkklmmomlllllllmA',
+    'AmlllllllmmmmlkkkklmmmmlllllllmA',
+    'AmlllllllmmmmllllllmmmmlllllllmA',
+    'AmlllllllmmsmllllllsmmmlllllllmA',
+    'AmmlllllmmmAmsllllsAmmmmlllllmmA',
+    'AmmmlllmmmmmmAsllsAmmmmmmlllmmmA',
+    'AmmmmmmmmmommllllllmmommmmmmmmmA',
+    'ommmmmmmmmommmAssAmmmommmmmmmmmo',
+    'AssssssssAommmmssmmmmoAssssssssA',
+    'AAAAAAAAAAommmAkkAmmmoAAAAAAAAAA',
+    'oddddddddoommmAkkAmmmooddddddddo',
+    'oddddddddoommmmAAmmmmooddddddddo',
+    'oddddddddoommmmmmmmmmooddddddddo',
+    'oddddddddoosmmmmmmmsmooddddddddo',
+    'odkkkkkkdooAmsmmmmsAmoodkkkkkkdo',
+    '.oooooooo.ommAsmmsAmmo.oooooooo.',
+    '..........ommmAssAmmmo..........',
+    '..........ommmmAAmmmmo..........',
+    '.........oommmmmmmmmmoo.........',
+    '........oAAddddddddddAAo........',
+    '........oAAddddddddddAAo........',
+    '........oAAAAAAAAAAAAAAo........',
+    '.........ooddssssssddoo.........',
+    '...........oooooooooo...........',
+    '................................',
+  ],
+}
+
 /** Palette used when the Founder's Cuirass is drawn on the body. */
 export const FOUNDER_PALETTE = FOUNDER_CHEST.palette
 
