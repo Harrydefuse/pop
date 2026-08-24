@@ -27,3 +27,9 @@ dist-ssr
 
 __pycache__/
 *.pyc
+
+# Generated while building the map — the exported sydney.js is the artefact.
+tools/sydney/terrain.txt
+tools/sydney/palette.json
+tools/sydney/*.png
+tools/sydney/__pycache__/

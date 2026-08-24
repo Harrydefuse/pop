@@ -1,65 +1,181 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { SYDNEY, TERRAIN_COLOURS } from '../game/sydney'
+import { SYDNEY } from '../game/sydney'
+import { TERRAIN, TILE, TILE_PALETTE, pick } from '../game/tiles'
 import { key } from '../game/mapgrid'
 
-/**
- * The map, painted a cell at a time. Terrain is baked at build time so this is
- * a straight lookup — no geometry at runtime, which is what keeps it smooth
- * while panning on a phone.
- */
-export default function SydneyMap({ revealed, fogged = true, className = '', style }) {
-  const ref = useRef(null)
-  const { w, h, rows } = SYDNEY
+const W = SYDNEY.w * TILE
+const H = SYDNEY.h * TILE
 
-  const base = useMemo(() => {
-    const data = new Uint8ClampedArray(w * h * 4)
-    for (let y = 0; y < h; y++) {
-      const row = rows[y]
-      for (let x = 0; x < w; x++) {
-        const hex = TERRAIN_COLOURS[row[x]] ?? '#000000'
-        const i = (y * w + x) * 4
-        data[i] = parseInt(hex.slice(1, 3), 16)
-        data[i + 1] = parseInt(hex.slice(3, 5), 16)
-        data[i + 2] = parseInt(hex.slice(5, 7), 16)
-        data[i + 3] = 255
+const rgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]
+
+/** Land next door means this bit of water is a shore, and shores get foam. */
+function isShore(x, y) {
+  for (const [dx, dy] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ]) {
+    const row = SYDNEY.rows[y + dy]
+    const ch = row?.[x + dx]
+    if (ch && !TERRAIN[ch]?.water) return true
+  }
+  return false
+}
+
+/** Paints the whole map once into an offscreen canvas: 8x8 of drawn art per
+ *  100m cell. Everything after this is a blit. */
+function paintBase() {
+  const cv = document.createElement('canvas')
+  cv.width = W
+  cv.height = H
+  const ctx = cv.getContext('2d')
+  const img = ctx.createImageData(W, H)
+  const d = img.data
+  const cache = new Map()
+  const colour = (ch) => {
+    let c = cache.get(ch)
+    if (!c) {
+      c = rgb(TILE_PALETTE[ch] ?? '#000000')
+      cache.set(ch, c)
+    }
+    return c
+  }
+
+  for (let cy = 0; cy < SYDNEY.h; cy++) {
+    const row = SYDNEY.rows[cy]
+    for (let cx = 0; cx < SYDNEY.w; cx++) {
+      const t = TERRAIN[row[cx]] ?? TERRAIN['.']
+      const base = colour(row[cx] === '~' ? 'd' : 'a')
+      const fallback = rgb(t.base)
+      const tile = t.foam && isShore(cx, cy) ? pick(t.foam, cx, cy) : pick(t.tiles, cx, cy)
+      for (let py = 0; py < TILE; py++) {
+        const line = tile[py]
+        let i = ((cy * TILE + py) * W + cx * TILE) * 4
+        for (let px = 0; px < TILE; px++, i += 4) {
+          const ch = line[px]
+          const c = ch === ' ' ? fallback : TILE_PALETTE[ch] ? colour(ch) : t.water ? base : fallback
+          d[i] = c[0]
+          d[i + 1] = c[1]
+          d[i + 2] = c[2]
+          d[i + 3] = 255
+        }
       }
     }
-    return data
-  }, [w, h, rows])
+  }
+  ctx.putImageData(img, 0, 0)
+  return cv
+}
+
+/** A dash of catchlight on the water, at a cell that will show it. Sampled once
+ *  — the animation only decides which ones are lit this frame. */
+function catchlights() {
+  const out = []
+  for (let cy = 0; cy < SYDNEY.h; cy++) {
+    const row = SYDNEY.rows[cy]
+    for (let cx = 0; cx < SYDNEY.w; cx++) {
+      const t = TERRAIN[row[cx]]
+      if (!t?.water) continue
+      const h = (cx * 73856093) ^ (cy * 19349663)
+      if ((h >>> 3) % 5) continue
+      out.push({
+        x: cx * TILE + ((h >>> 5) % 5),
+        y: cy * TILE + ((h >>> 9) % 7),
+        len: 2 + ((h >>> 13) % 3),
+        phase: (h >>> 17) % 8,
+        shore: isShore(cx, cy),
+      })
+    }
+  }
+  return out
+}
+
+export default function SydneyMap({ revealed, fogged = true, animate = true, className = '', style }) {
+  const ref = useRef(null)
+  const base = useMemo(paintBase, [])
+  const lights = useMemo(catchlights, [])
+
+  /** Fog is drawn small and scaled up smooth, so the edge of the known world is
+   *  a soft front rather than a staircase of squares. */
+  const fog = useMemo(() => {
+    if (!fogged) return null
+    const cv = document.createElement('canvas')
+    cv.width = SYDNEY.w
+    cv.height = SYDNEY.h
+    const ctx = cv.getContext('2d')
+    const img = ctx.createImageData(SYDNEY.w, SYDNEY.h)
+    for (let y = 0; y < SYDNEY.h; y++) {
+      for (let x = 0; x < SYDNEY.w; x++) {
+        const i = (y * SYDNEY.w + x) * 4
+        img.data[i] = 12
+        img.data[i + 1] = 10
+        img.data[i + 2] = 34
+        // Night, not a blackout: unwalked ground keeps its colour and its shape,
+        // which is the difference between a map and a scratch card.
+        img.data[i + 3] = revealed?.has(key(x, y)) ? 0 : 98
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    return cv
+  }, [revealed, fogged])
 
   useEffect(() => {
     const cv = ref.current
     if (!cv) return
     const ctx = cv.getContext('2d')
-    ctx.imageSmoothingEnabled = false
-    const img = ctx.createImageData(w, h)
-    img.data.set(base)
+    let frame = 0
+    let raf = 0
+    let last = 0
 
-    if (fogged && revealed) {
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          if (revealed.has(key(x, y))) continue
-          const i = (y * w + x) * 4
-          // Night, not a blackout. Unwalked ground stays readable enough to
-          // aim at — that is the difference between a map and a scratch card.
-          img.data[i] = Math.round(img.data[i] * 0.22 + 14 * 0.78)
-          img.data[i + 1] = Math.round(img.data[i + 1] * 0.22 + 12 * 0.78)
-          img.data[i + 2] = Math.round(img.data[i + 2] * 0.22 + 34 * 0.78)
-        }
+    const draw = () => {
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(base, 0, 0)
+
+      ctx.fillStyle = '#cfeaf8'
+      for (const s of lights) {
+        const lit = (s.phase + frame) % 8
+        if (lit > (s.shore ? 2 : 1)) continue
+        ctx.globalAlpha = s.shore ? 0.85 : 0.5
+        ctx.fillRect(s.x + (lit ? 1 : 0), s.y, s.len, 1)
+      }
+      ctx.globalAlpha = 1
+
+      if (fog) {
+        ctx.imageSmoothingEnabled = true
+        ctx.drawImage(fog, 0, 0, W, H)
       }
     }
-    ctx.putImageData(img, 0, 0)
-  }, [base, revealed, fogged, w, h])
+
+    // Water moves at a walking pace, not a frame rate. Eight redraws a second
+    // is plenty and costs nothing on a phone.
+    const tick = (t) => {
+      if (t - last > 125) {
+        last = t
+        frame++
+        draw()
+      }
+      raf = requestAnimationFrame(tick)
+    }
+
+    draw()
+    // Water that shimmers is charm; water that shimmers at someone who gets
+    // motion sick is not. Ask first.
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (animate && !still) raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [base, lights, fog, animate])
 
   return (
     <canvas
       ref={ref}
-      width={w}
-      height={h}
-      className={`pixelated block ${className}`}
-      style={{ imageRendering: 'pixelated', ...style }}
+      width={W}
+      height={H}
+      className={`block ${className}`}
+      style={style}
       role="img"
-      aria-label="Pixel map of Sydney Harbour"
+      aria-label="Map of Sydney Harbour"
     />
   )
 }
+
+export { W as MAP_PX_W, H as MAP_PX_H }
