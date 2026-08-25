@@ -109,6 +109,10 @@ export default function LogSheet({ title, accepts, accent = 'var(--color-cyan)',
         </div>
       )}
 
+      {/* Hidden while a health source cannot be connected at all: offering a
+          VERIFIED option nobody can reach, next to a MANUAL one that says it
+          costs you XP, is a dead end. Comes back with the sync step. */}
+      {linked && (
       <div className="mt-3 grid grid-cols-2 gap-1.5">
         <button
           onClick={() => linked && setVerified(true)}
@@ -130,6 +134,7 @@ export default function LogSheet({ title, accepts, accent = 'var(--color-cyan)',
           <span className="block text-[10px] text-ink-faint mt-1">{UNVERIFIED_XP_MULT * 100}% XP, unranked</span>
         </button>
       </div>
+      )}
 
       <div className="mt-3 border border-line bg-panel-2 p-3">
         <div className="flex items-baseline gap-2">

@@ -4,7 +4,7 @@ import { BOSS, CATALOG, INITIAL_STATE, freshDailies, gearPiece } from './data'
 import { DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v8' // v8: the city map and what has been explored
+const SAVE_KEY = 'lvl100.save.v9' // v9: characters have a build, male or female
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`

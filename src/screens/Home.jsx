@@ -180,18 +180,21 @@ function SlotSheet({ slot, state, onClose, onLog }) {
         <Btn full onClick={onLog} style={{ background: slot.color, borderColor: slot.color, color: '#0b0715' }}>
           LOG IT
         </Btn>
-        <Btn
-          variant={linked ? 'ghost' : 'dim'}
-          disabled={!linked}
-          onClick={() => {
-            sync()
-            onClose()
-          }}
-        >
-          SYNC
-        </Btn>
+        {/* Same reason as the log sheet: there is nowhere to link a provider
+            while sync is out of the sign-up flow, so a disabled SYNC and an
+            instruction to go and link one are both dead ends. */}
+        {linked && (
+          <Btn
+            variant="ghost"
+            onClick={() => {
+              sync()
+              onClose()
+            }}
+          >
+            SYNC
+          </Btn>
+        )}
       </div>
-      {!linked && <div className="text-[10px] text-ink-faint mt-2 text-center">Link a health app to sync automatically</div>}
     </Modal>
   )
 }

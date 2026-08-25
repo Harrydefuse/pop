@@ -1,34 +1,42 @@
 import { useState } from 'react'
-import { Btn, Panel } from './ui'
-import Icon from './Icon'
+import { Btn } from './ui'
 import { HeroView, PetView } from './Sprites'
 import { useGame } from '../game/useGame'
-import { HEALTH_PROVIDERS } from '../game/data'
-import { AVATAR_HAIR, AVATAR_SKINS, TUNIC } from '../game/sprites'
+import { AVATAR_BODIES, AVATAR_HAIR, AVATAR_SKINS, TUNIC } from '../game/sprites'
 
-const STEPS = ['YOU', 'SYNC']
-
-// Picking a class and listing the games you play are both out of the flow for
-// now. The player still carries a class so nothing downstream has to special
-// case it, and the game catalogue is still in config — both go back in as
-// their own step when we know what we want them to do.
+// Picking a class, listing the games you play and connecting a health source
+// are all out of the flow for now. The player still carries a class so nothing
+// downstream has to special case it, the game catalogue is still in config, and
+// links.health is still there to be filled — each goes back in as its own step
+// when we know what we want it to do.
 const DEFAULT_CLASS = 'ironstride'
 
-function Progress({ step }) {
+/** A row of mutually exclusive picks, sized to be hit with a thumb. */
+function Pick({ label, options, value, onChange }) {
   return (
-    <div className="flex items-center gap-1.5">
-      {STEPS.map((label, i) => (
-        <div key={label} className="flex-1">
-          <div className="h-1" style={{ background: i <= step - 1 ? 'var(--color-neon)' : 'var(--color-line)' }} />
-          <div
-            className="font-pixel text-[6px] mt-1.5"
-            style={{ color: i <= step - 1 ? 'var(--color-neon)' : 'var(--color-ink-faint)' }}
-          >
-            {label}
-          </div>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">{label}</div>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map((o) => {
+          const on = value === o.id
+          return (
+            <button
+              key={o.id}
+              onClick={() => onChange(o.id)}
+              aria-pressed={on}
+              className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+              style={{
+                color: on ? '#0b0715' : 'var(--color-ink-dim)',
+                background: on ? 'var(--color-neon)' : 'transparent',
+                borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
+              }}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
@@ -58,21 +66,13 @@ export default function Onboarding() {
   const [skin, setSkin] = useState(AVATAR_SKINS[0])
   const [hair, setHair] = useState(AVATAR_HAIR[0])
   const [hairLength, setHairLength] = useState('short')
-  const [health, setHealth] = useState([])
+  const [body, setBody] = useState('male')
 
-  const toggle = (list, set, id) => set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
-
-  const preview = { skin, hair, hairLength, shirt: TUNIC }
+  const preview = { body, skin, hair, hairLength, shirt: TUNIC }
 
   return (
     <div className="absolute inset-0 z-50 bg-void arcade-bg overflow-y-auto scroll-thin">
       <div className="min-h-full flex flex-col p-4">
-        {step > 0 && (
-          <div className="mb-5">
-            <Progress step={step} />
-          </div>
-        )}
-
         {/* ------------------------------------------------------------ intro */}
         {step === 0 && (
           <div className="flex-1 flex flex-col justify-center text-center">
@@ -114,7 +114,9 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <label className="font-pixel text-[7px] text-ink-faint" htmlFor="ob-name">
+            <Pick label="BODY" value={body} onChange={setBody} options={AVATAR_BODIES} />
+
+            <label className="font-pixel text-[7px] text-ink-faint mt-4" htmlFor="ob-name">
               NAME
             </label>
             <input
@@ -136,27 +138,20 @@ export default function Onboarding() {
               className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-mono text-[12px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
-            <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">HAIR</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ['short', 'SHORT'],
-                ['long', 'LONG'],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  onClick={() => setHairLength(id)}
-                  aria-pressed={hairLength === id}
-                  className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
-                  style={{
-                    color: hairLength === id ? '#0b0715' : 'var(--color-ink-dim)',
-                    background: hairLength === id ? 'var(--color-neon)' : 'transparent',
-                    borderColor: hairLength === id ? 'var(--color-neon)' : 'var(--color-line)',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            {/* Hair length is the male build's choice. The female build wears
+                her own hair, so offering a toggle that does nothing would just
+                be a control that lies. */}
+            {body === 'male' && (
+              <Pick
+                label="HAIR"
+                value={hairLength}
+                onChange={setHairLength}
+                options={[
+                  { id: 'short', label: 'SHORT' },
+                  { id: 'long', label: 'LONG' },
+                ]}
+              />
+            )}
 
             <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">SKIN</div>
             <div className="flex gap-2 flex-wrap">
@@ -176,59 +171,6 @@ export default function Onboarding() {
               <Btn variant="ghost" onClick={() => setStep(0)}>
                 BACK
               </Btn>
-              <Btn className="flex-1" onClick={() => setStep(2)}>
-                NEXT
-              </Btn>
-            </div>
-          </div>
-        )}
-
-        {/* -------------------------------------------------------- 2. sync */}
-        {step === 2 && (
-          <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon">CONNECT</div>
-            <div className="text-[11px] text-ink-dim mt-2">
-              A health source is what makes your numbers real. Without one, everything you log counts at
-              half rate and never touches a leaderboard.
-            </div>
-
-            <div className="space-y-1.5 mt-4">
-              {HEALTH_PROVIDERS.map((h) => {
-                const on = health.includes(h.id)
-                return (
-                  <button
-                    key={h.id}
-                    onClick={() => toggle(health, setHealth, h.id)}
-                    aria-pressed={on}
-                    className="w-full flex items-center gap-2.5 border p-2.5 text-left min-h-[44px] active:brightness-125"
-                    style={{ borderColor: on ? h.color : 'var(--color-line)' }}
-                  >
-                    <Icon name={on ? 'check' : 'link'} size={12} color={on ? h.color : 'var(--color-ink-faint)'} />
-                    <span className="font-pixel text-[8px] flex-1" style={{ color: on ? h.color : 'var(--color-ink-dim)' }}>
-                      {h.name.toUpperCase()}
-                    </span>
-                    <span className="text-[10px] text-ink-faint">{h.note}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            <Panel className="p-3 mt-4" corners={false}>
-              <div className="flex items-center gap-3">
-                <HeroView av={preview} height={72} />
-                <div className="min-w-0">
-                  <div className="font-pixel text-[9px]">{name.trim().toUpperCase() || 'ROOKIE'}</div>
-                  <div className="font-mono text-[11px] text-ink-faint mt-1.5 truncate">
-                    @{handle.trim() || 'newchallenger'}
-                  </div>
-                </div>
-              </div>
-            </Panel>
-
-            <div className="flex gap-2 mt-auto pt-6">
-              <Btn variant="ghost" onClick={() => setStep(1)}>
-                BACK
-              </Btn>
               <Btn
                 className="flex-1"
                 onClick={() =>
@@ -236,9 +178,9 @@ export default function Onboarding() {
                     name: (name.trim() || 'ROOKIE').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
                     classId: DEFAULT_CLASS,
-                    avatar: { seed: 0, skin, hair, hairLength, shirt: TUNIC },
+                    avatar: { seed: 0, body, skin, hair, hairLength, shirt: TUNIC },
                     games: [],
-                    health,
+                    health: [],
                   })
                 }
               >

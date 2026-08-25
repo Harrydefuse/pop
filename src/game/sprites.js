@@ -1728,17 +1728,45 @@ export function heroPalette(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC) {
 }
 
 /**
+ * Which grids a build uses, bare and dressed.
+ *
+ * The female build has no art of its own yet, so she borrows the long-haired
+ * male grids — the option is wired all the way through and saved, but she is
+ * not her until `art/female.png` and `art/female-bare.png` arrive at 32 x 59.
+ * When they do, only this table changes.
+ */
+const HERO_BODIES = {
+  male: {
+    bare: { short: () => HERO_BASE, long: () => HERO_BASE_LONG },
+    clothed: { short: () => HERO_GRID, long: () => HERO_LONG },
+  },
+  // She wears her own hair, so both lengths resolve to the same grids.
+  female: {
+    bare: { short: () => HERO_BASE_LONG, long: () => HERO_BASE_LONG },
+    clothed: { short: () => HERO_LONG, long: () => HERO_LONG },
+  },
+}
+
+export const AVATAR_BODIES = [
+  { id: 'male', label: 'MALE' },
+  { id: 'female', label: 'FEMALE' },
+]
+
+const gridFor = (body, dress, hairLength) =>
+  (HERO_BODIES[body] ?? HERO_BODIES.male)[dress][hairLength === 'long' ? 'long' : 'short']()
+
+/**
  * The bare body. Armour is drawn onto this rather than over a clothed sprite,
  * which is what stops garments showing through at the edges.
  */
-export function heroSprite(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short') {
-  const grid = hairLength === 'long' ? HERO_BASE_LONG : HERO_BASE
+export function heroSprite(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short', body = 'male') {
+  const grid = gridFor(body, 'bare', hairLength)
   return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
 }
 
 /** The fully dressed build, for anywhere that wants the character as drawn. */
-export function heroClothed(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short') {
-  const grid = hairLength === 'long' ? HERO_LONG : HERO_GRID
+export function heroClothed(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short', body = 'male') {
+  const grid = gridFor(body, 'clothed', hairLength)
   return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
 }
 

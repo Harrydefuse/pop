@@ -288,7 +288,12 @@ export const DAILY_SLOTS = [
 
 // Anti-cheat: only activities that arrive through a connected health provider
 // count at full value and are eligible for ranked leaderboards.
-export const UNVERIFIED_XP_MULT = 0.5
+//
+// Held at 1 while connecting a provider is out of the sign-up flow — there is
+// currently no way to link one, so charging everybody the unverified rate
+// would halve every player's XP with nothing they could do about it. Back to
+// 0.5 the day the sync step returns.
+export const UNVERIFIED_XP_MULT = 1
 
 export const STREAK_TIERS = [
   { days: 3, mult: 1.05, label: 'Warm' },

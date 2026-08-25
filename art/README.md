@@ -124,6 +124,33 @@ would rather not change size — say which you are drawing on and worn armour
 will be regenerated to match. 48 x 64 is the better canvas if you are starting
 fresh.
 
+### The female build
+
+Signing up offers MALE and FEMALE. The male build is the character already in
+the game. The female build has no art of its own yet, so she currently borrows
+the long-haired male grids — the option is wired all the way through and saved
+with the character, but she is not her until these arrive:
+
+```
+female.png        her as she should look by default, clothed
+female-bare.png   the same pose, clothes removed
+```
+
+**Draw her at 32 x 59** — the same canvas as `templates/worn-body.png`, exported
+at **8x = 256 x 472**. This matters more than it sounds: every piece of worn
+armour in the game is drawn on that exact frame, so at 32 x 59 her gear works
+the day she lands. At 48 x 64 every gear overlay has to be redrawn for her.
+
+Everything else is the same as Option B above: identical canvas for both files,
+front on, arms down, feet apart, transparent background, hard edges only. Give
+her whatever hairstyle she should have — hair length is a male-build control and
+is hidden when FEMALE is picked, so her hair is baked into her sprite. Hair
+colour still recolours from the palette, so draw her hair in the base brown
+(`#6d3c1c`) and its shades.
+
+Once both files are in `art/`, the only code change is one row of the
+`HERO_BODIES` table in `src/game/sprites.js`.
+
 ---
 
 ## 4. Bosses — **48 x 48**

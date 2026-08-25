@@ -43,7 +43,7 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
 export function HeroView({ av = {}, equipped = {}, height = 150, className = '' }) {
   // Aspect comes off the sprite rather than a constant, so dropping in art at a
   // different resolution does not need every call site changed.
-  const body = heroSprite(av.skin, av.hair, av.shirt, av.hairLength)
+  const body = heroSprite(av.skin, av.hair, av.shirt, av.hairLength, av.body)
   const width = Math.round((height * body.w) / body.h)
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
