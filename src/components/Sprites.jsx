@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, GEAR_OVERLAYS, PET_SPRITES, STONE_SPRITE, WEARS_ARMOUR, armourSprite, heroClothes, heroSprite } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, GEAR_OVERLAYS, PET_SPRITES, STONE_SPRITE, WEARS_ARMOUR, armourSprite, armouredClothes, heroClothes, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
@@ -45,18 +45,28 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   // different resolution does not need every call site changed.
   const body = heroSprite(av.skin, av.hair, av.shirt, av.hairLength, av.body)
   const clothes = heroClothes(av.body)
-  const armoured = WEARS_ARMOUR[av.body ?? 'male'] ? equipped : {}
+  const wears = WEARS_ARMOUR[av.body ?? 'male']
+  const armoured = wears ? equipped : {}
   const width = Math.round((height * body.w) / body.h)
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width, height }}>
       <PixelSprite sprite={body} size={width} />
 
-      {/* Clothes only where there is no armour, so nothing pokes out underneath. */}
-      {Object.entries(clothes).map(([slot, grid]) =>
-        armoured[slot] ? null : (
-          <PixelSprite key={`c-${slot}`} sprite={{ ...body, grid }} size={width} className="absolute inset-0" />
-        ),
-      )}
+      {/* Clothes only where there is no armour, so nothing pokes out underneath
+          — except on a build with no armour art of its own, where the garment
+          that slot covers is repainted in the metal instead. */}
+      {Object.entries(clothes).map(([slot, grid]) => {
+        if (armoured[slot]) return null
+        const worn = !wears ? equipped[slot] : null
+        return (
+          <PixelSprite
+            key={`c-${slot}`}
+            sprite={{ ...body, grid, palette: worn ? armouredClothes(worn.set) : body.palette }}
+            size={width}
+            className="absolute inset-0"
+          />
+        )
+      })}
       {Object.entries(armoured).map(([slot, item]) => {
         const overlay = GEAR_OVERLAYS[item?.kind ?? slot]
         if (!overlay || !item) return null

@@ -278,9 +278,14 @@ function makeHaze(revealed) {
   return cv
 }
 
+/** Painted once for the whole app, not once per component. The thumbnail and
+ *  the opened map are two instances of the same drawing. */
+let cached = null
+const artwork = () => (cached ??= paint())
+
 export default function OverviewMap({ revealed, className = '', style }) {
   const ref = useRef(null)
-  const art = useMemo(paint, [])
+  const art = useMemo(artwork, [])
   const haze = useMemo(() => (revealed?.size ? makeHaze(revealed) : null), [revealed])
 
   useEffect(() => {

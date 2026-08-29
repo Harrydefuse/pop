@@ -2203,10 +2203,32 @@ export function heroClothes(body = 'male') {
 }
 
 /** Worn armour is drawn on the male's 32 x 59 frame. Hers is 30 x 65, so the
- *  overlays do not land on her — they would sit high and narrow. Gear still
- *  equips and still counts; it is not painted on her until her own gear frame
- *  is drawn. */
+ *  overlays do not land on her — they would sit high and narrow. */
 export const WEARS_ARMOUR = { male: true, female: false }
+
+/**
+ * Her armour, until she has her own gear frame drawn.
+ *
+ * Equipping a breastplate and seeing nothing happen is worse than an
+ * approximation, so the garment that slot covers is repainted in the metal
+ * instead: her shirt comes out iron, or bone, or gilded. It is her own art in
+ * somebody else's colours rather than a plate that does not fit her.
+ */
+export function armouredClothes(set) {
+  // The Founder's Cuirass is not part of a set, so it borrows the gilded ramp.
+  const ramp = ARMOUR_PALETTES[set] ?? ARMOUR_PALETTES.gilded
+  return {
+    ...HERO_FIXED,
+    a: ramp.l,
+    A: ramp.m,
+    b: ramp.d,
+    B: ramp.o,
+    t: ramp.m,
+    T: ramp.o,
+    u: ramp.d,
+    U: ramp.o,
+  }
+}
 
 /** Which grids a build uses, bare and dressed. */
 const HERO_BODIES = {
