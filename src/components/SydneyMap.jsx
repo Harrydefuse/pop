@@ -122,7 +122,12 @@ export default function SydneyMap({ revealed, fogged = true, animate = true, cla
   const lights = useMemo(catchlights, [])
 
   /** Fog is drawn small and scaled up smooth, so the edge of the known world is
-   *  a soft front rather than a staircase of squares. */
+   *  a soft front rather than a staircase of squares.
+   *
+   *  And it is haze, not a blackout. A dark blanket over the whole map on day
+   *  one turned the best thing in the app grey — ground you have not walked is
+   *  paler, the way an unvisited region reads on an old map, and everywhere you
+   *  have been comes up in full colour. */
   const fog = useMemo(() => {
     if (!fogged) return null
     const cv = document.createElement('canvas')
@@ -133,12 +138,12 @@ export default function SydneyMap({ revealed, fogged = true, animate = true, cla
     for (let y = 0; y < SYDNEY.h; y++) {
       for (let x = 0; x < SYDNEY.w; x++) {
         const i = (y * SYDNEY.w + x) * 4
-        img.data[i] = 26
-        img.data[i + 1] = 18
-        img.data[i + 2] = 30
+        img.data[i] = 236
+        img.data[i + 1] = 223
+        img.data[i + 2] = 188
         // Night, not a blackout: unwalked ground keeps its colour and its shape,
         // which is the difference between a map and a scratch card.
-        img.data[i + 3] = revealed?.has(key(x, y)) ? 0 : 84
+        img.data[i + 3] = revealed?.has(key(x, y)) ? 0 : 54
       }
     }
     ctx.putImageData(img, 0, 0)

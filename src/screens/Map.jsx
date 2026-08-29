@@ -138,6 +138,10 @@ export default function Map() {
             const room = (l) => {
               const x = view.x + l.px * view.s
               const y = view.y + l.py * view.s
+              // Zoomed in, most of the city is off the side of the screen.
+              // Placing a name out there wastes a slot the declutter pass could
+              // have given to one you can actually see.
+              if (x < -80 || y < -20 || x > view.box.w + 80 || y > view.box.h + 20) return false
               // The zoom controls own the bottom right corner; nothing gets
               // written underneath them.
               if (x > view.box.w - 82 && y > view.box.h - 150) return false
@@ -153,11 +157,16 @@ export default function Map() {
                     <span
                       key={l.id}
                       aria-hidden="true"
-                      className="absolute -translate-x-1/2 font-pixel text-[7px] whitespace-nowrap pointer-events-none text-[#f6f1e4]"
+                      // A name plate rather than loose lettering: the map runs
+                      // from parchment to open water, and a plate reads on both.
+                      className="absolute -translate-x-1/2 font-pixel text-[7px] leading-none whitespace-nowrap pointer-events-none px-1 py-[3px] border"
                       style={{
                         left: view.x + l.px * view.s,
-                        top: view.y + l.py * view.s + 8,
-                        textShadow: '0 1px 0 #10131c, 0 -1px 0 #10131c, 1px 0 0 #10131c, -1px 0 0 #10131c',
+                        top: view.y + l.py * view.s + 7,
+                        color: '#33260f',
+                        background: '#f0e3bc',
+                        borderColor: '#7a6035',
+                        boxShadow: '1px 1px 0 0 rgba(0,0,0,0.35)',
                       }}
                     >
                       {l.name}
@@ -211,8 +220,8 @@ export default function Map() {
         </div>
         <Bar pct={pct} color="var(--color-lime)" height={6} className="mt-2" />
         <div className="text-[11px] text-ink-dim mt-2 leading-snug">
-          Ground stays dark until you have been there. Every kilometre you cover opens more of the harbour, and it stays
-          open. Drag to move, pinch or use + to get closer.
+          Ground you have not walked sits under haze. Every kilometre you cover clears more of it, and it stays clear.
+          Drag to move, pinch or use + to get closer.
         </div>
       </Panel>
 

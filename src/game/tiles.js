@@ -15,60 +15,60 @@ export const TILE = 8
 export const COAST_INK = '#4a3a24'
 
 export const TILE_PALETTE = {
-  // land
-  '.': '#cbb98c', // open ground, dry
-  ':': '#dbcb9f', // ground, caught by the light
-  ',': '#b3a075', // ground, in shade
-  p: '#7fa04a', // parkland
-  P: '#94b45c', // parkland highlight
-  // canopy
-  c: '#3f6f2c',
-  C: '#568a36',
-  v: '#2b4f1e',
-  n: '#5a3b22', // trunk
-  // built
-  w: '#cfc3ad',
-  W: '#a2957f',
-  f: '#a85a44', // terracotta, lit
-  F: '#7c3f31', // terracotta, shaded
-  g: '#5d6f8a', // slate roof, lit
-  G: '#42506a', // slate roof, shaded
-  i: '#f2d98a', // a lit window
-  I: '#38455c', // a dark one
-  // ground
-  r: '#efe3c2',
-  R: '#d6c69f',
-  Y: '#e2913f', // the big roads, the way a road atlas draws them
-  y: '#f2b969',
-  s: '#f0dfae',
-  S: '#ddc994',
-  k: '#a3927a',
-  K: '#82735d',
+  // ground — warm paper, bright enough that green reads as a feature on it
+  '.': '#e2d1a0',
+  ':': '#f0e3bc', // caught by the light
+  ',': '#cab586', // in shade
+  p: '#86c04e', // parkland
+  P: '#a2d764', // parkland highlight
+  // canopy — saturated, because a forest is the most alive thing on a map
+  c: '#3f8a30',
+  C: '#5cb043',
+  v: '#27601d',
+  n: '#6b4423', // trunk
+  // built — plaster walls, terracotta and slate roofs
+  w: '#efe4cc',
+  W: '#c9baa0',
+  f: '#cf5b41', // terracotta, lit
+  F: '#94382a', // terracotta, shaded
+  g: '#5f86b0', // slate roof, lit
+  G: '#3d5c80', // slate roof, shaded
+  i: '#fbe490', // a lit window
+  I: '#2f4260', // a dark one
+  // ground you walk on
+  r: '#f4e9cb',
+  R: '#ded1aa',
+  Y: '#e8933c', // the arterials, the way a road atlas draws them
+  y: '#f9cb84',
+  s: '#f7e8bc',
+  S: '#e5d2a2',
+  k: '#b3a38a',
+  K: '#8f8069',
   // water
-  d: '#215a92',
-  D: '#1a4c7e',
-  l: '#2d6ea9',
-  a: '#4aa0d8',
-  A: '#63b3e6',
-  o: '#bfe4f5',
+  d: '#2874b3',
+  D: '#1f5e95',
+  l: '#3a8bc9',
+  a: '#5cb6e2',
+  A: '#7fcdf0',
+  o: '#dcf2fc',
   // landmarks
-  x: '#c9d2da',
-  X: '#8e99a3',
-  m: '#f7f5ea',
-  M: '#cdc9b6',
+  x: '#d5dde4',
+  X: '#93a0ab',
+  m: '#fbfaf2',
+  M: '#d5d0bd',
 }
 
 /** Two or three cuts of each ground type, so a hillside is not a repeated stamp. */
 const GRASS = [
-  ['........', '..::....', '.:::....', '........', '........', '.....,..', '....,,,.', '........'],
-  ['....::..', '...:::..', '........', '.,,.....', '.,,,....', '........', '.....::.', '......:.'],
-  ['........', '.....:..', '....:::.', '........', '..,,....', '.,,,....', '........', '...:....'],
-  ['..,,....', '.,,,,...', '........', '......::', '.....:::', '........', '..:.....', '........'],
+  ['.:..:..:', '........', ':..:..:.', '........', '..:..:..', '........', ':..:..:.', '........'],
+  ['..::....', '.:::....', '.:......', '.....,..', '....,,,.', '.....,..', '..:..:..', '........'],
+  ['.:..:..:', '........', '....:::.', '...:::..', '........', '..,,....', '.,,,....', ':..:..:.'],
+  ['..,,....', '.,,,,...', '..,,....', '......::', '.....:::', '......::', '..:.....', '.:..:..:'],
 ]
 
 const GRASS_DARK = [
-  ['..,,....', '.,,,,...', '........', '.....,,.', '....,,,.', '........', '.,,.....', '........'],
-  ['........', '...,,...', '..,,,,..', '........', '......,,', '.....,,,', '........', '..,,....'],
+  [',..,..,.', '..,,....', '.,,,,...', '..,,....', ',..,..,.', '.....,,.', '....,,,.', '.....,,.'],
+  ['..,..,..', '...,,...', '..,,,,..', '...,,...', '..,..,..', '......,,', '.....,,,', '......,,'],
 ]
 
 const PARK = [
@@ -79,15 +79,15 @@ const PARK = [
 /** A tree is a trunk and a canopy with the light on one side. Nothing else in
  *  the whole map does as much to make it look drawn. */
 const TREE = [
-  ['..CCC...', '.CCCcc..', '.CCcccv.', '..cccv..', '...nn...', '...nn...', '..,..,..', '........'],
-  ['...CCC..', '..CCCcc.', '.CCccccv', '..cccvv.', '...nn...', '...nn...', '..,...,.', '........'],
-  ['..CCc...', '.CCcccv.', '..ccvv..', '...nn...', '...nn...', '..,.....', '.....CC.', '....Ccc.'],
+  ['..CCCC..', '.CCCCcc.', 'CCCCcccv', 'CCcccccv', '.cccccv.', '..cnnv..', '...nn...', '..,..,..'],
+  ['...CCC..', '..CCCCc.', '.CCCcccv', 'CCcccccv', '..ccccv.', '...nn...', '...nn...', '..,...,.'],
+  ['..CCCc..', '.CCCcccv', '.CCcccvv', '..cccv..', '...nn...', '...nn...', '.....CC.', '....Cccv'],
 ]
 
 const TREE_DEEP = [
-  ['.CCc....', 'CCccv...', '.ccvv...', '..nn....', '..nn.CCc', '....CCcc', '.....nn.', '..,..nn.'],
-  ['....CCc.', '...CCccv', '...cccv.', '....nn..', '.CCc.nn.', 'CCccv...', '..nn....', '..nn..,.'],
-  ['..vccv..', '.vcCCcv.', '.cCCCcv.', '.vcCccv.', '..vccv..', '...nn...', '...nn...', '..,..,..'],
+  ['.CCCc...', 'CCCcccv.', 'CCcccvv.', '..nn....', '..nn.CCC', '....CCcc', '.....nn.', '..,..nn.'],
+  ['...CCCc.', '..CCCccv', '..Ccccv.', '....nn..', 'CCCc.nn.', 'Ccccv...', '..nn....', '..nn..,.'],
+  ['..vCCv..', '.vCCCCv.', 'vcCCCCcv', 'vcCCCccv', '..vccv..', '...nn...', '...nn...', '..,..,..'],
 ]
 
 /** Houses read as houses because of the roof pitch — flat blocks read as boxes. */
@@ -108,8 +108,13 @@ const ROAD = [
   ['rrrrrrrr', 'rrrRrrrr', 'rrrrrrrr', 'rrrrrRrr', 'rrrrrrrr', 'rRrrrrrr', 'rrrrrrrr', 'rrrRrrrr'],
 ]
 
-/** The stripe is a cross so it reads the same whichever way the road runs. */
-const MAJOR = [['YYYYYYYY', 'YYYyyYYY', 'YYYyyYYY', 'YyyyyyyY', 'YyyyyyyY', 'YYYyyYYY', 'YYYyyYYY', 'YYYYYYYY']]
+/** Solid, so adjacent cells run together into one ribbon. The stripe used to be
+ *  a cross to read the same whichever way the road went, which at full zoom
+ *  turned every hundred metres of motorway into a plus sign. */
+const MAJOR = [
+  ['YYYYYYYY', 'YYyYYYYY', 'YYYYYYYY', 'YYYYYyYY', 'YYYYYYYY', 'YyYYYYYY', 'YYYYYYYY', 'YYYYyYYY'],
+  ['YYYYYYYY', 'YYYYyYYY', 'YYYYYYYY', 'YyYYYYYY', 'YYYYYYYY', 'YYYYYyYY', 'YYYYYYYY', 'YYyYYYYY'],
+]
 
 const SAND = [
   ['ssssssss', 'sssSssss', 'ssssssss', 'sSssssSs', 'ssssssss', 'sssssSss', 'ssssssss', 'sSssssss'],
@@ -144,21 +149,21 @@ const SAILS = [['...mm...', '..mmmm..', '.mmmmmm.', 'mmmmmmmm', 'mmmmmmmm', '.MM
 /** Each terrain character, its base colour (what fills the cell before the tile
  *  is stamped) and the cuts of art that can sit on it. */
 export const TERRAIN = {
-  '~': { base: '#215a92', tiles: DEEP, water: true },
-  '-': { base: '#4aa0d8', tiles: SHALLOW, water: true, foam: FOAM },
-  s: { base: '#f0dfae', tiles: SAND },
-  '.': { base: '#cbb98c', tiles: GRASS },
-  ',': { base: '#b3a075', tiles: GRASS_DARK },
-  t: { base: '#cbb98c', tiles: TREE },
-  T: { base: '#b3a075', tiles: TREE_DEEP },
-  p: { base: '#7fa04a', tiles: PARK },
-  b: { base: '#cbb98c', tiles: HOUSE },
-  B: { base: '#b3a075', tiles: TOWER },
-  r: { base: '#efe3c2', tiles: ROAD },
-  R: { base: '#e2913f', tiles: MAJOR },
-  k: { base: '#a3927a', tiles: ROCK },
+  '~': { base: '#2874b3', tiles: DEEP, water: true },
+  '-': { base: '#5cb6e2', tiles: SHALLOW, water: true, foam: FOAM },
+  s: { base: '#f7e8bc', tiles: SAND },
+  '.': { base: '#e2d1a0', tiles: GRASS },
+  ',': { base: '#cab586', tiles: GRASS_DARK },
+  t: { base: '#e2d1a0', tiles: TREE },
+  T: { base: '#cab586', tiles: TREE_DEEP },
+  p: { base: '#86c04e', tiles: PARK },
+  b: { base: '#e2d1a0', tiles: HOUSE },
+  B: { base: '#cab586', tiles: TOWER },
+  r: { base: '#f4e9cb', tiles: ROAD },
+  R: { base: '#e8933c', tiles: MAJOR },
+  k: { base: '#b3a38a', tiles: ROCK },
   X: { base: '#c9d2da', tiles: BRIDGE },
-  O: { base: '#cbb98c', tiles: SAILS },
+  O: { base: '#e2d1a0', tiles: SAILS },
 }
 
 /** Same cell, same tile, every build — no flicker when the map redraws. */
