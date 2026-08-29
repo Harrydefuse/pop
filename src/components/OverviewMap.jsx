@@ -31,8 +31,10 @@ const PAL = {
   G: '#3d5c80',
   w: '#efe4cc',
   // ground you walk on
-  Y: '#e8933c', // arterials
-  r: '#cbb083', // dirt track
+  Y: '#e0a24c', // arterials
+  y: '#f2c37e', // the crown of the road
+  r: '#e0c48d', // the road surface
+  e: '#4a3a24', // and the line drawn round it
   s: '#f2e2b4', // sand
   S: '#ddcb9c',
   // stone: a headland has a lit face and a shaded one, which is the whole of
@@ -75,11 +77,15 @@ const T = {
   ],
   // A suburb: roofs with a wall under each, close enough to read as a town.
   b: [
-    ['uuffuuuu', 'ufFFFuuu', 'fwwwwouU', 'uwwwwuuu', 'uUuugggg', 'uuugGGGg', 'uuuwwwww', 'uUuuwwww'],
-    ['uuuuffuu', 'uuufFFFu', 'uUfwwwwo', 'uuuwwwwu', 'ggggUuuu', 'gGGGguuu', 'wwwwwuuu', 'wwwwuuUu'],
+    ['uffuuggu', 'fFFFgGGG', 'wwwwwwww', 'uwwuuwwu', 'uUuuffuu', 'ucufFFFu', 'uuuwwwwu', 'ucuuwwuu'],
+    ['uggufffu', 'gGGGfFFF', 'wwwwwwww', 'uwwuuwwu', 'ffuuUuuc', 'FFFFuuuu', 'wwwwuuuu', 'uwwuucuu'],
+    ['uuffuuuu', 'ufFFFucu', 'ufwwwwuu', 'uuwwuuuu', 'uggguuff', 'gGGGufFF', 'wwwwuwww', 'uwwuuwwu'],
   ],
   // An arterial, solid so cells join into one ribbon.
-  R: [['YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY']],
+  R: [
+    ['eeeeeeee', 'YYYYYYYY', 'YYYYYYYY', 'yyyyyyyy', 'YYYYYYYY', 'YYYYYYYY', 'eeeeeeee', 'uuuuuuuu'],
+    ['euuuuuue', 'eYYYYYYe', 'eYYYYYYe', 'eyyyyyye', 'eYYYYYYe', 'eYYYYYYe', 'eYYYYYYe', 'euuuuuue'],
+  ],
   s: [['ssssssss', 'sSssssss', 'ssssSsss', 'ssssssss', 'sssSssSs', 'ssssssss', 'sSssssss', 'ssssssss']],
   k: [
     ['..oooo..', '.oLLLLo.', 'oLLLkkko', 'oLLkkkKo', 'oLkkkKKo', 'okkkKKKo', 'okkKKKKo', '.oooooo.'],

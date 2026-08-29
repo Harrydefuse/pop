@@ -122,3 +122,54 @@ export const BOATS = [
   [151.3100, -33.7800],
   [151.2900, -33.9130],
 ]
+
+/**
+ * The road network, as links between places.
+ *
+ * The reference draws its roads as one connected system with square corners,
+ * and that is what turns a set of towns into a country you could travel. The
+ * terrain pass already lays down arterials, but at 450 metres a cell they come
+ * out as patches; drawn between named places instead, they join up.
+ */
+export const ROUTES = [
+  ['cbd', 'quay'],
+  ['quay', 'bridge'],
+  ['bridge', 'northsyd'],
+  ['northsyd', 'chatswood'],
+  ['chatswood', 'willoughby'],
+  ['northsyd', 'cremorne'],
+  ['cremorne', 'mosman'],
+  ['mosman', 'balmoral'],
+  ['balmoral', 'manly'],
+  ['manly', 'freshwater'],
+  ['mosman', 'taronga'],
+  ['cbd', 'surry'],
+  ['surry', 'paddington'],
+  ['paddington', 'bondi'],
+  ['bondi', 'bronte'],
+  ['bronte', 'coogee'],
+  ['surry', 'randwick'],
+  ['randwick', 'coogee'],
+  ['cbd', 'darling'],
+  ['darling', 'glebe'],
+  ['glebe', 'newtown'],
+  ['newtown', 'leichhardt'],
+  ['leichhardt', 'balmain'],
+  ['leichhardt', 'gladesville'],
+  ['gladesville', 'homebush'],
+  ['cbd', 'hyde'],
+  ['hyde', 'domain'],
+  ['domain', 'doublebay'],
+  ['doublebay', 'rose'],
+  ['rose', 'vaucluse'],
+  ['vaucluse', 'watsons'],
+]
+
+/** Route ends, resolved to coarse-grid points. Unknown ids drop out. */
+export function routeLines() {
+  const at = (id) => {
+    const p = SYDNEY.places.find((q) => q.id === id)
+    return p ? overCell(p.lon, p.lat) : null
+  }
+  return ROUTES.map(([a, b]) => [at(a), at(b)]).filter(([a, b]) => a && b)
+}
