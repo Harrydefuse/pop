@@ -173,3 +173,14 @@ export function routeLines() {
   }
   return ROUTES.map(([a, b]) => [at(a), at(b)]).filter(([a, b]) => a && b)
 }
+
+/** Which coarse cells a set of fine explored cells lights up. One walked street
+ *  opens the block it is in, which is the right unit at this scale. */
+export function coarseExplored(fine) {
+  const out = new Set()
+  for (const k of fine) {
+    const [x, y] = k.split(',')
+    out.add(`${Math.floor((+x * OVER_W) / SYDNEY.w)},${Math.floor((+y * OVER_H) / SYDNEY.h)}`)
+  }
+  return out
+}

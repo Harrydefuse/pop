@@ -16,15 +16,15 @@ export const COAST_INK = '#4a3a24'
 
 export const TILE_PALETTE = {
   // ground — warm paper, bright enough that green reads as a feature on it
-  '.': '#e2d1a0',
-  ':': '#f0e3bc', // caught by the light
-  ',': '#cab586', // in shade
-  p: '#86c04e', // parkland
-  P: '#a2d764', // parkland highlight
+  '.': '#6ea63f', // grassland
+  ':': '#82bd4d', // caught by the light
+  ',': '#5a8c33', // in shade
+  p: '#7cb545', // parkland
+  P: '#95cf58', // parkland highlight
   // canopy — saturated, because a forest is the most alive thing on a map
-  c: '#3f8a30',
-  C: '#5cb043',
-  v: '#27601d',
+  c: '#2f6b24',
+  C: '#3f8a30',
+  v: '#1d4715',
   n: '#6b4423', // trunk
   // built — plaster walls, terracotta and slate roofs
   w: '#efe4cc',
@@ -38,12 +38,13 @@ export const TILE_PALETTE = {
   // ground you walk on
   r: '#f4e9cb',
   R: '#ded1aa',
-  Y: '#e8933c', // the arterials, the way a road atlas draws them
-  y: '#f9cb84',
-  s: '#f7e8bc',
+  Y: '#e0a24c', // the arterials
+  y: '#f2c37e',
+  s: '#f2e2b4',
+  U0: '#d9c79a', // trodden ground, under a suburb
   S: '#e5d2a2',
-  k: '#b3a38a',
-  K: '#8f8069',
+  k: '#a89e90',
+  K: '#7d7468',
   // water
   d: '#2874b3',
   D: '#1f5e95',
@@ -151,19 +152,19 @@ const SAILS = [['...mm...', '..mmmm..', '.mmmmmm.', 'mmmmmmmm', 'mmmmmmmm', '.MM
 export const TERRAIN = {
   '~': { base: '#2874b3', tiles: DEEP, water: true },
   '-': { base: '#5cb6e2', tiles: SHALLOW, water: true, foam: FOAM },
-  s: { base: '#f7e8bc', tiles: SAND },
-  '.': { base: '#e2d1a0', tiles: GRASS },
-  ',': { base: '#cab586', tiles: GRASS_DARK },
-  t: { base: '#e2d1a0', tiles: TREE },
-  T: { base: '#cab586', tiles: TREE_DEEP },
-  p: { base: '#86c04e', tiles: PARK },
-  b: { base: '#e2d1a0', tiles: HOUSE },
-  B: { base: '#cab586', tiles: TOWER },
+  s: { base: '#f2e2b4', tiles: SAND },
+  '.': { base: '#6ea63f', tiles: GRASS },
+  ',': { base: '#5a8c33', tiles: GRASS_DARK },
+  t: { base: '#6ea63f', tiles: TREE },
+  T: { base: '#5a8c33', tiles: TREE_DEEP },
+  p: { base: '#7cb545', tiles: PARK },
+  b: { base: '#d9c79a', tiles: HOUSE },
+  B: { base: '#cbb98c', tiles: TOWER },
   r: { base: '#f4e9cb', tiles: ROAD },
-  R: { base: '#e8933c', tiles: MAJOR },
-  k: { base: '#b3a38a', tiles: ROCK },
+  R: { base: '#e0a24c', tiles: MAJOR },
+  k: { base: '#a89e90', tiles: ROCK },
   X: { base: '#c9d2da', tiles: BRIDGE },
-  O: { base: '#e2d1a0', tiles: SAILS },
+  O: { base: '#6ea63f', tiles: SAILS },
 }
 
 /** Same cell, same tile, every build — no flicker when the map redraws. */

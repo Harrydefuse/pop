@@ -3,8 +3,9 @@ import { Bar, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import PixelSprite from '../components/PixelSprite'
 import OverviewMap from '../components/OverviewMap'
+import SydneyMap from '../components/SydneyMap'
 import MapViewport from '../components/MapViewport'
-import { OVER_H, OVER_PX, OVER_W, overCell } from '../game/overview'
+import { OVER_H, OVER_PX, OVER_W, coarseExplored, overCell } from '../game/overview'
 import { SYDNEY } from '../game/sydney'
 import { useGame } from '../game/useGame'
 import { CAMPAIGN, actById } from '../game/campaign'
@@ -142,7 +143,7 @@ function Framed({ children, className = '', pad = 10 }) {
 
 /** The tab shows a picture of it. Names, flags and landmarks are for when it is
  *  open — at thumbnail size they would be a smudge. */
-function Thumb({ onOpen }) {
+function Thumb({ onOpen, revealed }) {
   return (
     <Framed pad={7}>
       <button
@@ -150,7 +151,7 @@ function Thumb({ onOpen }) {
         className="relative block w-full overflow-hidden active:brightness-110"
         aria-label="Open the map of Sydney"
       >
-        <OverviewMap />
+        <OverviewMap revealed={revealed} />
         <span className="absolute inset-x-0 bottom-0 flex items-center justify-between px-2 py-1.5 bg-[#2a1e12]/85">
           <span className="font-pixel text-[7px]" style={{ color: '#e8d9b4' }}>
             SYDNEY
@@ -169,7 +170,7 @@ function Thumb({ onOpen }) {
  * the reference is, with every town named, the landmarks in place, and a
  * pennant on every boss you have not put down yet.
  */
-function BigMap({ onClose, markers, onPick }) {
+function BigMap({ onClose, markers, onPick, revealed, fine }) {
   return (
     <Modal open onClose={onClose} title="SYDNEY" accent="var(--color-gold)" wide>
       <Framed pad={6}>
@@ -178,7 +179,24 @@ function BigMap({ onClose, markers, onPick }) {
           h={BIG}
           label="Sydney"
           className="w-full aspect-square bg-[#2a1e12]"
-          content={<OverviewMap style={{ width: BIG, height: BIG }} />}
+          // Two drawings of the same ground, stacked and cross-faded by how far
+          // in you are: the world map you can read at a glance, resolving into
+          // the streets you actually walked. One coordinate space, so nothing
+          // jumps at the handover.
+          content={(view) => {
+            const street = Math.min(1, Math.max(0, (view.zoom - 1.9) / 1.3))
+            return (
+              <div className="relative" style={{ width: BIG, height: BIG }}>
+                <OverviewMap revealed={revealed} style={{ width: BIG, height: BIG, opacity: 1 - street }} />
+                <SydneyMap
+                  revealed={fine}
+                  animate={street > 0.05}
+                  className="absolute inset-0"
+                  style={{ width: BIG, height: BIG, opacity: street }}
+                />
+              </div>
+            )
+          }}
         >
           {(view) => {
             const at = (p) => {
@@ -270,7 +288,8 @@ function BigMap({ onClose, markers, onPick }) {
         </span>
       </Framed>
       <div className="text-[10px] text-ink-faint mt-2.5 leading-relaxed">
-        Drag to move, pinch or use + to get closer. Tap a pennant for what is waiting there.
+        Drag to move, pinch or use + to get closer — go far enough in and the drawing gives way to the streets. Tap a
+        pennant for what is waiting there.
       </div>
     </Modal>
   )
@@ -283,6 +302,7 @@ export default function Map() {
   const [open, setOpen] = useState(false)
   const c = campaignState(state.player, state.campaign)
 
+  const coarse = useMemo(() => coarseExplored(revealed), [revealed])
   const pct = revealed.size / (SYDNEY.w * SYDNEY.h)
 
   const markers = useMemo(
@@ -304,11 +324,13 @@ export default function Map() {
 
   return (
     <div className="p-3 space-y-3">
-      <Thumb onOpen={() => setOpen(true)} />
+      <Thumb onOpen={() => setOpen(true)} revealed={coarse} />
 
       {open && (
         <BigMap
           onClose={() => setOpen(false)}
+          revealed={coarse}
+          fine={revealed}
           markers={markers}
           onPick={(m) => {
             setPicked(m)

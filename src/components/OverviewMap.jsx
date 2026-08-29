@@ -254,17 +254,47 @@ function paint() {
   return cv
 }
 
-export default function OverviewMap({ className = '', style }) {
+/**
+ * Haze over ground you have not walked. Drawn at one pixel a cell and scaled up
+ * smooth, so the edge of what you know is a front rather than a staircase, and
+ * light enough that the colour underneath survives.
+ */
+function makeHaze(revealed) {
+  const cv = document.createElement('canvas')
+  cv.width = OVER_W
+  cv.height = OVER_H
+  const ctx = cv.getContext('2d')
+  const img = ctx.createImageData(OVER_W, OVER_H)
+  for (let y = 0; y < OVER_H; y++) {
+    for (let x = 0; x < OVER_W; x++) {
+      const i = (y * OVER_W + x) * 4
+      img.data[i] = 236
+      img.data[i + 1] = 223
+      img.data[i + 2] = 188
+      img.data[i + 3] = revealed.has(`${x},${y}`) ? 0 : 60
+    }
+  }
+  ctx.putImageData(img, 0, 0)
+  return cv
+}
+
+export default function OverviewMap({ revealed, className = '', style }) {
   const ref = useRef(null)
   const art = useMemo(paint, [])
+  const haze = useMemo(() => (revealed?.size ? makeHaze(revealed) : null), [revealed])
 
   useEffect(() => {
     const cv = ref.current
     if (!cv) return
     const ctx = cv.getContext('2d')
     ctx.imageSmoothingEnabled = false
+    ctx.clearRect(0, 0, cv.width, cv.height)
     ctx.drawImage(art, 0, 0)
-  }, [art])
+    if (haze) {
+      ctx.imageSmoothingEnabled = true
+      ctx.drawImage(haze, 0, 0, cv.width, cv.height)
+    }
+  }, [art, haze])
 
   return (
     <canvas

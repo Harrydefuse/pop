@@ -163,7 +163,11 @@ export default function MapViewport({ w, h, content, children, label = 'Map', cl
             imageRendering: view && view.s >= 0.85 ? 'pixelated' : 'auto',
           }}
         >
-          {content}
+          {typeof content === 'function'
+            ? // On the first render there is no view yet — the container has not
+              // been measured — so hand the content the fitted default.
+              content(view ? { ...view, fit, zoom: fit ? view.s / fit : 1 } : { s: fit, x: 0, y: 0, fit, zoom: 1 })
+            : content}
         </div>
         {view && children?.({ ...view, fit, zoom: fit ? view.s / fit : 1, box: size })}
       </div>
