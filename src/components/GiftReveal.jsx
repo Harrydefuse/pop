@@ -74,11 +74,29 @@ export default function GiftReveal({ onClose }) {
 
   const accent = RARITY.legendary.color
 
+  // Escape closes it once there is something to close — while the chest is
+  // still opening there is nothing to dismiss yet. Without this the overlay
+  // was a keyboard trap.
+  // Closable before you commit and after it has landed, but not mid-animation,
+  // where there is nothing to dismiss and half a reveal to lose.
+  const dismissable = phase === 'chest' || phase === 'revealed'
+  useEffect(() => {
+    if (!dismissable) return
+    const onKey = (e) => e.key === 'Escape' && onClose?.()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [dismissable, onClose])
+
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center">
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Beta founder gift"
+    >
       <button
         aria-label="Close"
-        onClick={phase === 'revealed' ? onClose : undefined}
+        onClick={dismissable ? onClose : undefined}
         className="absolute inset-0 bg-[#05030a]/92 backdrop-blur-[2px] cursor-default"
       />
 
