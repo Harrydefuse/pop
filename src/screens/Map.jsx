@@ -201,8 +201,9 @@ export default function Map() {
               <Icon name="spark" size={11} color="var(--color-ink-faint)" />
             </span>
             <p className="text-[10px] text-ink-faint leading-relaxed">
-              Twelve kilometres of harbour, Balmain out to the Heads and Manly down to Bondi. Coastline traced from the
-              real thing; every hundred metres of it drawn by hand.
+              Eighteen kilometres of Sydney: the Parramatta and Lane Cove rivers in the west, Dee Why and Curl Curl in
+              the north, Coogee in the south, and the whole harbour in the middle. Coastline traced from the real
+              thing; every hundred metres of it drawn by hand.
             </p>
           </div>
         </Panel>

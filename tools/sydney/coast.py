@@ -4,15 +4,19 @@ The harbour is the only thing that makes a map of Sydney read as Sydney, so it
 is built first and everything else hangs off it. Water is defined as polygons in
 grid space and rasterised; the land is whatever is left.
 
-Grid: 12km square, 120x120 cells, so one cell is 100m.
-    west 151.170  ->  east 151.300
-    north -33.790 ->  south -33.900
+Grid: 18km square, 180x180 cells, so one cell is still 100m.
+    west 151.130  ->  east 151.325
+    north -33.760 ->  south -33.922
+
+Wide enough now to hold the whole harbour plus the Parramatta River going
+west, the northern beaches up past Curl Curl, and Botany Bay in the south --
+so a run from most of Sydney lands somewhere on it.
 """
 import json, math, pathlib, random
 
-W = H = 120
-WEST, EAST = 151.170, 151.300
-NORTH, SOUTH = -33.790, -33.900
+W = H = 180
+WEST, EAST = 151.130, 151.325
+NORTH, SOUTH = -33.760, -33.922
 
 random.seed(20)
 
@@ -28,10 +32,14 @@ def poly(points):
 # --------------------------------------------------------------- the ocean --
 # The Pacific, east of the coastline: Manly down past the Heads to Bondi.
 OCEAN = poly([
-    (151.302, -33.780), (151.302, -33.912), (151.283, -33.906), (151.2775, -33.897),
-    (151.2765, -33.888), (151.2810, -33.878), (151.2845, -33.866), (151.2860, -33.852),
-    (151.2860, -33.840), (151.2865, -33.832), (151.2900, -33.826), (151.2925, -33.818),
-    (151.2960, -33.808), (151.2900, -33.796), (151.2930, -33.788), (151.300, -33.784),
+    (151.330, -33.755), (151.330, -33.930),
+    # south to north: Coogee, Bronte, Bondi, the cliffs under Vaucluse
+    (151.2580, -33.928), (151.2610, -33.913), (151.2680, -33.904), (151.2740, -33.899),
+    (151.2790, -33.8905), (151.2810, -33.878), (151.2845, -33.866), (151.2860, -33.852),
+    (151.2860, -33.840), (151.2865, -33.832),
+    # across the Heads, then up past Manly to Curl Curl
+    (151.2900, -33.826), (151.2925, -33.818), (151.2960, -33.808), (151.2890, -33.796),
+    (151.2900, -33.785), (151.2930, -33.779), (151.2930, -33.770), (151.2990, -33.758),
 ])
 
 # ------------------------------------------------------------ the harbour ---
@@ -82,18 +90,29 @@ BAYS = [
           (151.2140, -33.8345)]),
     # Mosman Bay, running north past the ferry wharf
     poly([(151.2335, -33.8468), (151.2425, -33.8452), (151.2425, -33.8285), (151.2360, -33.8265)]),
-    # Parramatta River, heading west out of frame
-    poly([(151.1785, -33.8480), (151.1700, -33.8455), (151.1700, -33.8560), (151.1795, -33.8520)]),
     # Iron Cove and Rozelle Bay
-    poly([(151.1700, -33.8620), (151.1835, -33.8640), (151.1835, -33.8760), (151.1700, -33.8760)]),
+    poly([(151.1620, -33.8600), (151.1835, -33.8640), (151.1835, -33.8760), (151.1650, -33.8740)]),
+    # Hen and Chicken Bay, further west again
+    poly([(151.1310, -33.8460), (151.1400, -33.8470), (151.1400, -33.8600), (151.1310, -33.8590)]),
+    # Homebush Bay, at the western edge
+    poly([(151.1300, -33.8280), (151.1380, -33.8290), (151.1380, -33.8420), (151.1300, -33.8410)]),
 ]
 
 
 # Middle Harbour in past Balmoral and The Spit, and North Harbour up to Manly:
 # both are channels, so both are drawn as a line with a width.
 INLETS = [
+    # Parramatta River, running west out of the harbour past Cockatoo Island
+    ([(151.1830, -33.8510), (151.1730, -33.8490), (151.1620, -33.8420), (151.1490, -33.8345),
+      (151.1370, -33.8300), (151.1280, -33.8265)], 7.0),
+    # Lane Cove River, north from Greenwich
+    ([(151.1770, -33.8425), (151.1700, -33.8320), (151.1640, -33.8190), (151.1580, -33.8055),
+      (151.1520, -33.7930)], 3.6),
+    # Curl Curl lagoon, behind the beach
+    ([(151.2870, -33.7700), (151.2800, -33.7690)], 3.0),
     ([(151.2590, -33.8235), (151.2540, -33.8175), (151.2500, -33.8130), (151.2472, -33.8060),
-      (151.2430, -33.8005), (151.2350, -33.7960), (151.2270, -33.7925), (151.2210, -33.7900)], 5.0),
+      (151.2430, -33.8005), (151.2350, -33.7960), (151.2270, -33.7925), (151.2180, -33.7880),
+      (151.2080, -33.7830), (151.2010, -33.7760)], 5.0),
     ([(151.2525, -33.8195), (151.2495, -33.8235)], 3.0),                       # Hunters Bay
     ([(151.2760, -33.8125), (151.2810, -33.8060), (151.2845, -33.8025)], 6.0), # North Harbour
     ([(151.2845, -33.8030), (151.2880, -33.8020)], 3.0),                       # Manly Cove

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
-import { BOSS, CATALOG, INITIAL_STATE, freshDailies, gearPiece } from './data'
+import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, freshDailies, gearPiece } from './data'
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
 import { MIN_SESSION_S, sessionAmount } from './session'
 import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v10' // v10: workouts are tracked in the app, not typed in
+const SAVE_KEY = 'lvl100.save.v11' // v11: the map got bigger, so explored cells mean something else
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -270,14 +270,26 @@ function reducer(state, action) {
   switch (action.type) {
     case 'onboard': {
       const { name, handle, classId, avatar, health, games } = action
+      // Making a character clears the showroom save out from under it. You
+      // start at one, with nothing, on a map you have not walked.
       return toast(
         {
           ...state,
+          ...FRESH_START,
           onboarded: true,
-          player: { ...state.player, name, handle, classId, avatar: { ...state.player.avatar, ...avatar }, games },
+          player: {
+            ...state.player,
+            ...FRESH_START.player,
+            name,
+            handle,
+            classId,
+            avatar: { ...state.player.avatar, ...avatar },
+            games,
+          },
+          dailies: freshDailies(),
           links: { ...state.links, health },
         },
-        { kind: 'level', title: `WELCOME, ${name.toUpperCase()}`, body: 'Character created. Go earn something.' },
+        { kind: 'level', title: `WELCOME, ${name.toUpperCase()}`, body: 'Level 1. Everything from here is yours.' },
       )
     }
 
@@ -528,6 +540,18 @@ function reducer(state, action) {
         player: { ...state.player, streak: state.player.streak + 1 },
       }
 
+    // Restoring is a whole-save swap. There is no server behind any of this,
+    // so a character code is how a character moves between two phones.
+    case 'restore': {
+      const next = action.state
+      if (!next?.player?.name || !Array.isArray(next.player.inventory)) return state
+      return toast({ ...next, toasts: state.toasts }, {
+        kind: 'level',
+        title: `WELCOME BACK, ${String(next.player.name).toUpperCase()}`,
+        body: 'Character restored on this device.',
+      })
+    }
+
     case 'reset':
       return baseState()
 
@@ -587,6 +611,7 @@ export function GameProvider({ children }) {
       onboard: (payload) => dispatch({ type: 'onboard', ...payload }),
       dismissToast: (id) => dispatch({ type: 'dismissToast', id }),
       newDay: () => dispatch({ type: 'newDay' }),
+      restore: (next) => dispatch({ type: 'restore', state: next }),
       reset: () => dispatch({ type: 'reset' }),
     }),
     [],

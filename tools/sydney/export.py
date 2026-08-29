@@ -33,13 +33,26 @@ PLACES = [
     ('vaucluse', 'Vaucluse', 151.276, -33.857, 2),
     ('bradleys', 'Bradleys Head', 151.251, -33.852, 2),
     ('doublebay', 'Double Bay', 151.245, -33.878, 2),
+    ('coogee', 'Coogee', 151.2560, -33.9200, 0),
+    ('chatswood', 'Chatswood', 151.1830, -33.7970, 0),
+    ('deewhy', 'Dee Why', 151.2870, -33.7540, 1),
+    ('parramattariver', 'Parramatta River', 151.1550, -33.8380, 1),
+    ('lanecove', 'Lane Cove River', 151.1650, -33.8180, 1),
+    ('randwick', 'Randwick', 151.2410, -33.9130, 1),
+    ('newtown', 'Newtown', 151.1790, -33.8980, 1),
+    ('leichhardt', 'Leichhardt', 151.1560, -33.8830, 2),
+    ('gladesville', 'Gladesville', 151.1330, -33.8330, 2),
+    ('willoughby', 'Willoughby', 151.1990, -33.8030, 2),
+    ('freshwater', 'Freshwater', 151.2880, -33.7790, 2),
+    ('bronte', 'Bronte', 151.2680, -33.9040, 2),
+    ('homebush', 'Homebush Bay', 151.1340, -33.8350, 2),
 ]
 
 places = [{'id': i, 'name': n, 'lon': lo, 'lat': la, 'rank': r} for i, n, lo, la, r in PLACES]
 
 head = '''// Sydney Harbour, drawn rather than photographed.
 //
-// A 120x120 terrain grid over a 12km square - one cell is 100 metres. The
+// A 180x180 terrain grid over an 18km square - one cell is 100 metres. The
 // coastline is built from polygons of the real harbour: the channel in from the
 // Heads, Middle Harbour running north, the bays cutting south past the CBD, and
 // the ocean beaches from Manly down to Bondi. Everything else - woodland, city
@@ -50,7 +63,7 @@ head = '''// Sydney Harbour, drawn rather than photographed.
 // TERRAIN_COLOURS is the flat colour behind it, for legends and small previews.
 '''
 
-out = [head, 'export const SYDNEY = {', '  w: 120,', '  h: 120,', '  bbox: [151.17, -33.9, 151.3, -33.79],',
+out = [head, 'export const SYDNEY = {', '  w: 180,', '  h: 180,', '  bbox: [151.13, -33.922, 151.325, -33.76],',
        '  places: ' + json.dumps(places, separators=(',', ':')) + ',',
        '  rows: [' + ','.join(json.dumps(r) for r in rows) + '],', '}', '',
        'export const TERRAIN_COLOURS = ' + json.dumps(palette, separators=(',', ':')), '']

@@ -9,6 +9,15 @@
       content="LVL100 turns real workouts into XP, loot and a companion that grows as you do. A fitness app first — the rewards just happen to be the kind you already care about."
     />
     <meta name="theme-color" content="#07060d" />
+    <!-- Added to the home screen it should open like an app, not a bookmark:
+         full screen, portrait, its own icon, and no browser chrome eating the
+         tab bar. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LVL100" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
     <title>LVL100 — Don't quit gaming to get fit</title>
   </head>
   <body>

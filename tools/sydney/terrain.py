@@ -58,6 +58,10 @@ PARKS = [
     [(151.2255, -33.8410), (151.2305, -33.8410), (151.2305, -33.8490), (151.2255, -33.8490)],  # Cremorne Point
     [(151.2620, -33.8490), (151.2700, -33.8490), (151.2700, -33.8560), (151.2620, -33.8560)],  # Nielsen Park
     [(151.2110, -33.8560), (151.2160, -33.8555), (151.2160, -33.8600), (151.2110, -33.8600)],  # Dawes Point
+    [(151.1450, -33.7880), (151.1720, -33.7900), (151.1700, -33.8180), (151.1450, -33.8150)],  # Lane Cove NP
+    [(151.2450, -33.7780), (151.2700, -33.7800), (151.2680, -33.8000), (151.2440, -33.7980)],  # Garigal / Manly Dam
+    [(151.2280, -33.9060), (151.2450, -33.9080), (151.2440, -33.9200), (151.2270, -33.9180)],  # Randwick racecourse
+    [(151.1380, -33.8620), (151.1560, -33.8640), (151.1550, -33.8780), (151.1370, -33.8760)],  # inner west green
 ]
 for p in PARKS:
     fill(poly(p), PARK)
@@ -74,6 +78,13 @@ URBAN = [
     [(151.278, -33.792), (151.292, -33.793), (151.292, -33.805), (151.278, -33.804)],   # Manly
     [(151.172, -33.850), (151.190, -33.852), (151.190, -33.863), (151.173, -33.861)],   # Balmain
     [(151.256, -33.858), (151.272, -33.860), (151.272, -33.876), (151.257, -33.874)],   # Rose Bay
+    [(151.1300, -33.8620), (151.1720, -33.8680), (151.1700, -33.9000), (151.1300, -33.8940)],  # Leichhardt, Ashfield
+    [(151.1700, -33.8760), (151.2100, -33.8820), (151.2080, -33.9160), (151.1690, -33.9100)],  # Newtown, Marrickville
+    [(151.1360, -33.8180), (151.1720, -33.8240), (151.1700, -33.8420), (151.1350, -33.8360)],  # Ryde, Gladesville
+    [(151.1780, -33.7860), (151.2080, -33.7880), (151.2060, -33.8180), (151.1760, -33.8160)],  # Chatswood, Willoughby
+    [(151.2680, -33.7620), (151.2960, -33.7640), (151.2940, -33.7860), (151.2660, -33.7840)],  # Dee Why, Brookvale
+    [(151.2180, -33.9000), (151.2560, -33.9060), (151.2540, -33.9220), (151.2170, -33.9160)],  # Kensington, Randwick
+    [(151.2540, -33.9040), (151.2660, -33.9060), (151.2650, -33.9220), (151.2530, -33.9200)],  # Coogee, Clovelly
 ]
 for u in URBAN:
     fill(poly(u), BUILD, jitter=0.34)
@@ -101,6 +112,13 @@ ROADS = [
     ((151.256, -33.818), (151.282, -33.800), ROAD),                  # up to Manly
     ((151.196, -33.858), (151.176, -33.856), ROAD),                  # out to Balmain
     ((151.252, -33.862), (151.278, -33.858), ROAD),                  # New South Head Rd to Watsons Bay
+    ((151.170, -33.884), (151.132, -33.888), MAJOR),                 # Parramatta Road, further west
+    ((151.205, -33.890), (151.215, -33.918), MAJOR),                 # south to Kensington
+    ((151.215, -33.918), (151.256, -33.912), ROAD),                  # across to Coogee
+    ((151.196, -33.838), (151.192, -33.790), MAJOR),                 # Pacific Highway north
+    ((151.192, -33.790), (151.198, -33.762), ROAD),
+    ((151.256, -33.818), (151.278, -33.782), ROAD),                  # up the northern beaches
+    ((151.170, -33.848), (151.140, -33.828), ROAD),                  # Victoria Road west
 ]
 for a, b, ch in ROADS:
     line(a, b, ch)
@@ -122,7 +140,7 @@ for y in range(H):
         if g[y][x] in (DEEP, SHALLOW):
             continue
         lon = WEST + (x + 0.5) / W * (EAST - WEST)
-        if lon > 151.270 and near(y, x, lambda ny, nx: g[ny][nx] == SHALLOW, 1):
+        if lon > 151.255 and near(y, x, lambda ny, nx: g[ny][nx] == SHALLOW, 1):
             g[y][x] = SAND
 
 
@@ -146,11 +164,11 @@ def blobs(count, size, on, put, spread=0.62):
                     frontier.append((y + dy, x + dx))
 
 
-blobs(300, 15, (GRASS,), TREE)                    # bushland through the suburbs
-blobs(120, 6, (TREE,), TREE2)                     # depth inside the canopy
-blobs(150, 6, (GRASS,), GRASS2)                   # open ground variation
-blobs(110, 24, (PARK,), TREE, spread=0.74)        # parks are mostly canopy
-blobs(60, 8, (PARK,), TREE2, spread=0.7)
+blobs(620, 15, (GRASS,), TREE)                    # bushland through the suburbs
+blobs(250, 6, (TREE,), TREE2)                     # depth inside the canopy
+blobs(320, 6, (GRASS,), GRASS2)                   # open ground variation
+blobs(240, 24, (PARK,), TREE, spread=0.74)        # parks are mostly canopy
+blobs(130, 8, (PARK,), TREE2, spread=0.7)
 
 # A park with no trees in it is a lawn. Whatever the clumps missed gets planted.
 for y in range(H):
@@ -175,7 +193,7 @@ for y in range(H):
 for y in range(H):
     for x in range(W):
         lon = WEST + (x + 0.5) / W * (EAST - WEST)
-        if g[y][x] in (GRASS, GRASS2, TREE, TREE2) and lon > 151.276 and near(y, x, lambda ny, nx: g[ny][nx] in (SAND, SHALLOW), 1):
+        if g[y][x] in (GRASS, GRASS2, TREE, TREE2) and lon > 151.262 and near(y, x, lambda ny, nx: g[ny][nx] in (SAND, SHALLOW), 1):
             g[y][x] = ROCK
 
 # ------------------------------------------------------------- landmarks ---

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Bar, Btn, Chip, Modal, Panel, RarityTag } from '../components/ui'
 import Icon from '../components/Icon'
 import { GearIcon, HeroView, PetView } from '../components/Sprites'
+import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
 import { EQUIP_SLOTS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
 import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor } from '../game/engine'
@@ -171,6 +172,7 @@ const FILTERS = [
 ]
 
 export default function Hero() {
+  const [saving, setSaving] = useState(false)
   const { state, equipBest } = useGame()
   const p = state.player
   const cls = classById(p.classId)
@@ -250,10 +252,17 @@ export default function Hero() {
           </div>
         </div>
 
-        <Btn full size="sm" variant="ghost" className="mt-3" onClick={equipBest}>
-          <Icon name="swap" size={10} color="currentColor" /> EQUIP MY BEST
-        </Btn>
+        <div className="grid grid-cols-2 gap-1.5 mt-3">
+          <Btn size="sm" variant="ghost" onClick={equipBest}>
+            <Icon name="swap" size={10} color="currentColor" /> EQUIP BEST
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={() => setSaving(true)}>
+            <Icon name="link" size={10} color="currentColor" /> MY CHARACTER
+          </Btn>
+        </div>
       </Panel>
+
+      {saving && <SaveSheet onClose={() => setSaving(false)} />}
 
       {/* ---------------------------------------------------------- filter */}
       <div className="grid grid-cols-3 border border-line bg-panel">
