@@ -1,0 +1,85 @@
+// The map you see before you open it.
+//
+// The detailed map is 180x180 cells of eight-pixel tiles — 1440 pixels square —
+// and the tab shows it about 340 across. Every tree, roof and street is thrown
+// away by that reduction, which is why it read as noise: the art was never
+// being seen. Detail does not survive a quarter-scale, so this is a second,
+// coarser drawing built for the size it is actually looked at.
+//
+// Forty cells across, 450 metres each, drawn at eight pixels a cell: a poster
+// of Sydney where a forest is a forest and a suburb is a cluster of roofs,
+// the way a fantasy world map is drawn.
+
+import { SYDNEY } from './sydney'
+
+export const OVER_W = 40
+export const OVER_H = 40
+export const OVER_TILE = 8
+
+export const OVER_PX = OVER_W * OVER_TILE
+
+const WATER = '~-'
+const FOREST = 'tTp'
+const TOWN = 'bB'
+const SAND = 's'
+const ROCK = 'k'
+const MAJOR = 'R'
+
+/**
+ * One coarse cell from the block of fine cells under it — by what the block is
+ * mostly made of, not by an average. Averaging terrain gives you mud.
+ */
+function classify(counts, total) {
+  const share = (k) => (counts[k] ?? 0) / total
+  // A block has to be properly wet to become water. At 450 metres a cell a
+  // low threshold drowns whole suburbs on the strength of one creek.
+  if (share('water') >= 0.58) return share('deep') > share('shallow') ? '~' : '-'
+  if (share('sand') >= 0.22) return 's'
+  if (share('major') >= 0.16) return 'R'
+  if (share('forest') >= 0.42) return 't'
+  if (share('town') >= 0.34) return 'b'
+  if (share('rock') >= 0.3) return 'k'
+  if (share('forest') >= 0.22) return ','
+  return '.'
+}
+
+/** Built once. The fine grid never changes, so neither does this. */
+export const OVERVIEW = (() => {
+  const rows = []
+  for (let oy = 0; oy < OVER_H; oy++) {
+    let row = ''
+    for (let ox = 0; ox < OVER_W; ox++) {
+      const x0 = Math.floor((ox * SYDNEY.w) / OVER_W)
+      const x1 = Math.floor(((ox + 1) * SYDNEY.w) / OVER_W)
+      const y0 = Math.floor((oy * SYDNEY.h) / OVER_H)
+      const y1 = Math.floor(((oy + 1) * SYDNEY.h) / OVER_H)
+      const counts = {}
+      let total = 0
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const ch = SYDNEY.rows[y][x]
+          total++
+          if (WATER.includes(ch)) {
+            counts.water = (counts.water ?? 0) + 1
+            counts[ch === '~' ? 'deep' : 'shallow'] = (counts[ch === '~' ? 'deep' : 'shallow'] ?? 0) + 1
+          } else if (FOREST.includes(ch)) counts.forest = (counts.forest ?? 0) + 1
+          else if (TOWN.includes(ch)) counts.town = (counts.town ?? 0) + 1
+          else if (ch === SAND) counts.sand = (counts.sand ?? 0) + 1
+          else if (ch === ROCK) counts.rock = (counts.rock ?? 0) + 1
+          if (ch === MAJOR) counts.major = (counts.major ?? 0) + 1
+        }
+      }
+      row += classify(counts, Math.max(1, total))
+    }
+    rows.push(row)
+  }
+  return rows
+})()
+
+export const isWater = (ch) => ch === '~' || ch === '-'
+
+/** Where a place sits on the coarse grid. */
+export function overCell(lon, lat) {
+  const [w, s, e, n] = SYDNEY.bbox
+  return [((lon - w) / (e - w)) * OVER_W, ((n - lat) / (n - s)) * OVER_H]
+}

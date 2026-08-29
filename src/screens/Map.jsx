@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react'
-import { Bar, Panel, SectionTitle } from '../components/ui'
+import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
-import SydneyMap, { MAP_PX_H, MAP_PX_W } from '../components/SydneyMap'
 import PixelSprite from '../components/PixelSprite'
+import SydneyMap, { MAP_PX_H, MAP_PX_W } from '../components/SydneyMap'
+import OverviewMap from '../components/OverviewMap'
 import MapViewport from '../components/MapViewport'
 import { key, toCell } from '../game/mapgrid'
+import { OVER_H, OVER_W, overCell } from '../game/overview'
 import { SYDNEY } from '../game/sydney'
 import { TILE } from '../game/tiles'
 import { useGame } from '../game/useGame'
 import { CAMPAIGN, actById } from '../game/campaign'
 import { campaignState } from '../game/engine'
-import { alpha } from '../game/color'
 
 /**
  * Bosses stand somewhere. Tying each one to a real place turns the ladder into
@@ -31,16 +32,16 @@ const BOSS_SITES = {
 }
 
 const LEGEND = [
-  ['#4aa0d8', 'Harbour'],
-  ['#cbb98c', 'Open ground'],
-  ['#3f6f2c', 'Bushland'],
-  ['#a85a44', 'Built up'],
-  ['#e2913f', 'Main roads'],
-  ['#f0dfae', 'Beach'],
+  ['#2874b3', 'Open water'],
+  ['#e2d1a0', 'Open ground'],
+  ['#3f8a30', 'Bushland'],
+  ['#cf5b41', 'Built up'],
+  ['#e8933c', 'Main roads'],
+  ['#f7e8bc', 'Beach'],
 ]
 
 /** A compass rose, drawn rather than set in type. Every map that means it has
- *  one, and it is the cheapest thing on the page that says "this was made".  */
+ *  one, and it is the cheapest thing on the page that says somebody made this. */
 const COMPASS = {
   w: 15,
   h: 15,
@@ -48,7 +49,7 @@ const COMPASS = {
   grid: [
     '.......o.......',
     '.......n.......',
-    '......onо......'.replace('о', 'n'),
+    '......nnn......',
     '......nnn......',
     '.....onnno.....',
     '.....dnnnd.....',
@@ -64,18 +65,196 @@ const COMPASS = {
   ],
 }
 
+/** The mark a town gets on the poster: two roofs, the way a world map draws a
+ *  settlement. Small enough to sit under its own name plate. */
+const TOWN = {
+  w: 9,
+  h: 7,
+  palette: { o: '#4a3a24', f: '#cf5b41', F: '#94382a', w: '#efe4cc', g: '#5f86b0' },
+  grid: [
+    '..o...o..',
+    '.ofo.ogo.',
+    'offFo ggo'.replace(' ', 'o'),
+    'owwwoowwo',
+    'owwwoowwo',
+    'ooooooooo',
+    '..o...o..',
+  ],
+}
+
 const place = (id) => SYDNEY.places.find((p) => p.id === id)
 
-/** Where a coordinate lands on the painted map, in its own pixels. */
+/** Where a coordinate lands on the detailed map, in its own pixels. */
 const spot = (p) => {
   const [x, y] = toCell([p.lon, p.lat])
   return { cx: x, cy: y, px: x * TILE + TILE / 2, py: y * TILE + TILE / 2 }
+}
+
+/** A place on the poster, as a percentage of it. */
+const posterAt = (p) => {
+  const [x, y] = overCell(p.lon, p.lat)
+  return { left: `${(x / OVER_W) * 100}%`, top: `${(y / OVER_H) * 100}%` }
+}
+
+/**
+ * The poster. Every town the picture has room for, named — a map with six
+ * labels on it is a diagram, and the reference this is drawn from names every
+ * settlement it has.
+ */
+function Poster({ onOpen }) {
+  const towns = useMemo(() => {
+    const taken = []
+    const out = []
+    for (const p of [...SYDNEY.places].sort((a, b) => a.rank - b.rank)) {
+      const [x, y] = overCell(p.lon, p.lat)
+      // Dee Why is north of the frame's top edge. A name plate hangs above its
+      // mark, so anything near an edge has to go rather than climb out of it.
+      if (x < 1 || y < 2 || x > OVER_W - 1 || y > OVER_H - 1) continue
+      // Percentages of a square, so one collision test works at any size.
+      const px = (x / OVER_W) * 100
+      const py = (y / OVER_H) * 100
+      if (taken.some((t) => Math.abs(t.px - px) < 26 && Math.abs(t.py - py) < 9)) continue
+      taken.push({ px, py })
+      out.push(p)
+    }
+    return out
+  }, [])
+
+  return (
+    <div
+      className="relative p-[7px]"
+      style={{ background: '#2a1e12', boxShadow: 'inset 0 0 0 2px #8a6a3f, 3px 3px 0 0 rgba(0,0,0,0.55)' }}
+    >
+      {['top-[3px] left-[3px]', 'top-[3px] right-[3px]', 'bottom-[3px] left-[3px]', 'bottom-[3px] right-[3px]'].map(
+        (at) => (
+          <span key={at} className={`absolute w-[5px] h-[5px] z-20 ${at}`} style={{ background: '#c9a227' }} />
+        ),
+      )}
+
+      <button
+        onClick={onOpen}
+        className="relative block w-full overflow-hidden active:brightness-105"
+        aria-label="Open the full map"
+      >
+        <OverviewMap />
+
+        {towns.map((p) => (
+          <span
+            key={p.id}
+            className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center pointer-events-none"
+            style={posterAt(p)}
+          >
+            <PixelSprite sprite={TOWN} size={11} />
+            <span
+              className="font-pixel text-[5px] leading-none whitespace-nowrap px-[3px] py-[2px] border mt-[1px]"
+              style={{ color: '#33260f', background: '#f0e3bc', borderColor: '#7a6035' }}
+            >
+              {p.name}
+            </span>
+          </span>
+        ))}
+      </button>
+
+      <span
+        className="absolute left-2.5 bottom-2.5 z-10 grid place-items-center w-9 h-9 border pointer-events-none"
+        style={{ background: '#e8d9b4', borderColor: '#2a1e12' }}
+        aria-hidden="true"
+      >
+        <PixelSprite sprite={COMPASS} size={26} />
+      </span>
+    </div>
+  )
+}
+
+/** The detailed map, opened. Same ground at a hundred metres a cell, with the
+ *  fog, the bosses and somewhere to pan to. */
+function FullMap({ onClose, revealed, markers, onPick }) {
+  return (
+    <Modal open onClose={onClose} title="SYDNEY" accent="var(--color-lime)" wide>
+      <MapViewport
+        w={MAP_PX_W}
+        h={MAP_PX_H}
+        label="Sydney"
+        className="w-full aspect-square bg-[#2a1e12]"
+        content={<SydneyMap revealed={revealed} style={{ width: MAP_PX_W, height: MAP_PX_H }} />}
+      >
+        {(view) => {
+          const limit = view.zoom >= 3 ? 2 : view.zoom >= 1.6 ? 1 : 0
+          const taken = []
+          const room = (l) => {
+            const x = view.x + l.px * view.s
+            const y = view.y + l.py * view.s
+            if (x < -80 || y < -20 || x > view.box.w + 80 || y > view.box.h + 20) return false
+            if (x > view.box.w - 82 && y > view.box.h - 150) return false
+            if (taken.some((t) => Math.abs(t.x - x) < 62 && Math.abs(t.y - y) < 16)) return false
+            taken.push({ x, y })
+            return true
+          }
+          return (
+            <>
+              {SYDNEY.places
+                .map((p) => ({ ...p, ...spot(p) }))
+                .sort((a, b) => a.rank - b.rank)
+                .filter((l) => l.rank <= limit && room(l))
+                .map((l) => (
+                  <span
+                    key={l.id}
+                    aria-hidden="true"
+                    className="absolute -translate-x-1/2 font-pixel text-[7px] leading-none whitespace-nowrap pointer-events-none px-1 py-[3px] border"
+                    style={{
+                      left: view.x + l.px * view.s,
+                      top: view.y + l.py * view.s + 7,
+                      color: '#33260f',
+                      background: '#f0e3bc',
+                      borderColor: '#7a6035',
+                    }}
+                  >
+                    {l.name}
+                  </span>
+                ))}
+
+              {markers.map((m) => {
+                const act = actById(m.boss.act)
+                const colour = m.cleared ? 'var(--color-ink-faint)' : m.current ? act.color : '#4a3a24'
+                return (
+                  <button
+                    key={m.boss.id}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onPick(m)
+                    }}
+                    aria-label={`${m.boss.name} at ${m.place.name}`}
+                    className="absolute grid place-items-center w-11 h-11 -translate-x-1/2 -translate-y-1/2 active:brightness-125"
+                    style={{ left: view.x + m.px * view.s, top: view.y + m.py * view.s }}
+                  >
+                    <span
+                      className={`block w-3 h-3 border-2 rotate-45 ${m.current ? 'pulse-ring' : ''}`}
+                      style={{
+                        borderColor: colour,
+                        background: m.current ? act.color : m.cleared ? 'transparent' : '#f0e3bc',
+                        opacity: m.found || m.current ? 1 : 0.6,
+                      }}
+                    />
+                  </button>
+                )
+              })}
+            </>
+          )
+        }}
+      </MapViewport>
+      <div className="text-[10px] text-ink-faint mt-2.5 leading-relaxed">
+        Drag to move, pinch or use + to get closer. Ground you have not walked sits under haze.
+      </div>
+    </Modal>
+  )
 }
 
 export default function Map() {
   const { state } = useGame()
   const revealed = useMemo(() => new Set(state.explored ?? []), [state.explored])
   const [picked, setPicked] = useState(null)
+  const [open, setOpen] = useState(false)
   const c = campaignState(state.player, state.campaign)
 
   const pct = revealed.size / (SYDNEY.w * SYDNEY.h)
@@ -98,120 +277,27 @@ export default function Map() {
     [revealed, c.defeated, c.current],
   )
 
-  const labels = useMemo(
-    () => [...SYDNEY.places].sort((a, b) => a.rank - b.rank).map((p) => ({ ...p, ...spot(p) })),
-    [],
-  )
   const shown = picked ?? markers.find((m) => m.current) ?? markers[0]
 
   return (
     <div className="p-3 space-y-3">
-      {/* A drawn map wants a drawn edge. Warm timber and a brass inlay, four
-          corner studs, and the compass in the bottom left where a cartographer
-          would put it — the frame is what turns a rendered grid into a thing
-          somebody made. */}
-      <div className="relative p-[7px]" style={{ background: '#2a1e12', boxShadow: 'inset 0 0 0 2px #8a6a3f, 3px 3px 0 0 rgba(0,0,0,0.55)' }}>
-        {[
-          ['top-[3px] left-[3px]', ''],
-          ['top-[3px] right-[3px]', ''],
-          ['bottom-[3px] left-[3px]', ''],
-          ['bottom-[3px] right-[3px]', ''],
-        ].map(([at], i) => (
-          <span key={i} className={`absolute w-[5px] h-[5px] z-10 ${at}`} style={{ background: '#c9a227' }} />
-        ))}
-        <Panel corners={false} className="p-0 border-0">
-        <MapViewport
-          w={MAP_PX_W}
-          h={MAP_PX_H}
-          label="Sydney Harbour"
-          className="w-full aspect-square bg-[#0b0715]"
-          content={<SydneyMap revealed={revealed} style={{ width: MAP_PX_W, height: MAP_PX_H }} />}
-        >
-          {(view) => {
-            // Labels earn their place as you go in: six anchors from across the
-            // whole harbour, then the suburbs, then everything.
-            const limit = view.zoom >= 3 ? 2 : view.zoom >= 1.6 ? 1 : 0
-            // Two names on top of each other is worse than one name. Take them
-            // in order of importance and drop anything that lands on a name
-            // already down.
-            const taken = []
-            const room = (l) => {
-              const x = view.x + l.px * view.s
-              const y = view.y + l.py * view.s
-              // Zoomed in, most of the city is off the side of the screen.
-              // Placing a name out there wastes a slot the declutter pass could
-              // have given to one you can actually see.
-              if (x < -80 || y < -20 || x > view.box.w + 80 || y > view.box.h + 20) return false
-              // The zoom controls own the bottom right corner; nothing gets
-              // written underneath them.
-              if (x > view.box.w - 82 && y > view.box.h - 150) return false
-              if (taken.some((t) => Math.abs(t.x - x) < 62 && Math.abs(t.y - y) < 16)) return false
-              taken.push({ x, y })
-              return true
-            }
-            return (
-              <>
-                {labels
-                  .filter((l) => l.rank <= limit && room(l))
-                  .map((l) => (
-                    <span
-                      key={l.id}
-                      aria-hidden="true"
-                      // A name plate rather than loose lettering: the map runs
-                      // from parchment to open water, and a plate reads on both.
-                      className="absolute -translate-x-1/2 font-pixel text-[7px] leading-none whitespace-nowrap pointer-events-none px-1 py-[3px] border"
-                      style={{
-                        left: view.x + l.px * view.s,
-                        top: view.y + l.py * view.s + 7,
-                        color: '#33260f',
-                        background: '#f0e3bc',
-                        borderColor: '#7a6035',
-                        boxShadow: '1px 1px 0 0 rgba(0,0,0,0.35)',
-                      }}
-                    >
-                      {l.name}
-                    </span>
-                  ))}
+      <Poster onOpen={() => setOpen(true)} />
 
-                {markers.map((m) => {
-                  const act = actById(m.boss.act)
-                  const colour = m.cleared ? 'var(--color-ink-faint)' : m.current ? act.color : 'var(--color-ink-faint)'
-                  return (
-                    <button
-                      key={m.boss.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setPicked(m)
-                      }}
-                      aria-label={`${m.boss.name} at ${m.place.name}`}
-                      className="absolute grid place-items-center w-11 h-11 -translate-x-1/2 -translate-y-1/2 active:brightness-125"
-                      style={{ left: view.x + m.px * view.s, top: view.y + m.py * view.s }}
-                    >
-                      <span
-                        className={`block w-3 h-3 border-2 rotate-45 ${m.current ? 'pulse-ring' : ''}`}
-                        style={{
-                          borderColor: colour,
-                          background: m.current ? act.color : m.cleared ? 'transparent' : alpha('#0b0715', 78),
-                          opacity: m.found || m.current ? 1 : 0.5,
-                        }}
-                      />
-                    </button>
-                  )
-                })}
-              </>
-            )
+      <Btn full variant="ghost" onClick={() => setOpen(true)}>
+        OPEN THE FULL MAP
+      </Btn>
+
+      {open && (
+        <FullMap
+          onClose={() => setOpen(false)}
+          revealed={revealed}
+          markers={markers}
+          onPick={(m) => {
+            setPicked(m)
+            setOpen(false)
           }}
-        </MapViewport>
-        </Panel>
-        <span
-          className="absolute left-2.5 bottom-2.5 z-10 grid place-items-center w-9 h-9 border"
-          style={{ background: '#e8d9b4', borderColor: '#2a1e12' }}
-          aria-hidden="true"
-        >
-          <PixelSprite sprite={COMPASS} size={26} />
-        </span>
-      </div>
+        />
+      )}
 
       <Panel corners={false} className="p-3">
         <div className="flex items-center justify-between">
@@ -221,7 +307,6 @@ export default function Map() {
         <Bar pct={pct} color="var(--color-lime)" height={6} className="mt-2" />
         <div className="text-[11px] text-ink-dim mt-2 leading-snug">
           Ground you have not walked sits under haze. Every kilometre you cover clears more of it, and it stays clear.
-          Drag to move, pinch or use + to get closer.
         </div>
       </Panel>
 
@@ -241,7 +326,7 @@ export default function Map() {
       )}
 
       <div>
-        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">100m a cell</span>}>
+        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">450m a cell</span>}>
           THE HARBOUR
         </SectionTitle>
         <Panel corners={false} className="p-3">
@@ -259,8 +344,8 @@ export default function Map() {
             </span>
             <p className="text-[10px] text-ink-faint leading-relaxed">
               Eighteen kilometres of Sydney: the Parramatta and Lane Cove rivers in the west, Dee Why and Curl Curl in
-              the north, Coogee in the south, and the whole harbour in the middle. Coastline traced from the real
-              thing; every hundred metres of it drawn by hand.
+              the north, Coogee in the south, and the whole harbour in the middle. Open it and the same ground is drawn
+              at a hundred metres a cell.
             </p>
           </div>
         </Panel>
