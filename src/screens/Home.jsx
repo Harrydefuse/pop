@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bar, Btn, Modal, Panel } from '../components/ui'
+import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { BossArt, ChestArt } from '../components/Sprites'
@@ -202,7 +202,95 @@ function SlotSheet({ slot, state, onClose, onLog }) {
   )
 }
 
-export default function Home() {
+/**
+ * What to do first.
+ *
+ * A new character lands here with a locked chest, three empty slots and a boss
+ * that opens four levels away — everything on the screen is a thing you cannot
+ * do yet. This names the one you can, and gets out of the way for good once
+ * the loop is running.
+ */
+function FirstSteps({ state, onGo }) {
+  const p = state.player
+  const steps = [
+    {
+      id: 'train',
+      done: state.log.length > 0,
+      title: 'Track a session',
+      note: 'Pick what you are doing and the app runs the clock. A minute counts.',
+      cta: 'GO TO TRAIN',
+      go: 'train',
+    },
+    {
+      id: 'chest',
+      done: p.inventory.length > 1,
+      title: 'Open the daily chest',
+      note: 'Twenty minutes of anything active unlocks it. Every chest is a drop.',
+      cta: null,
+    },
+    {
+      id: 'walk',
+      done: (state.explored?.length ?? 0) > 0,
+      title: 'Clear some of the map',
+      note: 'Track a walk or a run outdoors and the ground you cover opens up.',
+      cta: 'SEE THE MAP',
+      go: 'map',
+    },
+    {
+      id: 'boss',
+      done: p.level >= 5,
+      title: 'Reach level 5',
+      note: 'The Warden is waiting at Circular Quay. It does not move.',
+      cta: null,
+    },
+  ]
+  const doneCount = steps.filter((x) => x.done).length
+  if (doneCount === steps.length) return null
+  const next = steps.find((x) => !x.done)
+
+  return (
+    <Panel accent="var(--color-cyan)" className="p-3.5">
+      <SectionTitle
+        color="var(--color-cyan)"
+        right={<span className="font-mono text-[10px] text-ink-faint">{doneCount}/{steps.length}</span>}
+      >
+        FIRST STEPS
+      </SectionTitle>
+      <div className="space-y-1.5">
+        {steps.map((x) => (
+          <div key={x.id} className="flex items-start gap-2">
+            <span className="mt-[3px] shrink-0">
+              <Icon
+                name={x.done ? 'check' : x.id === next.id ? 'spark' : 'lock'}
+                size={11}
+                color={x.done ? 'var(--color-lime)' : x.id === next.id ? 'var(--color-cyan)' : 'var(--color-ink-faint)'}
+              />
+            </span>
+            <div className="min-w-0">
+              <div
+                className="text-[12px] leading-snug"
+                style={{
+                  color: x.done ? 'var(--color-ink-faint)' : x.id === next.id ? 'var(--color-ink)' : 'var(--color-ink-dim)',
+                  textDecoration: x.done ? 'line-through' : undefined,
+                }}
+              >
+                {x.title}
+              </div>
+              {x.id === next.id && <div className="text-[11px] text-ink-dim mt-0.5 leading-snug">{x.note}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {next.cta && (
+        <Btn full variant="cyan" size="sm" className="mt-3" onClick={() => onGo(next.go)}>
+          {next.cta}
+        </Btn>
+      )}
+    </Panel>
+  )
+}
+
+export default function Home({ onGo }) {
   const { state, openChest } = useGame()
   const [openSlot, setOpenSlot] = useState(null)
   const [logging, setLogging] = useState(null)
@@ -218,6 +306,8 @@ export default function Home() {
   return (
     <div className="p-3 space-y-3">
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
+
+      <FirstSteps state={state} onGo={onGo} />
 
       <Target onOpen={() => setCampaign(true)} />
 

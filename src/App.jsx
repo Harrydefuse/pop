@@ -81,7 +81,7 @@ function Device() {
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}
         <div className="mx-auto w-full max-w-[520px]">
-          {tab === 'home' && <Home />}
+          {tab === 'home' && <Home onGo={setTab} />}
           {tab === 'train' && <Train />}
           {tab === 'map' && <Map />}
           {tab === 'friends' && <Friends />}
