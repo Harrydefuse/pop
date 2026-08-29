@@ -4,8 +4,8 @@ const TABS = [
   { key: 'home', label: 'TODAY', icon: 'home' },
   { key: 'train', label: 'TRAIN', icon: 'bolt' },
   { key: 'map', label: 'MAP', icon: 'boot' },
-  { key: 'hero', label: 'HERO', icon: 'person' },
   { key: 'friends', label: 'FRIENDS', icon: 'trophy' },
+  { key: 'hero', label: 'HERO', icon: 'person' },
 ]
 
 export default function TabBar({ tab, setTab, badges = {} }) {

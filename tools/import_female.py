@@ -73,6 +73,25 @@ def read_grid():
     return rows
 
 
+def fix_jaw(rows):
+    """Her jaw shadow and the neck under it are the same brown as her hair, so
+    nearest colour files them under hair and she ends up wearing a strand
+    smeared across her chin. On the rows between her mouth and her collar,
+    anything on the hair ramp that sits inside the width of her face is skin in
+    shadow, not hair."""
+    # A stray tunic-coloured pixel in her hair is not her collar — the shirt is
+    # the first row that is properly made of it.
+    tunic_top = next(y for y, r in enumerate(rows) if sum(c in TUNIC for c in r) >= 4)
+    face = max((([x for x, c in enumerate(r) if c in SKIN]) for r in rows[:tunic_top]), key=len)
+    left, right = min(face), max(face)
+    out = []
+    for y, r in enumerate(rows):
+        if tunic_top - 3 <= y < tunic_top:
+            r = ''.join('D' if (c in HAIR and left <= x <= right) else c for x, c in enumerate(r))
+        out.append(r)
+    return out
+
+
 def only(rows, keep):
     """One clothing layer on its own, everything else knocked out."""
     return [''.join(c if c in keep else '.' for c in r) for r in rows]
@@ -88,7 +107,7 @@ def js(name, rows):
 
 
 if __name__ == '__main__':
-    g = read_grid()
+    g = fix_jaw(read_grid())
     print(f'{GW}x{GH}', Counter(''.join(g)).most_common())
     out = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else 'female-grids.js')
     out.write_text(

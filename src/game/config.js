@@ -367,9 +367,17 @@ export const SLOT_STATS = {
  * line or push the pace. It is the one slot where the choice is yours rather
  * than just "whichever number is bigger".
  */
+// What goes in your other hand. Seven of them now the weapon art is in — a
+// shield and six ways of hitting something. The stat spread is the choice: no
+// weapon is strictly better, they lean different ways.
 export const OFFHAND_KINDS = [
-  { id: 'shield', name: 'Shield', stats: { VIT: 3, FOCUS: 2 }, blurb: 'Take the hit. Steadier, harder to knock off a streak.' },
-  { id: 'sword', name: 'Sword', stats: { STR: 3, AGI: 2 }, blurb: 'Take the shot. Hits harder, leaves you open.' },
+  { id: 'shield', name: 'Shield', stats: { VIT: 4, FOCUS: 2 }, blurb: 'Take the hit. Steadier, and harder to knock off a streak.' },
+  { id: 'sword', name: 'Sword', stats: { STR: 3, AGI: 2 }, blurb: 'The honest one. Good at everything, best at nothing.' },
+  { id: 'axe', name: 'Axe', stats: { STR: 5 }, blurb: 'All of it in one swing. Nothing left over for anything else.' },
+  { id: 'dagger', name: 'Dagger', stats: { AGI: 4, STR: 1 }, blurb: 'Quick and close. Rewards showing up often over showing up hard.' },
+  { id: 'spear', name: 'Spear', stats: { AGI: 3, END: 2 }, blurb: 'Reach. Keeps the fight at the distance you choose.' },
+  { id: 'bow', name: 'Bow', stats: { FOCUS: 3, AGI: 2 }, blurb: 'Patience made into a weapon. Aim is the whole of it.' },
+  { id: 'staff', name: 'Staff', stats: { FOCUS: 4, VIT: 1 }, blurb: 'Nothing quick about it. Everything about it lasts.' },
 ]
 
 export function offhandKind(id) {
