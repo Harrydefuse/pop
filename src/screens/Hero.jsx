@@ -4,7 +4,8 @@ import Icon from '../components/Icon'
 import { GearIcon, HeroView, PetView } from '../components/Sprites'
 import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
-import { EQUIP_SLOTS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
+import { ARMOUR_SETS, EQUIP_SLOTS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
+import { GEAR_CATALOG } from '../game/data'
 import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor } from '../game/engine'
 import { alpha } from '../game/color'
 
@@ -169,7 +170,90 @@ const FILTERS = [
   { id: 'all', label: 'ALL' },
   { id: 'gear', label: 'GEAR' },
   { id: 'pets', label: 'PETS' },
+  { id: 'codex', label: 'COLLECT' },
 ]
+
+/**
+ * Everything in the game, whether you own it or not.
+ *
+ * Drops are the only way gear arrives, so a new character has a pair of boots
+ * and no idea what else exists — which makes the chest a lottery for a prize
+ * you cannot picture. This is the prize list: sixty pieces, five sets, lit if
+ * you have one and dark if you do not.
+ */
+function Collection({ owned, onPick }) {
+  const have = useMemo(() => new Set(owned.map((i) => `${i.set}:${i.kind}`)), [owned])
+  return (
+    <>
+      {ARMOUR_SETS.map((set) => {
+        const pieces = GEAR_CATALOG.filter((g) => g.set === set.id)
+        const got = pieces.filter((g) => have.has(`${g.set}:${g.kind}`)).length
+        return (
+          <div key={set.id} className="mb-4 last:mb-0">
+            <div className="flex items-baseline justify-between mb-2.5">
+              <span className="font-pixel text-[7px]" style={{ color: RARITY[set.rarity].color }}>
+                {set.name.toUpperCase()}
+              </span>
+              <span className="font-mono text-[10px] text-ink-faint">
+                {got}/{pieces.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-6 gap-1.5">
+              {pieces.map((g) => {
+                const mine = have.has(`${g.set}:${g.kind}`)
+                const color = RARITY[g.rarity].color
+                return (
+                  <button
+                    key={g.kind}
+                    onClick={() => onPick(g)}
+                    aria-label={`${g.name}${mine ? '' : ', not found yet'}`}
+                    className="relative grid place-items-center aspect-square border transition-transform active:scale-95"
+                    style={{
+                      borderColor: mine ? color : 'var(--color-line)',
+                      background: mine ? alpha(color, 20) : 'transparent',
+                    }}
+                  >
+                    {/* Dimmed, not hidden — the whole point is being able to see
+                        what is out there. */}
+                    <span style={mine ? undefined : { filter: 'grayscale(1) brightness(0.85)', opacity: 0.5 }}>
+                      <GearIcon slot={g.slot} kind={g.kind} set={g.set} size={26} />
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
+/** A piece you have not found yet: what it is, and what it would do. */
+function CodexSheet({ piece, onClose }) {
+  return (
+    <Modal open onClose={onClose} title={piece.name.toUpperCase()} accent={RARITY[piece.rarity].color}>
+      <div className="flex items-center gap-3">
+        <span className="grid place-items-center w-16 h-16 shrink-0 border" style={{ borderColor: RARITY[piece.rarity].color }}>
+          <GearIcon slot={piece.slot} kind={piece.kind} set={piece.set} size={48} />
+        </span>
+        <div className="min-w-0">
+          <RarityTag rarity={piece.rarity} />
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+            {Object.entries(piece.stats).map(([k, v]) => (
+              <span key={k} className="font-mono text-[11px] text-ink-dim">
+                {k} +{v}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="text-[11px] text-ink-dim mt-3 leading-snug">
+        Comes out of chests. The rarer the set, the longer you will be waiting — a legendary is a one-in-a-hundred day.
+      </div>
+    </Modal>
+  )
+}
 
 export default function Hero() {
   const [saving, setSaving] = useState(false)
@@ -183,6 +267,7 @@ export default function Hero() {
 
   const [filter, setFilter] = useState('all')
   const [openItem, setOpenItem] = useState(null)
+  const [openCodex, setOpenCodex] = useState(null)
   const [openPet, setOpenPet] = useState(null)
 
   const worn = useMemo(() => {
@@ -201,8 +286,8 @@ export default function Hero() {
     [p.pets],
   )
 
-  const showGear = filter !== 'pets'
-  const showPets = filter !== 'gear'
+  const showGear = filter === 'all' || filter === 'gear'
+  const showPets = filter === 'all' || filter === 'pets'
 
   return (
     <div className="p-3 space-y-3">
@@ -265,7 +350,7 @@ export default function Hero() {
       {saving && <SaveSheet onClose={() => setSaving(false)} />}
 
       {/* ---------------------------------------------------------- filter */}
-      <div className="grid grid-cols-3 border border-line bg-panel">
+      <div className="grid grid-cols-4 border border-line bg-panel">
         {FILTERS.map((f) => (
           <button
             key={f.id}
@@ -283,6 +368,8 @@ export default function Hero() {
 
       {/* ----------------------------------------------------------- tiles */}
       <Panel className="p-3">
+        {filter === 'codex' && <Collection owned={p.inventory} onPick={setOpenCodex} />}
+
         {showGear && (
           <>
             <div className="font-pixel text-[7px] text-ink-faint mb-2.5">GEAR · {gear.length}</div>
@@ -325,12 +412,13 @@ export default function Hero() {
           </>
         )}
 
-        {!gear.length && !pets.length && (
+        {filter !== 'codex' && !gear.length && !pets.length && (
           <div className="text-[11px] text-ink-faint text-center py-6">Open a chest to start collecting.</div>
         )}
       </Panel>
 
       {openItem && <ItemSheet item={openItem} onClose={() => setOpenItem(null)} />}
+      {openCodex && <CodexSheet piece={openCodex} onClose={() => setOpenCodex(null)} />}
       {openPet && <PetSheet pet={openPet} onClose={() => setOpenPet(null)} />}
     </div>
   )
