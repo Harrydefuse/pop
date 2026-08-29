@@ -96,13 +96,16 @@ function Target({ onOpen }) {
  * counts, the minimum, how to log it — lives behind a tap, so the screen stays
  * scannable when all you want to know is "what's left today".
  */
-function SlotRow({ slot, state, onOpen }) {
+function SlotRow({ slot, state, onOpen, last }) {
   const done = state.done
   const pct = slot.minMinutes ? Math.min(1, state.minutes / slot.minMinutes) : done ? 1 : 0
 
   return (
-    <button onClick={onOpen} className="w-full text-left active:brightness-125">
-      <Panel corners={false} className="p-2.5" style={done ? { borderColor: slot.color } : undefined}>
+    <button
+      onClick={onOpen}
+      className={`w-full text-left active:brightness-125 ${last ? '' : 'border-b border-line'}`}
+    >
+      <div className="p-2.5">
         <div className="flex items-center gap-2.5">
           <div
             className="grid place-items-center w-9 h-9 shrink-0 border"
@@ -126,7 +129,7 @@ function SlotRow({ slot, state, onOpen }) {
             {done ? 'DONE' : slot.minMinutes ? `${Math.round(state.minutes)}/${slot.minMinutes}m` : 'TODO'}
           </span>
         </div>
-      </Panel>
+      </div>
     </button>
   )
 }
@@ -236,11 +239,17 @@ export default function Home() {
       </Panel>
 
       {/* ------------------------------------------------------------ slots */}
-      <div className="space-y-2">
-        {DAILY_SLOTS.map((slot) => (
-          <SlotRow key={slot.id} slot={slot} state={slotState(slot.id)} onOpen={() => setOpenSlot(slot)} />
+      <Panel corners={false}>
+        {DAILY_SLOTS.map((slot, i) => (
+          <SlotRow
+            key={slot.id}
+            slot={slot}
+            state={slotState(slot.id)}
+            onOpen={() => setOpenSlot(slot)}
+            last={i === DAILY_SLOTS.length - 1}
+          />
         ))}
-      </div>
+      </Panel>
 
       {/* ------------------------------------------------------------ chest */}
       <Panel className="p-3.5 text-center" accent={chestReady ? 'var(--color-gold)' : undefined}>

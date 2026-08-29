@@ -9,6 +9,16 @@ import { alpha } from '../game/color'
 /** Distance activities are the ones worth asking for a GPS fix. */
 const WANTS_GPS = new Set(['walk', 'run', 'ride'])
 
+/** A wall of twelve identical cards is a list, not a choice. Colour groups them
+ *  by what they are for, which is the thing you are actually picking between. */
+const TINT = {
+  walk: 'var(--color-lime)', run: 'var(--color-lime)', ride: 'var(--color-lime)',
+  swim: 'var(--color-lime)', hiit: 'var(--color-lime)', sport: 'var(--color-lime)',
+  gym: 'var(--color-gold)', bodyweight: 'var(--color-gold)',
+  mobility: 'var(--color-cyan)', sleep: 'var(--color-cyan)',
+  aim: 'var(--color-neon)', vod: 'var(--color-neon)',
+}
+
 /**
  * Watches where you actually are, for as long as a session is running.
  *
@@ -168,16 +178,10 @@ function Pick() {
   const { startSession } = useGame()
   return (
     <div className="p-3 space-y-3">
-      <Panel corners={false} className="p-3.5">
-        <div className="font-pixel text-[11px] text-neon">WHAT ARE YOU DOING?</div>
-        <div className="text-[11px] text-ink-dim mt-2 leading-snug">
-          Start it here and the app does the counting. Nothing is typed in, so nothing can be made up — the XP costs
-          exactly the time it says it does.
-        </div>
-      </Panel>
-
       <div>
-        <SectionTitle>TRAIN</SectionTitle>
+        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">the app counts it</span>}>
+          WHAT ARE YOU DOING?
+        </SectionTitle>
         <div className="grid grid-cols-2 gap-2">
           {TRACKED.map((a) => (
             <button
@@ -186,15 +190,20 @@ function Pick() {
               className="text-left active:brightness-125"
               aria-label={`Start a ${a.name} session`}
             >
-              <Panel corners={false} className="p-3 h-full" style={{ background: alpha('#0b0715', 40) }}>
+              <Panel corners={false} className="p-2.5 h-full" style={{ borderColor: alpha(TINT[a.id], 45) }}>
                 <div className="flex items-center gap-2.5">
-                  <span className="grid place-items-center w-11 h-11 shrink-0 border border-line">
-                    <Icon name={a.icon} size={20} color="var(--color-neon)" />
+                  <span
+                    className="grid place-items-center w-11 h-11 shrink-0 border"
+                    style={{ borderColor: alpha(TINT[a.id], 55), background: alpha(TINT[a.id], 10) }}
+                  >
+                    <Icon name={a.icon} size={20} color={TINT[a.id]} />
                   </span>
                   <div className="min-w-0">
-                    <div className="font-pixel text-[8px] text-ink">{a.name.toUpperCase()}</div>
+                    <div className="font-pixel text-[8px]" style={{ color: TINT[a.id] }}>
+                      {a.name.toUpperCase()}
+                    </div>
                     <div className="font-mono text-[10px] text-ink-faint mt-1">
-                      {a.xp} XP / {a.per} {a.unit}
+                      {a.xp} XP / {a.per} {a.per === 1 ? a.unit.replace(/s$/, '') : a.unit}
                     </div>
                   </div>
                 </div>

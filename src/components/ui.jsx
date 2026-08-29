@@ -7,8 +7,8 @@ import { alpha } from '../game/color'
 export function Panel({ children, className = '', accent, corners = true, as: Tag = 'div', ...rest }) {
   return (
     <Tag
-      className={`relative border border-line bg-panel ${className}`}
-      style={accent ? { borderColor: accent, boxShadow: `0 0 0 1px ${alpha(accent, 20)}, 0 0 24px -12px ${accent}` } : undefined}
+      className={`relative border border-line bg-panel pixel-drop ${className}`}
+      style={accent ? { borderColor: accent, boxShadow: `3px 3px 0 0 ${alpha(accent, 18)}, 3px 3px 0 1px rgba(0,0,0,0.5)` } : undefined}
       {...rest}
     >
       {corners && <Corners color={accent} />}
@@ -61,7 +61,9 @@ export function Btn({ children, variant = 'primary', size = 'md', className = ''
   }
   return (
     <button
-      className={`font-pixel border transition-all duration-150 active:translate-y-px active:brightness-110 disabled:opacity-40 disabled:active:translate-y-0 disabled:active:brightness-100 ${BTN_VARIANTS[variant]} ${sizes[size]} ${full ? 'w-full' : ''} ${className}`}
+      className={`font-pixel border transition-none active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-40 disabled:active:translate-x-0 disabled:active:translate-y-0 ${
+        variant === 'ghost' || variant === 'dim' ? 'bevel-ghost' : 'bevel'
+      } ${BTN_VARIANTS[variant]} ${sizes[size]} ${full ? 'w-full' : ''} ${className}`}
       {...rest}
     >
       {children}
@@ -98,12 +100,12 @@ export function Bar({ pct, color = 'var(--color-neon)', height = 8, shine, track
       aria-valuemax={100}
     >
       <div
-        className={`relative h-full transition-[width] duration-500 ease-out ${shine ? 'xp-shine' : ''}`}
+        className={`relative h-full ${shine ? 'xp-shine' : ''}`}
         style={{
-          width: `${clamped * 100}%`,
+          width: `${Math.ceil(clamped * 40) * 2.5}%`,
           background: color,
-          backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.28), rgba(0,0,0,0.3))',
-          boxShadow: `0 0 12px -2px ${color}`,
+          boxShadow: `inset 0 1px 0 0 ${alpha('#ffffff', 30)}, inset 0 -1px 0 0 ${alpha('#000000', 35)}`,
+          transition: 'width 600ms steps(20, end)',
         }}
       />
       {/* segment ticks give the bar an arcade read rather than a web read */}
