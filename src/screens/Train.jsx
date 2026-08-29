@@ -3,7 +3,8 @@ import { Btn, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import { useGame } from '../game/useGame'
 import { MIN_SESSION_S, TRACKED, clock, elapsedMs, pace, sessionAmount, stepMetres } from '../game/session'
-import { resolveActivity } from '../game/engine'
+import { ACTIVITIES } from '../game/config'
+import { minutesOf, resolveActivity } from '../game/engine'
 import { alpha } from '../game/color'
 
 /** Distance activities are the ones worth asking for a GPS fix. */
@@ -173,9 +174,100 @@ function Running({ session, act }) {
   )
 }
 
+/** How long ago, in the words you would use out loud. */
+function ago(ms) {
+  const mins = Math.round((Date.now() - ms) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.round(hrs / 24)
+  return days === 1 ? 'yesterday' : `${days}d ago`
+}
+
+/**
+ * What you have actually done.
+ *
+ * Every session was already being recorded and nothing showed it, which made
+ * the app feel like it forgot you the moment you stopped the clock. The week is
+ * the number people check; the list underneath is the proof behind it.
+ */
+function History({ log }) {
+  const week = Date.now() - 7 * 24 * 3600 * 1000
+  const recent = log.slice(0, 12)
+  const totals = log
+    .filter((l) => l.at >= week)
+    .reduce(
+      (acc, l) => {
+        const act = ACTIVITIES.find((a) => a.id === l.activityId)
+        if (!act) return acc
+        acc.sessions += 1
+        acc.xp += l.xp
+        acc.minutes += minutesOf(act, l.amount)
+        if (act.unit === 'km') acc.km += l.amount
+        return acc
+      },
+      { sessions: 0, xp: 0, minutes: 0, km: 0 },
+    )
+
+  if (!log.length) {
+    return (
+      <div>
+        <SectionTitle>YOUR SESSIONS</SectionTitle>
+        <Panel corners={false} className="p-4">
+          <div className="text-[11px] text-ink-dim text-center leading-snug">
+            Nothing here yet. Start something above and it lands here the moment you stop the clock.
+          </div>
+        </Panel>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">last 7 days</span>}>
+        YOUR SESSIONS
+      </SectionTitle>
+      <Panel corners={false} className="p-3">
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            [totals.sessions, 'SESSIONS'],
+            [Math.round(totals.minutes), 'MINUTES'],
+            [totals.km ? totals.km.toFixed(1) : '0', 'KM'],
+            [totals.xp, 'XP'],
+          ].map(([n, label]) => (
+            <div key={label} className="border border-line p-2 text-center">
+              <div className="font-mono text-[15px] text-ink tabular-nums">{n}</div>
+              <div className="font-pixel text-[6px] text-ink-faint mt-1">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-line space-y-1.5">
+          {recent.map((l) => {
+            const act = ACTIVITIES.find((a) => a.id === l.activityId)
+            if (!act) return null
+            return (
+              <div key={l.id} className="flex items-center gap-2.5">
+                <Icon name={act.icon} size={12} color={TINT[act.id] ?? 'var(--color-ink-faint)'} />
+                <span className="font-pixel text-[7px] text-ink-dim w-[74px] shrink-0">{act.name.toUpperCase()}</span>
+                <span className="font-mono text-[11px] text-ink">
+                  {l.amount} {l.amount === 1 ? act.unit.replace(/s$/, '') : act.unit}
+                </span>
+                <span className="font-mono text-[11px] text-lime ml-auto">+{l.xp}</span>
+                <span className="font-mono text-[10px] text-ink-faint w-[62px] text-right shrink-0">{ago(l.at)}</span>
+              </div>
+            )
+          })}
+        </div>
+      </Panel>
+    </div>
+  )
+}
+
 /** Pick something to do. */
 function Pick() {
-  const { startSession } = useGame()
+  const { state, startSession } = useGame()
   return (
     <div className="p-3 space-y-3">
       <div>
@@ -212,6 +304,8 @@ function Pick() {
           ))}
         </div>
       </div>
+
+      <History log={state.log} />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Bar, Modal, Panel, SectionTitle } from '../components/ui'
+import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
+import CampaignSheet from '../components/CampaignSheet'
 import PixelSprite from '../components/PixelSprite'
 import OverviewMap from '../components/OverviewMap'
 import SydneyMap from '../components/SydneyMap'
@@ -300,6 +301,7 @@ export default function Map() {
   const revealed = useMemo(() => new Set(state.explored ?? []), [state.explored])
   const [picked, setPicked] = useState(null)
   const [open, setOpen] = useState(false)
+  const [campaign, setCampaign] = useState(false)
   const c = campaignState(state.player, state.campaign)
 
   const coarse = useMemo(() => coarseExplored(revealed), [revealed])
@@ -362,8 +364,23 @@ export default function Map() {
             <span className="font-mono text-[11px] text-ink-faint">at {shown.place.name}</span>
           </div>
           <div className="text-[11px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
+          {/* The map is where you find out a boss is standing somewhere. It
+              should also be where you can go and do something about it. */}
+          {!shown.cleared && (
+            <Btn
+              full
+              size="sm"
+              variant={shown.current ? 'danger' : 'ghost'}
+              className="mt-3"
+              onClick={() => setCampaign(true)}
+            >
+              {shown.current ? 'FIGHT IT' : 'SEE THE ROAD'}
+            </Btn>
+          )}
         </Panel>
       )}
+
+      {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
 
       <div>
         <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">450m a cell</span>}>

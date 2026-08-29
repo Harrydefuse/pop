@@ -232,15 +232,15 @@ export default function Site({ onEnterApp }) {
                 <span className="soft">to get fit.</span>
               </h1>
               <p className="lede">
-                LVL100 turns real workouts into XP, loot and a companion that grows as you do. It is a
-                fitness app first — the rewards just happen to be the kind you already care about.
+                LVL100 is an RPG you play by moving. Ten bosses, three acts and an ending — and the
+                only way through is real workouts, timed by the app, on a map of the city you live in.
               </p>
               <div className="hero-actions">
                 <a className="btn" href="#/app" onClick={go}>
                   Try the prototype
                 </a>
-                <a className="btn ghost" href="#how">
-                  See how it works
+                <a className="btn ghost" href="#campaign">
+                  See the game
                 </a>
               </div>
               <span className="hero-note">
@@ -285,28 +285,68 @@ export default function Site({ onEnterApp }) {
             <div className="steps reveal">
               <div className="step">
                 <span className="bar" />
-                <h3>You move</h3>
+                <h3>You start it in the app</h3>
                 <p>
-                  A run, a lift, a class, a bike ride, a long walk, a decent night&rsquo;s sleep. Nine
-                  activity types, and none of them require a gym.
+                  Walk, run, ride, swim, gym, HIIT, calisthenics, sport, mobility — thirteen kinds, and
+                  none of them require a gym. Pick one and the clock starts.
                 </p>
               </div>
               <div className="step">
                 <span className="bar" />
-                <h3>Your watch proves it</h3>
+                <h3>The app does the counting</h3>
                 <p>
-                  The session arrives from Apple Health, Health Connect, Strava, Garmin or WHOOP —
-                  already signed. You never have to be trusted, which means nobody else has to be either.
+                  Nothing is typed in, so nothing can be made up. Outdoors it follows your route, so
+                  distance and pace are measured rather than claimed — and the XP costs exactly the time
+                  it says it does.
                 </p>
               </div>
               <div className="step">
                 <span className="bar" />
                 <h3>You get paid</h3>
                 <p>
-                  XP toward your level, points into five stats, cores to spend, damage against the
-                  world boss, and progress on a chest you&rsquo;re trying not to open yet.
+                  XP toward your level, points into five stats, damage on whatever boss is in front of
+                  you, ground cleared on the map, and a chest at the end of the day.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* -------------------------------------------------------- campaign */}
+        <section id="campaign" className="deep">
+          <div className="wrap stack wide">
+            <div className="stack reveal">
+              <h2>It has an ending.</h2>
+              <p className="lede">
+                Ten bosses across three acts, each one standing at a real place in the city, each one
+                gated behind a level you have to earn. The Warden waits at Circular Quay from level
+                five. LVL100 is at the Heads, and almost nobody will get there.
+              </p>
+              <p>
+                Every boss is weak to something — a distance, a discipline, a habit — and hitting it
+                with what it hates does double damage. Which is a polite way of saying the game will
+                keep asking you to do the training you have been avoiding.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------- map */}
+        <section id="map">
+          <div className="wrap split">
+            <div className="stack reveal">
+              <h2>Your city, drawn as a world map.</h2>
+            </div>
+            <div className="stack reveal">
+              <p className="lede">
+                Eighteen kilometres of Sydney, hand-drawn a hundred metres at a time: the harbour, the
+                Bridge, the beaches, the bush, every suburb named. It opens under haze.
+              </p>
+              <p>
+                Walking clears it. Track a run outdoors and the ground you actually covered lights up
+                and stays lit — and zoom in far enough and the drawing gives way to the streets. It is
+                the one thing in the game that only grows, and only by having been somewhere.
+              </p>
             </div>
           </div>
         </section>
@@ -325,7 +365,7 @@ export default function Site({ onEnterApp }) {
                 <ul className="plain-list">
                   <li>
                     <span className="tick">✓</span>
-                    <span>A hundred levels, and a rank that resets weekly so coming back is never hopeless.</span>
+                    <span>A hundred levels and eight ranks, earned on power rather than on turning up recently.</span>
                   </li>
                   <li>
                     <span className="tick">✓</span>
@@ -408,9 +448,9 @@ export default function Site({ onEnterApp }) {
             <div className="stack reveal">
               <h2>A leaderboard you can&rsquo;t type your way up.</h2>
               <p className="lede">
-                Anyone can claim a 10k. So a typed workout earns half XP, never counts toward the
-                leaderboards, and never touches the world event — and the app says so at the moment you
-                type it, not in the small print.
+                Anyone can claim a 10k. So there is nowhere to claim one: there is no box to type a
+                number into and no slider to drag. A workout is a session the app timed, which means the
+                only way to spend XP&rsquo;s currency is to spend the hour.
               </p>
             </div>
             <div className="facts reveal">
@@ -520,8 +560,8 @@ export default function Site({ onEnterApp }) {
           <div className="wrap stack wide" style={{ alignItems: 'center' }}>
             <h2 className="reveal">It&rsquo;s already built. Go and poke at it.</h2>
             <p className="lede reveal" style={{ textAlign: 'center' }}>
-              The whole thing runs in your browser — log a session, open a chest, meet your pet. No
-              sign-up, and nothing leaves your device.
+              The whole thing runs in your browser — make a character, time a session, open a chest,
+              walk some of the map clear. No sign-up, and nothing leaves your device.
             </p>
             <a className="btn reveal" href="#/app" onClick={go}>
               Try the prototype
@@ -535,7 +575,11 @@ export default function Site({ onEnterApp }) {
           <p style={{ maxWidth: '60ch' }}>
             LVL100 is an early prototype. Everything on this page is the real thing — the screenshots
             are the running app, and the level meter above uses the same progression code the app
-            does. <a href="#/app" onClick={go}>Open it</a>.
+            does.{' '}
+            <a href="#/app" onClick={go} style={{ display: 'inline-block', padding: '0.65rem 0' }}>
+              Open it
+            </a>
+            .
           </p>
         </div>
       </footer>
