@@ -82,6 +82,31 @@ const TOWN = {
   ],
 }
 
+/** A boss's mark: a pennant on a pole, the way a quest map flags a place worth
+ *  going to. The colour is the act it belongs to. */
+const PENNANT = {
+  w: 9,
+  h: 11,
+  palette: { o: '#2a1e12', a: 'var(--pennant)', s: '#f0e3bc', p: '#6b5433' },
+  grid: [
+    '.oo......',
+    '.oaaaaao.',
+    '.oaosoao.',
+    '.oassaao.',
+    '.oaosoao.',
+    '.oaaaaao.',
+    '.opo.....',
+    '.opo.....',
+    '.opo.....',
+    'oopoo....',
+    '.ooo.....',
+  ],
+}
+
+/** Places the poster draws as themselves rather than as a generic town. Their
+ *  name sits below the mark so it does not cover the drawing. */
+const DRAWN = new Set(['bridge', 'opera', 'heads'])
+
 const place = (id) => SYDNEY.places.find((p) => p.id === id)
 
 /** Where a coordinate lands on the detailed map, in its own pixels. */
@@ -101,7 +126,7 @@ const posterAt = (p) => {
  * labels on it is a diagram, and the reference this is drawn from names every
  * settlement it has.
  */
-function Poster({ onOpen }) {
+function Poster({ onOpen, markers }) {
   const towns = useMemo(() => {
     const taken = []
     const out = []
@@ -122,14 +147,27 @@ function Poster({ onOpen }) {
 
   return (
     <div
-      className="relative p-[7px]"
-      style={{ background: '#2a1e12', boxShadow: 'inset 0 0 0 2px #8a6a3f, 3px 3px 0 0 rgba(0,0,0,0.55)' }}
+      className="relative p-[10px]"
+      style={{
+        background: '#2a1e12',
+        // Brass notches cut into the timber, the way a border is tooled — a
+        // plain rule and four studs was a box round a picture.
+        backgroundImage:
+          'repeating-linear-gradient(90deg, #6b5433 0 3px, transparent 3px 8px), repeating-linear-gradient(0deg, #6b5433 0 3px, transparent 3px 8px)',
+        backgroundSize: '100% 4px, 4px 100%',
+        backgroundPosition: 'center top, left center',
+        backgroundRepeat: 'repeat-x, repeat-y',
+        boxShadow: 'inset 0 0 0 2px #8a6a3f, inset 0 0 0 5px #2a1e12, inset 0 0 0 6px #c9a227, 3px 3px 0 0 rgba(0,0,0,0.55)',
+      }}
     >
-      {['top-[3px] left-[3px]', 'top-[3px] right-[3px]', 'bottom-[3px] left-[3px]', 'bottom-[3px] right-[3px]'].map(
-        (at) => (
-          <span key={at} className={`absolute w-[5px] h-[5px] z-20 ${at}`} style={{ background: '#c9a227' }} />
-        ),
-      )}
+      {[
+        ['top-[2px] left-[2px]', 'border-t-2 border-l-2'],
+        ['top-[2px] right-[2px]', 'border-t-2 border-r-2'],
+        ['bottom-[2px] left-[2px]', 'border-b-2 border-l-2'],
+        ['bottom-[2px] right-[2px]', 'border-b-2 border-r-2'],
+      ].map(([at, edge]) => (
+        <span key={at} className={`absolute w-2.5 h-2.5 z-20 ${at} ${edge}`} style={{ borderColor: '#c9a227' }} />
+      ))}
 
       <button
         onClick={onOpen}
@@ -138,13 +176,40 @@ function Poster({ onOpen }) {
       >
         <OverviewMap />
 
+        {(() => {
+          const held = []
+          return [...markers]
+            .sort((a, b) => Number(b.current) - Number(a.current))
+            .filter((m) => {
+              const [x, y] = overCell(m.place.lon, m.place.lat)
+              if (held.some((h) => Math.abs(h[0] - x) < 3 && Math.abs(h[1] - y) < 3)) return false
+              held.push([x, y])
+              return true
+            })
+        })().map((m) => {
+          const act = actById(m.boss.act)
+          const at = posterAt(m.place)
+          return (
+            <span
+              key={m.boss.id}
+              className={`absolute -translate-y-full pointer-events-none ${m.current ? 'pulse-ring' : ''}`}
+              style={{ ...at, '--pennant': m.cleared ? '#7a6035' : act.color, opacity: m.cleared ? 0.75 : 1 }}
+              aria-hidden="true"
+            >
+              <PixelSprite sprite={PENNANT} size={16} />
+            </span>
+          )
+        })}
+
         {towns.map((p) => (
           <span
             key={p.id}
-            className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center pointer-events-none"
+            className={`absolute -translate-x-1/2 flex flex-col items-center pointer-events-none ${
+              DRAWN.has(p.id) ? 'translate-y-1' : '-translate-y-full'
+            }`}
             style={posterAt(p)}
           >
-            <PixelSprite sprite={TOWN} size={11} />
+            {!DRAWN.has(p.id) && <PixelSprite sprite={TOWN} size={11} />}
             <span
               className="font-pixel text-[5px] leading-none whitespace-nowrap px-[3px] py-[2px] border mt-[1px]"
               style={{ color: '#33260f', background: '#f0e3bc', borderColor: '#7a6035' }}
@@ -281,7 +346,7 @@ export default function Map() {
 
   return (
     <div className="p-3 space-y-3">
-      <Poster onOpen={() => setOpen(true)} />
+      <Poster onOpen={() => setOpen(true)} markers={markers} />
 
       <Btn full variant="ghost" onClick={() => setOpen(true)}>
         OPEN THE FULL MAP

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { OVERVIEW, OVER_H, OVER_PX, OVER_TILE, OVER_W, isWater } from '../game/overview'
+import { BOATS, LANDMARKS, OVERVIEW, OVER_H, OVER_PX, OVER_TILE, OVER_W, isWater, overCell } from '../game/overview'
 
 /**
  * Sydney as one picture.
@@ -75,6 +75,60 @@ const T = {
   ],
 }
 
+/**
+ * Drawn on top of the terrain, in place. Each one is the thing itself rather
+ * than a pin pointing at it — the Bridge is an arch over the water, the Opera
+ * House is three sails, and the boats are boats.
+ */
+const ART = {
+  // Bigger than a cell on purpose. These are the two things on the whole map
+  // that say Sydney without a caption, so they are drawn to be seen.
+  bridge: {
+    w: 19,
+    h: 9,
+    pal: { o: '#2f343a', x: '#dbe3ea', X: '#8e99a3' },
+    grid: [
+      '......ooooooo......',
+      '....ooxxxxxxxoo....',
+      '..oox.........xoo..',
+      '.ox.............xo.',
+      'ox...............xo',
+      'xxxxxxxxxxxxxxxxxxx',
+      'XXXXXXXXXXXXXXXXXXX',
+      '.oXo...oXo...oXo...',
+      '.oXo...oXo...oXo...',
+    ],
+  },
+  sails: {
+    w: 15,
+    h: 9,
+    pal: { o: '#2f343a', m: '#ffffff', M: '#c9c4b0' },
+    grid: [
+      '.......o.......',
+      '.....o.mo......',
+      '....om.mmo.o...',
+      '...omm.mmmomo..',
+      '..ommm.mmmmmmo.',
+      '.ommmm.mmmmmmmo',
+      'ommmmmmmmmmmmmm',
+      'MMMMMMMMMMMMMMM',
+      'ooooooooooooooo',
+    ],
+  },
+  lighthouse: {
+    w: 5,
+    h: 9,
+    pal: { o: '#3a2c18', y: '#ffe066', w: '#f4efe0', W: '#c9553d' },
+    grid: ['.ooo.', 'oyyyo', '.ooo.', '.owo.', '.oWo.', '.owo.', '.oWo.', 'oowoo', 'ooooo'],
+  },
+  boat: {
+    w: 7,
+    h: 6,
+    pal: { o: '#3a2c18', s: '#f4efe0', h: '#8a5a2b', H: '#5c3a19' },
+    grid: ['..o....', '..oss..', '..osss.', '..o....', 'ohhhhho', '.oHHHo.'],
+  },
+}
+
 const rgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]
 
 function paint() {
@@ -136,6 +190,37 @@ function paint() {
         if (wet(1, 0)) put(x0 + OVER_TILE - 1, y0 + k)
       }
     }
+  }
+
+  // Landmarks and boats, stamped over the finished ground.
+  const stamp = (art, cxCells, cyCells) => {
+    const ox = Math.round(cxCells * OVER_TILE - art.w / 2)
+    const oy = Math.round(cyCells * OVER_TILE - art.h / 2)
+    for (let y = 0; y < art.h; y++) {
+      for (let x = 0; x < art.w; x++) {
+        const ch = art.grid[y][x]
+        if (ch === '.') continue
+        const px = ox + x
+        const py = oy + y
+        if (px < 0 || py < 0 || px >= cv.width || py >= cv.height) continue
+        const c = rgb(art.pal[ch])
+        const i = (py * cv.width + px) * 4
+        d[i] = c[0]
+        d[i + 1] = c[1]
+        d[i + 2] = c[2]
+      }
+    }
+  }
+  for (const l of LANDMARKS) {
+    const [x, y] = overCell(l.at[0], l.at[1])
+    stamp(ART[l.sprite], x + (l.dx ?? 0), y + (l.dy ?? 0))
+  }
+  for (const b of BOATS) {
+    const [x, y] = overCell(b[0], b[1])
+    // At 450 metres a cell a point that is water on the fine grid can land on
+    // a coarse cell that is not. A boat aground is worse than no boat.
+    if (!isWater(OVERVIEW[Math.floor(y)]?.[Math.floor(x)] ?? '.')) continue
+    stamp(ART.boat, x, y)
   }
 
   ctx.putImageData(img, 0, 0)

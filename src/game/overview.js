@@ -83,3 +83,36 @@ export function overCell(lon, lat) {
   const [w, s, e, n] = SYDNEY.bbox
   return [((lon - w) / (e - w)) * OVER_W, ((n - lat) / (n - s)) * OVER_H]
 }
+
+/**
+ * The things you would draw on a map of Sydney if you were drawing one by hand.
+ *
+ * A map made only of terrain is a survey. What makes the reference this is
+ * drawn from feel like somewhere are its castles and its ships — so this one
+ * gets the Bridge, the sails, the lighthouse on South Head, and boats out on
+ * the water where boats actually are.
+ */
+export const LANDMARKS = [
+  // A cell is 450 metres and the Bridge and the Opera House are 400 apart, so
+  // they are nudged off each other rather than drawn on top of one another.
+  { at: [151.2112, -33.8523], sprite: 'bridge', dy: -0.7 },
+  { at: [151.2153, -33.8568], sprite: 'sails', dx: 2.1, dy: 0.2 },
+  { at: [151.2853, -33.8367], sprite: 'lighthouse' },
+]
+
+export const BOATS = [
+  [151.2480, -33.8540],
+  [151.2660, -33.8330],
+  [151.2020, -33.8480],
+  [151.2340, -33.8560],
+  [151.1560, -33.8380],
+  [151.2760, -33.8100],
+  // out on the Pacific, where the map would otherwise be an empty blue field
+  [151.3020, -33.8700],
+  [151.2980, -33.8020],
+  [151.3040, -33.9000],
+  [151.3080, -33.8380],
+  [151.2960, -33.8560],
+  [151.3100, -33.7800],
+  [151.2900, -33.9130],
+]
