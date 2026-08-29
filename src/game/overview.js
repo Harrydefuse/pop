@@ -37,6 +37,7 @@ function classify(counts, total) {
   if (share('sand') >= 0.22) return 's'
   if (share('major') >= 0.16) return 'R'
   if (share('forest') >= 0.42) return 't'
+  if (share('rock') >= 0.18) return 'k'
   if (share('town') >= 0.34) return 'b'
   if (share('rock') >= 0.3) return 'k'
   if (share('forest') >= 0.22) return ','
@@ -69,7 +70,12 @@ export const OVERVIEW = (() => {
           if (ch === MAJOR) counts.major = (counts.major ?? 0) + 1
         }
       }
-      row += classify(counts, Math.max(1, total))
+      let ch = classify(counts, Math.max(1, total))
+      // Scatter high ground through the bush. Sydney's north shore and its
+      // eastern headlands are hills, and a wood with a hill in it reads as
+      // country rather than as a green rectangle.
+      if (ch === 't' && ((ox * 73856093) ^ (oy * 19349663)) % 5 === 0) ch = 'h'
+      row += ch
     }
     rows.push(row)
   }

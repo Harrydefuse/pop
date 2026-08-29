@@ -10,15 +10,20 @@ import { BOATS, LANDMARKS, OVERVIEW, OVER_H, OVER_PX, OVER_TILE, OVER_W, isWater
  * and disappears the moment it is scaled down to fit a phone.
  */
 const PAL = {
-  '.': '#e2d1a0', // open ground
-  ':': '#f0e3bc',
-  ',': '#cfbe8f', // scrubby ground
-  o: '#4a3a24', // ink
-  // canopy
-  c: '#3f8a30',
-  C: '#5cb043',
-  v: '#27601d',
-  n: '#6b4423', // trunk
+  // Wilderness is grass; the dry ground belongs to the places people live. That
+  // is how the reference reads — villages sit on worn earth with green all
+  // around them — and it happens to be true of Sydney too.
+  '.': '#6ea63f', // grassland
+  ':': '#82bd4d',
+  ',': '#5a8c33', // rough grass
+  u: '#d9c79a', // trodden ground, around a settlement
+  U: '#c4b184',
+  o: '#31261a', // ink
+  // canopy, dark enough that a wood reads against the grass
+  c: '#2f6b24',
+  C: '#3f8a30',
+  v: '#1d4715',
+  n: '#5a3b22', // trunk
   // roofs
   f: '#cf5b41',
   F: '#94382a',
@@ -26,11 +31,15 @@ const PAL = {
   G: '#3d5c80',
   w: '#efe4cc',
   // ground you walk on
-  Y: '#e8933c',
-  s: '#f7e8bc',
-  S: '#e5d2a2',
-  k: '#b3a38a',
-  K: '#8f8069',
+  Y: '#e8933c', // arterials
+  r: '#cbb083', // dirt track
+  s: '#f2e2b4', // sand
+  S: '#ddcb9c',
+  // stone: a headland has a lit face and a shaded one, which is the whole of
+  // how relief is drawn
+  k: '#a89e90',
+  K: '#7d7468',
+  L: '#cdc5b8', // catching the light
   // water
   d: '#2874b3',
   D: '#1f5e95',
@@ -39,31 +48,43 @@ const PAL = {
   W: '#dcf2fc',
 }
 
+/** What fills a cell before its tile is stamped. */
+const BASE = { b: 'u', R: 'Y', s: 's', k: '.', h: '.', '~': 'd', '-': 'a' }
+
 const T = {
   // Open ground, hatched the way a drawn map textures its paper.
   '.': [
-    ['.:..:..:', '........', ':..:..:.', '........', '..:..:..', '........', ':..:..:.', '........'],
-    ['..:..:..', '........', '.:..:..:', '........', ':..:..:.', '........', '..:..:..', '........'],
+    ['..:..:..', '.:......', '.....:..', '..,.....', '......,.', '.:...:..', '...,....', '.....:..'],
+    ['.:...:..', '....:...', '..,.....', '.....,..', '.:......', '......:.', '..:..,..', '........'],
   ],
   // Scrub — ground on its way to being forest.
   ',': [
-    ['..,.....', '.,,,....', '..,..:..', '........', '.....,..', '....,,,.', '.....,..', '.:..:...'],
-    ['.....,..', '....,,,.', '.....,..', '..:..:..', '..,.....', '.,,,....', '..,.....', '...:..:.'],
+    ['..,.....', '.,,,....', '..,..:..', '..c.....', '.....,..', '....,,,.', '.....,..', '.:..c...'],
+    ['.....,..', '....,,,.', '.....,..', '..:..c..', '..,.....', '.,,,....', '..,.....', '...c..:.'],
   ],
   // A wood: two canopies, lit from the top left, with trunks under them.
+  // Trees are round and outlined here, not spiky — the whole reference is
+  // drawn that way, and an outline is what stops a wood becoming a green smear.
   t: [
-    ['.CCc..CC', 'CCCccCCC', 'CCcccccv', '.cnnccv.', '..nn.nn.', '.CCc.nn.', 'CCCccv..', '.cnnv...'],
-    ['CC..CCc.', 'CCcCCCcc', 'ccvcccvv', '.nn.cnn.', 'CCc..nn.', 'CCcccv..', 'ccnnv...', '..nn....'],
+    ['..ooo..o', '.oCCCo.o', 'oCCcccoo', 'oCcccvoo', '.occvo.o', '..ono...', '..ono.oo', '..ooo.oo'],
+    ['o..ooo..', 'o.oCCCo.', 'ooCCccco', 'ooCcccvo', 'o.occvo.', '...ono..', 'oo.ono..', 'oo.ooo..'],
+  ],
+  h: [
+    ['...oo...', '..oLLo..', '.oLLLko.', 'oLLLkkko', 'oLLkkkKo', 'oLkkkKKo', 'okkkKKKo', '.oooooo.'],
+    ['..oo....', '.oLLo...', 'oLLLko.o', 'oLLkkkoo', 'oLkkkKoo', 'okkkKKo.', 'okkKKKo.', '.ooooo..'],
   ],
   // A suburb: roofs with a wall under each, close enough to read as a town.
   b: [
-    ['..ff....', '.fFFF...', 'fwwwwo..', '.wwww...', '....gggg', '...gGGGg', '...wwwww', '....wwww'],
-    ['....ff..', '...fFFF.', '..fwwwwo', '...wwww.', 'gggg....', 'gGGGg...', 'wwwww...', 'wwww....'],
+    ['uuffuuuu', 'ufFFFuuu', 'fwwwwouU', 'uwwwwuuu', 'uUuugggg', 'uuugGGGg', 'uuuwwwww', 'uUuuwwww'],
+    ['uuuuffuu', 'uuufFFFu', 'uUfwwwwo', 'uuuwwwwu', 'ggggUuuu', 'gGGGguuu', 'wwwwwuuu', 'wwwwuuUu'],
   ],
   // An arterial, solid so cells join into one ribbon.
   R: [['YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY', 'YYYYYYYY']],
   s: [['ssssssss', 'sSssssss', 'ssssSsss', 'ssssssss', 'sssSssSs', 'ssssssss', 'sSssssss', 'ssssssss']],
-  k: [['kkkKkkkk', 'kkKKkkKk', 'kKkkkKKk', 'kkkkkkkk', 'kkKkkkkk', 'kKKkkKkk', 'kkkkKKkk', 'kkkkkkkk']],
+  k: [
+    ['..oooo..', '.oLLLLo.', 'oLLLkkko', 'oLLkkkKo', 'oLkkkKKo', 'okkkKKKo', 'okkKKKKo', '.oooooo.'],
+    ['.oooo...', 'oLLLLo..', 'oLLkkko.', 'oLkkkKoo', 'okkkKKo.', 'okkKKKo.', 'okKKKKo.', '.ooooo..'],
+  ],
   // Open water, with the wave marks every drawn sea has.
   '~': [
     ['dddddddd', 'ddWWdddd', 'dddddddd', 'ddddddDd', 'dddddddd', 'dDdddddd', 'ddddWWdd', 'dddddddd'],
@@ -157,7 +178,7 @@ function paint() {
         const line = tile[py]
         let i = ((cy * OVER_TILE + py) * cv.width + cx * OVER_TILE) * 4
         for (let px = 0; px < OVER_TILE; px++, i += 4) {
-          const c = colour(line[px] === '.' && ch !== '.' ? (isWater(ch) ? (ch === '~' ? 'd' : 'a') : '.') : line[px])
+          const c = colour(line[px] === '.' && ch !== '.' ? (BASE[ch] ?? '.') : line[px])
           d[i] = c[0]
           d[i + 1] = c[1]
           d[i + 2] = c[2]

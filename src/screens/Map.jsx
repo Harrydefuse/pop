@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
+import { Bar, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import PixelSprite from '../components/PixelSprite'
-import SydneyMap, { MAP_PX_H, MAP_PX_W } from '../components/SydneyMap'
 import OverviewMap from '../components/OverviewMap'
 import MapViewport from '../components/MapViewport'
-import { key, toCell } from '../game/mapgrid'
-import { OVER_H, OVER_W, overCell } from '../game/overview'
+import { OVER_H, OVER_PX, OVER_W, overCell } from '../game/overview'
 import { SYDNEY } from '../game/sydney'
-import { TILE } from '../game/tiles'
 import { useGame } from '../game/useGame'
 import { CAMPAIGN, actById } from '../game/campaign'
 import { campaignState } from '../game/engine'
@@ -109,55 +106,25 @@ const DRAWN = new Set(['bridge', 'opera', 'heads'])
 
 const place = (id) => SYDNEY.places.find((p) => p.id === id)
 
-/** Where a coordinate lands on the detailed map, in its own pixels. */
-const spot = (p) => {
-  const [x, y] = toCell([p.lon, p.lat])
-  return { cx: x, cy: y, px: x * TILE + TILE / 2, py: y * TILE + TILE / 2 }
-}
+/** How big the map is drawn when it is open: the coarse art at 3x, so every
+ *  drawn pixel is three across and the thing reads as chunky rather than fine. */
+const BIG = OVER_PX * 3
 
-/** A place on the poster, as a percentage of it. */
-const posterAt = (p) => {
-  const [x, y] = overCell(p.lon, p.lat)
-  return { left: `${(x / OVER_W) * 100}%`, top: `${(y / OVER_H) * 100}%` }
-}
-
-/**
- * The poster. Every town the picture has room for, named — a map with six
- * labels on it is a diagram, and the reference this is drawn from names every
- * settlement it has.
- */
-function Poster({ onOpen, markers }) {
-  const towns = useMemo(() => {
-    const taken = []
-    const out = []
-    for (const p of [...SYDNEY.places].sort((a, b) => a.rank - b.rank)) {
-      const [x, y] = overCell(p.lon, p.lat)
-      // Dee Why is north of the frame's top edge. A name plate hangs above its
-      // mark, so anything near an edge has to go rather than climb out of it.
-      if (x < 1 || y < 2 || x > OVER_W - 1 || y > OVER_H - 1) continue
-      // Percentages of a square, so one collision test works at any size.
-      const px = (x / OVER_W) * 100
-      const py = (y / OVER_H) * 100
-      if (taken.some((t) => Math.abs(t.px - px) < 26 && Math.abs(t.py - py) < 9)) continue
-      taken.push({ px, py })
-      out.push(p)
-    }
-    return out
-  }, [])
-
+/** The frame. Tooled timber, a gold rule, brackets at the corners. */
+function Framed({ children, className = '', pad = 10 }) {
   return (
     <div
-      className="relative p-[10px]"
+      className={`relative ${className}`}
       style={{
+        padding: pad,
         background: '#2a1e12',
-        // Brass notches cut into the timber, the way a border is tooled — a
-        // plain rule and four studs was a box round a picture.
         backgroundImage:
           'repeating-linear-gradient(90deg, #6b5433 0 3px, transparent 3px 8px), repeating-linear-gradient(0deg, #6b5433 0 3px, transparent 3px 8px)',
         backgroundSize: '100% 4px, 4px 100%',
         backgroundPosition: 'center top, left center',
         backgroundRepeat: 'repeat-x, repeat-y',
-        boxShadow: 'inset 0 0 0 2px #8a6a3f, inset 0 0 0 5px #2a1e12, inset 0 0 0 6px #c9a227, 3px 3px 0 0 rgba(0,0,0,0.55)',
+        boxShadow:
+          'inset 0 0 0 2px #8a6a3f, inset 0 0 0 5px #2a1e12, inset 0 0 0 6px #c9a227, 3px 3px 0 0 rgba(0,0,0,0.55)',
       }}
     >
       {[
@@ -168,148 +135,142 @@ function Poster({ onOpen, markers }) {
       ].map(([at, edge]) => (
         <span key={at} className={`absolute w-2.5 h-2.5 z-20 ${at} ${edge}`} style={{ borderColor: '#c9a227' }} />
       ))}
-
-      <button
-        onClick={onOpen}
-        className="relative block w-full overflow-hidden active:brightness-105"
-        aria-label="Open the full map"
-      >
-        <OverviewMap />
-
-        {(() => {
-          const held = []
-          return [...markers]
-            .sort((a, b) => Number(b.current) - Number(a.current))
-            .filter((m) => {
-              const [x, y] = overCell(m.place.lon, m.place.lat)
-              if (held.some((h) => Math.abs(h[0] - x) < 3 && Math.abs(h[1] - y) < 3)) return false
-              held.push([x, y])
-              return true
-            })
-        })().map((m) => {
-          const act = actById(m.boss.act)
-          const at = posterAt(m.place)
-          return (
-            <span
-              key={m.boss.id}
-              className={`absolute -translate-y-full pointer-events-none ${m.current ? 'pulse-ring' : ''}`}
-              style={{ ...at, '--pennant': m.cleared ? '#7a6035' : act.color, opacity: m.cleared ? 0.75 : 1 }}
-              aria-hidden="true"
-            >
-              <PixelSprite sprite={PENNANT} size={16} />
-            </span>
-          )
-        })}
-
-        {towns.map((p) => (
-          <span
-            key={p.id}
-            className={`absolute -translate-x-1/2 flex flex-col items-center pointer-events-none ${
-              DRAWN.has(p.id) ? 'translate-y-1' : '-translate-y-full'
-            }`}
-            style={posterAt(p)}
-          >
-            {!DRAWN.has(p.id) && <PixelSprite sprite={TOWN} size={11} />}
-            <span
-              className="font-pixel text-[5px] leading-none whitespace-nowrap px-[3px] py-[2px] border mt-[1px]"
-              style={{ color: '#33260f', background: '#f0e3bc', borderColor: '#7a6035' }}
-            >
-              {p.name}
-            </span>
-          </span>
-        ))}
-      </button>
-
-      <span
-        className="absolute left-2.5 bottom-2.5 z-10 grid place-items-center w-9 h-9 border pointer-events-none"
-        style={{ background: '#e8d9b4', borderColor: '#2a1e12' }}
-        aria-hidden="true"
-      >
-        <PixelSprite sprite={COMPASS} size={26} />
-      </span>
+      {children}
     </div>
   )
 }
 
-/** The detailed map, opened. Same ground at a hundred metres a cell, with the
- *  fog, the bosses and somewhere to pan to. */
-function FullMap({ onClose, revealed, markers, onPick }) {
+/** The tab shows a picture of it. Names, flags and landmarks are for when it is
+ *  open — at thumbnail size they would be a smudge. */
+function Thumb({ onOpen }) {
   return (
-    <Modal open onClose={onClose} title="SYDNEY" accent="var(--color-lime)" wide>
-      <MapViewport
-        w={MAP_PX_W}
-        h={MAP_PX_H}
-        label="Sydney"
-        className="w-full aspect-square bg-[#2a1e12]"
-        content={<SydneyMap revealed={revealed} style={{ width: MAP_PX_W, height: MAP_PX_H }} />}
+    <Framed pad={7}>
+      <button
+        onClick={onOpen}
+        className="relative block w-full overflow-hidden active:brightness-110"
+        aria-label="Open the map of Sydney"
       >
-        {(view) => {
-          const limit = view.zoom >= 3 ? 2 : view.zoom >= 1.6 ? 1 : 0
-          const taken = []
-          const room = (l) => {
-            const x = view.x + l.px * view.s
-            const y = view.y + l.py * view.s
-            if (x < -80 || y < -20 || x > view.box.w + 80 || y > view.box.h + 20) return false
-            if (x > view.box.w - 82 && y > view.box.h - 150) return false
-            if (taken.some((t) => Math.abs(t.x - x) < 62 && Math.abs(t.y - y) < 16)) return false
-            taken.push({ x, y })
-            return true
-          }
-          return (
-            <>
-              {SYDNEY.places
-                .map((p) => ({ ...p, ...spot(p) }))
-                .sort((a, b) => a.rank - b.rank)
-                .filter((l) => l.rank <= limit && room(l))
-                .map((l) => (
-                  <span
-                    key={l.id}
-                    aria-hidden="true"
-                    className="absolute -translate-x-1/2 font-pixel text-[7px] leading-none whitespace-nowrap pointer-events-none px-1 py-[3px] border"
-                    style={{
-                      left: view.x + l.px * view.s,
-                      top: view.y + l.py * view.s + 7,
-                      color: '#33260f',
-                      background: '#f0e3bc',
-                      borderColor: '#7a6035',
-                    }}
-                  >
-                    {l.name}
-                  </span>
-                ))}
+        <OverviewMap />
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-between px-2 py-1.5 bg-[#2a1e12]/85">
+          <span className="font-pixel text-[7px]" style={{ color: '#e8d9b4' }}>
+            SYDNEY
+          </span>
+          <span className="font-pixel text-[6px]" style={{ color: '#c9a227' }}>
+            TAP TO OPEN
+          </span>
+        </span>
+      </button>
+    </Framed>
+  )
+}
 
-              {markers.map((m) => {
-                const act = actById(m.boss.act)
-                const colour = m.cleared ? 'var(--color-ink-faint)' : m.current ? act.color : '#4a3a24'
-                return (
-                  <button
-                    key={m.boss.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onPick(m)
-                    }}
-                    aria-label={`${m.boss.name} at ${m.place.name}`}
-                    className="absolute grid place-items-center w-11 h-11 -translate-x-1/2 -translate-y-1/2 active:brightness-125"
-                    style={{ left: view.x + m.px * view.s, top: view.y + m.py * view.s }}
-                  >
-                    <span
-                      className={`block w-3 h-3 border-2 rotate-45 ${m.current ? 'pulse-ring' : ''}`}
-                      style={{
-                        borderColor: colour,
-                        background: m.current ? act.color : m.cleared ? 'transparent' : '#f0e3bc',
-                        opacity: m.found || m.current ? 1 : 0.6,
+/**
+ * The map, open. Same drawing at three times the size so it is chunky the way
+ * the reference is, with every town named, the landmarks in place, and a
+ * pennant on every boss you have not put down yet.
+ */
+function BigMap({ onClose, markers, onPick }) {
+  return (
+    <Modal open onClose={onClose} title="SYDNEY" accent="var(--color-gold)" wide>
+      <Framed pad={6}>
+        <MapViewport
+          w={BIG}
+          h={BIG}
+          label="Sydney"
+          className="w-full aspect-square bg-[#2a1e12]"
+          content={<OverviewMap style={{ width: BIG, height: BIG }} />}
+        >
+          {(view) => {
+            const at = (p) => {
+              const [x, y] = overCell(p.lon, p.lat)
+              return { x: view.x + (x / OVER_W) * BIG * view.s, y: view.y + (y / OVER_H) * BIG * view.s }
+            }
+            // Zoomed out, only the places that carry the shape of the city;
+            // the suburbs arrive as you go in.
+            const limit = view.zoom >= 2.4 ? 2 : view.zoom >= 1.5 ? 1 : 0
+            const taken = []
+            const room = (p) => {
+              if (p.rank > limit) return false
+              const { x, y } = at(p)
+              if (x < -60 || y < -20 || x > view.box.w + 60 || y > view.box.h + 20) return false
+              // Plates are wide and stack easily; this box is what keeps The
+              // Heads off Watsons Bay.
+              if (taken.some((t) => Math.abs(t.x - x) < 78 && Math.abs(t.y - y) < 21)) return false
+              taken.push({ x, y })
+              return true
+            }
+            const held = []
+            const flags = [...markers]
+              .sort((a, b) => Number(b.current) - Number(a.current))
+              .filter((m) => {
+                const { x, y } = at(m.place)
+                if (held.some((h) => Math.abs(h.x - x) < 26 && Math.abs(h.y - y) < 26)) return false
+                held.push({ x, y })
+                return true
+              })
+
+            return (
+              <>
+                {flags.map((m) => {
+                  const act = actById(m.boss.act)
+                  const { x, y } = at(m.place)
+                  return (
+                    <button
+                      key={m.boss.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onPick(m)
                       }}
-                    />
-                  </button>
-                )
-              })}
-            </>
-          )
-        }}
-      </MapViewport>
+                      aria-label={`${m.boss.name} at ${m.place.name}`}
+                      className="absolute -translate-y-full grid place-items-start w-11 h-11 active:brightness-125"
+                      style={{ left: x, top: y, '--pennant': m.cleared ? '#7a6035' : act.color }}
+                    >
+                      <span className={m.current ? 'pulse-ring' : ''}>
+                        <PixelSprite sprite={PENNANT} size={20} />
+                      </span>
+                    </button>
+                  )
+                })}
+
+                {[...SYDNEY.places]
+                  .sort((a, b) => a.rank - b.rank)
+                  .filter(room)
+                  .map((p) => {
+                    const { x, y } = at(p)
+                    return (
+                      <span
+                        key={p.id}
+                        aria-hidden="true"
+                        className={`absolute -translate-x-1/2 flex flex-col items-center pointer-events-none ${
+                          DRAWN.has(p.id) ? 'translate-y-1' : '-translate-y-full'
+                        }`}
+                        style={{ left: x, top: y }}
+                      >
+                        {!DRAWN.has(p.id) && <PixelSprite sprite={TOWN} size={13} />}
+                        <span
+                          className="font-pixel text-[6px] leading-none whitespace-nowrap px-1 py-[3px] border mt-[1px]"
+                          style={{ color: '#33260f', background: '#f0e3bc', borderColor: '#7a6035' }}
+                        >
+                          {p.name}
+                        </span>
+                      </span>
+                    )
+                  })}
+              </>
+            )
+          }}
+        </MapViewport>
+        <span
+          className="absolute left-3 bottom-3 z-10 grid place-items-center w-9 h-9 border pointer-events-none"
+          style={{ background: '#e8d9b4', borderColor: '#2a1e12' }}
+          aria-hidden="true"
+        >
+          <PixelSprite sprite={COMPASS} size={26} />
+        </span>
+      </Framed>
       <div className="text-[10px] text-ink-faint mt-2.5 leading-relaxed">
-        Drag to move, pinch or use + to get closer. Ground you have not walked sits under haze.
+        Drag to move, pinch or use + to get closer. Tap a pennant for what is waiting there.
       </div>
     </Modal>
   )
@@ -329,33 +290,25 @@ export default function Map() {
       CAMPAIGN.map((boss) => {
         const p = place(BOSS_SITES[boss.id])
         if (!p) return null
-        const s = spot(p)
         return {
           boss,
           place: p,
-          ...s,
-          found: revealed.has(key(s.cx, s.cy)),
           cleared: c.defeated.includes(boss.id),
           current: c.current?.id === boss.id,
         }
       }).filter(Boolean),
-    [revealed, c.defeated, c.current],
+    [c.defeated, c.current],
   )
 
   const shown = picked ?? markers.find((m) => m.current) ?? markers[0]
 
   return (
     <div className="p-3 space-y-3">
-      <Poster onOpen={() => setOpen(true)} markers={markers} />
-
-      <Btn full variant="ghost" onClick={() => setOpen(true)}>
-        OPEN THE FULL MAP
-      </Btn>
+      <Thumb onOpen={() => setOpen(true)} />
 
       {open && (
-        <FullMap
+        <BigMap
           onClose={() => setOpen(false)}
-          revealed={revealed}
           markers={markers}
           onPick={(m) => {
             setPicked(m)
