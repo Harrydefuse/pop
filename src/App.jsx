@@ -12,6 +12,7 @@ import Home from './screens/Home'
 import Friends from './screens/Friends'
 import Hero from './screens/Hero'
 import Map from './screens/Map'
+import Train, { SessionBar } from './screens/Train'
 
 const PITCH = [
   ['IT IS A GAME', 'Ten bosses, three acts, an ending. Fitness is the controller, not the point.'],
@@ -81,6 +82,7 @@ function Device() {
             stretching edge to edge. No-op inside the 400px frame. */}
         <div className="mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home />}
+          {tab === 'train' && <Train />}
           {tab === 'map' && <Map />}
           {tab === 'friends' && <Friends />}
           {tab === 'hero' && <Hero />}
@@ -88,6 +90,7 @@ function Device() {
         </div>
       </main>
 
+      {tab !== 'train' && <SessionBar onOpen={() => setTab('train')} />}
       <TabBar tab={tab} setTab={setTab} badges={{ home: questsOpen ? 1 : 0 }} />
 
       <Toasts />

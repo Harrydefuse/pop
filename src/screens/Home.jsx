@@ -178,7 +178,7 @@ function SlotSheet({ slot, state, onClose, onLog }) {
 
       <div className="flex gap-2 mt-3.5">
         <Btn full onClick={onLog} style={{ background: slot.color, borderColor: slot.color, color: '#0b0715' }}>
-          LOG IT
+          START A SESSION
         </Btn>
         {/* Same reason as the log sheet: there is nowhere to link a provider
             while sync is out of the sign-up flow, so a disabled SYNC and an

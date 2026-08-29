@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, INITIAL_STATE, freshDailies, gearPiece } from './data'
-import { DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
+import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
+import { MIN_SESSION_S, sessionAmount } from './session'
+import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
-const SAVE_KEY = 'lvl100.save.v9' // v9: characters have a build, male or female
+const SAVE_KEY = 'lvl100.save.v10' // v10: workouts are tracked in the app, not typed in
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -282,6 +284,69 @@ function reducer(state, action) {
     case 'log':
       return applyLog(state, action)
 
+    // ---------------------------------------------------------- sessions --
+    // A workout is a stopwatch the app owns. Everything the log needs — how
+    // long, how far, where — is measured while it runs, which is what stops
+    // anyone claiming a marathon by dragging a slider.
+    case 'startSession':
+      if (state.session) return state
+      return {
+        ...state,
+        session: { activityId: action.activityId, startedAt: Date.now(), accumulated: 0, paused: false, metres: 0, points: [] },
+      }
+
+    case 'pauseSession':
+      if (!state.session || state.session.paused) return state
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          paused: true,
+          accumulated: state.session.accumulated + (Date.now() - state.session.startedAt),
+        },
+      }
+
+    case 'resumeSession':
+      if (!state.session?.paused) return state
+      return { ...state, session: { ...state.session, paused: false, startedAt: Date.now() } }
+
+    // Fixes arrive a few seconds apart; the trace is kept so the map can be
+    // opened up by ground actually covered.
+    case 'sessionFix': {
+      if (!state.session || state.session.paused) return state
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          metres: state.session.metres + action.metres,
+          points: [...state.session.points, action.point].slice(-4000),
+        },
+      }
+    }
+
+    case 'discardSession':
+      return { ...state, session: null }
+
+    case 'finishSession': {
+      const s = state.session
+      if (!s) return state
+      const act = ACTIVITIES.find((a) => a.id === s.activityId)
+      const ms = s.accumulated + (s.paused ? 0 : Date.now() - s.startedAt)
+      if (!act || ms < MIN_SESSION_S * 1000) return { ...state, session: null }
+      // Tracked by the app, so it counts as verified — this is the path a
+      // provider link will one day share.
+      const next = applyLog({ ...state, session: null }, {
+        activityId: act.id,
+        amount: sessionAmount(act, ms, s.metres),
+        verified: true,
+        source: 'tracked',
+      })
+      if (!s.points.length) return next
+      const cells = new Set(next.explored)
+      for (const pt of s.points) revealAt(cells, [pt.lon, pt.lat], 3)
+      return { ...next, explored: [...cells] }
+    }
+
     case 'sync': {
       const picks = syntheticSync(state.links.health)
       if (!picks.length) return state
@@ -499,6 +564,12 @@ export function GameProvider({ children }) {
     () => ({
       log: (payload) => dispatch({ type: 'log', ...payload }),
       sync: () => dispatch({ type: 'sync' }),
+      startSession: (activityId) => dispatch({ type: 'startSession', activityId }),
+      pauseSession: () => dispatch({ type: 'pauseSession' }),
+      resumeSession: () => dispatch({ type: 'resumeSession' }),
+      sessionFix: (point, metres) => dispatch({ type: 'sessionFix', point, metres }),
+      finishSession: () => dispatch({ type: 'finishSession' }),
+      discardSession: () => dispatch({ type: 'discardSession' }),
       openChest: () => dispatch({ type: 'openChest' }),
       openGift: () => dispatch({ type: 'openGift' }),
       explore: (cells) => dispatch({ type: 'explore', cells }),
