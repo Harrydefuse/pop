@@ -10,21 +10,25 @@
 
 export const TILE = 8
 
+/** Ink. Every drawn map has a dark line where land meets water — it is the
+ *  single thing that separates an illustrated map from a coloured chart. */
+export const COAST_INK = '#4a3a24'
+
 export const TILE_PALETTE = {
   // land
-  '.': '#5d9a44', // grass
-  ':': '#7cbe5b', // grass, caught by the light
-  ',': '#40702c', // grass, in shade
-  p: '#57a340', // parkland
-  P: '#74c855', // parkland highlight
+  '.': '#cbb98c', // open ground, dry
+  ':': '#dbcb9f', // ground, caught by the light
+  ',': '#b3a075', // ground, in shade
+  p: '#7fa04a', // parkland
+  P: '#94b45c', // parkland highlight
   // canopy
-  c: '#3f7a30',
-  C: '#4f9139',
-  v: '#2e5c22',
+  c: '#3f6f2c',
+  C: '#568a36',
+  v: '#2b4f1e',
   n: '#5a3b22', // trunk
   // built
-  w: '#bcb1a0',
-  W: '#95897a',
+  w: '#cfc3ad',
+  W: '#a2957f',
   f: '#a85a44', // terracotta, lit
   F: '#7c3f31', // terracotta, shaded
   g: '#5d6f8a', // slate roof, lit
@@ -32,14 +36,14 @@ export const TILE_PALETTE = {
   i: '#f2d98a', // a lit window
   I: '#38455c', // a dark one
   // ground
-  r: '#cbc1a4',
-  R: '#b3a888',
-  Y: '#e3d5ac', // the big roads
-  y: '#f0e6c4',
-  s: '#e8d8a6',
-  S: '#d3c08b',
-  k: '#8a7d68',
-  K: '#6d624f',
+  r: '#efe3c2',
+  R: '#d6c69f',
+  Y: '#e2913f', // the big roads, the way a road atlas draws them
+  y: '#f2b969',
+  s: '#f0dfae',
+  S: '#ddc994',
+  k: '#a3927a',
+  K: '#82735d',
   // water
   d: '#215a92',
   D: '#1a4c7e',
@@ -142,19 +146,19 @@ const SAILS = [['...mm...', '..mmmm..', '.mmmmmm.', 'mmmmmmmm', 'mmmmmmmm', '.MM
 export const TERRAIN = {
   '~': { base: '#215a92', tiles: DEEP, water: true },
   '-': { base: '#4aa0d8', tiles: SHALLOW, water: true, foam: FOAM },
-  s: { base: '#e8d8a6', tiles: SAND },
-  '.': { base: '#5d9a44', tiles: GRASS },
-  ',': { base: '#4c8038', tiles: GRASS_DARK },
-  t: { base: '#5d9a44', tiles: TREE },
-  T: { base: '#4c8038', tiles: TREE_DEEP },
-  p: { base: '#57a340', tiles: PARK },
-  b: { base: '#5d9a44', tiles: HOUSE },
-  B: { base: '#4c8038', tiles: TOWER },
-  r: { base: '#cbc1a4', tiles: ROAD },
-  R: { base: '#e3d5ac', tiles: MAJOR },
-  k: { base: '#8a7d68', tiles: ROCK },
+  s: { base: '#f0dfae', tiles: SAND },
+  '.': { base: '#cbb98c', tiles: GRASS },
+  ',': { base: '#b3a075', tiles: GRASS_DARK },
+  t: { base: '#cbb98c', tiles: TREE },
+  T: { base: '#b3a075', tiles: TREE_DEEP },
+  p: { base: '#7fa04a', tiles: PARK },
+  b: { base: '#cbb98c', tiles: HOUSE },
+  B: { base: '#b3a075', tiles: TOWER },
+  r: { base: '#efe3c2', tiles: ROAD },
+  R: { base: '#e2913f', tiles: MAJOR },
+  k: { base: '#a3927a', tiles: ROCK },
   X: { base: '#c9d2da', tiles: BRIDGE },
-  O: { base: '#5d9a44', tiles: SAILS },
+  O: { base: '#cbb98c', tiles: SAILS },
 }
 
 /** Same cell, same tile, every build — no flicker when the map redraws. */

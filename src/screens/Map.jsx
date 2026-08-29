@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Bar, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import SydneyMap, { MAP_PX_H, MAP_PX_W } from '../components/SydneyMap'
+import PixelSprite from '../components/PixelSprite'
 import MapViewport from '../components/MapViewport'
 import { key, toCell } from '../game/mapgrid'
 import { SYDNEY } from '../game/sydney'
@@ -30,12 +31,38 @@ const BOSS_SITES = {
 }
 
 const LEGEND = [
-  ['#3f93cc', 'Harbour'],
-  ['#5d9a44', 'Open ground'],
-  ['#3f7a30', 'Bushland'],
+  ['#4aa0d8', 'Harbour'],
+  ['#cbb98c', 'Open ground'],
+  ['#3f6f2c', 'Bushland'],
   ['#a85a44', 'Built up'],
-  ['#e8d8a6', 'Beach'],
+  ['#e2913f', 'Main roads'],
+  ['#f0dfae', 'Beach'],
 ]
+
+/** A compass rose, drawn rather than set in type. Every map that means it has
+ *  one, and it is the cheapest thing on the page that says "this was made".  */
+const COMPASS = {
+  w: 15,
+  h: 15,
+  palette: { o: '#2a1e12', n: '#b8452f', s: '#e8d9b4', d: '#8a6a3f' },
+  grid: [
+    '.......o.......',
+    '.......n.......',
+    '......onо......'.replace('о', 'n'),
+    '......nnn......',
+    '.....onnno.....',
+    '.....dnnnd.....',
+    '..o..dnnnd..o..',
+    'onnnddsssddnnno',
+    '..o..dsssd..o..',
+    '.....dsssd.....',
+    '.....odsdo.....',
+    '......ddd......',
+    '......ods......',
+    '.......d.......',
+    '.......o.......',
+  ],
+}
 
 const place = (id) => SYDNEY.places.find((p) => p.id === id)
 
@@ -79,7 +106,20 @@ export default function Map() {
 
   return (
     <div className="p-3 space-y-3">
-      <Panel className="p-2" accent="var(--color-lime)">
+      {/* A drawn map wants a drawn edge. Warm timber and a brass inlay, four
+          corner studs, and the compass in the bottom left where a cartographer
+          would put it — the frame is what turns a rendered grid into a thing
+          somebody made. */}
+      <div className="relative p-[7px]" style={{ background: '#2a1e12', boxShadow: 'inset 0 0 0 2px #8a6a3f, 3px 3px 0 0 rgba(0,0,0,0.55)' }}>
+        {[
+          ['top-[3px] left-[3px]', ''],
+          ['top-[3px] right-[3px]', ''],
+          ['bottom-[3px] left-[3px]', ''],
+          ['bottom-[3px] right-[3px]', ''],
+        ].map(([at], i) => (
+          <span key={i} className={`absolute w-[5px] h-[5px] z-10 ${at}`} style={{ background: '#c9a227' }} />
+        ))}
+        <Panel corners={false} className="p-0 border-0">
         <MapViewport
           w={MAP_PX_W}
           h={MAP_PX_H}
@@ -154,7 +194,15 @@ export default function Map() {
             )
           }}
         </MapViewport>
-      </Panel>
+        </Panel>
+        <span
+          className="absolute left-2.5 bottom-2.5 z-10 grid place-items-center w-9 h-9 border"
+          style={{ background: '#e8d9b4', borderColor: '#2a1e12' }}
+          aria-hidden="true"
+        >
+          <PixelSprite sprite={COMPASS} size={26} />
+        </span>
+      </div>
 
       <Panel corners={false} className="p-3">
         <div className="flex items-center justify-between">

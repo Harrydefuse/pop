@@ -4,7 +4,7 @@ import Icon from '../components/Icon'
 import { GearIcon, HeroView, PetView } from '../components/Sprites'
 import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
-import { ARMOUR_SETS, EQUIP_SLOTS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
+import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
 import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor } from '../game/engine'
 import { alpha } from '../game/color'
@@ -167,10 +167,10 @@ function PetSheet({ pet, onClose }) {
 /* ------------------------------------------------------------------- root --- */
 
 const FILTERS = [
-  { id: 'all', label: 'ALL' },
-  { id: 'gear', label: 'GEAR' },
+  { id: 'all', label: 'YOURS' },
   { id: 'pets', label: 'PETS' },
-  { id: 'codex', label: 'COLLECT' },
+  { id: 'armoury', label: 'ARMOURY' },
+  { id: 'weapons', label: 'WEAPONS' },
 ]
 
 /**
@@ -178,46 +178,63 @@ const FILTERS = [
  *
  * Drops are the only way gear arrives, so a new character has a pair of boots
  * and no idea what else exists — which makes the chest a lottery for a prize
- * you cannot picture. This is the prize list: sixty pieces, five sets, lit if
- * you have one and dark if you do not.
+ * you cannot picture. This is the prize list, and it is arranged by piece
+ * rather than by set: a row is one thing, five columns are the five ways it
+ * can come out of a chest, so you read it as "the axe, and how good an axe
+ * gets" instead of "another twelve icons".
  */
-function Collection({ owned, onPick }) {
+const ARMOUR_KINDS = ['helm', 'chest', 'legs', 'gloves', 'boots', 'shield']
+const WEAPON_KINDS = ['sword', 'axe', 'dagger', 'spear', 'bow', 'staff']
+
+function kindName(kind) {
+  return (
+    OFFHAND_KINDS.find((k) => k.id === kind)?.name ??
+    EQUIP_SLOTS.find((s) => s.key === kind)?.name ??
+    kind
+  )
+}
+
+function Collection({ kinds, owned, onPick }) {
   const have = useMemo(() => new Set(owned.map((i) => `${i.set}:${i.kind}`)), [owned])
   return (
     <>
-      {ARMOUR_SETS.map((set) => {
-        const pieces = GEAR_CATALOG.filter((g) => g.set === set.id)
-        const got = pieces.filter((g) => have.has(`${g.set}:${g.kind}`)).length
+      {kinds.map((kind) => {
+        const row = ARMOUR_SETS.map((set) => GEAR_CATALOG.find((g) => g.set === set.id && g.kind === kind)).filter(Boolean)
+        const got = row.filter((g) => have.has(`${g.set}:${g.kind}`)).length
         return (
-          <div key={set.id} className="mb-4 last:mb-0">
-            <div className="flex items-baseline justify-between mb-2.5">
-              <span className="font-pixel text-[7px]" style={{ color: RARITY[set.rarity].color }}>
-                {set.name.toUpperCase()}
-              </span>
+          <div key={kind} className="mb-3.5 last:mb-0">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="font-pixel text-[7px] text-ink-dim">{kindName(kind).toUpperCase()}</span>
               <span className="font-mono text-[10px] text-ink-faint">
-                {got}/{pieces.length}
+                {got}/{row.length}
               </span>
             </div>
-            <div className="grid grid-cols-6 gap-1.5">
-              {pieces.map((g) => {
+            <div className="grid grid-cols-5 gap-1.5">
+              {row.map((g) => {
                 const mine = have.has(`${g.set}:${g.kind}`)
                 const color = RARITY[g.rarity].color
                 return (
                   <button
-                    key={g.kind}
+                    key={g.set}
                     onClick={() => onPick(g)}
-                    aria-label={`${g.name}${mine ? '' : ', not found yet'}`}
+                    aria-label={`${g.name}${mine ? '' : ', locked'}`}
                     className="relative grid place-items-center aspect-square border transition-transform active:scale-95"
                     style={{
                       borderColor: mine ? color : 'var(--color-line)',
                       background: mine ? alpha(color, 20) : 'transparent',
                     }}
                   >
-                    {/* Dimmed, not hidden — the whole point is being able to see
-                        what is out there. */}
-                    <span style={mine ? undefined : { filter: 'grayscale(1) brightness(0.85)', opacity: 0.5 }}>
+                    {/* Dimmed, not hidden — the point is seeing what is out
+                        there — and the padlock sits in the corner rather than
+                        over the top, so it says why without covering it. */}
+                    <span style={mine ? undefined : { filter: 'grayscale(1) brightness(1.1)', opacity: 0.55 }}>
                       <GearIcon slot={g.slot} kind={g.kind} set={g.set} size={26} />
                     </span>
+                    {!mine && (
+                      <span className="absolute -bottom-px -right-px grid place-items-center w-3.5 h-3.5 bg-void">
+                        <Icon name="lock" size={8} color="var(--color-ink-faint)" />
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -286,7 +303,7 @@ export default function Hero() {
     [p.pets],
   )
 
-  const showGear = filter === 'all' || filter === 'gear'
+  const showGear = filter === 'all'
   const showPets = filter === 'all' || filter === 'pets'
 
   return (
@@ -368,7 +385,8 @@ export default function Hero() {
 
       {/* ----------------------------------------------------------- tiles */}
       <Panel className="p-3">
-        {filter === 'codex' && <Collection owned={p.inventory} onPick={setOpenCodex} />}
+        {filter === 'armoury' && <Collection kinds={ARMOUR_KINDS} owned={p.inventory} onPick={setOpenCodex} />}
+        {filter === 'weapons' && <Collection kinds={WEAPON_KINDS} owned={p.inventory} onPick={setOpenCodex} />}
 
         {showGear && (
           <>
@@ -412,7 +430,7 @@ export default function Hero() {
           </>
         )}
 
-        {filter !== 'codex' && !gear.length && !pets.length && (
+        {(filter === 'all' || filter === 'pets') && !gear.length && !pets.length && (
           <div className="text-[11px] text-ink-faint text-center py-6">Open a chest to start collecting.</div>
         )}
       </Panel>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { SYDNEY } from '../game/sydney'
-import { TERRAIN, TILE, TILE_PALETTE, pick } from '../game/tiles'
+import { COAST_INK, TERRAIN, TILE, TILE_PALETTE, pick } from '../game/tiles'
 import { key } from '../game/mapgrid'
 
 const W = SYDNEY.w * TILE
@@ -63,6 +63,32 @@ function paintBase() {
       }
     }
   }
+  // The coastline, inked last so it sits over whatever the tiles put down.
+  // Land keeps the line rather than water, which is how it is drawn on paper:
+  // the shore belongs to the land.
+  const ink = rgb(COAST_INK)
+  const put = (x, y) => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return
+    const i = (y * W + x) * 4
+    d[i] = ink[0]
+    d[i + 1] = ink[1]
+    d[i + 2] = ink[2]
+  }
+  for (let cy = 0; cy < SYDNEY.h; cy++) {
+    for (let cx = 0; cx < SYDNEY.w; cx++) {
+      if (TERRAIN[SYDNEY.rows[cy][cx]]?.water) continue
+      const wet = (dx, dy) => TERRAIN[SYDNEY.rows[cy + dy]?.[cx + dx]]?.water
+      const x0 = cx * TILE
+      const y0 = cy * TILE
+      for (let k = 0; k < TILE; k++) {
+        if (wet(0, -1)) put(x0 + k, y0)
+        if (wet(0, 1)) put(x0 + k, y0 + TILE - 1)
+        if (wet(-1, 0)) put(x0, y0 + k)
+        if (wet(1, 0)) put(x0 + TILE - 1, y0 + k)
+      }
+    }
+  }
+
   ctx.putImageData(img, 0, 0)
   return cv
 }
@@ -107,12 +133,12 @@ export default function SydneyMap({ revealed, fogged = true, animate = true, cla
     for (let y = 0; y < SYDNEY.h; y++) {
       for (let x = 0; x < SYDNEY.w; x++) {
         const i = (y * SYDNEY.w + x) * 4
-        img.data[i] = 12
-        img.data[i + 1] = 10
-        img.data[i + 2] = 34
+        img.data[i] = 26
+        img.data[i + 1] = 18
+        img.data[i + 2] = 30
         // Night, not a blackout: unwalked ground keeps its colour and its shape,
         // which is the difference between a map and a scratch card.
-        img.data[i + 3] = revealed?.has(key(x, y)) ? 0 : 98
+        img.data[i + 3] = revealed?.has(key(x, y)) ? 0 : 84
       }
     }
     ctx.putImageData(img, 0, 0)
