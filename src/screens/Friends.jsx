@@ -28,7 +28,7 @@ function ModeSwitch({ mode, setMode }) {
             style={{
               borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
               background: on ? 'var(--color-neon)' : 'transparent',
-              color: on ? '#0b0715' : 'var(--color-ink-faint)',
+              color: on ? '#ffffff' : 'var(--color-ink-faint)',
             }}
           >
             {label}
@@ -88,7 +88,7 @@ export default function Friends() {
         level: 4 + Math.floor(Math.random() * 30),
         streak: Math.floor(Math.random() * 20),
         classId: 'vanguard',
-        avatar: { seed: list.length + 3, skin: '#e8b48a', hair: '#22d3ee', shirt: '#a855f7' },
+        avatar: { seed: list.length + 3, skin: '#e8b48a', hair: '#0e7490', shirt: '#6d28d9' },
         fresh: true,
       },
     ])
@@ -141,7 +141,7 @@ export default function Friends() {
           {board.map((f, i) => {
             const cls = classById(f.classId)
             const isMe = f.id === 'me'
-            const medal = ['#fbbf24', '#c5cdd8', '#b07a4a'][i]
+            const medal = ['#92400e', '#64748b', '#92400e'][i]
             return (
               <div
                 key={f.id}
@@ -162,7 +162,7 @@ export default function Friends() {
                     {f.fresh && <span className="font-pixel text-[6px] text-lime">NEW</span>}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <Icon name="flame" size={8} color="#fb923c" />
+                    <Icon name="flame" size={8} color="#c2410c" />
                     <span className="font-mono text-[10px] text-ink-faint">{f.streak} day streak</span>
                   </div>
                 </div>

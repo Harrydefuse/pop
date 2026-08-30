@@ -116,7 +116,7 @@ function Framed({ children, className = '', pad = 10 }) {
         backgroundPosition: 'center top, left center',
         backgroundRepeat: 'repeat-x, repeat-y',
         boxShadow:
-          'inset 0 0 0 2px #8a6a3f, inset 0 0 0 5px #2a1e12, inset 0 0 0 6px #c9a227, 3px 3px 0 0 rgba(0,0,0,0.55)',
+          'inset 0 0 0 2px #8a6a3f, inset 0 0 0 5px #2a1e12, inset 0 0 0 6px #a16207, 3px 3px 0 0 rgba(0,0,0,0.55)',
       }}
     >
       {[
@@ -125,7 +125,7 @@ function Framed({ children, className = '', pad = 10 }) {
         ['bottom-[2px] left-[2px]', 'border-b-2 border-l-2'],
         ['bottom-[2px] right-[2px]', 'border-b-2 border-r-2'],
       ].map(([at, edge]) => (
-        <span key={at} className={`absolute w-2.5 h-2.5 z-20 ${at} ${edge}`} style={{ borderColor: '#c9a227' }} />
+        <span key={at} className={`absolute w-2.5 h-2.5 z-20 ${at} ${edge}`} style={{ borderColor: '#a16207' }} />
       ))}
       {children}
     </div>
@@ -180,7 +180,7 @@ function BigMap({ onClose, markers, onPick, revealed, fine, footer }) {
               if (x < -60 || y < -20 || x > view.box.w + 60 || y > view.box.h + 20) return false
               // Plates are wide and stack easily; this box is what keeps The
               // Heads off Watsons Bay.
-              if (taken.some((t) => Math.abs(t.x - x) < 78 && Math.abs(t.y - y) < 21)) return false
+              if (taken.some((t) => Math.abs(t.x - x) < 78 && Math.abs(t.y - y) < 27)) return false
               taken.push({ x, y })
               return true
             }

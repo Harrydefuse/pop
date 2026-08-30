@@ -55,7 +55,7 @@ function CurrentBoss({ boss, damage, onFight }) {
         <div className="flex items-center gap-2">
           <span className="font-pixel text-[7px] text-ink-faint">WEAK TO</span>
           {boss.weak && (
-            <span className="font-pixel text-[7px] px-1.5 py-0.5" style={{ background: act.color, color: '#0b0715' }}>
+            <span className="font-pixel text-[7px] px-1.5 py-0.5" style={{ background: act.color, color: '#ffffff' }}>
               x2 DMG
             </span>
           )}

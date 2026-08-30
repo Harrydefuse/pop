@@ -111,7 +111,7 @@ function SlotRow({ slot, state, onOpen, last }) {
             className="grid place-items-center w-9 h-9 shrink-0 border"
             style={{ borderColor: slot.color, background: done ? slot.color : 'transparent' }}
           >
-            <Icon name={slot.icon} size={16} color={done ? '#0b0715' : slot.color} />
+            <Icon name={slot.icon} size={16} color={done ? '#ffffff' : slot.color} />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -147,7 +147,7 @@ function SlotSheet({ slot, state, onClose, onLog }) {
           className="grid place-items-center w-12 h-12 shrink-0 border"
           style={{ borderColor: slot.color, background: done ? slot.color : 'transparent' }}
         >
-          <Icon name={slot.icon} size={22} color={done ? '#0b0715' : slot.color} />
+          <Icon name={slot.icon} size={22} color={done ? '#ffffff' : slot.color} />
         </div>
         <div className="min-w-0">
           <div className="text-[13px] text-ink">{slot.rule}</div>
@@ -180,7 +180,7 @@ function SlotSheet({ slot, state, onClose, onLog }) {
       </div>
 
       <div className="flex gap-2 mt-3.5">
-        <Btn full onClick={onLog} style={{ background: slot.color, borderColor: slot.color, color: '#0b0715' }}>
+        <Btn full onClick={onLog} style={{ background: slot.color, borderColor: slot.color, color: '#ffffff' }}>
           START A SESSION
         </Btn>
         {/* Same reason as the log sheet: there is nowhere to link a provider
@@ -315,8 +315,8 @@ export default function Home({ onGo }) {
       {/* ------------------------------------------------------ streak strip */}
       <Panel corners={false} className="p-2.5">
         <div className="flex items-center gap-2.5">
-          <Icon name="flame" size={18} color="#fb923c" />
-          <span className="font-pixel text-[13px] text-[#fb923c]">{p.streak}</span>
+          <Icon name="flame" size={18} color="#c2410c" />
+          <span className="font-pixel text-[13px] text-[#c2410c]">{p.streak}</span>
           <span className="font-pixel text-[7px] text-ink-faint">DAY STREAK</span>
           <span className="ml-auto font-mono text-[11px] text-lime">×{streak.mult.toFixed(2)}</span>
           <span

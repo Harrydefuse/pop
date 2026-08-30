@@ -40,7 +40,7 @@ function BossDefeat({ reward, onDismiss }) {
 
       <Drops drops={reward.drops} />
 
-      <Btn full className="mt-4" onClick={onDismiss} style={{ background: act.color, borderColor: act.color, color: '#12081f' }}>
+      <Btn full className="mt-4" onClick={onDismiss} style={{ background: act.color, borderColor: act.color, color: '#ffffff' }}>
         COLLECT
       </Btn>
     </Modal>
@@ -102,7 +102,7 @@ export default function RewardModal() {
 
       <Drops drops={reward.drops} />
 
-      <Btn full className="mt-4" onClick={dismissReward} style={{ background: accent, borderColor: accent, color: '#12081f' }}>
+      <Btn full className="mt-4" onClick={dismissReward} style={{ background: accent, borderColor: accent, color: '#ffffff' }}>
         COLLECT
       </Btn>
     </Modal>

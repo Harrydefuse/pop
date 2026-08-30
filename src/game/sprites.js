@@ -130,7 +130,7 @@ export const ZEUS = {
   h: 16,
   palette: {
     ...PET_PAL_BASE,
-    m: '#b45309', // mane dark
+    m: '#92400e', // mane dark
     n: '#f59e0b', // mane light
     b: '#fcd34d', // body
     l: '#fde68a', // face highlight

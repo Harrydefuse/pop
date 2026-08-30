@@ -139,7 +139,7 @@ function Running({ session, act }) {
             full
             disabled={!ready}
             onClick={finishSession}
-            style={ready ? { background: 'var(--color-lime)', borderColor: 'var(--color-lime)', color: '#0b0715' } : undefined}
+            style={ready ? { background: 'var(--color-lime)', borderColor: 'var(--color-lime)', color: '#ffffff' } : undefined}
           >
             FINISH
           </Btn>

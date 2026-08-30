@@ -15,7 +15,7 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
   const streak = streakTier(p.streak)
 
   return (
-    <header className="relative z-20 border-b border-line bg-[#0d0918]/95 backdrop-blur px-3 pb-2.5 pad-safe-top">
+    <header className="relative z-20 border-b border-line bg-panel/95 backdrop-blur px-3 pb-2.5 pad-safe-top">
       <div className="flex items-center gap-2.5">
         {/* 38px of avatar, 44px of hit area — padding expands the target without
             changing the visual size. */}
@@ -43,8 +43,8 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
 
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="flex items-center gap-1" title={`${p.streak} day streak · ${streak.label}`}>
-            <Icon name="flame" size={11} color={p.streak > 0 ? '#fb923c' : 'var(--color-ink-faint)'} />
-            <span className="font-pixel text-[9px]" style={{ color: p.streak > 0 ? '#fb923c' : 'var(--color-ink-faint)' }}>
+            <Icon name="flame" size={11} color={p.streak > 0 ? '#c2410c' : 'var(--color-ink-faint)'} />
+            <span className="font-pixel text-[9px]" style={{ color: p.streak > 0 ? '#c2410c' : 'var(--color-ink-faint)' }}>
               {p.streak}
             </span>
           </div>
@@ -61,14 +61,14 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
           >
             <span
               className="block w-8 h-8 overflow-hidden"
-              style={{ padding: 2, background: '#2a1e12', boxShadow: 'inset 0 0 0 1px #c9a227' }}
+              style={{ padding: 2, background: '#2a1e12', boxShadow: 'inset 0 0 0 1px #a16207' }}
             >
               <OverviewMap className="w-full h-full" />
             </span>
           </button>
           <button
             onClick={onOpenAxis}
-            className="grid place-items-center w-11 h-11 border border-cyan bg-[#0c1a20] hover:brightness-125 active:brightness-150"
+            className="grid place-items-center w-11 h-11 border border-cyan bg-cyan/10 hover:brightness-125 active:brightness-150"
             style={{ boxShadow: '0 0 14px -6px var(--color-cyan)' }}
             aria-label="Open AXIS coach"
             title="AXIS coach"

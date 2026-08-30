@@ -26,7 +26,7 @@ function Pick({ label, options, value, onChange }) {
               aria-pressed={on}
               className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
               style={{
-                color: on ? '#0b0715' : 'var(--color-ink-dim)',
+                color: on ? '#ffffff' : 'var(--color-ink-dim)',
                 background: on ? 'var(--color-neon)' : 'transparent',
                 borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
               }}
@@ -83,7 +83,7 @@ export default function Onboarding({ onContinue }) {
             <div className="font-pixel text-[26px] leading-none">
               LEVEL <span className="text-neon">100</span>
             </div>
-            <div className="font-pixel text-[8px] text-ink-faint mt-3">A FITNESS APP THAT PAYS YOU IN LOOT</div>
+            <div className="font-pixel text-[8px] text-ink-faint mt-3">A GAME YOU PLAY BY MOVING</div>
 
             <div className="flex justify-center gap-1 my-7">
               <PetView refId="pup" level={1} size={44} />

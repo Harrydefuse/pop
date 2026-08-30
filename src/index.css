@@ -53,33 +53,43 @@
 @custom-variant pitch (@media (min-width: 1024px) and (min-height: 720px));
 
 @theme {
-  /* LVL100 — neon arcade palette */
-  --color-void: #07060d; /* app background, near-black violet */
-  --color-panel: #120d20; /* card surface */
-  --color-panel-2: #1a1230; /* raised surface / rows */
-  --color-line: #3a2a57; /* hairline border */
-  --color-line-hot: #4c3378; /* border on active/hover */
+  /* LVL100 — arcade palette on paper.
+     Fluorescent colour is the point, but a 400-weight neon on white is around
+     2:1 and unreadable. Every accent keeps its hue and goes deep enough to
+     clear 4.5:1 on the page — and deep enough that white sits on it when it is
+     used as a fill, which is the other half of the same problem. */
+  --color-void: #f6f4ef; /* the page */
+  --color-panel: #ffffff; /* card surface */
+  --color-panel-2: #f1eef7; /* raised surface / rows */
+  --color-line: #ddd7e8; /* hairline border */
+  --color-line-hot: #b9aed4; /* border on active/hover */
 
-  --color-neon: #a855f7; /* primary purple */
-  --color-neon-bright: #c084fc; /* violet that still clears 4.5:1 on the tinted "you" row */
-  --color-neon-dim: #6d28d9;
-  --color-cyan: #22d3ee; /* secondary signal */
-  --color-lime: #a3e635; /* success / gains */
-  --color-gold: #fbbf24; /* currency, legendary */
-  --color-danger: #f43f5e; /* boss / warnings */
+  --color-neon: #6d28d9; /* primary violet — 7.1:1 on paper */
+  --color-neon-bright: #7c3aed;
+  --color-neon-dim: #a78bfa;
+  --color-cyan: #0e7490; /* secondary signal */
+  --color-lime: #3f6212; /* success / gains */
+  --color-gold: #92400e; /* currency, legendary */
+  --color-danger: #be123c; /* boss / warnings */
+
+  /* Kept for glow, wash and anything decorative that never carries a word. */
+  --color-neon-glow: #a855f7;
+  --color-cyan-glow: #22d3ee;
+  --color-lime-glow: #a3e635;
+  --color-gold-glow: #fbbf24;
 
   /* All three clear 4.5:1 on every surface in this app — captions are set as
      small as 9px, so "muted" can never mean "below the contrast floor". */
-  --color-ink: #f2ecff; /* 16.5:1 on panel */
-  --color-ink-dim: #a394c4; /* 6.9:1 on panel */
-  --color-ink-faint: #8b7dae; /* 4.8:1 on panel */
+  --color-ink: #1a1526; /* 15.6:1 on panel */
+  --color-ink-dim: #4f4866; /* 8.2:1 */
+  --color-ink-faint: #6b6484; /* 5.4:1 */
 
   /* rarity ladder — matches the pet-collection art */
-  --color-r-common: #b8bfcc;
-  --color-r-uncommon: #4ade80;
-  --color-r-rare: #38bdf8;
-  --color-r-epic: #c084fc;
-  --color-r-legendary: #f59e0b;
+  --color-r-common: #64748b;
+  --color-r-uncommon: #166534;
+  --color-r-rare: #0369a1;
+  --color-r-epic: #7c3aed;
+  --color-r-legendary: #92400e;
 
   --font-pixel: 'Press Start 2P', 'Courier New', monospace;
   --font-body: 'Chakra Petch', system-ui, sans-serif;
@@ -108,7 +118,7 @@ body {
 
 ::selection {
   background: var(--color-neon);
-  color: #0a0612;
+  color: #ffffff;
 }
 
 /* Browsers default <button> to the arrow cursor, and every control in this app
@@ -185,8 +195,8 @@ button:disabled {
 .arcade-bg {
   background-color: var(--color-void);
   background-image:
-    radial-gradient(circle at 50% -10%, rgba(168, 85, 247, 0.13), transparent 62%),
-    repeating-conic-gradient(rgba(255, 255, 255, 0.028) 0% 25%, transparent 0% 50%);
+    radial-gradient(circle at 50% -10%, rgba(168, 85, 247, 0.1), transparent 62%),
+    repeating-conic-gradient(rgba(26, 21, 38, 0.04) 0% 25%, transparent 0% 50%);
   background-size:
     100% 100%,
     4px 4px;
@@ -195,7 +205,7 @@ button:disabled {
 /* Chrome drawn the way a sprite is: a solid offset block, no blur. Nothing in
    pixel art has a soft shadow, because nothing in pixel art has a sub-pixel. */
 .pixel-drop {
-  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.55);
+  box-shadow: 3px 3px 0 0 rgba(26, 21, 38, 0.14);
 }
 
 /* A raised face: light along the top-left, dark along the bottom-right, one
@@ -203,26 +213,26 @@ button:disabled {
    to say "this is a button". */
 .bevel {
   box-shadow:
-    inset 1px 1px 0 0 rgba(255, 255, 255, 0.28),
-    inset -1px -1px 0 0 rgba(0, 0, 0, 0.45),
-    2px 2px 0 0 rgba(0, 0, 0, 0.5);
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.34),
+    inset -1px -1px 0 0 rgba(0, 0, 0, 0.3),
+    2px 2px 0 0 rgba(26, 21, 38, 0.28);
 }
 
 .bevel:active:not(:disabled) {
   box-shadow:
-    inset 1px 1px 0 0 rgba(0, 0, 0, 0.4),
-    inset -1px -1px 0 0 rgba(255, 255, 255, 0.16),
-    0 0 0 0 rgba(0, 0, 0, 0.5);
+    inset 1px 1px 0 0 rgba(0, 0, 0, 0.28),
+    inset -1px -1px 0 0 rgba(255, 255, 255, 0.2),
+    0 0 0 0 rgba(26, 21, 38, 0.28);
 }
 
 /* Ghost buttons get the same geometry without the lit face, so a row of mixed
    buttons still sits on one plane. */
 .bevel-ghost {
-  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.45);
+  box-shadow: 2px 2px 0 0 rgba(26, 21, 38, 0.2);
 }
 
 .bevel-ghost:active:not(:disabled) {
-  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 0 rgba(26, 21, 38, 0.2);
 }
 
 /* CRT scanlines — decorative only, sits above the shell at very low opacity */
@@ -233,13 +243,13 @@ button:disabled {
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.22) 0px,
-    rgba(0, 0, 0, 0.22) 1px,
+    rgba(26, 21, 38, 0.028) 0px,
+    rgba(26, 21, 38, 0.028) 1px,
     transparent 1px,
     transparent 3px
   );
   mix-blend-mode: multiply;
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 /* The corners of a CRT were always darker than the middle. Cheap, and it stops
@@ -250,7 +260,7 @@ button:disabled {
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+  background: radial-gradient(ellipse at 50% 50%, transparent 62%, rgba(26, 21, 38, 0.09) 100%);
 }
 
 @keyframes xp-shine {

@@ -9,14 +9,14 @@ const TABS = [
 
 export default function TabBar({ tab, setTab, badges = {} }) {
   return (
-    <nav className="relative z-20 border-t border-line bg-[#0d0918]/95 backdrop-blur grid grid-cols-4 pad-safe-bottom">
+    <nav className="relative z-20 border-t border-line bg-panel/95 backdrop-blur grid grid-cols-4 pad-safe-bottom">
       {TABS.map((t) => {
         const active = tab === t.key
         return (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className="relative py-2.5 min-h-[52px] flex flex-col items-center justify-center gap-1.5 transition-colors active:bg-[#1a1230]"
+            className="relative py-2.5 min-h-[52px] flex flex-col items-center justify-center gap-1.5 transition-colors active:bg-panel-2"
             aria-current={active ? 'page' : undefined}
           >
             {active && (
