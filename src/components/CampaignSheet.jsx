@@ -229,7 +229,20 @@ function Detail({ boss, status, damage, onBack, onFight }) {
  * made the campaign feel like a side room; now it opens off the day you are
  * actually living, which is where the sessions come from.
  */
-export default function CampaignSheet({ onClose }) {
+/** On its own tab there is no dialog to be inside — the same content just sits
+ *  on the page. `embedded` is which of the two it is. */
+function Shell({ embedded, onClose, title, accent, children }) {
+  if (!embedded) {
+    return (
+      <Modal open onClose={onClose} wide title={title} accent={accent}>
+        {children}
+      </Modal>
+    )
+  }
+  return <div className="p-3">{children}</div>
+}
+
+export default function CampaignSheet({ onClose, embedded }) {
   const { state } = useGame()
   const [detail, setDetail] = useState(null)
   const [fighting, setFighting] = useState(null)
@@ -237,10 +250,9 @@ export default function CampaignSheet({ onClose }) {
 
   return (
     <>
-      <Modal
-        open
+      <Shell
+        embedded={embedded}
         onClose={onClose}
-        wide
         title={detail ? 'BOSS' : 'YOUR STORY'}
         accent={detail ? actById(detail.act).color : 'var(--color-neon)'}
       >
@@ -309,7 +321,7 @@ export default function CampaignSheet({ onClose }) {
             })}
           </div>
         )}
-      </Modal>
+      </Shell>
 
       {fighting && (
         <LogSheet

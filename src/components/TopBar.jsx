@@ -1,5 +1,6 @@
 import Avatar from './Avatar'
-import OverviewMap from './OverviewMap'
+import PixelSprite from './PixelSprite'
+import { MAP_ICON } from '../game/sprites'
 import Icon from './Icon'
 import { Bar } from './ui'
 import { useGame } from '../game/useGame'
@@ -59,12 +60,7 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
             className="shrink-0 grid place-items-center w-11 h-11 active:brightness-110"
             aria-label="Open the map of Sydney"
           >
-            <span
-              className="block w-8 h-8 overflow-hidden"
-              style={{ padding: 2, background: '#2a1e12', boxShadow: 'inset 0 0 0 1px #a16207' }}
-            >
-              <OverviewMap className="w-full h-full" />
-            </span>
+            <PixelSprite sprite={MAP_ICON} size={30} />
           </button>
           <button
             onClick={onOpenAxis}

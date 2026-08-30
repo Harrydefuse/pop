@@ -1,8 +1,103 @@
 import { useState } from 'react'
 import { Btn } from './ui'
 import { HeroView, PetView } from './Sprites'
+import PixelSprite from './PixelSprite'
+import TitleScene from './TitleScene'
 import { useGame } from '../game/useGame'
-import { AVATAR_BODIES, AVATAR_HAIR, AVATAR_SKINS, TUNIC } from '../game/sprites'
+import { AVATAR_BODIES, AVATAR_HAIR, AVATAR_SKINS, TITLE_SWORD, TUNIC } from '../game/sprites'
+
+// The title card's own furniture. It is deliberately not the app's button and
+// text styles: this screen is the game's cover, and it is the one place that
+// gets to look like a cover.
+// Stained timber with a brass edge — the same material as the title plaque, so
+// the furniture on this screen all comes from one set.
+const BOARD = {
+  // The flat colour is not decorative: it is what anything measuring contrast
+  // against this board reads, since a gradient alone computes as transparent.
+  backgroundColor: '#2a1810',
+  backgroundImage: 'linear-gradient(180deg, #3d2718 0%, #2a1810 60%, #1e100a 100%)',
+  boxShadow: '0 0 0 3px #140a06, 0 0 0 6px #a97c2e, 0 0 0 9px #140a06, 0 9px 0 rgba(10,18,32,0.3)',
+}
+
+const OUTLINE = (c) =>
+  `2px 0 0 ${c}, -2px 0 0 ${c}, 0 2px 0 ${c}, 0 -2px 0 ${c}, 2px 2px 0 ${c}, -2px 2px 0 ${c}, 2px -2px 0 ${c}, -2px -2px 0 ${c}`
+
+/** LVL / 100 on a timber plaque, with the blade laid through the middle. */
+function TitleLogo() {
+  return (
+    <div className="relative">
+      <div
+        className="px-7 py-3 text-center"
+        style={{
+          backgroundColor: '#6d1a14',
+          backgroundImage: 'linear-gradient(180deg, #8a241b 0%, #6d1a14 55%, #55110d 100%)',
+          boxShadow:
+            '0 0 0 3px #240907, 0 0 0 6px #d99a3c, 0 0 0 9px #240907, 0 9px 0 rgba(10,18,32,0.35)',
+        }}
+      >
+        <div
+          className="font-pixel text-[40px] leading-[0.95] tracking-tight"
+          style={{ color: '#ff7d5e', textShadow: `${OUTLINE('#2a0a08')}, 0 5px 0 #8f2a16` }}
+        >
+          LVL
+        </div>
+
+        {/* A zero-height rail between the two lines, so the blade lands in the
+            gap at any type size instead of at half the plaque's height. */}
+        <div className="relative h-0">
+          <PixelSprite
+            sprite={TITLE_SWORD}
+            size={300}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          />
+        </div>
+
+        <div
+          className="font-pixel text-[40px] leading-[0.95] tracking-tight mt-7"
+          style={{ color: '#ff7d5e', textShadow: `${OUTLINE('#2a0a08')}, 0 5px 0 #8f2a16` }}
+        >
+          100
+        </div>
+      </div>
+
+      <div className="flex justify-center mt-5">
+        <div
+          className="font-pixel text-[7px] tracking-[0.3em] px-3 py-2"
+          style={{ ...BOARD, color: '#ffe6b0' }}
+        >
+          A GAME YOU PLAY BY MOVING
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** A menu line: pixel type with a hard outline, and carets on the live one. */
+function MenuItem({ children, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group w-full min-h-[48px] font-pixel text-[13px] flex items-center justify-center gap-3 active:translate-y-[2px]"
+      style={{ color: '#ffffff', textShadow: `${OUTLINE('#10203a')}, 0 4px 0 rgba(8,16,30,0.4)` }}
+    >
+      <span
+        aria-hidden="true"
+        className="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[10px]"
+        style={{ color: '#ffd97a', textShadow: OUTLINE('#3a1f05') }}
+      >
+        &#9656;
+      </span>
+      {children}
+      <span
+        aria-hidden="true"
+        className="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[10px]"
+        style={{ color: '#ffd97a', textShadow: OUTLINE('#3a1f05') }}
+      >
+        &#9666;
+      </span>
+    </button>
+  )
+}
 
 // Picking a class, listing the games you play and connecting a health source
 // are all out of the flow for now. The player still carries a class so nothing
@@ -74,50 +169,48 @@ export default function Onboarding({ onContinue }) {
 
   const preview = { body, skin, hair, hairLength, shirt: TUNIC }
 
+  // The title card is its own screen, not a step in a form: full bleed art, the
+  // mark, and a short menu. Every open of the app lands here first.
+  if (step === 0) {
+    return (
+      <div className="absolute inset-0 z-50 overflow-hidden select-none">
+        <TitleScene className="absolute inset-0" />
+
+        <div className="absolute inset-0 flex flex-col items-center px-6 pt-[9%] pb-6">
+          <TitleLogo />
+
+          {/* The menu gets its own board rather than floating on the sky:
+              pale type over a bright painting is a legibility problem no
+              outline actually solves. */}
+          <div className="w-full max-w-[250px] mt-[11%]" style={BOARD}>
+            <div className="py-1">
+              <MenuItem onClick={has ? onContinue : () => setStep(1)}>START</MenuItem>
+              <div className="h-px mx-4" style={{ background: 'rgba(169,124,46,0.45)' }} />
+              <MenuItem onClick={() => setStep(1)}>{has ? 'NEW CHARACTER' : 'HOW IT WORKS'}</MenuItem>
+            </div>
+          </div>
+
+          <div className="flex-1" />
+
+          <div className="flex items-end gap-1">
+            <PetView refId="pup" level={1} size={34} />
+            <PetView refId="turbo" level={30} size={38} />
+            <PetView refId="frost" level={55} size={44} float />
+            <PetView refId="ember" level={80} size={38} />
+            <PetView refId="zeus" level={100} size={34} />
+          </div>
+
+          <p className="font-pixel text-[7px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>
+            {has ? `CARRY ON AS ${(state.player.name || 'ROOKIE').toUpperCase()}` : 'TEN BOSSES · THREE ACTS · ONE ENDING'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="absolute inset-0 z-50 bg-void arcade-bg overflow-y-auto scroll-thin">
       <div className="min-h-full flex flex-col p-4">
-        {/* ------------------------------------------------------------ intro */}
-        {step === 0 && (
-          <div className="flex-1 flex flex-col justify-center text-center">
-            <div className="font-pixel text-[26px] leading-none">
-              LEVEL <span className="text-neon">100</span>
-            </div>
-            <div className="font-pixel text-[8px] text-ink-faint mt-3">A GAME YOU PLAY BY MOVING</div>
-
-            <div className="flex justify-center gap-1 my-7">
-              <PetView refId="pup" level={1} size={44} />
-              <PetView refId="turbo" level={30} size={44} />
-              <PetView refId="frost" level={55} size={44} float />
-              <PetView refId="ember" level={80} size={44} />
-              <PetView refId="zeus" level={100} size={44} />
-            </div>
-
-            <p className="text-[12px] text-ink-dim leading-relaxed px-2">
-              An RPG you play by moving. Ten bosses, three acts and an ending, on a map of the city you
-              live in.
-            </p>
-
-            {/* Every open lands here, so a character already in progress needs a
-                way past it. Making a new one still starts from nothing — that is
-                what making a new one means. */}
-            {has && (
-              <Btn full size="lg" className="mt-7" onClick={onContinue}>
-                CONTINUE AS {state.player.name}
-              </Btn>
-            )}
-            <Btn
-              full
-              size="lg"
-              variant={has ? 'ghost' : 'primary'}
-              className={has ? 'mt-2' : 'mt-7'}
-              onClick={() => setStep(1)}
-            >
-              {has ? 'START A NEW CHARACTER' : 'MAKE YOUR CHARACTER'}
-            </Btn>
-          </div>
-        )}
-
         {/* ------------------------------------------------------ 1. the look */}
         {step === 1 && (
           <div className="flex-1 flex flex-col">

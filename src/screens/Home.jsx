@@ -2,14 +2,11 @@ import { useState } from 'react'
 import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
-import { BossArt, ChestArt } from '../components/Sprites'
-import CampaignSheet from '../components/CampaignSheet'
+import { ChestArt } from '../components/Sprites'
 import GiftReveal from '../components/GiftReveal'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
-import { actById } from '../game/campaign'
-import { campaignState, streakTier } from '../game/engine'
-import { alpha } from '../game/color'
+import { streakTier } from '../game/engine'
 
 /**
  * The beta gift, sat at the very top until it is claimed. It is the first thing
@@ -35,55 +32,6 @@ function GiftCard({ onOpen }) {
             </div>
           </div>
           <Icon name="chevron" size={11} color="var(--color-gold)" />
-        </div>
-      </Panel>
-    </button>
-  )
-}
-
-/**
- * The through-line of the whole app. Today is where you play; this strip is the
- * standing reminder that none of it is bookkeeping — every session lands on the
- * thing between you and the next chapter.
- */
-function Target({ onOpen }) {
-  const { state } = useGame()
-  const c = campaignState(state.player, state.campaign)
-  const boss = c.current ?? c.locked
-  if (!boss) return null
-  const act = actById(boss.act)
-  const live = Boolean(c.current)
-
-  return (
-    <button onClick={onOpen} className="w-full text-left active:brightness-125">
-      <Panel corners={false} className="p-2.5" style={{ borderColor: alpha(act.color, 55) }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-11 h-11 grid place-items-center shrink-0 border" style={{ borderColor: act.color }}>
-            <BossArt
-              sprite={boss.sprite}
-              size={28}
-              style={live ? undefined : { filter: 'grayscale(1) brightness(0.45)', opacity: 0.7 }}
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[7px] text-ink-faint">{live ? 'TODAY LANDS ON' : 'NEXT BOSS'}</div>
-            <div className="font-pixel text-[9px] mt-1 truncate" style={{ color: act.color }}>
-              {boss.name}
-            </div>
-            {live ? (
-              <Bar pct={c.pct} color="var(--color-danger)" height={3} className="mt-1.5" />
-            ) : (
-              <div className="text-[10px] text-ink-faint mt-1">Opens at level {boss.level}</div>
-            )}
-          </div>
-          <span className="flex items-center gap-1.5 shrink-0">
-            {live && (
-              <span className="font-mono text-[11px]" style={{ color: act.color }}>
-                {Math.round(c.pct * 100)}%
-              </span>
-            )}
-            <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
-          </span>
         </div>
       </Panel>
     </button>
@@ -294,7 +242,6 @@ export default function Home({ onGo }) {
   const { state, openChest } = useGame()
   const [openSlot, setOpenSlot] = useState(null)
   const [logging, setLogging] = useState(null)
-  const [campaign, setCampaign] = useState(false)
   const [gift, setGift] = useState(false)
   const p = state.player
   const streak = streakTier(p.streak)
@@ -308,8 +255,6 @@ export default function Home({ onGo }) {
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <FirstSteps state={state} onGo={onGo} />
-
-      <Target onOpen={() => setCampaign(true)} />
 
 
       {/* ------------------------------------------------------ streak strip */}
@@ -391,7 +336,6 @@ export default function Home({ onGo }) {
 
       {gift && <GiftReveal onClose={() => setGift(false)} />}
 
-      {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
 
       {logging && (
         <LogSheet

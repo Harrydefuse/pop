@@ -187,7 +187,10 @@ function ChestOdds() {
         {RARITY_ORDER.map((k) => (
           <div className="odd" key={k}>
             <span className="odd-bar" style={{ background: RARITY[k].color, height: `${18 + RARITY[k].weight * 1.1}px` }} />
-            <span className="odd-pct" style={{ color: RARITY[k].color }}>
+            {/* The bar carries the rarity colour at full strength; the number
+                is the same hue lifted towards white, because several of those
+                colours do not clear AA as text on this ground. */}
+            <span className="odd-pct" style={{ color: `color-mix(in srgb, ${RARITY[k].color} 45%, #ffffff)` }}>
               {RARITY[k].weight}%
             </span>
             <span className="odd-name">{RARITY[k].label}</span>
@@ -576,7 +579,7 @@ export default function Site({ onEnterApp }) {
             LVL100 is an early prototype. Everything on this page is the real thing — the screenshots
             are the running app, and the level meter above uses the same progression code the app
             does.{' '}
-            <a href="#/app" onClick={go} style={{ display: 'inline-block', padding: '0.65rem 0' }}>
+            <a href="#/app" onClick={go} style={{ display: 'inline-block', padding: '0.75rem 0' }}>
               Open it
             </a>
             .

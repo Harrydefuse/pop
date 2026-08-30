@@ -2230,6 +2230,63 @@ export function armouredClothes(set) {
   }
 }
 
+// The map, as an object rather than as a place: a rolled chart with a compass
+// sitting on the corner of it. The header shows this instead of a shrunk-down
+// Sydney, which at 32 pixels was a smudge of green.
+export const MAP_ICON = {
+  w: 24,
+  h: 24,
+  palette: { o: '#0d0b12', p: '#f7dc9a', P: '#efcb7d', r: '#e6a860', n: '#9c6b33', g: '#4c9c30', G: '#38761f', b: '#0e84cc', B: '#0a5f99', w: '#f2f2f2', k: '#3a3a3a', a: '#a8a8a8', x: '#e85018' },
+  grid: [
+    '...................ooo..',
+    '.ooo..............wwkww.',
+    'opppo............wkkxkwo',
+    'opppo............wkkwkko',
+    'opppoooooooooooooowkwkwo',
+    'opppoGggggggggppraawwwao',
+    'oppporgggggggppppraaanoo',
+    'oppporggggggpggppproooro',
+    'oppporppkgpppgggpppbBBro',
+    'oppporppnnppppggpbbbbpro',
+    'oppporppnoppppppbbbpppro',
+    'oppporpppppbbbbbbbppppro',
+    'oppporpppbbbbbbbbbnnkpro',
+    'oppporbbbbppppbbbbbpppro',
+    'opppokbbppppppppbbbbbpro',
+    'opppokbppppgggpppppbbbro',
+    'opooorpppggggggggppppbbo',
+    'ookkorppggggggggggppppbo',
+    'oonnrrpggggggggggggpppro',
+    '.opppppppppppppppppppppo',
+    '..oooooooooooooooooooopo',
+    '...................onkpo',
+    '...................oopro',
+    '....................ooo.',
+  ],
+}
+
+
+// The blade that lies across the title card, hilt on the left and the point
+// running out past the plaque on the right.
+export const TITLE_SWORD = {
+  w: 52,
+  h: 11,
+  palette: { o: '#241408', g: '#f0c15a', G: '#b07d1e', h: '#7a4526', H: '#4f2b16', s: '#dfe6f0', w: '#ffffff', S: '#9aa8bd' },
+  grid: [
+    '...........ogo......................................',
+    '..oo......ogggo.....................................',
+    '.oggo.....ogggo.....................................',
+    'oggggoooooogggoooooooooooooooooooooooooooooooo......',
+    'ogggghhhhhhgggwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwoooo..',
+    'ogggghhhhhhgggsssssssssssssssssssssssssssssssssssso.',
+    'oGGGGHHHHHHGGGSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSoooo..',
+    'oGGGGooooooGGGoooooooooooooooooooooooooooooooo......',
+    '.oGGo.....oGGGo.....................................',
+    '..oo......oGGGo.....................................',
+    '...........oGo......................................',
+  ],
+}
+
 /** Which grids a build uses, bare and dressed. */
 const HERO_BODIES = {
   male: {
