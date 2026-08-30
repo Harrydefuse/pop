@@ -7,7 +7,15 @@ import { FOUNDER_GIFT, RARITY } from '../game/config'
 import { useGame } from '../game/useGame'
 
 const GOLD = '#f2ca55'
-const CONFETTI_COLOURS = ['#f2ca55', '#c08a1c', '#6d28d9', '#0e7490', '#166534', '#be123c', '#ffffff']
+const CONFETTI_COLOURS = [
+  '#f2ca55',
+  '#c08a1c',
+  'var(--color-neon)',
+  'var(--color-cyan)',
+  'var(--tone-green)',
+  'var(--color-danger)',
+  'var(--color-ink)',
+]
 
 /**
  * Paper confetti. The scatter is generated once in a lazy initialiser rather
@@ -97,7 +105,8 @@ export default function GiftReveal({ onClose }) {
       <button
         aria-label="Close"
         onClick={dismissable ? onClose : undefined}
-        className="absolute inset-0 bg-[#1a1526]/65 backdrop-blur-[2px] cursor-default"
+        className="absolute inset-0 backdrop-blur-[2px] cursor-default"
+        style={{ background: 'var(--scrim-strong)' }}
       />
 
       <div className="relative w-full max-w-[340px] m-3 p-5 border bg-panel text-center" style={{ borderColor: accent, boxShadow: `0 0 60px -14px ${accent}` }}>
@@ -161,7 +170,7 @@ export default function GiftReveal({ onClose }) {
               ))}
             </div>
             <p className="text-[11px] text-ink-dim mt-3 leading-relaxed">{FOUNDER_GIFT.blurb}</p>
-            <Btn full className="mt-4" onClick={onClose} style={{ background: accent, borderColor: accent, color: '#ffffff' }}>
+            <Btn full className="mt-4" onClick={onClose} style={{ background: accent, borderColor: accent, color: 'var(--color-on-accent)' }}>
               PUT IT ON
             </Btn>
           </>

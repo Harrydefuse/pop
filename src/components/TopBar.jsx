@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Avatar from './Avatar'
 import PixelSprite from './PixelSprite'
 import { MAP_ICON } from '../game/sprites'
@@ -5,6 +6,34 @@ import Icon from './Icon'
 import { Bar } from './ui'
 import { useGame } from '../game/useGame'
 import { classById, fmt, powerScore, rankFor, streakTier, xpToNext } from '../game/engine'
+import { applyTheme, readTheme } from '../game/theme'
+
+/** Light or dark, on the same shelf as the map. */
+function ThemeToggle() {
+  const [theme, setTheme] = useState(readTheme)
+  const dark = theme === 'dark'
+  const next = dark ? 'light' : 'dark'
+  return (
+    <button
+      onClick={() => setTheme(applyTheme(next))}
+      className="shrink-0 grid place-items-center w-11 h-11 active:brightness-125"
+      aria-label={`Switch to ${next} mode`}
+      title={`Switch to ${next} mode`}
+    >
+      {/* The icon is the mode you are about to get, not the one you are in:
+          a moon to go dark, a sun to come back. */}
+      <span
+        className="grid place-items-center w-7 h-7 border"
+        style={{
+          borderColor: dark ? 'var(--color-gold)' : 'var(--color-neon)',
+          background: dark ? 'color-mix(in srgb, var(--color-gold) 14%, transparent)' : 'color-mix(in srgb, var(--color-neon) 10%, transparent)',
+        }}
+      >
+        <Icon name={dark ? 'sun' : 'moon'} size={13} color={dark ? 'var(--color-gold)' : 'var(--color-neon)'} />
+      </span>
+    </button>
+  )
+}
 
 export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
   const { state } = useGame()
@@ -33,26 +62,20 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
               labelling the player with something they never chose — and the
               room it took is what the map needed. */}
           <div className="font-pixel text-[10px] truncate">{p.name}</div>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="font-pixel text-[7px]" style={{ color: rank.color }}>
+          <div className="flex items-center gap-1.5 mt-1 whitespace-nowrap overflow-hidden">
+            <span className="font-pixel text-[7px] shrink-0" style={{ color: rank.color }}>
               {rank.name}
             </span>
-            <span className="text-ink-faint text-[10px]">·</span>
-            <span className="font-mono text-[10px] text-ink-dim">{fmt(power)} PWR</span>
+            <span className="text-ink-faint text-[10px] shrink-0">·</span>
+            <span className="font-mono text-[10px] text-ink-dim truncate">{fmt(power)} PWR</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-1" title={`${p.streak} day streak · ${streak.label}`}>
-            <Icon name="flame" size={11} color={p.streak > 0 ? '#c2410c' : 'var(--color-ink-faint)'} />
-            <span className="font-pixel text-[9px]" style={{ color: p.streak > 0 ? '#c2410c' : 'var(--color-ink-faint)' }}>
-              {p.streak}
-            </span>
-          </div>
-          <div className="flex items-center gap-1" title="Cores">
-            <Icon name="core" size={11} color="var(--color-gold)" />
-            <span className="font-pixel text-[9px] text-gold">{fmt(p.cores)}</span>
-          </div>
+        {/* Controls only. The streak and the cores moved down to the meter row
+            when the theme toggle arrived — three 44px targets, a name and two
+            readouts do not fit across a 375px phone, and the name is the part
+            that was losing. */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* The map lives up here now: a picture of the city small enough to
               sit beside the numbers, and one tap from the whole thing. */}
           <button
@@ -62,6 +85,7 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
           >
             <PixelSprite sprite={MAP_ICON} size={30} />
           </button>
+          <ThemeToggle />
           <button
             onClick={onOpenAxis}
             className="grid place-items-center w-11 h-11 border border-cyan bg-cyan/10 hover:brightness-125 active:brightness-150"
@@ -79,6 +103,17 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
         <Bar pct={p.xp / need} height={7} shine className="flex-1" />
         <span className="font-mono text-[9px] text-ink-faint shrink-0 tabular-nums">
           {fmt(p.xp)}/{fmt(need)}
+        </span>
+        <span className="w-px h-3 bg-line shrink-0" />
+        <span className="flex items-center gap-1 shrink-0" title={`${p.streak} day streak · ${streak.label}`}>
+          <Icon name="flame" size={10} color={p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)'} />
+          <span className="font-pixel text-[8px]" style={{ color: p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)' }}>
+            {p.streak}
+          </span>
+        </span>
+        <span className="flex items-center gap-1 shrink-0" title="Cores">
+          <Icon name="core" size={10} color="var(--color-gold)" />
+          <span className="font-pixel text-[8px] text-gold">{fmt(p.cores)}</span>
         </span>
       </div>
     </header>

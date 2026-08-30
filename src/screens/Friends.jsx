@@ -28,7 +28,7 @@ function ModeSwitch({ mode, setMode }) {
             style={{
               borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
               background: on ? 'var(--color-neon)' : 'transparent',
-              color: on ? '#ffffff' : 'var(--color-ink-faint)',
+              color: on ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
             }}
           >
             {label}
@@ -141,7 +141,7 @@ export default function Friends() {
           {board.map((f, i) => {
             const cls = classById(f.classId)
             const isMe = f.id === 'me'
-            const medal = ['#92400e', '#64748b', '#92400e'][i]
+            const medal = ['var(--color-gold)', 'var(--tone-slate)', 'var(--tone-bronze)'][i]
             return (
               <div
                 key={f.id}
@@ -162,7 +162,7 @@ export default function Friends() {
                     {f.fresh && <span className="font-pixel text-[6px] text-lime">NEW</span>}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <Icon name="flame" size={8} color="#c2410c" />
+                    <Icon name="flame" size={8} color="var(--tone-orange)" />
                     <span className="font-mono text-[10px] text-ink-faint">{f.streak} day streak</span>
                   </div>
                 </div>

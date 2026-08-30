@@ -10,21 +10,21 @@ export const ACTS = [
     numeral: 'I',
     name: 'THE STARTING LINE',
     blurb: 'The ones that get you before you have started.',
-    color: '#166534',
+    color: 'var(--tone-green)',
   },
   {
     id: 'act2',
     numeral: 'II',
     name: 'THE GRIND',
     blurb: 'Nothing here is dramatic. That is what makes it hard.',
-    color: '#92400e',
+    color: 'var(--color-gold)',
   },
   {
     id: 'act3',
     numeral: 'III',
     name: 'THE HUNDRED',
     blurb: 'Past this point the only thing left in your way is you.',
-    color: '#7c3aed',
+    color: 'var(--color-neon-bright)',
   },
 ]
 

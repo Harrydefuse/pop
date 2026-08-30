@@ -98,19 +98,19 @@ export const CATALOG = { pets: PET_CATALOG, gear: GEAR_CATALOG }
 // ------------------------------------------------------------ health & game links
 
 export const HEALTH_PROVIDERS = [
-  { id: 'apple', name: 'Apple Health', note: 'Workouts, steps, sleep, HR', color: '#f2ecff' },
-  { id: 'google', name: 'Health Connect', note: 'Android workouts & steps', color: '#166534' },
+  { id: 'apple', name: 'Apple Health', note: 'Workouts, steps, sleep, HR', color: 'var(--color-ink)' },
+  { id: 'google', name: 'Health Connect', note: 'Android workouts & steps', color: 'var(--tone-green)' },
   { id: 'strava', name: 'Strava', note: 'Runs & rides with GPS traces', color: '#fc4c02' },
-  { id: 'garmin', name: 'Garmin', note: 'Full session + recovery data', color: '#0369a1' },
-  { id: 'whoop', name: 'WHOOP', note: 'Strain, recovery, sleep', color: '#3f6212' },
+  { id: 'garmin', name: 'Garmin', note: 'Full session + recovery data', color: 'var(--tone-sky)' },
+  { id: 'whoop', name: 'WHOOP', note: 'Strain, recovery, sleep', color: 'var(--color-lime)' },
 ]
 
 export const GAME_ACCOUNTS = [
-  { id: 'riot', name: 'Riot Games', titles: 'Valorant, League, TFT', color: '#be123c' },
-  { id: 'steam', name: 'Steam', titles: 'CS2, Apex, everything else', color: '#0369a1' },
-  { id: 'epic', name: 'Epic Games', titles: 'Fortnite, Rocket League', color: '#f2ecff' },
-  { id: 'blizzard', name: 'Battle.net', titles: 'Overwatch 2, WoW, Diablo', color: '#6d28d9' },
-  { id: 'xbox', name: 'Xbox Live', titles: 'Game Pass library', color: '#166534' },
+  { id: 'riot', name: 'Riot Games', titles: 'Valorant, League, TFT', color: 'var(--color-danger)' },
+  { id: 'steam', name: 'Steam', titles: 'CS2, Apex, everything else', color: 'var(--tone-sky)' },
+  { id: 'epic', name: 'Epic Games', titles: 'Fortnite, Rocket League', color: 'var(--color-ink)' },
+  { id: 'blizzard', name: 'Battle.net', titles: 'Overwatch 2, WoW, Diablo', color: 'var(--color-neon)' },
+  { id: 'xbox', name: 'Xbox Live', titles: 'Game Pass library', color: 'var(--tone-green)' },
 ]
 
 // ---------------------------------------------------------------------- roster
@@ -313,7 +313,7 @@ export const COACHES = [
     rating: 4.9,
     students: 3120,
     tag: 'FITNESS',
-    color: '#be123c',
+    color: 'var(--color-danger)',
     lessons: ['Squat setup that stops knee pain', 'Progressive overload without a spreadsheet', '45-min gamer PPL'],
   },
   {
@@ -324,7 +324,7 @@ export const COACHES = [
     rating: 4.8,
     students: 8940,
     tag: 'VALORANT',
-    color: '#6d28d9',
+    color: 'var(--color-neon)',
     lessons: ['Crosshair placement drills', 'Reading the retake', 'Warm-up that beats 40 min of DM'],
   },
   {
@@ -335,7 +335,7 @@ export const COACHES = [
     rating: 4.7,
     students: 2410,
     tag: 'OVERWATCH',
-    color: '#92400e',
+    color: 'var(--color-gold)',
     lessons: ['Positioning as Ana', 'Cooldown tracking habits', 'Wrist care for 8-hour days'],
   },
   {
@@ -346,7 +346,7 @@ export const COACHES = [
     rating: 5.0,
     students: 6180,
     tag: 'RECOVERY',
-    color: '#0e7490',
+    color: 'var(--color-cyan)',
     lessons: ['Fixing a 4am sleep schedule', 'Caffeine timing for late queues', 'Deload weeks'],
   },
 ]

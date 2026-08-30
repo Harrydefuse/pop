@@ -16,11 +16,11 @@ export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary']
 // Five trainable stats. Every logged activity maps onto one or two of them, so
 // the character sheet is a direct read-out of how you actually train.
 export const STATS = [
-  { key: 'STR', name: 'Strength', color: '#be123c', blurb: 'Lifting volume, calisthenics, carries' },
-  { key: 'END', name: 'Endurance', color: '#0e7490', blurb: 'Running, cycling, rowing, swimming' },
-  { key: 'AGI', name: 'Agility', color: '#3f6212', blurb: 'HIIT, sprints, sport, mobility' },
-  { key: 'VIT', name: 'Vitality', color: '#92400e', blurb: 'Sleep, steps, recovery, hydration' },
-  { key: 'FOCUS', name: 'Focus', color: '#6d28d9', blurb: 'Aim training, consistency, balance days' },
+  { key: 'STR', name: 'Strength', color: 'var(--color-danger)', blurb: 'Lifting volume, calisthenics, carries' },
+  { key: 'END', name: 'Endurance', color: 'var(--color-cyan)', blurb: 'Running, cycling, rowing, swimming' },
+  { key: 'AGI', name: 'Agility', color: 'var(--color-lime)', blurb: 'HIIT, sprints, sport, mobility' },
+  { key: 'VIT', name: 'Vitality', color: 'var(--color-gold)', blurb: 'Sleep, steps, recovery, hydration' },
+  { key: 'FOCUS', name: 'Focus', color: 'var(--color-neon)', blurb: 'Aim training, consistency, balance days' },
 ]
 
 export const STAT_KEYS = STATS.map((s) => s.key)
@@ -35,7 +35,7 @@ export const CLASSES = [
     tagline: 'Runners, riders, rowers',
     blurb: 'You measure a good week in kilometres.',
     affinity: 'END',
-    color: '#0e7490',
+    color: 'var(--color-cyan)',
     icon: 'boot',
     passive: { label: '+12% XP from running and riding', type: 'xp', tags: ['run', 'ride'], value: 0.12 },
   },
@@ -45,7 +45,7 @@ export const CLASSES = [
     tagline: 'Barbells, dumbbells, the squat rack',
     blurb: 'If it is heavy, you want to pick it up.',
     affinity: 'STR',
-    color: '#be123c',
+    color: 'var(--color-danger)',
     icon: 'dumbbell',
     passive: { label: '+12% XP from gym sessions', type: 'xp', tags: ['lift'], value: 0.12 },
   },
@@ -55,7 +55,7 @@ export const CLASSES = [
     tagline: 'Lifts heavy and still runs',
     blurb: 'Leg day and a 10k in the same week.',
     affinity: 'AGI',
-    color: '#7c3aed', // brighter than the base neon so 7px labels clear 4.5:1 on a tint
+    color: 'var(--color-neon-bright)', // brighter than the base neon so 7px labels clear 4.5:1 on a tint
     icon: 'bolt',
     // Smaller bonus across two disciplines rather than a big one on a single
     // lane: the hybrid trades depth for breadth, exactly like the training does.
@@ -67,7 +67,7 @@ export const CLASSES = [
     tagline: 'Calisthenics, yoga, pilates, walking',
     blurb: 'Your body is the only equipment you need.',
     affinity: 'VIT',
-    color: '#166534',
+    color: 'var(--tone-green)',
     icon: 'lotus',
     passive: { label: '+12% XP from bodyweight and mobility', type: 'xp', tags: ['mobility'], value: 0.12 },
   },
@@ -76,14 +76,14 @@ export const CLASSES = [
 // Competitive ranks, driven by weekly Power rather than lifetime level so a
 // returning player can climb back without regrinding a hundred levels.
 export const RANKS = [
-  { key: 'bronze', name: 'BRONZE', min: 0, color: '#92400e' },
-  { key: 'silver', name: 'SILVER', min: 400, color: '#64748b' },
-  { key: 'gold', name: 'GOLD', min: 900, color: '#92400e' },
-  { key: 'platinum', name: 'PLATINUM', min: 1600, color: '#0f766e' },
-  { key: 'diamond', name: 'DIAMOND', min: 2600, color: '#1d4ed8' },
-  { key: 'ascendant', name: 'ASCENDANT', min: 4000, color: '#166534' },
-  { key: 'immortal', name: 'IMMORTAL', min: 6000, color: '#be123c' },
-  { key: 'lvl100', name: 'LVL100', min: 9000, color: '#6d28d9' },
+  { key: 'bronze', name: 'BRONZE', min: 0, color: 'var(--tone-bronze)' },
+  { key: 'silver', name: 'SILVER', min: 400, color: 'var(--tone-slate)' },
+  { key: 'gold', name: 'GOLD', min: 900, color: 'var(--color-gold)' },
+  { key: 'platinum', name: 'PLATINUM', min: 1600, color: 'var(--tone-jade)' },
+  { key: 'diamond', name: 'DIAMOND', min: 2600, color: 'var(--tone-blue)' },
+  { key: 'ascendant', name: 'ASCENDANT', min: 4000, color: 'var(--tone-green)' },
+  { key: 'immortal', name: 'IMMORTAL', min: 6000, color: 'var(--color-danger)' },
+  { key: 'lvl100', name: 'LVL100', min: 9000, color: 'var(--color-neon)' },
 ]
 
 // Activity catalogue. `unit` drives the logging UI, `per` is how much of that
@@ -284,7 +284,7 @@ export const DAILY_SLOTS = [
     minMinutes: 20,
     accepts: ['walk', 'run', 'ride', 'swim', 'hiit', 'sport'],
     xp: 120,
-    color: '#166534',
+    color: 'var(--tone-green)',
     icon: 'boot',
     unlocksChest: true,
   },
@@ -297,7 +297,7 @@ export const DAILY_SLOTS = [
     minMinutes: 20,
     accepts: ['aim', 'vod'],
     xp: 90,
-    color: '#0e7490',
+    color: 'var(--color-cyan)',
     icon: 'crosshair',
   },
   {
@@ -309,7 +309,7 @@ export const DAILY_SLOTS = [
     minMinutes: 0,
     accepts: ['gym', 'bodyweight', 'mobility', 'sleep'],
     xp: 100,
-    color: '#92400e',
+    color: 'var(--color-gold)',
     icon: 'dumbbell',
   },
 ]
@@ -434,7 +434,7 @@ export const STONES = [
   {
     key: 'power',
     name: 'POWER',
-    color: '#6d28d9',
+    color: 'var(--color-neon)',
     metric: 'volume',
     goal: 100000,
     unit: 'kg lifted',
@@ -443,7 +443,7 @@ export const STONES = [
   {
     key: 'space',
     name: 'SPACE',
-    color: '#0369a1',
+    color: 'var(--tone-sky)',
     metric: 'distance',
     goal: 1000,
     unit: 'km covered',
@@ -452,7 +452,7 @@ export const STONES = [
   {
     key: 'reality',
     name: 'REALITY',
-    color: '#be123c',
+    color: 'var(--color-danger)',
     metric: 'sessions',
     goal: 300,
     unit: 'verified sessions',
@@ -461,7 +461,7 @@ export const STONES = [
   {
     key: 'soul',
     name: 'SOUL',
-    color: '#c2410c',
+    color: 'var(--tone-orange)',
     metric: 'coop',
     goal: 100,
     unit: 'friend challenges',
@@ -470,7 +470,7 @@ export const STONES = [
   {
     key: 'time',
     name: 'TIME',
-    color: '#166534',
+    color: 'var(--tone-green)',
     metric: 'streak',
     goal: 365,
     unit: 'day streak',
@@ -479,7 +479,7 @@ export const STONES = [
   {
     key: 'mind',
     name: 'MIND',
-    color: '#92400e',
+    color: 'var(--color-gold)',
     metric: 'balance',
     goal: 200,
     unit: 'balanced days',

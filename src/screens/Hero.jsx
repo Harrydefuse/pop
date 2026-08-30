@@ -32,7 +32,7 @@ function Tile({ rarity, level, equipped, label, onClick, children }) {
       {children}
       <span
         className="absolute bottom-0 right-0 font-pixel text-[6px] px-1 py-0.5 leading-none"
-        style={{ background: '#ffffff', color }}
+        style={{ background: 'var(--color-panel)', color }}
       >
         {level}
       </span>
@@ -374,7 +374,7 @@ export default function Hero() {
             onClick={() => setFilter(f.id)}
             className="font-pixel text-[8px] py-2.5 min-h-[44px] border-r border-line last:border-0 transition-colors active:brightness-125"
             style={{
-              color: filter === f.id ? '#ffffff' : 'var(--color-ink-faint)',
+              color: filter === f.id ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
               background: filter === f.id ? 'var(--color-neon)' : 'transparent',
             }}
           >

@@ -84,6 +84,21 @@
   --color-ink-dim: #4f4866; /* 8.2:1 */
   --color-ink-faint: #6b6484; /* 5.4:1 */
 
+  /* Colours the game data reaches for by name that are not one of the five
+     signals above — ranks, acts, slots, sources. They live here rather than as
+     hex in config so a theme swap moves them too. */
+  --tone-green: #166534;
+  --tone-sky: #0369a1;
+  --tone-slate: #64748b;
+  --tone-orange: #c2410c;
+  --tone-jade: #0f766e;
+  --tone-blue: #1d4ed8;
+  --tone-bronze: #92400e;
+
+  /* What sits on top of a filled accent. On paper the accents are deep and
+     this is white; on a dark screen they are fluorescent and it inverts. */
+  --color-on-accent: #ffffff;
+
   /* rarity ladder — matches the pet-collection art */
   --color-r-common: #64748b;
   --color-r-uncommon: #166534;
@@ -96,6 +111,89 @@
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
   --breakpoint-xs: 26rem;
+}
+
+/* Chrome is drawn from the ink colour, not from black, so it has to move with
+   the theme as well: a 55% drop shadow reads as depth on a dark screen and as
+   grime on paper, and the dither has to be dark specks on light or light specks
+   on dark. Everything decorative is named here once. */
+:root {
+  color-scheme: light;
+  --chrome-wash: rgba(168, 85, 247, 0.1);
+  --chrome-dither: rgba(26, 21, 38, 0.04);
+  --chrome-drop: rgba(26, 21, 38, 0.14);
+  --bevel-lit: rgba(255, 255, 255, 0.34);
+  --bevel-shade: rgba(0, 0, 0, 0.3);
+  --bevel-drop: rgba(26, 21, 38, 0.28);
+  --bevel-ghost-drop: rgba(26, 21, 38, 0.2);
+  --chrome-scan: rgba(26, 21, 38, 0.028);
+  --chrome-scan-opacity: 0.55;
+  --chrome-vignette: rgba(26, 21, 38, 0.09);
+  --chrome-vignette-stop: 62%;
+  --scrim: rgba(26, 21, 38, 0.55);
+  --scrim-strong: rgba(26, 21, 38, 0.65);
+}
+
+/* The night side. Every token above keeps its role and changes its value —
+   nothing here introduces a colour the light theme does not have a twin for,
+   which is what stops the two themes drifting apart as the app grows.
+   Specificity beats the bare :root that @theme emits, so these win. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-void: #07060d;
+  --color-panel: #120d20;
+  --color-panel-2: #1a1230;
+  --color-line: #3a2a57;
+  --color-line-hot: #4c3378;
+
+  --color-neon: #a855f7;
+  --color-neon-bright: #c084fc;
+  --color-neon-dim: #6d28d9;
+  --color-cyan: #22d3ee;
+  --color-lime: #a3e635;
+  --color-gold: #fbbf24;
+  --color-danger: #f43f5e;
+
+  /* On a dark ground the accents are already fluorescent, so the decorative
+     "glow" variants are the accents themselves rather than brighter ones. */
+  --color-neon-glow: #c084fc;
+  --color-cyan-glow: #67e8f9;
+  --color-lime-glow: #bef264;
+  --color-gold-glow: #fcd34d;
+
+  --color-ink: #f2ecff;
+  --color-ink-dim: #a394c4;
+  --color-ink-faint: #8b7dae;
+
+  --tone-green: #4ade80;
+  --tone-sky: #38bdf8;
+  --tone-slate: #c5cdd8;
+  --tone-orange: #fb923c;
+  --tone-jade: #5eead4;
+  --tone-blue: #60a5fa;
+  --tone-bronze: #b07a4a;
+
+  --color-on-accent: #12081f;
+
+  --color-r-common: #b8bfcc;
+  --color-r-uncommon: #4ade80;
+  --color-r-rare: #38bdf8;
+  --color-r-epic: #c084fc;
+  --color-r-legendary: #f59e0b;
+
+  --chrome-wash: rgba(168, 85, 247, 0.13);
+  --chrome-dither: rgba(255, 255, 255, 0.028);
+  --chrome-drop: rgba(0, 0, 0, 0.55);
+  --bevel-lit: rgba(255, 255, 255, 0.28);
+  --bevel-shade: rgba(0, 0, 0, 0.45);
+  --bevel-drop: rgba(0, 0, 0, 0.5);
+  --bevel-ghost-drop: rgba(0, 0, 0, 0.45);
+  --chrome-scan: rgba(0, 0, 0, 0.22);
+  --chrome-scan-opacity: 0.5;
+  --chrome-vignette: rgba(0, 0, 0, 0.45);
+  --chrome-vignette-stop: 55%;
+  --scrim: rgba(5, 3, 10, 0.85);
+  --scrim-strong: rgba(5, 3, 10, 0.92);
 }
 
 * {
@@ -118,7 +216,7 @@ body {
 
 ::selection {
   background: var(--color-neon);
-  color: #ffffff;
+  color: var(--color-on-accent);
 }
 
 /* Browsers default <button> to the arrow cursor, and every control in this app
@@ -195,8 +293,8 @@ button:disabled {
 .arcade-bg {
   background-color: var(--color-void);
   background-image:
-    radial-gradient(circle at 50% -10%, rgba(168, 85, 247, 0.1), transparent 62%),
-    repeating-conic-gradient(rgba(26, 21, 38, 0.04) 0% 25%, transparent 0% 50%);
+    radial-gradient(circle at 50% -10%, var(--chrome-wash), transparent 62%),
+    repeating-conic-gradient(var(--chrome-dither) 0% 25%, transparent 0% 50%);
   background-size:
     100% 100%,
     4px 4px;
@@ -205,7 +303,7 @@ button:disabled {
 /* Chrome drawn the way a sprite is: a solid offset block, no blur. Nothing in
    pixel art has a soft shadow, because nothing in pixel art has a sub-pixel. */
 .pixel-drop {
-  box-shadow: 3px 3px 0 0 rgba(26, 21, 38, 0.14);
+  box-shadow: 3px 3px 0 0 var(--chrome-drop);
 }
 
 /* A raised face: light along the top-left, dark along the bottom-right, one
@@ -213,26 +311,26 @@ button:disabled {
    to say "this is a button". */
 .bevel {
   box-shadow:
-    inset 1px 1px 0 0 rgba(255, 255, 255, 0.34),
-    inset -1px -1px 0 0 rgba(0, 0, 0, 0.3),
-    2px 2px 0 0 rgba(26, 21, 38, 0.28);
+    inset 1px 1px 0 0 var(--bevel-lit),
+    inset -1px -1px 0 0 var(--bevel-shade),
+    2px 2px 0 0 var(--bevel-drop);
 }
 
 .bevel:active:not(:disabled) {
   box-shadow:
-    inset 1px 1px 0 0 rgba(0, 0, 0, 0.28),
-    inset -1px -1px 0 0 rgba(255, 255, 255, 0.2),
-    0 0 0 0 rgba(26, 21, 38, 0.28);
+    inset 1px 1px 0 0 var(--bevel-shade),
+    inset -1px -1px 0 0 var(--bevel-lit),
+    0 0 0 0 var(--bevel-drop);
 }
 
 /* Ghost buttons get the same geometry without the lit face, so a row of mixed
    buttons still sits on one plane. */
 .bevel-ghost {
-  box-shadow: 2px 2px 0 0 rgba(26, 21, 38, 0.2);
+  box-shadow: 2px 2px 0 0 var(--bevel-ghost-drop);
 }
 
 .bevel-ghost:active:not(:disabled) {
-  box-shadow: 0 0 0 0 rgba(26, 21, 38, 0.2);
+  box-shadow: 0 0 0 0 var(--bevel-ghost-drop);
 }
 
 /* CRT scanlines — decorative only, sits above the shell at very low opacity */
@@ -243,13 +341,13 @@ button:disabled {
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(26, 21, 38, 0.028) 0px,
-    rgba(26, 21, 38, 0.028) 1px,
+    var(--chrome-scan) 0px,
+    var(--chrome-scan) 1px,
     transparent 1px,
     transparent 3px
   );
   mix-blend-mode: multiply;
-  opacity: 0.55;
+  opacity: var(--chrome-scan-opacity);
 }
 
 /* The corners of a CRT were always darker than the middle. Cheap, and it stops
@@ -260,7 +358,11 @@ button:disabled {
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%, transparent 62%, rgba(26, 21, 38, 0.09) 100%);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent var(--chrome-vignette-stop),
+    var(--chrome-vignette) 100%
+  );
 }
 
 @keyframes xp-shine {

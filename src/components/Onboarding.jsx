@@ -121,7 +121,7 @@ function Pick({ label, options, value, onChange }) {
               aria-pressed={on}
               className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
               style={{
-                color: on ? '#ffffff' : 'var(--color-ink-dim)',
+                color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
                 background: on ? 'var(--color-neon)' : 'transparent',
                 borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
               }}

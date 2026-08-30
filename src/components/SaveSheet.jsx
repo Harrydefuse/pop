@@ -50,7 +50,7 @@ export default function SaveSheet({ onClose }) {
             aria-pressed={mode === id}
             className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
             style={{
-              color: mode === id ? '#ffffff' : 'var(--color-ink-dim)',
+              color: mode === id ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
               background: mode === id ? 'var(--color-cyan)' : 'transparent',
               borderColor: mode === id ? 'var(--color-cyan)' : 'var(--color-line)',
             }}

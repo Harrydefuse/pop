@@ -44,10 +44,10 @@ export function SectionTitle({ children, right, color = 'var(--color-neon)' }) {
 /* ------------------------------------------------------------------- controls */
 
 const BTN_VARIANTS = {
-  primary: 'bg-neon text-white border-neon hover:bg-[#5b21b6]',
-  gold: 'bg-gold text-white border-gold hover:brightness-110',
-  cyan: 'bg-cyan text-white border-cyan hover:brightness-110',
-  danger: 'bg-danger text-white border-danger hover:brightness-110',
+  primary: 'bg-neon text-[var(--color-on-accent)] border-neon hover:brightness-110',
+  gold: 'bg-gold text-[var(--color-on-accent)] border-gold hover:brightness-110',
+  cyan: 'bg-cyan text-[var(--color-on-accent)] border-cyan hover:brightness-110',
+  danger: 'bg-danger text-[var(--color-on-accent)] border-danger hover:brightness-110',
   ghost: 'bg-transparent text-ink border-line-hot hover:border-neon hover:text-neon',
   dim: 'bg-panel-2 text-ink-dim border-line hover:text-ink hover:border-line-hot',
 }
@@ -76,7 +76,7 @@ export function Chip({ children, color = 'var(--color-ink-dim)', filled, classNa
     <span
       className={`font-pixel text-[7px] px-1.5 py-1 border leading-none inline-flex items-center gap-1 ${className}`}
       style={{
-        color: filled ? '#ffffff' : color,
+        color: filled ? 'var(--color-on-accent)' : color,
         borderColor: color,
         background: filled ? color : alpha(color, 10),
       }}
@@ -177,7 +177,8 @@ export function Modal({ open, onClose, title, children, accent = 'var(--color-ne
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-[#1a1526]/55 backdrop-blur-[2px] cursor-default"
+        className="absolute inset-0 backdrop-blur-[2px] cursor-default"
+        style={{ background: 'var(--scrim)' }}
       />
       <div
         className={`relative w-full ${wide ? 'max-w-[400px]' : 'max-w-[340px]'} m-3 border bg-panel max-h-[85%] flex flex-col`}

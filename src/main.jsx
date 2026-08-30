@@ -1,6 +1,9 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+// Imported for the side effect: it stamps the saved theme on <html> before the
+// first render, so the app never paints a frame in the wrong one.
+import './game/theme'
 import App from './App.jsx'
 import Site from './site/Site.jsx'
 
