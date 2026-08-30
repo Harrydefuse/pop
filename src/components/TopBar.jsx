@@ -1,10 +1,11 @@
 import Avatar from './Avatar'
+import OverviewMap from './OverviewMap'
 import Icon from './Icon'
 import { Bar } from './ui'
 import { useGame } from '../game/useGame'
 import { classById, fmt, powerScore, rankFor, streakTier, xpToNext } from '../game/engine'
 
-export default function TopBar({ onOpenProfile, onOpenAxis }) {
+export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
   const { state } = useGame()
   const p = state.player
   const cls = classById(p.classId)
@@ -27,12 +28,10 @@ export default function TopBar({ onOpenProfile, onOpenAxis }) {
         </button>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="font-pixel text-[10px] truncate">{p.name}</span>
-            <span className="font-pixel text-[7px] px-1 py-0.5 border" style={{ color: cls.color, borderColor: cls.color }}>
-              {cls.name}
-            </span>
-          </div>
+          {/* No class chip. Nobody picks a class at sign-up, so the header was
+              labelling the player with something they never chose — and the
+              room it took is what the map needed. */}
+          <div className="font-pixel text-[10px] truncate">{p.name}</div>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="font-pixel text-[7px]" style={{ color: rank.color }}>
               {rank.name}
@@ -53,6 +52,20 @@ export default function TopBar({ onOpenProfile, onOpenAxis }) {
             <Icon name="core" size={11} color="var(--color-gold)" />
             <span className="font-pixel text-[9px] text-gold">{fmt(p.cores)}</span>
           </div>
+          {/* The map lives up here now: a picture of the city small enough to
+              sit beside the numbers, and one tap from the whole thing. */}
+          <button
+            onClick={onOpenMap}
+            className="shrink-0 grid place-items-center w-11 h-11 active:brightness-110"
+            aria-label="Open the map of Sydney"
+          >
+            <span
+              className="block w-8 h-8 overflow-hidden"
+              style={{ padding: 2, background: '#2a1e12', boxShadow: 'inset 0 0 0 1px #c9a227' }}
+            >
+              <OverviewMap className="w-full h-full" />
+            </span>
+          </button>
           <button
             onClick={onOpenAxis}
             className="grid place-items-center w-11 h-11 border border-cyan bg-[#0c1a20] hover:brightness-125 active:brightness-150"

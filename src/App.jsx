@@ -11,7 +11,7 @@ import Icon from './components/Icon'
 import Home from './screens/Home'
 import Friends from './screens/Friends'
 import Hero from './screens/Hero'
-import Map from './screens/Map'
+import MapSheet from './screens/Map'
 import Train, { SessionBar } from './screens/Train'
 
 const PITCH = [
@@ -67,6 +67,7 @@ function Device() {
   const { state } = useGame()
   const [tab, setTab] = useState('home')
   const [axis, setAxis] = useState(false)
+  const [map, setMap] = useState(false)
 
   const questsOpen = state.dailies.some((d) => !d.done)
 
@@ -74,16 +75,15 @@ function Device() {
     <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 scanlines">
       {!state.onboarded && <Onboarding />}
 
-      <TopBar onOpenProfile={() => setTab('hero')} onOpenAxis={() => setAxis(true)} />
+      <TopBar onOpenProfile={() => setTab('hero')} onOpenAxis={() => setAxis(true)} onOpenMap={() => setMap(true)} />
 
       <main className="flex-1 overflow-y-auto scroll-thin arcade-bg">
         {/* Caps the measure when the app runs full-bleed on a wide, short
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}
         <div className="mx-auto w-full max-w-[520px]">
-          {tab === 'home' && <Home onGo={setTab} />}
+          {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
           {tab === 'train' && <Train />}
-          {tab === 'map' && <Map />}
           {tab === 'friends' && <Friends />}
           {tab === 'hero' && <Hero />}
           <div className="h-4" />
@@ -96,6 +96,7 @@ function Device() {
       <Toasts />
       <RewardModal />
       <Axis open={axis} onClose={() => setAxis(false)} />
+      {map && <MapSheet onClose={() => setMap(false)} />}
     </div>
   )
 }

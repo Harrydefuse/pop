@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
-import Icon from '../components/Icon'
+import { Bar, Btn, Modal, SectionTitle } from '../components/ui'
 import CampaignSheet from '../components/CampaignSheet'
 import PixelSprite from '../components/PixelSprite'
 import OverviewMap from '../components/OverviewMap'
@@ -29,15 +28,6 @@ const BOSS_SITES = {
   backslide: 'bondi',
   lvl100: 'heads',
 }
-
-const LEGEND = [
-  ['#2874b3', 'Open water'],
-  ['#e2d1a0', 'Open ground'],
-  ['#3f8a30', 'Bushland'],
-  ['#cf5b41', 'Built up'],
-  ['#e8933c', 'Main roads'],
-  ['#f7e8bc', 'Beach'],
-]
 
 /** A compass rose, drawn rather than set in type. Every map that means it has
  *  one, and it is the cheapest thing on the page that says somebody made this. */
@@ -142,36 +132,12 @@ function Framed({ children, className = '', pad = 10 }) {
   )
 }
 
-/** The tab shows a picture of it. Names, flags and landmarks are for when it is
- *  open — at thumbnail size they would be a smudge. */
-function Thumb({ onOpen, revealed }) {
-  return (
-    <Framed pad={7}>
-      <button
-        onClick={onOpen}
-        className="relative block w-full overflow-hidden active:brightness-110"
-        aria-label="Open the map of Sydney"
-      >
-        <OverviewMap revealed={revealed} />
-        <span className="absolute inset-x-0 bottom-0 flex items-center justify-between px-2 py-1.5 bg-[#2a1e12]/85">
-          <span className="font-pixel text-[7px]" style={{ color: '#e8d9b4' }}>
-            SYDNEY
-          </span>
-          <span className="font-pixel text-[6px]" style={{ color: '#c9a227' }}>
-            TAP TO OPEN
-          </span>
-        </span>
-      </button>
-    </Framed>
-  )
-}
-
 /**
  * The map, open. Same drawing at three times the size so it is chunky the way
  * the reference is, with every town named, the landmarks in place, and a
  * pennant on every boss you have not put down yet.
  */
-function BigMap({ onClose, markers, onPick, revealed, fine }) {
+function BigMap({ onClose, markers, onPick, revealed, fine, footer }) {
   return (
     <Modal open onClose={onClose} title="SYDNEY" accent="var(--color-gold)" wide>
       <Framed pad={6}>
@@ -292,19 +258,25 @@ function BigMap({ onClose, markers, onPick, revealed, fine }) {
         Drag to move, pinch or use + to get closer — go far enough in and the drawing gives way to the streets. Tap a
         pennant for what is waiting there.
       </div>
+      {footer}
     </Modal>
   )
 }
 
-export default function Map() {
+/**
+ * The map, opened from the header.
+ *
+ * It used to be a tab of its own with the explored bar and the boss it points
+ * at underneath. Those belong with the map rather than beside it, so they came
+ * along when it moved.
+ */
+export default function MapSheet({ onClose }) {
   const { state } = useGame()
   const revealed = useMemo(() => new Set(state.explored ?? []), [state.explored])
+  const coarse = useMemo(() => coarseExplored(revealed), [revealed])
   const [picked, setPicked] = useState(null)
-  const [open, setOpen] = useState(false)
   const [campaign, setCampaign] = useState(false)
   const c = campaignState(state.player, state.campaign)
-
-  const coarse = useMemo(() => coarseExplored(revealed), [revealed])
   const pct = revealed.size / (SYDNEY.w * SYDNEY.h)
 
   const markers = useMemo(
@@ -325,88 +297,56 @@ export default function Map() {
   const shown = picked ?? markers.find((m) => m.current) ?? markers[0]
 
   return (
-    <div className="p-3 space-y-3">
-      <Thumb onOpen={() => setOpen(true)} revealed={coarse} />
+    <>
+      <BigMap
+        onClose={onClose}
+        revealed={coarse}
+        fine={revealed}
+        markers={markers}
+        onPick={setPicked}
+        footer={
+          <>
+            <div className="mt-3 pt-3 border-t border-line">
+              <div className="flex items-center justify-between">
+                <span className="font-pixel text-[8px] text-ink-faint">SYDNEY EXPLORED</span>
+                <span className="font-mono text-[12px] text-lime">{(pct * 100).toFixed(1)}%</span>
+              </div>
+              <Bar pct={pct} color="var(--color-lime)" height={6} className="mt-2" />
+              <div className="text-[11px] text-ink-dim mt-2 leading-snug">
+                Ground you have not walked sits under haze. Every kilometre you cover clears more of it, and it stays
+                clear.
+              </div>
+            </div>
 
-      {open && (
-        <BigMap
-          onClose={() => setOpen(false)}
-          revealed={coarse}
-          fine={revealed}
-          markers={markers}
-          onPick={(m) => {
-            setPicked(m)
-            setOpen(false)
-          }}
-        />
-      )}
-
-      <Panel corners={false} className="p-3">
-        <div className="flex items-center justify-between">
-          <span className="font-pixel text-[8px] text-ink-faint">SYDNEY EXPLORED</span>
-          <span className="font-mono text-[12px] text-lime">{(pct * 100).toFixed(1)}%</span>
-        </div>
-        <Bar pct={pct} color="var(--color-lime)" height={6} className="mt-2" />
-        <div className="text-[11px] text-ink-dim mt-2 leading-snug">
-          Ground you have not walked sits under haze. Every kilometre you cover clears more of it, and it stays clear.
-        </div>
-      </Panel>
-
-      {shown && (
-        <Panel className="p-3.5" accent={actById(shown.boss.act).color}>
-          <SectionTitle color={actById(shown.boss.act).color}>
-            {shown.cleared ? 'CLEARED' : shown.current ? 'STANDING HERE NOW' : 'FURTHER ON'}
-          </SectionTitle>
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="font-pixel text-[10px]" style={{ color: actById(shown.boss.act).color }}>
-              {shown.boss.name}
-            </span>
-            <span className="font-mono text-[11px] text-ink-faint">at {shown.place.name}</span>
-          </div>
-          <div className="text-[11px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
-          {/* The map is where you find out a boss is standing somewhere. It
-              should also be where you can go and do something about it. */}
-          {!shown.cleared && (
-            <Btn
-              full
-              size="sm"
-              variant={shown.current ? 'danger' : 'ghost'}
-              className="mt-3"
-              onClick={() => setCampaign(true)}
-            >
-              {shown.current ? 'FIGHT IT' : 'SEE THE ROAD'}
-            </Btn>
-          )}
-        </Panel>
-      )}
-
+            {shown && (
+              <div className="mt-3 pt-3 border-t border-line">
+                <SectionTitle color={actById(shown.boss.act).color}>
+                  {shown.cleared ? 'CLEARED' : shown.current ? 'STANDING HERE NOW' : 'FURTHER ON'}
+                </SectionTitle>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="font-pixel text-[10px]" style={{ color: actById(shown.boss.act).color }}>
+                    {shown.boss.name}
+                  </span>
+                  <span className="font-mono text-[11px] text-ink-faint">at {shown.place.name}</span>
+                </div>
+                <div className="text-[11px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
+                {!shown.cleared && (
+                  <Btn
+                    full
+                    size="sm"
+                    variant={shown.current ? 'danger' : 'ghost'}
+                    className="mt-3"
+                    onClick={() => setCampaign(true)}
+                  >
+                    {shown.current ? 'FIGHT IT' : 'SEE THE ROAD'}
+                  </Btn>
+                )}
+              </div>
+            )}
+          </>
+        }
+      />
       {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
-
-      <div>
-        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">450m a cell</span>}>
-          THE HARBOUR
-        </SectionTitle>
-        <Panel corners={false} className="p-3">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-            {LEGEND.map(([colour, label]) => (
-              <span key={label} className="flex items-center gap-2">
-                <span className="w-3 h-3 shrink-0 border border-line" style={{ background: colour }} />
-                <span className="text-[11px] text-ink-dim">{label}</span>
-              </span>
-            ))}
-          </div>
-          <div className="flex items-start gap-2 mt-3 pt-3 border-t border-line">
-            <span className="mt-0.5 shrink-0">
-              <Icon name="spark" size={11} color="var(--color-ink-faint)" />
-            </span>
-            <p className="text-[10px] text-ink-faint leading-relaxed">
-              Eighteen kilometres of Sydney: the Parramatta and Lane Cove rivers in the west, Dee Why and Curl Curl in
-              the north, Coogee in the south, and the whole harbour in the middle. Open it and the same ground is drawn
-              at a hundred metres a cell.
-            </p>
-          </div>
-        </Panel>
-      </div>
-    </div>
+    </>
   )
 }
