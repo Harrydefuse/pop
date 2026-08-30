@@ -66,6 +66,9 @@ function DesktopPitch({ onExit }) {
 function Device() {
   const { state } = useGame()
   const [tab, setTab] = useState('home')
+  // Deliberately not persisted: every open lands on the character screen, so
+  // the build, the name and the look can all be changed before going in.
+  const [entered, setEntered] = useState(false)
   const [axis, setAxis] = useState(false)
   const [map, setMap] = useState(false)
 
@@ -73,7 +76,7 @@ function Device() {
 
   return (
     <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 scanlines">
-      {!state.onboarded && <Onboarding />}
+      {!entered && <Onboarding onContinue={() => setEntered(true)} />}
 
       <TopBar onOpenProfile={() => setTab('hero')} onOpenAxis={() => setAxis(true)} onOpenMap={() => setMap(true)} />
 

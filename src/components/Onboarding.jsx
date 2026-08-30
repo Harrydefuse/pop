@@ -57,16 +57,20 @@ function Swatch({ color, selected, onClick, label }) {
   )
 }
 
-export default function Onboarding() {
-  const { onboard } = useGame()
+export default function Onboarding({ onContinue }) {
+  const { state, onboard } = useGame()
+  const has = state.onboarded
   const [step, setStep] = useState(0)
 
-  const [name, setName] = useState('')
-  const [handle, setHandle] = useState('')
-  const [skin, setSkin] = useState(AVATAR_SKINS[0])
-  const [hair, setHair] = useState(AVATAR_HAIR[0])
-  const [hairLength, setHairLength] = useState('short')
-  const [body, setBody] = useState('male')
+  // Seeded from the character already on this device, so coming back to change
+  // one thing does not mean typing all of it again.
+  const av = state.player.avatar
+  const [name, setName] = useState(has ? state.player.name : '')
+  const [handle, setHandle] = useState(has ? state.player.handle : '')
+  const [skin, setSkin] = useState(av.skin ?? AVATAR_SKINS[0])
+  const [hair, setHair] = useState(av.hair ?? AVATAR_HAIR[0])
+  const [hairLength, setHairLength] = useState(av.hairLength ?? 'short')
+  const [body, setBody] = useState(av.body ?? 'male')
 
   const preview = { body, skin, hair, hairLength, shirt: TUNIC }
 
@@ -90,12 +94,26 @@ export default function Onboarding() {
             </div>
 
             <p className="text-[12px] text-ink-dim leading-relaxed px-2">
-              Three small things a day. Every day you move, a chest unlocks — and every chest can roll
-              anything.
+              An RPG you play by moving. Ten bosses, three acts and an ending, on a map of the city you
+              live in.
             </p>
 
-            <Btn full size="lg" className="mt-7" onClick={() => setStep(1)}>
-              MAKE YOUR CHARACTER
+            {/* Every open lands here, so a character already in progress needs a
+                way past it. Making a new one still starts from nothing — that is
+                what making a new one means. */}
+            {has && (
+              <Btn full size="lg" className="mt-7" onClick={onContinue}>
+                CONTINUE AS {state.player.name}
+              </Btn>
+            )}
+            <Btn
+              full
+              size="lg"
+              variant={has ? 'ghost' : 'primary'}
+              className={has ? 'mt-2' : 'mt-7'}
+              onClick={() => setStep(1)}
+            >
+              {has ? 'START A NEW CHARACTER' : 'MAKE YOUR CHARACTER'}
             </Btn>
           </div>
         )}
@@ -173,7 +191,7 @@ export default function Onboarding() {
               </Btn>
               <Btn
                 className="flex-1"
-                onClick={() =>
+                onClick={() => {
                   onboard({
                     name: (name.trim() || 'ROOKIE').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
@@ -182,7 +200,8 @@ export default function Onboarding() {
                     games: [],
                     health: [],
                   })
-                }
+                  onContinue?.()
+                }}
               >
                 START PLAYING
               </Btn>
