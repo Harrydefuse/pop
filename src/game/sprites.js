@@ -669,7 +669,10 @@ export const ARMOUR_PALETTES = {
   iron: { o: '#10131a', d: '#4a515e', m: '#6b7280', l: '#98a1ae', A: '#c3c9d4', s: '#2a2f38' },
   bone: { o: '#191512', d: '#8a8272', m: '#b5ad9b', l: '#ded7c6', A: '#6f6656', s: '#3a352c' },
   verdant: { o: '#0b1a18', d: '#1f6b60', m: '#35a294', l: '#6fd7c6', A: '#d9b451', s: '#113330' },
-  gilded: { o: '#2a1c05', d: '#8a6410', m: '#c9971d', l: '#f0c14b', A: '#fff0b0', s: '#4a3208' },
+  // Gold is the one ramp that came out flat on the body: every value sat in
+  // the same narrow band, so a whole set read as one slab of yellow. Widened
+  // top and bottom — the trim is nearly white, the shadow nearly brown.
+  gilded: { o: '#2a1c05', d: '#7a5409', m: '#bd8a12', l: '#f0c14b', A: '#fff6d8', s: '#3d2804' },
 }
 
 /** One slot + one set = one sprite, built on demand. */
@@ -1528,11 +1531,11 @@ const worn = (rows) => {
 }
 
 export const GEAR_OVERLAYS = {
-  helm: worn({ 6: '...............AA...............', 7: '...............AA...............', 8: '......dllllllllAAlllllllld......', 9: '......dllllllllAAlllllllld......', 10: '.....dlllllllllAAllllllllld.....', 11: '.....dmmmmmmmmmmmmmmmmmmmmd.....', 12: '.....dmmmmmmmmmmmmmmmmmmmmd.....', 13: '....dmmmmmmmmmmmmmmmmmmmmmmd....', 14: '....dmmmmmmmmmmmmmmmmmmmmmmd....', 15: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 16: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 17: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 18: '...dmmmmmmmmmmmmmmmmmmmmmmmmd...', 19: '...dmoooooooooooooooooooooomd...', 20: '...dmoooooooooooooooooooooomd...', 21: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 22: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 23: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 24: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 25: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 26: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 27: '...dmmmmmmmmmmmddmmmmmmmmmmmd...', 28: '...dmmmmmmmmmmmddmmmmmmmmmmmd...' }),
-  chest: worn({ 28: '.......lllllllllllllllllll......', 29: '......llllmmmmmmmmmmmmmllll.....', 30: '......dmmmmmmmmmmmmmmmmmmmmd....', 31: '....dmmm.dddddddddddddddmmmd....', 32: '...dmm...dmmmmmmmmmmmmmd..mmd...', 33: '...dm....dmmmmmmmmmmmmmd...md...', 34: '...d.....ddddddddddddddd....d...', 35: '.........dmmmmmmmmmmmmmd........', 36: '.........dmmmmmmmmmmmmmd........', 37: '.........ddddddddddddddd........', 38: '.........dmmmmmmmmmmmmmd........', 39: '.........dmmmmmmmmmmmmmd........', 40: '.........ddddddddddddddd........', 41: '.........dmmmmmmmmmmmmmd........', 42: '.........dmmmmmmmmmmmmmd........', 43: '.........sssssssAAssssss........', 44: '.........sssssssAAssssss........' }),
-  legs: worn({ 45: '...lll..dllllllllllllllld.lll...', 46: '........dmmmmmmmmmmmmmmmd.......', 47: '........dmmmmmmmmmmmmmmmd.......', 48: '.......dmmmmmmmmmmmmmmmmmd......', 49: '.......dmmmmmmmd.dmmmmmmmd......', 50: '.......dmmmmmmmd.dmmmmmmmd......', 51: '........dddddddd.ddddddddd......' }),
-  gloves: worn({ 40: '...dlld...................lll...', 41: '...dmmd...................mmm...', 42: '...dmmd..................dmmd...', 43: '...dmmd....m.............dmmd...', 44: '...ddd.....................dd...' }),
-  boots: worn({ 51: '........dlllllld.dllllllld......', 52: '........dmmmmmmd.dmmmmmmd.......', 53: '.........dmmmd....dmmmmmd.......', 54: '.........dmmmd.....dmmmmd.......', 55: '........dmmmmmd...dmmmmmd.......', 56: '.......dmmmmmmd...dmmmmmmd......', 57: '......dddddddd.....dddddddd.....' }),
+  helm: worn({ 2: '...............ooo..............', 3: '..............oAAdo.............', 4: '..............oAAdo.............', 5: '..............oAAdo.............', 6: '..............oAAdo.............', 7: '............ooosssooo...........', 8: '..........oolllllllldoo.........', 9: '.........ollAAAAAAAmmldo........', 10: '........olmAAAAAAAmmmmmdo.......', 11: '.......olmAAAAAAmmmmmmmmdo......', 12: '......olmlAAAAmmmmmmmmmlmdo.....', 13: '......olmlllmmmmmmmmmmmmmdo.....', 14: '......olmlmmmmmmmmmmmmmlmdo.....', 15: '......olmmmmmmmmmmmmmmmmmdo.....', 16: '......olmmmmmmmmmmmmmmmmmdo.....', 17: '....ooossssAAAAsssAAAAssssooo...', 18: '...olllllld....lld....lllllldo..', 19: '...olmmmmmd....lmd....lmmmmmdo..', 20: '...olmmmmmd....lmd....lmmmmmdo..', 21: '...olmmmmmd....lmd....lmmmmmdo..', 22: '...olmmmmmd....ddd....lmmmmmdo..', 23: '...olmmmmmd...........lmmmmmdo..', 24: '...oddmmmms...........smmmmddo..', 25: '....oodddddllllllllllldddddoo...', 26: '......ooooodmmAAAAAmmdooooo.....', 27: '...........odddddddddo..........', 28: '............ooooooooo...........' }),
+  chest: worn({ 26: '.....oo..................oo.....', 27: '...ooldoo.oooooooooooo.ooldoo...', 28: '..olAAAAdollllllllllldolAAAAdo..', 29: '.olAAAAmmddddddddddddddAAAAmmdo.', 30: '.olmmmmmlAAAAAAAAAAAAAAdmmmmmdo.', 31: '.olmmmmmlmmmmmmldmmmmmmdmmmmmdo.', 32: '.osssssslmAAAAAldmmmmmmdsssssso.', 33: '.odAAAAAdAAAAAAldmmmmmmdAAAAldo.', 34: '..ossssslmAAAAAldmmmmmmdssssso..', 35: '..odlllllmsssssldsssssmdlllldo..', 36: '...oddddlmmmmmmldmmmmmmdddddo...', 37: '....oooodssssssssssssssdoooo....', 38: '........ollllllllllllldo........', 39: '........osssssssssssssso........', 40: '........ollllllllllllldo........', 41: '........odssssssssssssdo........', 42: '.........ollllAAAAllldo.........', 43: '.........oAAAAAAAAAAAAo.........', 44: '..........oooooooooooo..........' }),
+  legs: worn({ 43: '........oooooooooooooooo........', 44: '.......ollllllllllllllldo.......', 45: '.......osssssssssssssssso.......', 46: '.......osssssssssssssssso.......', 47: '.......ollllllldllllllldo.......', 48: '.......olssssssdlssssssdo.......', 49: '.......olmAAAAmdlmAAAAmdo.......', 50: '.......ossmmmmssssmmmmsso.......', 51: '.......olAAAAAAdlAAAAAAdo.......', 52: '.......olmmmmmmdlmmmmmmdo.......', 53: '.......oddddddddddddddddo.......', 54: '........oooooooooooooooo........' }),
+  gloves: worn({ 36: '...oooo..................oooo...', 37: '..ollldo................ollldo..', 38: '..olmmdo................olmmdo..', 39: '..osssso................osssso..', 40: '.olAAAAdo..............olAAAAdo.', 41: '.olAAAAdo..............olAAAAdo.', 42: '.olmmmmdo..............olmmmmdo.', 43: '.odssssdo..............odssssdo.', 44: '..oddddo................oddddo..', 45: '...oooo..................oooo...' }),
+  boots: worn({ 52: '........ooooooo..ooooooo........', 53: '.......olAAAAAdoolAAAAAdo.......', 54: '.......osssssssoolssssssoo......', 55: '......olAAAAAAdoodlAAAAAAdo.....', 56: '.....olmmmmmmmdo.odmmmmmmmdo....', 57: '.....oddddddddo...oddddddddo....', 58: '......oooooooo.....oooooooo.....' }),
 sword: worn({ 15: '..........................oo....', 16: '.........................ommo...', 17: '........................odlmdo..', 18: '........................odlmdo..', 19: '........................odlmdo..', 20: '........................odlmdo..', 21: '........................odlmdo..', 22: '........................odlmdo..', 23: '........................odlmdo..', 24: '........................odlmdo..', 25: '........................odlmdo..', 26: '........................odlmdo..', 27: '........................odlmdo..', 28: '........................odlmdo..', 29: '........................odlmdo..', 30: '........................odlmdo..', 31: '........................odlmdo..', 32: '........................odlmdo..', 33: '........................odlmdo..', 34: '........................odlmdo..', 35: '........................odlmdo..', 36: '........................odlmdo..', 37: '.......................oAAAAAAo.', 38: '.......................oAAAAAAo.', 39: '........................oossoo..', 40: '.........................osso...', 41: '.........................osso...', 42: '.........................osso...', 43: '.........................osso...', 44: '.........................osso...', 45: '.........................osso...', 46: '.........................osso...', 47: '........................oAAAAo..', 48: '.........................oooo...' }),
   founderChest: worn({ 28: '.......llAAAAAAAAAAAAAAAll......', 29: '......lllssssssssssssssslll.....', 30: '......dmmAmmmmmmmmmmmmmAmmmd....', 31: '....dmmm.AmmmmmmmmmmmmmAmmmd....', 32: '...dmm...AAmmmmmmmmmmmAA..mmd...', 33: '...dm....AmAmmmmmmmmmAmA...md...', 34: '...d.....AmmAmmmmmmmAmmA....d...', 35: '.........AmmmAmmssmAmmmA........', 36: '.........AmmmmAmssAmmmmA........', 37: '.........AmmmmmAssmmmmmA........', 38: '.........AAmmmmmAmmmmmAA........', 39: '.........AmAmmmmmmmmmAmA........', 40: '.........AmmAmmmmmmmAmmA........', 41: '.........AmmmAmmmmmAmmmA........', 42: '.........sssssssssssssss........', 43: '.........AAAAAAAAAAAAAAA........', 44: '.........sssssssssssssss........' }),
 }
@@ -1751,6 +1754,68 @@ const HERO_RAMPS = {
 /** Slots that never change with the player's choices. */
 /** Outline, trousers and belt — not offered as choices, so not derived. */
 const HERO_FIXED = { o: '#0a0604', t: '#522f17', T: '#371f10', u: '#4a2a15', U: '#412513' }
+
+/**
+ * The hair keys in the hero ramp.
+ *
+ * A helm replaces the hairstyle rather than sitting on top of it. You cannot
+ * wear a helmet and a haircut at the same time, and a fringe coming through a
+ * steel dome is the single thing that made a full set read as dress-up instead
+ * of as armour.
+ */
+const HAIR_KEYS = new Set(['h', 'H', 'j', 'J'])
+const shaved = new WeakMap()
+
+export function underHelm(sprite) {
+  let grid = shaved.get(sprite.grid)
+  if (!grid) {
+    const cells = sprite.grid.map((row) => [...row].map((c) => (HAIR_KEYS.has(c) ? '.' : c)))
+    const h = cells.length
+    const w = cells[0].length
+    // The hair was wearing an outline, and an outline is the shared colour
+    // rather than a hair key — so cutting the hair leaves a black scribble
+    // hanging in the air. Erode outline that no longer borders anything solid,
+    // repeatedly, because a spike of hair leaves a chain of it.
+    for (let pass = 0; pass < 40; pass++) {
+      let cut = false
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (cells[y][x] !== 'o') continue
+          const holds = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dy, dx]) => {
+            const c = cells[y + dy]?.[x + dx]
+            return c && c !== '.' && c !== 'o'
+          })
+          if (!holds) {
+            cells[y][x] = '.'
+            cut = true
+          }
+        }
+      }
+      if (!cut) break
+    }
+    // Cutting the hair keys leaves two kinds of litter behind: the outline the
+    // hair was wearing, which is the shared outline colour rather than a hair
+    // key, and the odd cell of another ramp the transcription borrowed inside
+    // the fringe. Both end up as islands floating clear of the body, so rather
+    // than chase keys, keep only what is still joined to the character. The
+    // feet are the one place guaranteed to be part of it.
+    const keep = Array.from({ length: h }, () => new Array(w).fill(false))
+    const stack = []
+    for (let x = 0; x < w; x++) {
+      if (cells[h - 1][x] !== '.') stack.push([x, h - 1])
+      if (cells[h - 2]?.[x] !== '.') stack.push([x, h - 2])
+    }
+    while (stack.length) {
+      const [x, y] = stack.pop()
+      if (x < 0 || y < 0 || x >= w || y >= h || keep[y][x] || cells[y][x] === '.') continue
+      keep[y][x] = true
+      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1])
+    }
+    grid = cells.map((row, y) => row.map((c, x) => (keep[y][x] ? c : '.')).join(''))
+    shaved.set(sprite.grid, grid)
+  }
+  return { ...sprite, grid }
+}
 
 export function heroPalette(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC) {
   const palette = { ...HERO_FIXED }
@@ -2101,12 +2166,12 @@ export const WEAPON_OVERLAYS = {
  * screen is for.
  */
 export const GEAR_OVERLAYS_F = {
-  helm: wornF({ 5: '...............oo.............', 6: '..............oAAo............', 7: '..............oAAo............', 8: '...........oooAAAAooo.........', 9: '..........ommmmmmmmmmo........', 10: '.........ommllllmmmmmmo.......', 11: '........ommllllmmmmmmmmo......', 12: '........ommlllmmmmmmmmmo......', 13: '.......ommlllmmmmmmmmmmmo.....', 14: '.......ommmmmmmmmmmmmmmmo.....', 15: '.......ommmmmmmmmmmmmmmmo.....', 16: '.......ommmmmmmmmmmmmmmmo.....', 17: '.......oAAAAAAAAAAAAAAAAo.....', 18: '.......olloooooooooooollo.....', 19: '.......omm............mmo.....', 20: '.......omm............mmo.....', 21: '.......omm............mmo.....', 22: '.......omm............mmo.....', 23: '.......omm............mmo.....', 24: '.......odd............ddo.....', 25: '........oo............oo......' }),
-  chest: wornF({ 27: '.........oooooooooooooooo.....', 28: '........ollllllllllllllllo....', 29: '......oolllllllllllllllllloo..', 30: '.....olllmmmmmmmmmmmmmmmmdddo.', 31: '.....olllmmmmmmmmmmmmmmmmdddo.', 32: '.....olmmdmmmmmmmmmmmmmmlmmdo.', 33: '.....olmmdmmmmmmmmmmmmmmlmmdo.', 34: '.....olmmddmlllmmmmmmmdolmmdo.', 35: '.....olmmdodmmmmmmmmmdoolmmdo.', 36: '.....olmmdodmmmddmmmmdoolmmdo.', 37: '.....olmmdoodmmddmmmdo.olmmdo.', 38: '.....olmmdoodmmddmmmdo.olmmdo.', 39: '.....olmmdosssAAAAssso.olmmdo.', 40: '.....oddddosssAAAAssso.oddddo.', 41: '......oooo.oooooooooo...oooo..' }),
-  legs: wornF({ 40: '..........oooooooooooo........', 41: '.........odlllmmmmmmmdo.......', 42: '.........odmmmmmmmmmmdo.......', 43: '........odmmmmmmmmmmmmdo......', 44: '........odmmmmmmmmmmmmdo......', 45: '........oddddddddddddddo......', 46: '........odlllmmdodlllmmdo.....', 47: '........odlllmmdodlllmmdo.....', 48: '........odmmmmmdodmmmmmdo.....', 49: '........odAAAAAdodAAAAAdo.....', 50: '........odmmmmmdodmmmmmdo.....', 51: '........odmmmmmdodmmmmmdo.....', 52: '........odmmmmmdodmmmmmdo.....', 53: '........odmmmmmdodmmmmmdo.....', 54: '.........ooooooo.ooooooo......' }),
-  gloves: wornF({ 41: '....ooooo...............ooooo.', 42: '...odllldo.............odllldo', 43: '..odmmmmmdo...........odmmmmmd', 44: '..odAAAAAdo...........odAAAAAd', 45: '..odmmmmmdo...........odmmmmmd', 46: '..odmmmmmdo...........odmmmmmd', 47: '...odmmmdo.............odmmmdo', 48: '....ooooo...............ooooo.' }),
-  boots: wornF({ 53: '........oooooooo.oooooooo.....', 54: '.......ollllllllollllllllo....', 55: '.......ommmmmmmmommmmmmmmo....', 56: '.......ommmmmmmmommmmmmmmo....', 57: '........oAAAAAAo.oAAAAAAo.....', 58: '........odmmmmdo.odmmmmdo.....', 59: '........odmmmmdo.odmmmmdo.....', 60: '.......odmmmmmdo.odmmmmdo.....', 61: '.......odmmmmmdo.odmmmmmdo....', 62: '......odmmmmmmmdoodmmmmmmdo...', 63: '......oddddddddo.odddddddddo..', 64: '.......oooooooo...ooooooooo...' }),
-  shield: wornF({ 32: 'oooooooo......................', 33: 'lmmmmmddo.....................', 34: 'lmmmmmddo.....................', 35: 'lmmmmmddo.....................', 36: 'lmmmmmddo.....................', 37: 'lmAAAAddo.....................', 38: 'lmAAAAddo.....................', 39: 'lmAAAAddo.....................', 40: 'lmAAAAddo.....................', 41: 'lmAAAAddo.....................', 42: 'lmmmmmddo.....................', 43: 'lmmmmmddo.....................', 44: 'lmmmmmddo.....................', 45: 'mmmmmmmmo.....................', 46: 'ommmmmmo......................', 47: '.oddddo.......................', 48: '..oddo........................', 49: '...oo.........................' }),
+  helm: wornF({ 3: '..............ooo.............', 4: '.............oAAdo............', 5: '.............oAAdo............', 6: '.............oAAdo............', 7: '.............oAAdo............', 8: '............oosssooo..........', 9: '..........oollllllldoo........', 10: '.........olAAAAAAAmmldo.......', 11: '........olAAAAAAAmmmmmdo......', 12: '.......olAAAAAAmmmmmmmmdo.....', 13: '.......olAlAAmmmmmmmmlmdo.....', 14: '.......ollllmmmmmmmmmmmdo.....', 15: '.......olmlmmmmmmmmmmlmdo.....', 16: '.......olmmmmmmmmmmmmmmdo.....', 17: '.......olmmmmmmmmmmmmmmdo.....', 18: '......oosssAAAAssAAAAsssoo....', 19: '.....olllld....ld....lllldo...', 20: '.....olmmmd....ld....lmmmdo...', 21: '.....olmmmd....ld....lmmmdo...', 22: '.....olmmmd....ld....lmmmdo...', 23: '.....olmmmd....dd....lmmmdo...', 24: '.....olmmmd..........lmmmdo...', 25: '.....oddmmd..........lmmddo...', 26: '......ooddddllllllllddddoo....', 27: '........oooodmAAAAmdoooo......', 28: '............oddddddo..........', 29: '.............oooooo...........' }),
+  chest: wornF({ 26: '.......oo..............oo.....', 27: '......oldo.oooooooooo.oldo....', 28: '.....olAAdollllllllldolAAdo...', 29: '....olAAAmddddddddddddAAAmdo..', 30: '....olmmmmlAAAAAAAAAAdmmmmdo..', 31: '....olmmmmlmmmmldmmmmdmmmmdo..', 32: '....ossssslAAAAldmmmmdssssso..', 33: '....odAAAldAAAAldmmmmdAAAldo..', 34: '.....ossssolAAAldmmmdosssso...', 35: '.....odlldolsssldsssdodlldo...', 36: '......ossoolmmmldmmmdoosso....', 37: '.....ollldolmmmldmmmdollldo...', 38: '.....olmmdossssssssssolmmdo...', 39: '.....olmmdollllllllldolmmdo...', 40: '.....olmmdossssssssssolmmdo...', 41: '.....oddddolllAAAAlldoddddo...', 42: '......oooooAAAAAAAAAAooooo....', 43: '...........oooooooooo.........' }),
+  legs: wornF({ 42: '.........oooooooooooooo.......', 43: '........ollllllllllllldo......', 44: '........osssssssssssssso......', 45: '........osssssssdsssssso......', 46: '........olllllldolllllldo.....', 47: '........olsssssdolsssssdo.....', 48: '........olmAAAmdolmAAAmdo.....', 49: '........olmmmmmdolmmmmmdo.....', 50: '........osssssssossssssso.....', 51: '........olAAAAAdolAAAAAdo.....', 52: '........olmmmmmdolmmmmmdo.....', 53: '........olmmmmmdolmmmmmdo.....', 54: '........odddddddodddddddo.....', 55: '.........ooooooo.ooooooo......' }),
+  gloves: wornF({ 41: '....oooo................oooo..', 42: '...ollldo..............ollldo.', 43: '...osssso..............osssso.', 44: '..olAAAAdo............olAAAAdo', 45: '..olAAAAdo............olAAAAdo', 46: '..olmmmmdo............olmmmmdo', 47: '..odssssdo............odssssdo', 48: '...oddddo..............oddddo.', 49: '....oooo................oooo..' }),
+  boots: wornF({ 54: '.........oooooo...oooooo......', 55: '........olAAAAdo.olAAAAdo.....', 56: '........olmmmmdo.olmmmmdo.....', 57: '........osssssso.osssssso.....', 58: '.......olAAAAAdo.olAAAAAo.....', 59: '.......olmmmmmdo.olmmmmdo.....', 60: '......olmmmmmmdo.olmmmmmdo....', 61: '......olmmmmmmdo.olmmmmmmdo...', 62: '......olmmmmmmmdoodmmmmmmmdo..', 63: '......oddddddddo..oddddddddo..', 64: '.......oooooooo....oooooooo...' }),
+  shield: wornF({ 30: 'oooooooo......................', 31: 'AAAAAAAAo.....................', 32: 'AAAAAAAAo.....................', 33: 'lmmlmmmdo.....................', 34: 'lmslssmdo.....................', 35: 'lsAlAdsdo.....................', 36: 'lAAlAAddo.....................', 37: 'ldAlAAddo.....................', 38: 'lmdlddmdo.....................', 39: 'lmmlmmmdo.....................', 40: 'lmmlmmmdo.....................', 41: 'lmmlmmmdo.....................', 42: 'dmmlmmmdo.....................', 43: 'odmmmmdo......................', 44: '.odmmdo.......................', 45: '..oddo........................', 46: '...oo.........................' }),
 }
 
 /** Which set of worn art a build uses. */

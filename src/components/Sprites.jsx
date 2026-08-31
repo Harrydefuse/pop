@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, WORN_OVERLAYS, armourSprite, heroClothes, heroSprite } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, WORN_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -95,13 +95,15 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
 export function HeroView({ av = {}, equipped = {}, height = 150, className = '' }) {
   // Aspect comes off the sprite rather than a constant, so dropping in art at a
   // different resolution does not need every call site changed.
-  const body = heroSprite(av.skin, av.hair, av.shirt, av.body)
+  const drawn = heroSprite(av.skin, av.hair, av.shirt, av.body)
   const clothes = heroClothes(av.body)
   const build = av.body ?? 'male'
   // Every build has a set cut to its own silhouette now, so there is no longer
   // a question of whether armour can be drawn — only which set of art to use.
   const plate = WORN_OVERLAYS[build] ?? WORN_OVERLAYS.male
   const armoured = equipped
+  // With a helm on, the hair goes with it.
+  const body = armoured.helm ? underHelm(drawn) : drawn
   const held = equipped.offhand
   const weapon = held ? WEAPON_OVERLAYS[build]?.[held.kind] : null
   const width = Math.round((height * body.w) / body.h)
