@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
-import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, freshDailies, gearPiece } from './data'
+import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, gearPiece } from './data'
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
-import { MIN_SESSION_S, sessionAmount } from './session'
+import { INTERVAL, MIN_SESSION_S, SPLIT_M, elapsedMs, modeOf, sessionAmount, setTotals } from './session'
 import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
@@ -135,7 +135,31 @@ function applyBossDamage(state, act, xp) {
   return grantBossReward(next, current)
 }
 
-function applyLog(state, { activityId, amount, verified, source }) {
+/**
+ * What the session measured, kept alongside the amount.
+ *
+ * The amount is one number and every session collapses into it, which is fine
+ * for XP and useless for looking back — "45 min" says nothing about whether it
+ * was five sets or fifteen. Only the fields the mode actually filled are kept.
+ */
+function sessionDetail(s, ms) {
+  const mode = modeOf(s.activityId)
+  if (mode === 'strength') {
+    const t = setTotals(s.sets)
+    return t.sets ? { mode, ...t } : null
+  }
+  if (mode === 'interval') {
+    const cycle = Math.max(1, (s.work ?? INTERVAL.work) + (s.rest ?? INTERVAL.rest))
+    const rounds = Math.floor(ms / 1000 / cycle)
+    return rounds ? { mode, rounds, work: s.work ?? INTERVAL.work, rest: s.rest ?? INTERVAL.rest } : null
+  }
+  if (mode === 'distance' && s.splits?.length) {
+    return { mode, splits: s.splits.map((sp) => sp.ms), metres: Math.round(s.metres) }
+  }
+  return null
+}
+
+function applyLog(state, { activityId, amount, verified, source, detail }) {
   const player = state.player
   const result = resolveActivity(player, { activityId, amount, verified })
   const act = result.activity
@@ -197,6 +221,7 @@ function applyLog(state, { activityId, amount, verified, source }) {
         at: Date.now(),
         xp: result.xp,
         source: source ?? (verified ? 'Health app' : 'Manual'),
+        ...(detail ? { detail } : null),
       },
       ...state.log,
     ].slice(0, 40),
@@ -304,7 +329,21 @@ function reducer(state, action) {
       if (state.session) return state
       return {
         ...state,
-        session: { activityId: action.activityId, startedAt: Date.now(), accumulated: 0, paused: false, metres: 0, points: [] },
+        session: {
+          activityId: action.activityId,
+          startedAt: Date.now(),
+          accumulated: 0,
+          paused: false,
+          metres: 0,
+          points: [],
+          // A distance session fills splits, a strength session fills sets, an
+          // interval session reads its rounds off the clock. All three ride in
+          // the same record so a session is one thing, whatever it measures.
+          splits: [],
+          sets: [],
+          work: INTERVAL.work,
+          rest: INTERVAL.rest,
+        },
       }
 
     case 'pauseSession':
@@ -322,15 +361,52 @@ function reducer(state, action) {
       if (!state.session?.paused) return state
       return { ...state, session: { ...state.session, paused: false, startedAt: Date.now() } }
 
-    // Fixes arrive a few seconds apart; the trace is kept so the map can be
-    // opened up by ground actually covered.
-    case 'sessionFix': {
-      if (!state.session || state.session.paused) return state
+    // A set of whatever is in front of you. There is no weight field on
+    // purpose: reps are what the app can ask for without becoming a spreadsheet,
+    // and the XP still comes off the clock, so nothing here can be inflated.
+    case 'sessionSet': {
+      if (!state.session) return state
+      const reps = Math.max(1, Math.min(500, Math.round(action.reps)))
       return {
         ...state,
         session: {
           ...state.session,
-          metres: state.session.metres + action.metres,
+          sets: [...(state.session.sets ?? []), { reps, at: elapsedMs(state.session) }],
+        },
+      }
+    }
+
+    case 'sessionUndoSet': {
+      if (!state.session?.sets?.length) return state
+      return { ...state, session: { ...state.session, sets: state.session.sets.slice(0, -1) } }
+    }
+
+    case 'sessionInterval': {
+      if (!state.session) return state
+      const clamp = (n) => Math.max(INTERVAL.min, Math.min(INTERVAL.max, Math.round(n)))
+      return { ...state, session: { ...state.session, work: clamp(action.work), rest: clamp(action.rest) } }
+    }
+
+    // Fixes arrive a few seconds apart; the trace is kept so the map can be
+    // opened up by ground actually covered.
+    case 'sessionFix': {
+      if (!state.session || state.session.paused) return state
+      const metres = state.session.metres + action.metres
+      // A split lands the moment the trace crosses the next kilometre, so the
+      // list builds itself as you run rather than being worked out at the end.
+      const splits = state.session.splits ?? []
+      const crossed = Math.floor(metres / SPLIT_M)
+      const at = elapsedMs(state.session)
+      const grown =
+        crossed > splits.length
+          ? [...splits, { km: splits.length + 1, at, ms: at - (splits[splits.length - 1]?.at ?? 0) }]
+          : splits
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          metres,
+          splits: grown,
           points: [...state.session.points, action.point].slice(-4000),
         },
       }
@@ -352,6 +428,7 @@ function reducer(state, action) {
         amount: sessionAmount(act, ms, s.metres),
         verified: true,
         source: 'tracked',
+        detail: sessionDetail(s, ms),
       })
       if (!s.points.length) return next
       const cells = new Set(next.explored)
@@ -552,6 +629,28 @@ function reducer(state, action) {
       })
     }
 
+    // Testing only. It skips the game rather than playing it, which is exactly
+    // what it is for and exactly why it should not survive to launch.
+    case 'testAccount':
+      return toast(
+        {
+          ...state,
+          ...TEST_ACCOUNT,
+          player: {
+            ...state.player,
+            ...TEST_ACCOUNT.player,
+            // The character you built is the thing you are usually testing, so
+            // it survives; only the numbers and the kit are replaced.
+            avatar: state.player.avatar,
+            name: state.onboarded ? state.player.name : TEST_ACCOUNT.player.name,
+            handle: state.onboarded ? state.player.handle : TEST_ACCOUNT.player.handle,
+          },
+          explored: state.explored?.length ? state.explored : INITIAL_STATE.explored,
+          dailies: freshDailies(),
+        },
+        { kind: 'level', title: 'TEST ACCOUNT', body: 'Level 100, full gilded set, every boss down.' },
+      )
+
     case 'reset':
       return baseState()
 
@@ -592,6 +691,9 @@ export function GameProvider({ children }) {
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres) => dispatch({ type: 'sessionFix', point, metres }),
+      sessionSet: (reps) => dispatch({ type: 'sessionSet', reps }),
+      sessionUndoSet: () => dispatch({ type: 'sessionUndoSet' }),
+      sessionInterval: (work, rest) => dispatch({ type: 'sessionInterval', work, rest }),
       finishSession: () => dispatch({ type: 'finishSession' }),
       discardSession: () => dispatch({ type: 'discardSession' }),
       openChest: () => dispatch({ type: 'openChest' }),
@@ -613,6 +715,7 @@ export function GameProvider({ children }) {
       newDay: () => dispatch({ type: 'newDay' }),
       restore: (next) => dispatch({ type: 'restore', state: next }),
       reset: () => dispatch({ type: 'reset' }),
+      testAccount: () => dispatch({ type: 'testAccount' }),
     }),
     [],
   )

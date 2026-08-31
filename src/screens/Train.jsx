@@ -1,11 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
-import { Btn, Panel, SectionTitle } from '../components/ui'
+import { Bar, Btn, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import { useGame } from '../game/useGame'
-import { MIN_SESSION_S, TRACKED, clock, elapsedMs, pace, sessionAmount, stepMetres } from '../game/session'
+import {
+  INTERVAL,
+  MIN_SESSION_S,
+  SPLIT_M,
+  TRACKED,
+  clock,
+  elapsedMs,
+  intervalPhase,
+  modeOf,
+  pace,
+  sessionAmount,
+  setTotals,
+  splitPace,
+  stepMetres,
+} from '../game/session'
 import { ACTIVITIES } from '../game/config'
 import { minutesOf, resolveActivity } from '../game/engine'
 import { alpha } from '../game/color'
+
+/** What the tracker will actually do, said on the card you press. A run and a
+ *  gym session are not measured the same way and the choice should say so. */
+const MODE_NOTE = {
+  distance: 'GPS · pace · splits',
+  strength: 'sets and reps',
+  interval: 'work / rest rounds',
+  steady: 'timed',
+}
 
 /** Distance activities are the ones worth asking for a GPS fix. */
 const WANTS_GPS = new Set(['walk', 'run', 'ride'])
@@ -72,45 +95,329 @@ const GPS_NOTE = {
   off: null,
 }
 
-/** The stopwatch. Everything the log needs is read off it. */
+/**
+ * The trace, drawn as you make it.
+ *
+ * A distance session already collects every fix so the fog can be lifted; this
+ * puts the same points on screen while you are still running, which is the
+ * difference between a stopwatch and a tracker. Colour is read back off the
+ * element rather than written in, so the line follows the theme.
+ */
+function RouteTrace({ points }) {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const cv = ref.current
+    if (!cv) return
+    const w = Math.round(cv.clientWidth)
+    const h = Math.round(cv.clientHeight)
+    if (!w || !h) return
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    cv.width = w * dpr
+    cv.height = h * dpr
+    const g = cv.getContext('2d')
+    g.scale(dpr, dpr)
+    g.clearRect(0, 0, w, h)
+    if (points.length < 2) return
+
+    let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity
+    for (const pt of points) {
+      minLat = Math.min(minLat, pt.lat); maxLat = Math.max(maxLat, pt.lat)
+      minLon = Math.min(minLon, pt.lon); maxLon = Math.max(maxLon, pt.lon)
+    }
+    // Latitude and longitude are not the same distance apart on the ground, so
+    // the longitude span is squeezed by the cosine of where you are standing.
+    // Without it a north-south run comes out looking like a diagonal.
+    const squeeze = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180)
+    const spanLat = Math.max(1e-6, maxLat - minLat)
+    const spanLon = Math.max(1e-6, (maxLon - minLon) * squeeze)
+    const pad = 10
+    const k = Math.min((w - pad * 2) / spanLon, (h - pad * 2) / spanLat)
+    const ox = (w - spanLon * k) / 2
+    const oy = (h - spanLat * k) / 2
+    const X = (pt) => ox + (pt.lon - minLon) * squeeze * k
+    const Y = (pt) => oy + (maxLat - pt.lat) * k
+
+    const ink = getComputedStyle(cv).color
+    g.lineWidth = 3
+    g.lineJoin = 'round'
+    g.lineCap = 'round'
+    g.strokeStyle = ink
+    g.beginPath()
+    g.moveTo(X(points[0]), Y(points[0]))
+    for (let i = 1; i < points.length; i++) g.lineTo(X(points[i]), Y(points[i]))
+    g.stroke()
+
+    // Where you set off, and where you are now.
+    const dot = (pt, fill) => {
+      g.fillStyle = fill
+      g.fillRect(Math.round(X(pt)) - 3, Math.round(Y(pt)) - 3, 6, 6)
+    }
+    dot(points[0], getComputedStyle(cv).getPropertyValue('--color-ink-faint').trim() || ink)
+    dot(points[points.length - 1], ink)
+  }, [points])
+
+  return <canvas ref={ref} className="w-full h-[132px] block" style={{ color: 'var(--color-lime)' }} aria-hidden="true" />
+}
+
+/** Distance, pace, and the kilometres behind you. */
+function DistanceReadout({ session, ms }) {
+  const km = session.metres / 1000
+  const p = pace(ms, session.metres)
+  const splits = session.splits ?? []
+  const best = splits.reduce((b, sp) => Math.min(b, sp.ms), Infinity)
+  const intoKm = (session.metres % SPLIT_M) / SPLIT_M
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        <Stat label="DISTANCE" value={`${km.toFixed(2)} km`} />
+        <Stat label="PACE" value={p ?? '—'} tone="var(--color-lime)" />
+      </div>
+
+      {/* How far into the current kilometre you are. A run is a sequence of
+          small finishes, and this is the one you are currently chasing. */}
+      <div className="mt-3 text-left">
+        <div className="flex justify-between items-baseline">
+          <span className="font-pixel text-[6px] text-ink-faint">KM {splits.length + 1}</span>
+          <span className="font-mono text-[10px] text-ink-faint">{Math.round(intoKm * 100)}%</span>
+        </div>
+        <Bar pct={intoKm} height={6} color="var(--color-lime)" className="mt-1" />
+      </div>
+
+      {splits.length > 0 && (
+        <div className="mt-3 border-t border-line pt-3 text-left">
+          <div className="font-pixel text-[6px] text-ink-faint mb-2">SPLITS</div>
+          <div className="space-y-1">
+            {splits.slice(-6).map((sp) => (
+              <div key={sp.km} className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-ink-faint w-7 shrink-0">{sp.km}k</span>
+                <span className="h-2 border border-line flex-1 overflow-hidden">
+                  <span
+                    className="block h-full"
+                    style={{ width: `${Math.max(12, (best / sp.ms) * 100)}%`, background: sp.ms === best ? 'var(--color-lime)' : 'var(--color-line-hot)' }}
+                  />
+                </span>
+                <span className="font-mono text-[11px] text-ink w-[52px] text-right shrink-0">{splitPace(sp.ms)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+/** Reps and sets, because a clock does not describe a lift. */
+function StrengthReadout({ session, ms }) {
+  const { sessionSet, sessionUndoSet } = useGame()
+  const [reps, setReps] = useState(10)
+  const sets = session.sets ?? []
+  const totals = setTotals(sets)
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        <Stat label="SETS" value={totals.sets} />
+        <Stat label="REPS" value={totals.reps} tone="var(--color-gold)" />
+      </div>
+
+      <div className="flex items-stretch gap-2 mt-3">
+        <button
+          onClick={() => setReps((n) => Math.max(1, n - 1))}
+          className="w-11 min-h-[44px] border border-line font-pixel text-[12px] text-ink-dim active:brightness-125"
+          aria-label="One rep fewer"
+        >
+          −
+        </button>
+        <div className="flex-1 border border-line grid place-items-center min-h-[44px]">
+          <span className="font-mono text-[20px] text-ink tabular-nums">{reps}</span>
+        </div>
+        <button
+          onClick={() => setReps((n) => Math.min(500, n + 1))}
+          className="w-11 min-h-[44px] border border-line font-pixel text-[12px] text-ink-dim active:brightness-125"
+          aria-label="One rep more"
+        >
+          +
+        </button>
+      </div>
+
+      <Btn
+        full
+        className="mt-2"
+        onClick={() => sessionSet(reps)}
+        style={{ background: 'var(--color-gold)', borderColor: 'var(--color-gold)', color: 'var(--color-on-accent)' }}
+      >
+        LOG SET OF {reps}
+      </Btn>
+
+      {sets.length > 0 && (
+        <div className="mt-3 border-t border-line pt-3 text-left">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-pixel text-[6px] text-ink-faint">SETS SO FAR</span>
+            <button onClick={sessionUndoSet} className="font-pixel text-[6px] text-ink-faint min-h-[44px] px-2 active:text-danger">
+              UNDO LAST
+            </button>
+          </div>
+          <div className="space-y-1">
+            {sets.slice(-6).map((set, i) => {
+              const n = sets.length - Math.min(6, sets.length) + i + 1
+              return (
+                <div key={`${set.at}-${n}`} className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] text-ink-faint w-8 shrink-0">#{n}</span>
+                  <span className="font-mono text-[12px] text-ink">{set.reps} reps</span>
+                  <span className="font-mono text-[10px] text-ink-faint ml-auto">{clock(set.at)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      <div className="font-mono text-[10px] text-ink-faint mt-3">{clock(ms)} under the bar</div>
+    </>
+  )
+}
+
+/** Work, rest, repeat — read off the clock rather than counted by hand. */
+function IntervalReadout({ session, ms }) {
+  const { sessionInterval } = useGame()
+  const work = session.work ?? INTERVAL.work
+  const rest = session.rest ?? INTERVAL.rest
+  const at = intervalPhase(ms, work, rest)
+  const working = at.phase === 'work'
+  const tone = working ? 'var(--color-lime)' : 'var(--color-cyan)'
+  const span = working ? work : rest
+  const setup = at.completed === 0
+
+  return (
+    <>
+      <div className="mt-4 border p-3" style={{ borderColor: tone, background: alpha(tone, 10) }}>
+        <div className="font-pixel text-[8px]" style={{ color: tone }}>
+          {working ? 'WORK' : 'REST'}
+        </div>
+        <div className="font-mono text-[40px] leading-none tabular-nums mt-1" style={{ color: tone }}>
+          {at.left}
+        </div>
+        <Bar pct={1 - at.left / span} height={6} color={tone} className="mt-2" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <Stat label="ROUND" value={at.round} />
+        <Stat label="DONE" value={at.completed} tone={tone} />
+      </div>
+
+      {/* Only before the first round closes. Changing the block after that
+          would re-cut every round already behind you, because the schedule is
+          derived from the clock rather than recorded. */}
+      {setup && (
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {[
+            ['WORK', work, (n) => sessionInterval(n, rest)],
+            ['REST', rest, (n) => sessionInterval(work, n)],
+          ].map(([label, value, set]) => (
+            <div key={label} className="border border-line p-2">
+              <div className="font-pixel text-[6px] text-ink-faint">{label}</div>
+              <div className="flex items-center gap-1 mt-1">
+                <button
+                  onClick={() => set(value - 5)}
+                  className="w-9 min-h-[44px] font-pixel text-[11px] text-ink-dim active:text-ink"
+                  aria-label={`Five seconds less ${label.toLowerCase()}`}
+                >
+                  −
+                </button>
+                <span className="font-mono text-[15px] text-ink flex-1 text-center tabular-nums">{value}s</span>
+                <button
+                  onClick={() => set(value + 5)}
+                  className="w-9 min-h-[44px] font-pixel text-[11px] text-ink-dim active:text-ink"
+                  aria-label={`Five seconds more ${label.toLowerCase()}`}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+/** One number, for the activities where one number is the honest answer. */
+function SteadyReadout({ act, ms, preview }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 mt-4">
+      <Stat label="COUNTS AS" value={`${sessionAmount(act, ms)} ${act.unit}`} />
+      <Stat label="XP SO FAR" value={`+${preview.xp}`} tone="var(--color-lime)" />
+    </div>
+  )
+}
+
+function Stat({ label, value, tone = 'var(--color-ink)' }) {
+  return (
+    <div className="border border-line p-2.5">
+      <div className="font-pixel text-[6px] text-ink-faint">{label}</div>
+      <div className="font-mono text-[16px] mt-1 tabular-nums" style={{ color: tone }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+/** The instrument for whatever you are doing. Everything the log needs is
+ *  read off it. */
 function Running({ session, act }) {
   const { pauseSession, resumeSession, finishSession, discardSession, sessionFix, state } = useGame()
   const [, tick] = useState(0)
-  const gps = useTrace(session, (point, metres) => sessionFix(point, metres))
+  const moved = useRef(Date.now())
+  const auto = useRef(false)
+  const gps = useTrace(session, (point, metres) => {
+    if (metres > 0) moved.current = Date.now()
+    sessionFix(point, metres)
+  })
+  const mode = modeOf(act.id)
 
   useEffect(() => {
     const t = setInterval(() => tick((n) => n + 1), 1000)
     return () => clearInterval(t)
   }, [])
 
+  // Standing at a crossing should not cost you a pace figure, and a coffee
+  // stop should not count as running. With a fix coming in, a still minute and
+  // a half pauses the clock and the next step you take starts it again. Only
+  // with a fix: without one there is no way to tell a treadmill from a sofa,
+  // and pausing someone's session on a guess is worse than counting it.
+  useEffect(() => {
+    if (mode !== 'distance' || gps !== 'on') return
+    if (!session.paused && Date.now() - moved.current > 90000) {
+      auto.current = true
+      pauseSession()
+    } else if (session.paused && auto.current && Date.now() - moved.current < 4000) {
+      auto.current = false
+      resumeSession()
+    }
+  })
+
   const ms = elapsedMs(session)
   const secs = Math.floor(ms / 1000)
   const ready = secs >= MIN_SESSION_S
   const amount = sessionAmount(act, ms, session.metres)
   const preview = resolveActivity(state.player, { activityId: act.id, amount, verified: true })
-  const km = session.metres / 1000
-  const p = pace(ms, session.metres)
+  const tint = TINT[act.id] ?? 'var(--color-lime)'
 
   return (
     <div className="p-3 space-y-3">
-      <Panel className="p-4 text-center" accent="var(--color-lime)">
-        <SectionTitle color="var(--color-lime)">{session.paused ? 'PAUSED' : act.name.toUpperCase()}</SectionTitle>
+      <Panel className="p-4 text-center" accent={tint}>
+        <SectionTitle color={tint}>
+          {session.paused ? (auto.current ? 'AUTO-PAUSED' : 'PAUSED') : act.name.toUpperCase()}
+        </SectionTitle>
         <div className="font-mono text-[44px] leading-none text-ink tabular-nums" aria-live="off">
           {clock(ms)}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          <div className="border border-line p-2.5">
-            <div className="font-pixel text-[6px] text-ink-faint">{WANTS_GPS.has(act.id) ? 'DISTANCE' : 'COUNTS AS'}</div>
-            <div className="font-mono text-[16px] text-ink mt-1">
-              {WANTS_GPS.has(act.id) ? `${km.toFixed(2)} km` : `${amount} ${act.unit}`}
-            </div>
-          </div>
-          <div className="border border-line p-2.5">
-            <div className="font-pixel text-[6px] text-ink-faint">{p ? 'PACE' : 'XP SO FAR'}</div>
-            <div className="font-mono text-[16px] text-lime mt-1">{p ?? `+${preview.xp}`}</div>
-          </div>
-        </div>
+        {mode === 'distance' && <DistanceReadout session={session} ms={ms} />}
+        {mode === 'strength' && <StrengthReadout session={session} ms={ms} />}
+        {mode === 'interval' && <IntervalReadout session={session} ms={ms} />}
+        {mode === 'steady' && <SteadyReadout act={act} ms={ms} preview={preview} />}
 
         {GPS_NOTE[gps] && (
           <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -127,7 +434,14 @@ function Running({ session, act }) {
 
         <div className="flex gap-2 mt-4">
           {session.paused ? (
-            <Btn full onClick={resumeSession}>
+            <Btn
+              full
+              onClick={() => {
+                auto.current = false
+                moved.current = Date.now()
+                resumeSession()
+              }}
+            >
               RESUME
             </Btn>
           ) : (
@@ -152,6 +466,21 @@ function Running({ session, act }) {
         </button>
       </Panel>
 
+      {mode === 'distance' && (
+        <Panel corners={false} className="p-3">
+          <div className="font-pixel text-[7px] text-ink-faint">YOUR ROUTE</div>
+          {session.points.length > 1 ? (
+            <RouteTrace points={session.points} />
+          ) : (
+            <div className="h-[132px] grid place-items-center text-[11px] text-ink-faint text-center px-4">
+              {gps === 'on' || gps === 'waiting'
+                ? 'The line appears once you have covered some ground.'
+                : 'No location, so there is no line to draw. The clock still counts.'}
+            </div>
+          )}
+        </Panel>
+      )}
+
       <Panel corners={false} className="p-3">
         <div className="font-pixel text-[7px] text-ink-faint">WHAT THIS IS WORTH</div>
         <div className="flex items-baseline gap-2 mt-2">
@@ -172,6 +501,18 @@ function Running({ session, act }) {
       </Panel>
     </div>
   )
+}
+
+/** What the session actually was, in one line, from what its mode recorded. */
+function detailLine(detail) {
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+  if (!detail) return null
+  if (detail.mode === 'strength') return `${plural(detail.sets, 'set')} · ${plural(detail.reps, 'rep')}`
+  if (detail.mode === 'interval') return `${plural(detail.rounds, 'round')} · ${detail.work}s on ${detail.rest}s off`
+  if (detail.mode === 'distance' && detail.splits?.length) {
+    return `${plural(detail.splits.length, 'split')} · best ${splitPace(Math.min(...detail.splits))} /km`
+  }
+  return null
 }
 
 /** How long ago, in the words you would use out loud. */
@@ -247,15 +588,21 @@ function History({ log }) {
           {recent.map((l) => {
             const act = ACTIVITIES.find((a) => a.id === l.activityId)
             if (!act) return null
+            const detail = detailLine(l.detail)
             return (
-              <div key={l.id} className="flex items-center gap-2.5">
-                <Icon name={act.icon} size={12} color={TINT[act.id] ?? 'var(--color-ink-faint)'} />
-                <span className="font-pixel text-[7px] text-ink-dim w-[74px] shrink-0">{act.name.toUpperCase()}</span>
-                <span className="font-mono text-[11px] text-ink">
-                  {l.amount} {l.amount === 1 ? act.unit.replace(/s$/, '') : act.unit}
-                </span>
-                <span className="font-mono text-[11px] text-lime ml-auto">+{l.xp}</span>
-                <span className="font-mono text-[10px] text-ink-faint w-[62px] text-right shrink-0">{ago(l.at)}</span>
+              <div key={l.id}>
+                <div className="flex items-center gap-2.5">
+                  <Icon name={act.icon} size={12} color={TINT[act.id] ?? 'var(--color-ink-faint)'} />
+                  <span className="font-pixel text-[7px] text-ink-dim w-[74px] shrink-0">{act.name.toUpperCase()}</span>
+                  <span className="font-mono text-[11px] text-ink">
+                    {l.amount} {l.amount === 1 ? act.unit.replace(/s$/, '') : act.unit}
+                  </span>
+                  <span className="font-mono text-[11px] text-lime ml-auto">+{l.xp}</span>
+                  <span className="font-mono text-[10px] text-ink-faint w-[62px] text-right shrink-0">{ago(l.at)}</span>
+                </div>
+                {/* The amount is one number and every session collapses into
+                    it. This is the part worth reading back. */}
+                {detail && <div className="font-mono text-[10px] text-ink-faint ml-[24px] mb-0.5">{detail}</div>}
               </div>
             )
           })}
@@ -297,6 +644,7 @@ function Pick() {
                     <div className="font-mono text-[10px] text-ink-faint mt-1">
                       {a.xp} XP / {a.per} {a.per === 1 ? a.unit.replace(/s$/, '') : a.unit}
                     </div>
+                    <div className="font-mono text-[9px] text-ink-faint mt-0.5 truncate">{MODE_NOTE[modeOf(a.id)]}</div>
                   </div>
                 </div>
               </Panel>

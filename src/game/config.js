@@ -6,9 +6,11 @@ export const MAX_LEVEL = 100
 export const RARITY = {
   common: { key: 'common', label: 'COMMON', color: 'var(--color-r-common)', weight: 60, mult: 1 },
   uncommon: { key: 'uncommon', label: 'UNCOMMON', color: 'var(--color-r-uncommon)', weight: 25, mult: 1.35 },
-  rare: { key: 'rare', label: 'RARE', color: 'var(--color-r-rare)', weight: 10, mult: 1.8 },
-  epic: { key: 'epic', label: 'EPIC', color: 'var(--color-r-epic)', weight: 4, mult: 2.5 },
-  legendary: { key: 'legendary', label: 'LEGENDARY', color: 'var(--color-r-legendary)', weight: 1, mult: 4 },
+  // `glow` is the decorative twin: bright enough to read as light on the
+  // character. `color` stays the one that carries words.
+  rare: { key: 'rare', label: 'RARE', color: 'var(--color-r-rare)', glow: 'var(--color-r-rare-glow)', weight: 10, mult: 1.8 },
+  epic: { key: 'epic', label: 'EPIC', color: 'var(--color-r-epic)', glow: 'var(--color-r-epic-glow)', weight: 4, mult: 2.5 },
+  legendary: { key: 'legendary', label: 'LEGENDARY', color: 'var(--color-r-legendary)', glow: 'var(--color-r-legendary-glow)', weight: 1, mult: 4 },
 }
 
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary']

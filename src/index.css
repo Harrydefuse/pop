@@ -99,6 +99,13 @@
      this is white; on a dark screen they are fluorescent and it inverts. */
   --color-on-accent: #ffffff;
 
+  /* The decorative twins of the top three rarities. A glow is light, so it has
+     to be bright — the text-safe ladder below is deep on purpose and reads as
+     rust when it is used for a spark. Never put a word in these. */
+  --color-r-rare-glow: #0ea5e9;
+  --color-r-epic-glow: #a855f7;
+  --color-r-legendary-glow: #f59e0b;
+
   /* rarity ladder — matches the pet-collection art */
   --color-r-common: #64748b;
   --color-r-uncommon: #166534;
@@ -146,8 +153,11 @@
   --color-line: #3a2a57;
   --color-line-hot: #4c3378;
 
-  --color-neon: #a855f7;
-  --color-neon-bright: #c084fc;
+  /* A hair brighter than the old dark violet: at #a855f7 the rank chip, which
+     sets its own colour on a ten-per-cent wash of itself, came out at 4.35:1
+     and missed AA by a whisker. */
+  --color-neon: #b168f8;
+  --color-neon-bright: #c894fd;
   --color-neon-dim: #6d28d9;
   --color-cyan: #22d3ee;
   --color-lime: #a3e635;
@@ -174,6 +184,10 @@
   --tone-bronze: #b07a4a;
 
   --color-on-accent: #12081f;
+
+  --color-r-rare-glow: #7dd3fc;
+  --color-r-epic-glow: #d8b4fe;
+  --color-r-legendary-glow: #fcd34d;
 
   --color-r-common: #b8bfcc;
   --color-r-uncommon: #4ade80;
@@ -380,6 +394,58 @@ button:disabled {
   width: 40%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
   animation: xp-shine 2.4s ease-in-out infinite;
+}
+
+/* Worn rarity, made visible on the character rather than in a label.
+   A blink rather than a fade: nothing in pixel art crossfades, and a sparkle
+   that eases in and out reads as a web page effect sitting on top of the art
+   instead of part of it. */
+@keyframes gear-aura {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+.gear-aura {
+  animation: gear-aura 3s ease-in-out infinite;
+}
+
+@keyframes gear-spark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  16% {
+    opacity: 1;
+    transform: scale(0.7);
+  }
+  24% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+.gear-spark {
+  animation: gear-spark 2.4s steps(3, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gear-aura,
+  .gear-spark {
+    animation: none;
+  }
+  .gear-spark {
+    opacity: 0.85;
+  }
 }
 
 @keyframes float-soft {

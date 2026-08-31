@@ -17,6 +17,71 @@ export const MIN_SESSION_S = 60
 const MAX_SPEED_MPS = 12
 const MIN_FIX_M = 5
 
+/**
+ * How an activity is actually measured, which is not the same for all of them.
+ *
+ * A stopwatch is the right instrument for a yoga session and the wrong one for
+ * a set of squats — thirty minutes in a gym says nothing about what was lifted,
+ * and a HIIT block is rounds of work and rest, not one long minute counter.
+ * Each mode gets the readout its sport uses.
+ */
+export const MODE = {
+  walk: 'distance',
+  run: 'distance',
+  ride: 'distance',
+  swim: 'distance',
+  gym: 'strength',
+  bodyweight: 'strength',
+  hiit: 'interval',
+  sport: 'interval',
+  mobility: 'steady',
+  aim: 'steady',
+  vod: 'steady',
+  sleep: 'steady',
+}
+
+export const modeOf = (activityId) => MODE[activityId] ?? 'steady'
+
+/** How far apart the splits are. A kilometre, because that is what runners
+ *  talk in and what the pace figure is already per. */
+export const SPLIT_M = 1000
+
+/** Default work and rest, in seconds. Forty on, twenty off is the block most
+ *  interval sessions are built out of. */
+export const INTERVAL = { work: 40, rest: 20, min: 10, max: 180 }
+
+/**
+ * Where an interval session is right now.
+ *
+ * Derived from the clock rather than stored, so a round cannot drift out of
+ * step with the elapsed time, and closing the app mid-round costs nothing.
+ */
+export function intervalPhase(ms, work = INTERVAL.work, rest = INTERVAL.rest) {
+  const cycle = Math.max(1, work + rest)
+  const t = ms / 1000
+  const done = Math.floor(t / cycle)
+  const into = t - done * cycle
+  const working = into < work
+  return {
+    phase: working ? 'work' : 'rest',
+    left: Math.ceil(working ? work - into : cycle - into),
+    round: done + 1,
+    completed: done,
+  }
+}
+
+/** Total reps across the logged sets, and how many sets that was. */
+export function setTotals(sets = []) {
+  return sets.reduce((acc, s) => ({ sets: acc.sets + 1, reps: acc.reps + s.reps }), { sets: 0, reps: 0 })
+}
+
+/** Minutes per kilometre for one split, in the form a runner reads. */
+export function splitPace(ms) {
+  const perKm = ms / 60000
+  const m = Math.floor(perKm)
+  return `${m}:${String(Math.round((perKm - m) * 60)).padStart(2, '0')}`
+}
+
 /** Activities offered on the tracker, movement first. */
 export const TRACKED = ['walk', 'run', 'ride', 'swim', 'gym', 'hiit', 'bodyweight', 'sport', 'mobility', 'aim', 'vod', 'sleep']
   .map((id) => ACTIVITIES.find((a) => a.id === id))

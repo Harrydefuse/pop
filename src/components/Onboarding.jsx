@@ -153,7 +153,7 @@ function Swatch({ color, selected, onClick, label }) {
 }
 
 export default function Onboarding({ onContinue }) {
-  const { state, onboard } = useGame()
+  const { state, onboard, testAccount } = useGame()
   const has = state.onboarded
   const [step, setStep] = useState(0)
 
@@ -186,6 +186,17 @@ export default function Onboarding({ onContinue }) {
               <MenuItem onClick={has ? onContinue : () => setStep(1)}>START</MenuItem>
               <div className="h-px mx-4" style={{ background: 'rgba(169,124,46,0.45)' }} />
               <MenuItem onClick={() => setStep(1)}>{has ? 'NEW CHARACTER' : 'HOW IT WORKS'}</MenuItem>
+              <div className="h-px mx-4" style={{ background: 'rgba(169,124,46,0.45)' }} />
+              {/* Testing only: it hands you the end of the game. This line and
+                  the reducer case behind it come out before anyone else plays. */}
+              <MenuItem
+                onClick={() => {
+                  testAccount()
+                  onContinue?.()
+                }}
+              >
+                TEST ACCOUNT
+              </MenuItem>
             </div>
           </div>
 

@@ -200,10 +200,10 @@ export default function Friends() {
         <div className="flex items-baseline justify-between mb-1.5">
           <span className="font-pixel text-[8px] text-ink-faint">YOUR NEXT LEVEL</span>
           <span className="font-mono text-[10px] text-ink-dim">
-            {Math.round(p.xp)} / {xpToNext(p.level)} XP
+            {Number.isFinite(xpToNext(p.level)) ? `${Math.round(p.xp)} / ${xpToNext(p.level)} XP` : 'MAX LEVEL'}
           </span>
         </div>
-        <Bar pct={p.xp / xpToNext(p.level)} height={8} shine />
+        <Bar pct={Number.isFinite(xpToNext(p.level)) ? p.xp / xpToNext(p.level) : 1} height={8} shine />
         <div className="text-[11px] text-ink-dim mt-2.5 leading-snug">
           No global board here on purpose. Ten people you actually know beats ten million you don&apos;t.
         </div>

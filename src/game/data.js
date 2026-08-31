@@ -3,6 +3,7 @@
 
 import { AVATAR_HAIR, AVATAR_SKINS, HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
 import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, SLOT_STATS, armourSet, offhandKind } from './config'
+import { CAMPAIGN } from './campaign'
 
 // ------------------------------------------------------------------- catalogues
 
@@ -396,6 +397,74 @@ export const FRESH_START = {
   session: null,
   log: [],
   chest: { unlocked: false, openedToday: false },
+}
+
+
+// ------------------------------------------------------------- test account
+
+/**
+ * Everything unlocked, for testing.
+ *
+ * There is no other way to see the top of the game without playing to it — a
+ * full legendary set, a maxed pet, the whole campaign beaten and the map walked
+ * are all real states the app can be in, and all of them are weeks away. This
+ * is a switch that puts you there, and it is meant to be deleted the day the
+ * game is in front of players rather than in front of us.
+ */
+export const TEST_ACCOUNT = {
+  onboarded: true,
+  player: {
+    name: 'MAXED',
+    handle: 'testaccount',
+    classId: 'ironstride',
+    level: 100,
+    xp: 0,
+    streak: 214,
+    shields: 3,
+    cores: 250000,
+    stats: { STR: 96000, END: 104000, AGI: 88000, VIT: 92000, FOCUS: 81000 },
+    // The full gilded regalia, plus one of every other set in the bag so the
+    // armoury, the weapons page and the upgrade path all have something in
+    // them to look at.
+    equipped: { helm: 'g1', chest: 'g2', legs: 'g3', gloves: 'g4', boots: 'g5', offhand: 'g6' },
+    inventory: [
+      { id: 'g1', ...gearPiece('helm', 'gilded'), level: 10 },
+      { id: 'g2', ...gearPiece('chest', 'gilded'), level: 10 },
+      { id: 'g3', ...gearPiece('legs', 'gilded'), level: 10 },
+      { id: 'g4', ...gearPiece('gloves', 'gilded'), level: 10 },
+      { id: 'g5', ...gearPiece('boots', 'gilded'), level: 10 },
+      { id: 'g6', ...gearPiece('offhand', 'gilded', 'sword'), level: 10 },
+      { id: 'g7', ...gearPiece('offhand', 'gilded', 'axe'), level: 8 },
+      { id: 'g8', ...gearPiece('offhand', 'gilded', 'bow'), level: 8 },
+      { id: 'g9', ...gearPiece('offhand', 'gilded', 'staff'), level: 7 },
+      { id: 'g10', ...gearPiece('offhand', 'verdant', 'spear'), level: 6 },
+      { id: 'g11', ...gearPiece('offhand', 'verdant', 'dagger'), level: 6 },
+      { id: 'g12', ...gearPiece('chest', 'verdant'), level: 8 },
+      { id: 'g13', ...gearPiece('helm', 'verdant'), level: 8 },
+      { id: 'g14', ...gearPiece('legs', 'bone'), level: 6 },
+      { id: 'g15', ...gearPiece('gloves', 'bone'), level: 6 },
+      { id: 'g16', ...gearPiece('boots', 'iron'), level: 5 },
+      { id: 'g17', ...gearPiece('chest', 'leather'), level: 4 },
+    ],
+    pets: PET_CATALOG.map((pet, i) => ({
+      id: `t_${pet.id}`,
+      ref: pet.id,
+      name: pet.name,
+      rarity: pet.rarity,
+      stat: pet.stat,
+      level: [100, 90, 80, 70, 100, 65, 55][i] ?? 50,
+      xp: 0,
+    })),
+    activePetId: 't_zeus',
+    stones: ['power', 'space', 'reality', 'soul', 'time', 'mind'],
+    titles: CAMPAIGN.map((b) => b.reward.title).filter(Boolean),
+    lifetime: { volume: 1840000, distance: 6120, sessions: 2140, coop: 410, streak: 214, balance: 812, bossKm: 964 },
+    week: { activeMinutes: 640, gamingHours: 18, km: 74.5, sessions: 11 },
+  },
+  campaign: { defeated: CAMPAIGN.map((b) => b.id), damage: 0 },
+  gift: { pending: false, opened: true },
+  chest: { unlocked: true, openedToday: false },
+  session: null,
 }
 
 // ----------------------------------------------------------------- initial save

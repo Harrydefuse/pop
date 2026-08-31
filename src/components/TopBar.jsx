@@ -6,6 +6,7 @@ import Icon from './Icon'
 import { Bar } from './ui'
 import { useGame } from '../game/useGame'
 import { classById, fmt, powerScore, rankFor, streakTier, xpToNext } from '../game/engine'
+import { MAX_LEVEL } from '../game/config'
 import { applyTheme, readTheme } from '../game/theme'
 
 /** Light or dark, on the same shelf as the map. */
@@ -42,6 +43,7 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
   const power = powerScore(p)
   const { rank } = rankFor(power)
   const need = xpToNext(p.level)
+  const maxed = !Number.isFinite(need)
   const streak = streakTier(p.streak)
 
   return (
@@ -100,9 +102,9 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
 
       <div className="flex items-center gap-2 mt-2.5">
         <span className="font-pixel text-[8px] text-neon shrink-0">LV {p.level}</span>
-        <Bar pct={p.xp / need} height={7} shine className="flex-1" />
+        <Bar pct={maxed ? 1 : p.xp / need} height={7} shine className="flex-1" />
         <span className="font-mono text-[9px] text-ink-faint shrink-0 tabular-nums">
-          {fmt(p.xp)}/{fmt(need)}
+          {maxed ? `MAX ${MAX_LEVEL}` : `${fmt(p.xp)}/${fmt(need)}`}
         </span>
         <span className="w-px h-3 bg-line shrink-0" />
         <span className="flex items-center gap-1 shrink-0" title={`${p.streak} day streak · ${streak.label}`}>
