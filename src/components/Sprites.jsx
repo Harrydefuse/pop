@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, GEAR_OVERLAYS, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, WEARS_ARMOUR, armourSprite, armouredClothes, heroClothes, heroSprite } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, WORN_OVERLAYS, armourSprite, heroClothes, heroSprite } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -97,13 +97,13 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   // different resolution does not need every call site changed.
   const body = heroSprite(av.skin, av.hair, av.shirt, av.body)
   const clothes = heroClothes(av.body)
-  const wears = WEARS_ARMOUR[av.body ?? 'male']
-  // Armour has to be cut to a silhouette, so a build without its own set does
-  // not get one. What is in the hand is a different matter: it only has to line
-  // up with a fist, so both builds carry the whole rack.
-  const armoured = wears ? equipped : {}
+  const build = av.body ?? 'male'
+  // Every build has a set cut to its own silhouette now, so there is no longer
+  // a question of whether armour can be drawn — only which set of art to use.
+  const plate = WORN_OVERLAYS[build] ?? WORN_OVERLAYS.male
+  const armoured = equipped
   const held = equipped.offhand
-  const weapon = held ? WEAPON_OVERLAYS[av.body ?? 'male']?.[held.kind] : null
+  const weapon = held ? WEAPON_OVERLAYS[build]?.[held.kind] : null
   const width = Math.round((height * body.w) / body.h)
   const aura = gearAura(equipped)
   return (
@@ -141,11 +141,10 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
           that slot covers is repainted in the metal instead. */}
       {Object.entries(clothes).map(([slot, grid]) => {
         if (armoured[slot]) return null
-        const worn = !wears ? equipped[slot] : null
         return (
           <PixelSprite
             key={`c-${slot}`}
-            sprite={{ ...body, grid, palette: worn ? armouredClothes(worn.set) : body.palette }}
+            sprite={{ ...body, grid, palette: body.palette }}
             size={width}
             className="absolute inset-0"
           />
@@ -154,8 +153,11 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
       {Object.entries(armoured).map(([slot, item]) => {
         // The offhand is drawn from the weapon table further down, on both
         // builds, so it is skipped here.
-        if (slot === 'offhand') return null
-        const overlay = GEAR_OVERLAYS[item?.kind ?? slot]
+        // The offhand is drawn from the weapon table further down, and the
+        // gauntlets after it, so the hand closes over the grip instead of the
+        // weapon sitting on top of the fist.
+        if (slot === 'offhand' || slot === 'gloves') return null
+        const overlay = plate[item?.kind ?? slot]
         if (!overlay || !item) return null
         return (
           <PixelSprite
@@ -170,6 +172,21 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
       {weapon && (
         <PixelSprite
           sprite={{ ...weapon, palette: ARMOUR_PALETTES[held.set] ?? ARMOUR_PALETTES.leather }}
+          size={width}
+          className="absolute inset-0"
+        />
+      )}
+
+      {/* Last, so a gauntlet grips the weapon rather than being covered by it. */}
+      {armoured.gloves && plate.gloves && (
+        <PixelSprite
+          sprite={{
+            ...plate.gloves,
+            palette:
+              armoured.gloves.set === 'founder'
+                ? FOUNDER_PALETTE
+                : (ARMOUR_PALETTES[armoured.gloves.set] ?? ARMOUR_PALETTES.leather),
+          }}
           size={width}
           className="absolute inset-0"
         />

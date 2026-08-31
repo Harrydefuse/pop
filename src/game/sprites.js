@@ -2047,8 +2047,6 @@ export function heroClothes(body = 'male') {
   return body === 'female' ? { chest: HERO_F_SHIRT, legs: HERO_F_LEGS } : HERO_CLOTHES
 }
 
-/** Worn armour is drawn on the male's 32 x 59 frame. Hers is 30 x 65, so the
- *  overlays do not land on her — they would sit high and narrow. */
 /** The same trick on her frame, which is 30 x 65 rather than 32 x 59. */
 const wornF = (rows) => {
   const grid = Array.from({ length: HERO_F.length }, () => '.'.repeat(HERO_F[0].length))
@@ -2089,31 +2087,32 @@ export const WEAPON_OVERLAYS = {
   },
 }
 
-export const WEARS_ARMOUR = { male: true, female: false }
-
 /**
- * Her armour, until she has her own gear frame drawn.
+ * Her armour, cut to her own silhouette.
  *
- * Equipping a breastplate and seeing nothing happen is worse than an
- * approximation, so the garment that slot covers is repainted in the metal
- * instead: her shirt comes out iron, or bone, or gilded. It is her own art in
- * somebody else's colours rather than a plate that does not fit her.
+ * Recolouring her shirt in the metal was a stopgap and it looked like one: gold
+ * cloth is not a breastplate, and there was nothing at all on her hands or her
+ * feet. These are drawn against the shape of the body underneath — pauldrons on
+ * the tops of her arms, a cuirass that follows her waist in, greaves on the legs
+ * the art actually has.
+ *
+ * Her helm is open-faced where his is a closed bucket, on purpose: the profile
+ * picture is her face, and a helmet that erases it undoes what the character
+ * screen is for.
  */
-export function armouredClothes(set) {
-  // The Founder's Cuirass is not part of a set, so it borrows the gilded ramp.
-  const ramp = ARMOUR_PALETTES[set] ?? ARMOUR_PALETTES.gilded
-  return {
-    ...HERO_FIXED,
-    a: ramp.l,
-    A: ramp.m,
-    b: ramp.d,
-    B: ramp.o,
-    t: ramp.m,
-    T: ramp.o,
-    u: ramp.d,
-    U: ramp.o,
-  }
+export const GEAR_OVERLAYS_F = {
+  helm: wornF({ 5: '...............oo.............', 6: '..............oAAo............', 7: '..............oAAo............', 8: '...........oooAAAAooo.........', 9: '..........ommmmmmmmmmo........', 10: '.........ommllllmmmmmmo.......', 11: '........ommllllmmmmmmmmo......', 12: '........ommlllmmmmmmmmmo......', 13: '.......ommlllmmmmmmmmmmmo.....', 14: '.......ommmmmmmmmmmmmmmmo.....', 15: '.......ommmmmmmmmmmmmmmmo.....', 16: '.......ommmmmmmmmmmmmmmmo.....', 17: '.......oAAAAAAAAAAAAAAAAo.....', 18: '.......olloooooooooooollo.....', 19: '.......omm............mmo.....', 20: '.......omm............mmo.....', 21: '.......omm............mmo.....', 22: '.......omm............mmo.....', 23: '.......omm............mmo.....', 24: '.......odd............ddo.....', 25: '........oo............oo......' }),
+  chest: wornF({ 27: '.........oooooooooooooooo.....', 28: '........ollllllllllllllllo....', 29: '......oolllllllllllllllllloo..', 30: '.....olllmmmmmmmmmmmmmmmmdddo.', 31: '.....olllmmmmmmmmmmmmmmmmdddo.', 32: '.....olmmdmmmmmmmmmmmmmmlmmdo.', 33: '.....olmmdmmmmmmmmmmmmmmlmmdo.', 34: '.....olmmddmlllmmmmmmmdolmmdo.', 35: '.....olmmdodmmmmmmmmmdoolmmdo.', 36: '.....olmmdodmmmddmmmmdoolmmdo.', 37: '.....olmmdoodmmddmmmdo.olmmdo.', 38: '.....olmmdoodmmddmmmdo.olmmdo.', 39: '.....olmmdosssAAAAssso.olmmdo.', 40: '.....oddddosssAAAAssso.oddddo.', 41: '......oooo.oooooooooo...oooo..' }),
+  legs: wornF({ 40: '..........oooooooooooo........', 41: '.........odlllmmmmmmmdo.......', 42: '.........odmmmmmmmmmmdo.......', 43: '........odmmmmmmmmmmmmdo......', 44: '........odmmmmmmmmmmmmdo......', 45: '........oddddddddddddddo......', 46: '........odlllmmdodlllmmdo.....', 47: '........odlllmmdodlllmmdo.....', 48: '........odmmmmmdodmmmmmdo.....', 49: '........odAAAAAdodAAAAAdo.....', 50: '........odmmmmmdodmmmmmdo.....', 51: '........odmmmmmdodmmmmmdo.....', 52: '........odmmmmmdodmmmmmdo.....', 53: '........odmmmmmdodmmmmmdo.....', 54: '.........ooooooo.ooooooo......' }),
+  gloves: wornF({ 41: '....ooooo...............ooooo.', 42: '...odllldo.............odllldo', 43: '..odmmmmmdo...........odmmmmmd', 44: '..odAAAAAdo...........odAAAAAd', 45: '..odmmmmmdo...........odmmmmmd', 46: '..odmmmmmdo...........odmmmmmd', 47: '...odmmmdo.............odmmmdo', 48: '....ooooo...............ooooo.' }),
+  boots: wornF({ 53: '........oooooooo.oooooooo.....', 54: '.......ollllllllollllllllo....', 55: '.......ommmmmmmmommmmmmmmo....', 56: '.......ommmmmmmmommmmmmmmo....', 57: '........oAAAAAAo.oAAAAAAo.....', 58: '........odmmmmdo.odmmmmdo.....', 59: '........odmmmmdo.odmmmmdo.....', 60: '.......odmmmmmdo.odmmmmdo.....', 61: '.......odmmmmmdo.odmmmmmdo....', 62: '......odmmmmmmmdoodmmmmmmdo...', 63: '......oddddddddo.odddddddddo..', 64: '.......oooooooo...ooooooooo...' }),
+  shield: wornF({ 32: 'oooooooo......................', 33: 'lmmmmmddo.....................', 34: 'lmmmmmddo.....................', 35: 'lmmmmmddo.....................', 36: 'lmmmmmddo.....................', 37: 'lmAAAAddo.....................', 38: 'lmAAAAddo.....................', 39: 'lmAAAAddo.....................', 40: 'lmAAAAddo.....................', 41: 'lmAAAAddo.....................', 42: 'lmmmmmddo.....................', 43: 'lmmmmmddo.....................', 44: 'lmmmmmddo.....................', 45: 'mmmmmmmmo.....................', 46: 'ommmmmmo......................', 47: '.oddddo.......................', 48: '..oddo........................', 49: '...oo.........................' }),
 }
+
+/** Which set of worn art a build uses. */
+export const WORN_OVERLAYS = { male: GEAR_OVERLAYS, female: GEAR_OVERLAYS_F }
+
+
 
 // The map, as an object rather than as a place: a rolled chart with a compass
 // sitting on the corner of it. The header shows this instead of a shrunk-down
