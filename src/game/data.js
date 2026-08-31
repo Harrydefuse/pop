@@ -148,8 +148,11 @@ function makeFriend(i, power, extra = {}) {
     streak: [3, 12, 41, 7, 88, 19, 2, 130, 26, 5, 61, 14, 33, 9][i % 14],
     weeklyKm: [12, 41, 8, 26, 63, 19, 4, 88, 31, 15, 52, 22, 37, 11][i % 14],
     bossKm: [22.4, 61.8, 9.2, 38.5, 84.1, 27.3, 4.6, 112.7, 44.9, 16.2, 70.5, 30.1, 51.8, 12.9][i % 14],
+    // The profile picture is the character now, so the roster has to be built
+    // from both bodies or every face in the leaderboard is the same man.
     avatar: {
       seed: i,
+      body: i % 3 === 1 ? 'female' : 'male',
       skin: AVATAR_SKINS[i % AVATAR_SKINS.length],
       hair: AVATAR_HAIR[i % AVATAR_HAIR.length],
       hairLength: i % 2 ? 'long' : 'short',

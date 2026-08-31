@@ -51,10 +51,10 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
             changing the visual size. */}
         <button
           onClick={onOpenProfile}
-          className="shrink-0 active:brightness-125 grid place-items-center w-11 h-11 -m-[3px]"
+          className="shrink-0 active:brightness-125 grid place-items-center w-11 h-11"
           aria-label="Open character sheet"
         >
-          <Avatar av={p.avatar} size={38} ring={cls.color} />
+          <Avatar av={p.avatar} size={42} ring={cls.color} />
         </button>
 
         <div className="min-w-0 flex-1">

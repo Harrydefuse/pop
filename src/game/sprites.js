@@ -1439,34 +1439,6 @@ export const BOSS_SPRITES = { 'couch-titan': BOSS_SPRITE, ogre: OGRE_SPRITE }
 // --------------------------------------------------------------------- AVATARS
 // Compact 12x12 heads used for friends, leaderboard rows and feed posts. Two
 // silhouettes x recolourable skin/hair keeps the roster varied without art debt.
-const AVATAR_A = [
-  '...oooooo...',
-  '..ohhhhhho..',
-  '.ohhhhhhhho.',
-  '.ohssssssho.',
-  '.oskssskkso.',
-  '.osssssssso.',
-  '.ossskkssso.',
-  '..osssssso..',
-  '...oaaaao...',
-  '..oaaaaaao..',
-  '.oaaaaaaaao.',
-  '.oaaaaaaaao.',
-]
-
-/** Long hair falls down both sides of the bust; short keeps the base outline. */
-const AVATAR_LONG = AVATAR_A.map((row, y) =>
-  y >= 3 && y <= 8 ? 'h' + row.slice(1, 11) + 'h' : row,
-)
-
-export function avatarSprite(seed = 0, skin = '#e8b48a', hair = '#2b1a10', shirt = TUNIC, hairLength = 'short') {
-  return {
-    w: 12,
-    h: 12,
-    palette: { o: '#0d0a16', s: skin, h: hair, k: '#141018', a: shirt },
-    grid: hairLength === 'long' ? AVATAR_LONG : AVATAR_A,
-  }
-}
 
 
 // ------------------------------------------------------------------ THE HERO
@@ -2321,6 +2293,25 @@ export function heroSprite(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, ha
 export function heroClothed(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short', body = 'male') {
   const grid = gridFor(body, 'clothed', hairLength)
   return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
+}
+
+// Where the shoulders are on both builds. The head occupies the top of the
+// hero art and the neck lands on the same row either way, so one number cuts a
+// bust out of both — hair to collarbone, nothing below it.
+const BUST_ROWS = 31
+
+/**
+ * The player's face, for the profile picture.
+ *
+ * This used to be a separate twelve-pixel drawing that knew nothing about the
+ * character: same blob whichever body, hair length or skin you picked, with a
+ * flat block of colour for the shoulders. It is now the top of the same art
+ * the loadout screen shows full length, so a purple-haired woman in the
+ * character sheet is a purple-haired woman in the corner of the header.
+ */
+export function heroBust(skin, hair, shirt, hairLength = 'short', body = 'male') {
+  const full = heroClothed(skin, hair, shirt, hairLength, body)
+  return { w: full.w, h: BUST_ROWS, palette: full.palette, grid: full.grid.slice(0, BUST_ROWS) }
 }
 
 /** The base character's tunic. Onboarding does not offer a shirt colour, so
