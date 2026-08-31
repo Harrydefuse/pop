@@ -4,9 +4,12 @@ import Icon from '../components/Icon'
 import { useGame } from '../game/useGame'
 import {
   INTERVAL,
+  LIFTS,
   MIN_SESSION_S,
   SPLIT_M,
   TRACKED,
+  WEIGHT_STEP,
+  byLift,
   clock,
   elapsedMs,
   intervalPhase,
@@ -15,7 +18,7 @@ import {
   sessionAmount,
   setTotals,
   splitPace,
-  stepMetres,
+  fixStep,
 } from '../game/session'
 import { ACTIVITIES } from '../game/config'
 import { minutesOf, resolveActivity } from '../game/engine'
@@ -75,8 +78,9 @@ function useTrace(session, onFix) {
         setStatus('on')
         const now = { lat: pos.coords.latitude, lon: pos.coords.longitude, t: pos.timestamp }
         const prev = last.current
-        last.current = now
-        cb.current(now, stepMetres(prev, now, prev ? (now.t - prev.t) / 1000 : 0))
+        const step = fixStep(prev, now)
+        if (step.anchor) last.current = now
+        cb.current(now, step.metres, step.keep)
       },
       () => setStatus('denied'),
       { enableHighAccuracy: true, maximumAge: 4000, timeout: 20000 },
@@ -208,71 +212,157 @@ function DistanceReadout({ session, ms }) {
   )
 }
 
-/** Reps and sets, because a clock does not describe a lift. */
-function StrengthReadout({ session, ms }) {
-  const { sessionSet, sessionUndoSet } = useGame()
-  const [reps, setReps] = useState(10)
-  const sets = session.sets ?? []
-  const totals = setTotals(sets)
-
+/** A number you change with your thumbs rather than a keyboard. */
+function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix = '' }) {
   return (
-    <>
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        <Stat label="SETS" value={totals.sets} />
-        <Stat label="REPS" value={totals.reps} tone="var(--color-gold)" />
-      </div>
-
-      <div className="flex items-stretch gap-2 mt-3">
+    <div className="border border-line p-2">
+      <div className="font-pixel text-[6px] text-ink-faint">{label}</div>
+      <div className="flex items-center gap-1 mt-1">
         <button
-          onClick={() => setReps((n) => Math.max(1, n - 1))}
-          className="w-11 min-h-[44px] border border-line font-pixel text-[12px] text-ink-dim active:brightness-125"
-          aria-label="One rep fewer"
+          onClick={() => onChange(Math.max(min, value - step))}
+          className="w-9 min-h-[44px] font-pixel text-[12px] text-ink-dim active:text-ink"
+          aria-label={`Less ${label.toLowerCase()}`}
         >
           −
         </button>
-        <div className="flex-1 border border-line grid place-items-center min-h-[44px]">
-          <span className="font-mono text-[20px] text-ink tabular-nums">{reps}</span>
-        </div>
+        <span className="font-mono text-[18px] text-ink flex-1 text-center tabular-nums">
+          {value}
+          {suffix}
+        </span>
         <button
-          onClick={() => setReps((n) => Math.min(500, n + 1))}
-          className="w-11 min-h-[44px] border border-line font-pixel text-[12px] text-ink-dim active:brightness-125"
-          aria-label="One rep more"
+          onClick={() => onChange(Math.min(max, value + step))}
+          className="w-9 min-h-[44px] font-pixel text-[12px] text-ink-dim active:text-ink"
+          aria-label={`More ${label.toLowerCase()}`}
         >
           +
         </button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * What you lifted, how many times, how heavy.
+ *
+ * A clock does not describe a gym session, and neither does a rep count on its
+ * own — five by five at a hundred kilos and five by five at forty are the same
+ * row otherwise. None of it earns XP: that still comes off the clock, so a
+ * typed weight cannot be turned into a level. It is a training record.
+ */
+function StrengthReadout({ session, ms }) {
+  const { sessionSet, sessionUndoSet } = useGame()
+  const [lift, setLift] = useState(session.lift ?? LIFTS[0])
+  const [reps, setReps] = useState(8)
+  const [weight, setWeight] = useState(40)
+  const [pickingLift, setPickingLift] = useState(false)
+  const sets = session.sets ?? []
+  const totals = setTotals(sets)
+  const perLift = byLift(sets)
+
+  return (
+    <>
+      <div className="grid grid-cols-3 gap-2 mt-4">
+        <Stat label="SETS" value={totals.sets} />
+        <Stat label="REPS" value={totals.reps} />
+        <Stat label="VOLUME" value={totals.volume ? `${Math.round(totals.volume)}kg` : '—'} tone="var(--color-gold)" />
+      </div>
+
+      {/* The lift comes off a short list rather than a text field: free text
+          turns the log into a pile of spellings of "bench press" that nothing
+          can add up. */}
+      <button
+        onClick={() => setPickingLift((v) => !v)}
+        aria-expanded={pickingLift}
+        className="w-full min-h-[44px] border border-line mt-3 px-3 flex items-center justify-between active:brightness-125"
+      >
+        <span className="font-pixel text-[6px] text-ink-faint">EXERCISE</span>
+        <span className="font-mono text-[13px] text-ink truncate ml-2">{lift}</span>
+      </button>
+
+      {pickingLift && (
+        <div className="grid grid-cols-2 gap-1.5 mt-2 max-h-[188px] overflow-y-auto scroll-thin">
+          {LIFTS.map((name) => (
+            <button
+              key={name}
+              onClick={() => {
+                setLift(name)
+                setPickingLift(false)
+              }}
+              aria-pressed={lift === name}
+              className="font-mono text-[11px] min-h-[44px] px-2 border text-left truncate active:brightness-125"
+              style={{
+                color: lift === name ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
+                background: lift === name ? 'var(--color-gold)' : 'transparent',
+                borderColor: lift === name ? 'var(--color-gold)' : 'var(--color-line)',
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <Stepper label="REPS" value={reps} onChange={setReps} min={1} max={500} />
+        <Stepper
+          label="WEIGHT"
+          value={weight}
+          onChange={setWeight}
+          step={WEIGHT_STEP}
+          max={1000}
+          suffix={weight === 0 ? '' : 'kg'}
+        />
+      </div>
+      {weight === 0 && <div className="font-mono text-[10px] text-ink-faint mt-1">Bodyweight — reps only.</div>}
 
       <Btn
         full
         className="mt-2"
-        onClick={() => sessionSet(reps)}
+        onClick={() => sessionSet(lift, reps, weight)}
         style={{ background: 'var(--color-gold)', borderColor: 'var(--color-gold)', color: 'var(--color-on-accent)' }}
       >
-        LOG SET OF {reps}
+        LOG {reps} × {weight === 0 ? 'BODYWEIGHT' : `${weight}KG`}
       </Btn>
 
       {sets.length > 0 && (
         <div className="mt-3 border-t border-line pt-3 text-left">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-pixel text-[6px] text-ink-faint">SETS SO FAR</span>
+            <span className="font-pixel text-[6px] text-ink-faint">TODAY</span>
             <button onClick={sessionUndoSet} className="font-pixel text-[6px] text-ink-faint min-h-[44px] px-2 active:text-danger">
               UNDO LAST
             </button>
           </div>
-          <div className="space-y-1">
-            {sets.slice(-6).map((set, i) => {
-              const n = sets.length - Math.min(6, sets.length) + i + 1
-              return (
-                <div key={`${set.at}-${n}`} className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-ink-faint w-8 shrink-0">#{n}</span>
-                  <span className="font-mono text-[12px] text-ink">{set.reps} reps</span>
-                  <span className="font-mono text-[10px] text-ink-faint ml-auto">{clock(set.at)}</span>
+
+          {/* Grouped by lift, because that is how a session is actually
+              remembered: four exercises, not nineteen numbered sets. */}
+          <div className="space-y-2.5">
+            {perLift.map((g) => (
+              <div key={g.lift}>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono text-[12px] text-ink truncate">{g.lift}</span>
+                  <span className="font-mono text-[10px] text-ink-faint ml-auto shrink-0">
+                    {g.volume ? `${Math.round(g.volume)}kg` : `${g.reps} reps`}
+                  </span>
                 </div>
-              )
-            })}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {sets
+                    .filter((set) => (set.lift ?? 'Other') === g.lift)
+                    .map((set, i) => (
+                      <span
+                        key={`${g.lift}-${set.at}-${i}`}
+                        className="font-mono text-[10px] px-1.5 py-0.5 border border-line text-ink-dim"
+                      >
+                        {set.reps}
+                        {set.weight ? ` × ${set.weight}kg` : ''}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
+
       <div className="font-mono text-[10px] text-ink-faint mt-3">{clock(ms)} under the bar</div>
     </>
   )
@@ -370,9 +460,9 @@ function Running({ session, act }) {
   const [, tick] = useState(0)
   const moved = useRef(Date.now())
   const auto = useRef(false)
-  const gps = useTrace(session, (point, metres) => {
+  const gps = useTrace(session, (point, metres, keep) => {
     if (metres > 0) moved.current = Date.now()
-    sessionFix(point, metres)
+    sessionFix(point, metres, keep)
   })
   const mode = modeOf(act.id)
 
@@ -507,7 +597,12 @@ function Running({ session, act }) {
 function detailLine(detail) {
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
   if (!detail) return null
-  if (detail.mode === 'strength') return `${plural(detail.sets, 'set')} · ${plural(detail.reps, 'rep')}`
+  if (detail.mode === 'strength') {
+    const named = (detail.lifts ?? []).slice(0, 2).map((g) => g.lift).join(', ')
+    const more = (detail.lifts?.length ?? 0) > 2 ? ` +${detail.lifts.length - 2}` : ''
+    const volume = detail.volume ? ` · ${Math.round(detail.volume).toLocaleString()} kg` : ''
+    return `${plural(detail.sets, 'set')}${volume}${named ? ` · ${named}${more}` : ''}`
+  }
   if (detail.mode === 'interval') return `${plural(detail.rounds, 'round')} · ${detail.work}s on ${detail.rest}s off`
   if (detail.mode === 'distance' && detail.splits?.length) {
     return `${plural(detail.splits.length, 'split')} · best ${splitPace(Math.min(...detail.splits))} /km`

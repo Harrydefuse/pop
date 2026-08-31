@@ -70,9 +70,91 @@ export function intervalPhase(ms, work = INTERVAL.work, rest = INTERVAL.rest) {
   }
 }
 
-/** Total reps across the logged sets, and how many sets that was. */
+/**
+ * The lifts a gym session gets to name.
+ *
+ * A short list on purpose. Free text turns the log into a pile of spellings of
+ * "bench press" that nothing can add up, and a full exercise database is a
+ * different product. These cover most of what a session is made of, and
+ * anything else goes under the last one.
+ */
+export const LIFTS = [
+  'Bench press',
+  'Squat',
+  'Deadlift',
+  'Overhead press',
+  'Barbell row',
+  'Pull-up',
+  'Dip',
+  'Lat pulldown',
+  'Leg press',
+  'Romanian deadlift',
+  'Lunge',
+  'Hip thrust',
+  'Bicep curl',
+  'Tricep extension',
+  'Lateral raise',
+  'Calf raise',
+  'Plank',
+  'Other',
+]
+
+/** How much the bar goes up and down by. 2.5kg is the smallest plate pair. */
+export const WEIGHT_STEP = 2.5
+
+/**
+ * Totals across the logged sets.
+ *
+ * Volume is reps times weight, which is the number a lifter actually tracks —
+ * and the one the Power stone already counts. A bodyweight set carries no
+ * weight, so it adds reps and no volume rather than being thrown away.
+ */
 export function setTotals(sets = []) {
-  return sets.reduce((acc, s) => ({ sets: acc.sets + 1, reps: acc.reps + s.reps }), { sets: 0, reps: 0 })
+  return sets.reduce(
+    (acc, s) => ({
+      sets: acc.sets + 1,
+      reps: acc.reps + s.reps,
+      volume: acc.volume + s.reps * (s.weight ?? 0),
+    }),
+    { sets: 0, reps: 0, volume: 0 },
+  )
+}
+
+/** The same totals, split by which lift they belong to, heaviest first. */
+export function byLift(sets = []) {
+  const out = new Map()
+  for (const s of sets) {
+    const key = s.lift ?? 'Other'
+    const at = out.get(key) ?? { lift: key, sets: 0, reps: 0, volume: 0, top: 0 }
+    at.sets += 1
+    at.reps += s.reps
+    at.volume += s.reps * (s.weight ?? 0)
+    at.top = Math.max(at.top, s.weight ?? 0)
+    out.set(key, at)
+  }
+  return [...out.values()].sort((a, b) => b.volume - a.volume || b.reps - a.reps)
+}
+
+/**
+ * A trace thinned down to something worth keeping.
+ *
+ * A long walk is thousands of fixes and all of them go into the save. Every
+ * nth point, plus both ends, is indistinguishable at map scale and a fraction
+ * of the size. Five decimal places is about a metre, which is finer than the
+ * fix that produced it.
+ */
+export const ROUTE_POINTS = 120
+
+export function simplifyRoute(points = [], cap = ROUTE_POINTS) {
+  if (points.length < 2) return []
+  const round = (n) => Math.round(n * 1e5) / 1e5
+  const step = Math.max(1, Math.ceil(points.length / cap))
+  const out = []
+  for (let i = 0; i < points.length; i += step) out.push([round(points[i].lat), round(points[i].lon)])
+  const last = points[points.length - 1]
+  const tail = [round(last.lat), round(last.lon)]
+  if (out[out.length - 1][0] !== tail[0] || out[out.length - 1][1] !== tail[1]) out.push(tail)
+  return out
 }
 
 /** Minutes per kilometre for one split, in the form a runner reads. */
@@ -98,13 +180,24 @@ export function metresBetween(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-/** How far a new fix should add to the trace, or 0 if it is noise. */
-export function stepMetres(prev, next, secondsApart) {
-  if (!prev) return 0
+/**
+ * What to do with a new fix.
+ *
+ * Three outcomes, and they are not the same. A jump no runner could make is a
+ * glitch: it adds nothing and it does not go on the map, but it does become the
+ * new anchor, because the alternative is measuring every later fix from a
+ * position you have long since left. A move under five metres is standing
+ * still with a wandering signal: it adds nothing and — importantly — does not
+ * re-anchor, so a slow walk of three metres a fix still accumulates instead of
+ * being rounded away to nothing forever. Anything else is ground covered.
+ */
+export function fixStep(prev, next) {
+  if (!prev) return { metres: 0, anchor: true, keep: true }
+  const secs = (next.t - prev.t) / 1000
   const d = metresBetween(prev, next)
-  if (d < MIN_FIX_M) return 0
-  if (secondsApart > 0 && d / secondsApart > MAX_SPEED_MPS) return 0
-  return d
+  if (secs > 0 && d / secs > MAX_SPEED_MPS) return { metres: 0, anchor: true, keep: false }
+  if (d < MIN_FIX_M) return { metres: 0, anchor: false, keep: false }
+  return { metres: d, anchor: true, keep: true }
 }
 
 /** Milliseconds a session has actually been running. */

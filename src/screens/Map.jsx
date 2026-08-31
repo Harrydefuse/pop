@@ -5,11 +5,25 @@ import PixelSprite from '../components/PixelSprite'
 import OverviewMap from '../components/OverviewMap'
 import SydneyMap from '../components/SydneyMap'
 import MapViewport from '../components/MapViewport'
+import RouteMap from '../components/RouteMap'
 import { OVER_H, OVER_PX, OVER_W, coarseExplored, overCell } from '../game/overview'
 import { SYDNEY } from '../game/sydney'
 import { useGame } from '../game/useGame'
+import { ACTIVITIES } from '../game/config'
 import { CAMPAIGN, actById } from '../game/campaign'
 import { campaignState } from '../game/engine'
+
+/** One colour per route, so a screen of them reads as separate walks. */
+const ROUTE_COLOURS = ['#0e7490', '#be123c', '#3f6212', '#6d28d9', '#c2410c', '#0369a1']
+
+/** How long ago, short enough for a list row. */
+function whenAgo(at) {
+  const days = Math.floor((Date.now() - at) / 86400000)
+  if (days < 1) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 7) return `${days}d ago`
+  return `${Math.round(days / 7)}w ago`
+}
 
 /**
  * Bosses stand somewhere. Tying each one to a real place turns the ladder into
@@ -137,9 +151,9 @@ function Framed({ children, className = '', pad = 10 }) {
  * the reference is, with every town named, the landmarks in place, and a
  * pennant on every boss you have not put down yet.
  */
-function BigMap({ onClose, markers, onPick, revealed, fine, footer }) {
+function BigMap({ markers, onPick, revealed, fine, footer }) {
   return (
-    <Modal open onClose={onClose} title="SYDNEY" accent="var(--color-gold)" wide>
+    <>
       <Framed pad={6}>
         <MapViewport
           w={BIG}
@@ -259,7 +273,97 @@ function BigMap({ onClose, markers, onPick, revealed, fine, footer }) {
         pennant for what is waiting there.
       </div>
       {footer}
-    </Modal>
+    </>
+  )
+}
+
+/** The walks themselves, on a street map rather than on the drawn one. */
+function RouteView({ routes }) {
+  const [pickedId, setPickedId] = useState('all')
+  const shown = pickedId === 'all' ? routes : routes.filter((r) => r.id === pickedId)
+  const totalKm = routes.reduce((n, r) => n + r.km, 0)
+
+  if (!routes.length) {
+    return (
+      <div className="py-10 text-center">
+        <div className="font-pixel text-[9px] text-ink-faint">NOTHING WALKED YET</div>
+        <p className="text-[11px] text-ink-dim mt-3 leading-relaxed px-2">
+          Track a walk, a run or a ride from TRAIN with location on, and the line you made lands here on a real map.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <RouteMap routes={shown.map((r) => ({ id: r.id, points: r.points, colour: r.colour }))} height={300} className="border border-line" />
+
+      <div className="flex items-center justify-between mt-3">
+        <span className="font-pixel text-[7px] text-ink-faint">
+          {routes.length} {routes.length === 1 ? 'ROUTE' : 'ROUTES'}
+        </span>
+        <span className="font-mono text-[11px] text-lime">{totalKm.toFixed(1)} km</span>
+      </div>
+
+      <div className="mt-2 border-t border-line pt-2 space-y-1">
+        <button
+          onClick={() => setPickedId('all')}
+          className="w-full flex items-center gap-2.5 min-h-[44px] px-1 text-left active:brightness-125"
+          aria-pressed={pickedId === 'all'}
+        >
+          <span
+            className="w-2.5 h-2.5 shrink-0 border"
+            style={{ borderColor: 'var(--color-line-hot)', background: pickedId === 'all' ? 'var(--color-neon)' : 'transparent' }}
+          />
+          <span className="font-pixel text-[7px] text-ink-dim">EVERYTHING</span>
+        </button>
+        {routes.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => setPickedId(r.id)}
+            className="w-full flex items-center gap-2.5 min-h-[44px] px-1 text-left active:brightness-125"
+            aria-pressed={pickedId === r.id}
+          >
+            <span
+              className="w-2.5 h-2.5 shrink-0 border"
+              style={{ borderColor: r.colour, background: pickedId === r.id ? r.colour : 'transparent' }}
+            />
+            <span className="font-pixel text-[7px] text-ink-dim w-[62px] shrink-0">{r.label}</span>
+            <span className="font-mono text-[11px] text-ink">{r.km.toFixed(2)} km</span>
+            <span className="font-mono text-[10px] text-ink-faint ml-auto">{r.when}</span>
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
+/** Which of the two maps is on screen. */
+function ViewSwitch({ value, onChange }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 mb-3">
+      {[
+        ['routes', 'YOUR ROUTES'],
+        ['world', 'THE WORLD'],
+      ].map(([id, label]) => {
+        const on = value === id
+        return (
+          <button
+            key={id}
+            onClick={() => onChange(id)}
+            aria-pressed={on}
+            className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+            style={{
+              color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
+              background: on ? 'var(--color-gold)' : 'transparent',
+              borderColor: on ? 'var(--color-gold)' : 'var(--color-line)',
+            }}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -296,10 +400,33 @@ export default function MapSheet({ onClose }) {
 
   const shown = picked ?? markers.find((m) => m.current) ?? markers[0]
 
+  // Every distance session that came back with a trace, newest first.
+  const routes = useMemo(
+    () =>
+      (state.log ?? [])
+        .filter((l) => l.detail?.route?.length > 1)
+        .slice(0, 12)
+        .map((l, i) => ({
+          id: l.id,
+          points: l.detail.route,
+          km: (l.detail.metres ?? 0) / 1000,
+          label: (ACTIVITIES.find((a) => a.id === l.activityId)?.name ?? 'SESSION').toUpperCase(),
+          when: whenAgo(l.at),
+          colour: ROUTE_COLOURS[i % ROUTE_COLOURS.length],
+        })),
+    [state.log],
+  )
+
+  const [view, setView] = useState(routes.length ? 'routes' : 'world')
+
   return (
     <>
-      <BigMap
-        onClose={onClose}
+      <Modal open onClose={onClose} title={view === 'world' ? 'SYDNEY' : 'WHERE YOU WENT'} accent="var(--color-gold)" wide>
+        <ViewSwitch value={view} onChange={setView} />
+        {view === 'routes' ? (
+          <RouteView routes={routes} />
+        ) : (
+          <BigMap
         revealed={coarse}
         fine={revealed}
         markers={markers}
@@ -345,7 +472,9 @@ export default function MapSheet({ onClose }) {
             )}
           </>
         }
-      />
+          />
+        )}
+      </Modal>
       {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
     </>
   )

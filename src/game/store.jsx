@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, gearPiece } from './data'
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
-import { INTERVAL, MIN_SESSION_S, SPLIT_M, elapsedMs, modeOf, sessionAmount, setTotals } from './session'
+import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
 
@@ -146,15 +146,21 @@ function sessionDetail(s, ms) {
   const mode = modeOf(s.activityId)
   if (mode === 'strength') {
     const t = setTotals(s.sets)
-    return t.sets ? { mode, ...t } : null
+    return t.sets ? { mode, ...t, lifts: byLift(s.sets) } : null
   }
   if (mode === 'interval') {
     const cycle = Math.max(1, (s.work ?? INTERVAL.work) + (s.rest ?? INTERVAL.rest))
     const rounds = Math.floor(ms / 1000 / cycle)
     return rounds ? { mode, rounds, work: s.work ?? INTERVAL.work, rest: s.rest ?? INTERVAL.rest } : null
   }
-  if (mode === 'distance' && s.splits?.length) {
-    return { mode, splits: s.splits.map((sp) => sp.ms), metres: Math.round(s.metres) }
+  if (mode === 'distance' && (s.splits?.length || s.points?.length > 1)) {
+    return {
+      mode,
+      splits: (s.splits ?? []).map((sp) => sp.ms),
+      metres: Math.round(s.metres),
+      // Kept so the walk can be looked at again later, not just counted once.
+      route: simplifyRoute(s.points),
+    }
   }
   return null
 }
@@ -174,6 +180,10 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
   // Lifetime counters feed the stones
   const lifetime = { ...player.lifetime }
   if (act.id === 'lift') lifetime.volume += amount
+  // A tracked gym session now knows what was actually moved, so the stone that
+  // counts lifted kilos can finally be fed by the tracker rather than only by
+  // the old manual entry.
+  if (detail?.mode === 'strength' && detail.volume) lifetime.volume += Math.round(detail.volume)
   if (act.id === 'run' || act.id === 'ride') lifetime.distance += amount
   if (verified) lifetime.sessions += 1
   lifetime.bossKm = Math.round((lifetime.bossKm + result.bossDamage) * 10) / 10
@@ -361,17 +371,19 @@ function reducer(state, action) {
       if (!state.session?.paused) return state
       return { ...state, session: { ...state.session, paused: false, startedAt: Date.now() } }
 
-    // A set of whatever is in front of you. There is no weight field on
-    // purpose: reps are what the app can ask for without becoming a spreadsheet,
-    // and the XP still comes off the clock, so nothing here can be inflated.
+    // A set: which lift, how many reps, how heavy. None of it earns XP — that
+    // still comes off the clock, so a typed number cannot be turned into a
+    // level. It is a training record, and it is worth keeping for that alone.
     case 'sessionSet': {
       if (!state.session) return state
       const reps = Math.max(1, Math.min(500, Math.round(action.reps)))
+      const weight = Math.max(0, Math.min(1000, Math.round((action.weight ?? 0) * 2) / 2))
       return {
         ...state,
         session: {
           ...state.session,
-          sets: [...(state.session.sets ?? []), { reps, at: elapsedMs(state.session) }],
+          lift: action.lift ?? state.session.lift,
+          sets: [...(state.session.sets ?? []), { lift: action.lift ?? 'Other', reps, weight, at: elapsedMs(state.session) }],
         },
       }
     }
@@ -407,7 +419,12 @@ function reducer(state, action) {
           ...state.session,
           metres,
           splits: grown,
-          points: [...state.session.points, action.point].slice(-4000),
+          // Only fixes that were accepted go on the trace. A glitch that is
+          // not counted as distance must not be drawn as a line across the
+          // city, or lift the fog off ground nobody walked.
+          points: action.keep || !state.session.points.length
+            ? [...state.session.points, action.point].slice(-4000)
+            : state.session.points,
         },
       }
     }
@@ -690,8 +707,8 @@ export function GameProvider({ children }) {
       startSession: (activityId) => dispatch({ type: 'startSession', activityId }),
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
-      sessionFix: (point, metres) => dispatch({ type: 'sessionFix', point, metres }),
-      sessionSet: (reps) => dispatch({ type: 'sessionSet', reps }),
+      sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),
+      sessionSet: (lift, reps, weight) => dispatch({ type: 'sessionSet', lift, reps, weight }),
       sessionUndoSet: () => dispatch({ type: 'sessionUndoSet' }),
       sessionInterval: (work, rest) => dispatch({ type: 'sessionInterval', work, rest }),
       finishSession: () => dispatch({ type: 'finishSession' }),

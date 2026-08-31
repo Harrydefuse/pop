@@ -379,6 +379,55 @@ button:disabled {
   );
 }
 
+/* Leaflet arrives with its own look. These pull its chrome onto the app's
+   palette so a real street map does not sit inside the game wearing a
+   different set of clothes — and give the ground a drawn grid for when the
+   tiles cannot be reached at all. */
+.route-ground {
+  background-color: var(--color-panel-2);
+  background-image:
+    linear-gradient(var(--color-line-hot) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line-hot) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+.route-map.leaflet-container {
+  background: transparent;
+  font-family: var(--font-mono);
+}
+.route-map .leaflet-control-attribution {
+  background: var(--color-panel);
+  color: var(--color-ink-faint);
+  font-size: 9px;
+  border: 1px solid var(--color-line);
+  border-right: 0;
+  border-bottom: 0;
+}
+.route-map .leaflet-control-attribution a {
+  color: var(--color-ink-dim);
+}
+.route-map .leaflet-bar a {
+  background: var(--color-panel);
+  color: var(--color-ink);
+  border-bottom-color: var(--color-line);
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+}
+.route-map .leaflet-bar a:hover {
+  background: var(--color-panel-2);
+  color: var(--color-ink);
+}
+.route-map .leaflet-bar {
+  border-color: var(--color-line-hot);
+  border-radius: 0;
+}
+.route-map .leaflet-bar a:first-child,
+.route-map .leaflet-bar a:last-child {
+  border-radius: 0;
+}
+
 @keyframes xp-shine {
   from {
     transform: translateX(-100%);
