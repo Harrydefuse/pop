@@ -9,7 +9,7 @@ import { heroBust } from '../game/sprites'
  * is the whole point of the thing.
  */
 export default function Avatar({ av = {}, size = 34, ring, className = '' }) {
-  const sprite = heroBust(av.skin, av.hair, av.shirt, av.hairLength, av.body)
+  const sprite = heroBust(av.skin, av.hair, av.shirt, av.body)
   return (
     <div
       className={`grid place-items-center shrink-0 border bg-panel-2 overflow-hidden ${className}`}

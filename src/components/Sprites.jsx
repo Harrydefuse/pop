@@ -43,7 +43,7 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
 export function HeroView({ av = {}, equipped = {}, height = 150, className = '' }) {
   // Aspect comes off the sprite rather than a constant, so dropping in art at a
   // different resolution does not need every call site changed.
-  const body = heroSprite(av.skin, av.hair, av.shirt, av.hairLength, av.body)
+  const body = heroSprite(av.skin, av.hair, av.shirt, av.body)
   const clothes = heroClothes(av.body)
   const wears = WEARS_ARMOUR[av.body ?? 'male']
   const armoured = wears ? equipped : {}

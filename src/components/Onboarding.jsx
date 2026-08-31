@@ -164,10 +164,9 @@ export default function Onboarding({ onContinue }) {
   const [handle, setHandle] = useState(has ? state.player.handle : '')
   const [skin, setSkin] = useState(av.skin ?? AVATAR_SKINS[0])
   const [hair, setHair] = useState(av.hair ?? AVATAR_HAIR[0])
-  const [hairLength, setHairLength] = useState(av.hairLength ?? 'short')
   const [body, setBody] = useState(av.body ?? 'male')
 
-  const preview = { body, skin, hair, hairLength, shirt: TUNIC }
+  const preview = { body, skin, hair, shirt: TUNIC }
 
   // The title card is its own screen, not a step in a form: full bleed art, the
   // mark, and a short menu. Every open of the app lands here first.
@@ -249,21 +248,6 @@ export default function Onboarding({ onContinue }) {
               className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-mono text-[12px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
-            {/* Hair length is the male build's choice. The female build wears
-                her own hair, so offering a toggle that does nothing would just
-                be a control that lies. */}
-            {body === 'male' && (
-              <Pick
-                label="HAIR"
-                value={hairLength}
-                onChange={setHairLength}
-                options={[
-                  { id: 'short', label: 'SHORT' },
-                  { id: 'long', label: 'LONG' },
-                ]}
-              />
-            )}
-
             <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">SKIN</div>
             <div className="flex gap-2 flex-wrap">
               {AVATAR_SKINS.map((c) => (
@@ -289,7 +273,7 @@ export default function Onboarding({ onContinue }) {
                     name: (name.trim() || 'ROOKIE').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
                     classId: DEFAULT_CLASS,
-                    avatar: { seed: 0, body, skin, hair, hairLength, shirt: TUNIC },
+                    avatar: { seed: 0, body, skin, hair, shirt: TUNIC },
                     games: [],
                     health: [],
                   })

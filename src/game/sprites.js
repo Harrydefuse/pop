@@ -1538,71 +1538,6 @@ export const GEAR_OVERLAYS = {
   founderChest: worn({ 28: '.......llAAAAAAAAAAAAAAAll......', 29: '......lllssssssssssssssslll.....', 30: '......dmmAmmmmmmmmmmmmmAmmmd....', 31: '....dmmm.AmmmmmmmmmmmmmAmmmd....', 32: '...dmm...AAmmmmmmmmmmmAA..mmd...', 33: '...dm....AmAmmmmmmmmmAmA...md...', 34: '...d.....AmmAmmmmmmmAmmA....d...', 35: '.........AmmmAmmssmAmmmA........', 36: '.........AmmmmAmssAmmmmA........', 37: '.........AmmmmmAssmmmmmA........', 38: '.........AAmmmmmAmmmmmAA........', 39: '.........AmAmmmmmmmmmAmA........', 40: '.........AmmAmmmmmmmAmmA........', 41: '.........AmmmAmmmmmAmmmA........', 42: '.........sssssssssssssss........', 43: '.........AAAAAAAAAAAAAAA........', 44: '.........sssssssssssssss........' }),
 }
 
-/**
- * The long-hair build is derived from the short one rather than drawn twice, so
- * the face, body and gear alignment can never drift between the two.
- */
-const HERO_LONG = [
-  '..........oooooooo..............',
-  '..........ohhhhjjJoo.ooo........',
-  '..........ohhhhjhJoo.ooo........',
-  '..oooooooooooHjhjhhHoojjo.......',
-  '...ohhhhhhhhhhhhhhhhhojjooooo...',
-  '...oooHhhhhhhhhhhhjhhjHHHhhoo...',
-  '....oohhjhhhhhhhhhJjhjHHohjJooo.',
-  '...oojhjHhhjjhhJJHHJjjjjJhhjjjjo',
-  '.oohhhjHhhhjjhhjJJhjhhhhhjhhooo.',
-  'oJhhhjHJhhhjjhjHHhhjhhhjhhjJooo.',
-  '.oooooJhhhhhhhHJJhhhjhHhhjhhjoo.',
-  '...oHHhhHjjjhjHhhhhhhHohhhhjhoo.',
-  '..oJHhhHHjjjjHohhjjhJoohhhhHJJJo',
-  '..oJJJHHHHjjHoohhjHHodojjHjHoHHo',
-  '..oJJHHHHHJHodoJJHHoSdooHHHHHooo',
-  '.oHHHoHHooooSSoHHooSSSSSoHHoHoo.',
-  'ooJHHoHHSossSSSHHoSSSSSSSHHoHoo.',
-  'ooHhhoHoSSssssSoodSssssSSoHhhHo.',
-  '.oHhhoHoSssoossSSsssoosssoHhhHo.',
-  '.oHhhsoosssoosssssssoosssoohhHo.',
-  '.oHhhSdhsssoosssssssoosssddhhHo.',
-  '.oHhhSdhsssoosssssssoosssddhhHo.',
-  '.oHhhodoSsssssssssssssssSoohhHo.',
-  '.oHhhoooSsssssssssssssssSoohhHo.',
-  '.oHhho.oodsssssssssssSdoooohhHo.',
-  '.oHhho...oodsssssssssdoo..ohhHo.',
-  '.oHhho..ooooooDDDDDoooooo.ohhHo.',
-  '.oHhho..ooooooDDDDDoooooo.ohhHo.',
-  '..ohho.oBAbbodddddddobbbboohho..',
-  '..ohhoobaaaaAoSsssoAAaaaaAohho..',
-  '...oo.oaaaaaaAosSoAAaaaaaaboo...',
-  '....ooAaabaaaaADDoaaaaAbaabo....',
-  '...ooBaaABaaaaAAoAaaaaBAAaabo...',
-  '...oAAaaboaaaaaaBAaaaaabbaaAo...',
-  '...oooBABoaaaaaaaaaaaaoBbAooo...',
-  '....oodABoaaaaaaaaaaaaooBAdo....',
-  '....oodoooAAaaaaaaaaaAoooodo....',
-  '...oSSSSoBAAAaaaaaaaAABooSSSo...',
-  '...osssdooBBbbAAAAAbbBBooSsso...',
-  '...osssoooootBAAAAAbbTToossso...',
-  '..oSsssooUuttoooooooooTooossSoo.',
-  '..ossssoooooobAAAAAAAABbooSssoo.',
-  '..ossssoouottoaAAAAAaAbbossssoo.',
-  '..ossDsooooDbooaaaaaAoooossDsoo.',
-  '..oddSooooTooooTooooooTToooSdoo.',
-  '...ooo..oTuooUUUUUTTuuUUo.ooo...',
-  '........oUtutuToooTttttuo.......',
-  '........outtttToooTttttto.......',
-  '.......oTttttuToooTtttuuoo......',
-  '.......oUttutuTo.oTtttuTTo......',
-  '.......oUtUUuTTo.oTTtuuUTo......',
-  '........ottoTUoo.ooTTUooTo......',
-  '........ooddoUoo.ooTTodoo.......',
-  '.........oSSSo....oooSdoo.......',
-  '.........osSSo.....oSSdoo.......',
-  '........osssSdo...odSssso.......',
-  '.......osssssdo...odssssso......',
-  '......oSSdssSo.....odsdSSSo.....',
-  '......ooooooo.......ooooooo.....',
-]
 
 const HERO_BASE = [
   '..........oooooooo..............',
@@ -1666,67 +1601,6 @@ const HERO_BASE = [
   '......ooooooo.......ooooooo.....',
 ]
 
-const HERO_BASE_LONG = [
-  '..........oooooooo..............',
-  '..........ohhhhjjJoo.ooo........',
-  '..........ohhhhjhJoo.ooo........',
-  '..oooooooooooHjhjhhHoojjo.......',
-  '...ohhhhhhhhhhhhhhhhhojjooooo...',
-  '...oooHhhhhhhhhhhhjhhjHHHhhoo...',
-  '....oohhjhhhhhhhhhJjhjHHohjJooo.',
-  '...oojhjHhhjjhhJJHHJjjjjJhhjjjjo',
-  '.oohhhjHhhhjjhhjJJhjhhhhhjhhooo.',
-  'oJhhhjHJhhhjjhjHHhhjhhhjhhjJooo.',
-  '.oooooJhhhhhhhHJJhhhjhHhhjhhjoo.',
-  '...oHHhhHjjjhjHhhhhhhHohhhhjhoo.',
-  '..oJHhhHHjjjjHohhjjhJoohhhhHJJJo',
-  '..oJJJHHHHjjHoohhjHHodojjHjHoHHo',
-  '..oJJHHHHHJHodoJJHHoSdooHHHHHooo',
-  '.oHHHoHHooooSSoHHooSSSSSoHHoHoo.',
-  'ooJHHoHHSoSsSSSHHoSSSSSSSHHoHoo.',
-  'ooHhhoHoSSssssSoodSssssSSoHhhHo.',
-  '.oHhhoHoSsSooSsSSssSooSsSoHhhHo.',
-  '.oHhhSooSsSooSsssssSooSsSoohhHo.',
-  '.oHhhSdhssSooSsssssSooSssddhhHo.',
-  '.oHhhSdhssSooSsssssSooSssddhhHo.',
-  '.oHhhodoSsssssssssssssssSoohhHo.',
-  '.oHhhoooSsssssssssssssssSoohhHo.',
-  '.oHhho.oodsssssssssssSdoooohhHo.',
-  '.oHhho...oodsssssssssdoo..ohhHo.',
-  '.oHhho..ooooooDDDDDoooooo.ohhHo.',
-  '.oHhho..oSsSooDDDDDooSsSo.ohhHo.',
-  '..ohho.oSssssdddddddssssSoohho..',
-  '..ohhooSssssssSssssssssssSohho..',
-  '...oo.oSssssssssSsssssssssSoo...',
-  '....ooSssssssssDDsssssssssSo....',
-  '...oSssssssssssssssssssssssSo...',
-  '...oSssssssssssssssssssssssSo...',
-  '...oSssssssssssssssssssssssSo...',
-  '....oodsssssssssssssssssssdo....',
-  '....oodsssssssssssssssSoSsdo....',
-  '...oSSSSsssssssssssssssSoSSSo...',
-  '...oSssdoSsssssssssssssSoSsSo...',
-  '...oSsSooSsssssssssssssSoSsSo...',
-  '..oSssSoSssssssssssssssSooSsSoo.',
-  '..oSssSooSssssssssssssssSoSsSoo.',
-  '..oSssSoSsssssssssssssssssssSoo.',
-  '..oSsDSooSsDsssssssssssSoSsDSoo.',
-  '..oddSoooSssssssssssssssSooSdoo.',
-  '...ooo..oSsssssssssssssSo.ooo...',
-  '........oSsssssssssssssSo.......',
-  '........oSsssssSoSsssssSo.......',
-  '.......oSssssssSoSssssssSo......',
-  '.......oSsssssSo.oSsssssSo......',
-  '.......oSsssssSo.oSsssssSo......',
-  '........oSssssSo.oSsssssSo......',
-  '........oSddsSoo.oSsssdoo.......',
-  '.........oSSSo....oSsSdoo.......',
-  '.........oSSSo.....oSSdoo.......',
-  '........oSssSdo...odSssSo.......',
-  '.......oSssssdo...odssssSo......',
-  '......oSSdssSo.....odsdSSSo.....',
-  '......ooooooo.......ooooooo.....',
-]
 
 /**
  * Clothes are a layer, not part of the body. Each one is only drawn when that
@@ -2259,17 +2133,11 @@ export const TITLE_SWORD = {
   ],
 }
 
-/** Which grids a build uses, bare and dressed. */
+/** Which grids a build uses, bare and dressed. Each build wears its own hair,
+ *  so there is no length to key on and nothing else in here. */
 const HERO_BODIES = {
-  male: {
-    bare: { short: () => HERO_BASE, long: () => HERO_BASE_LONG },
-    clothed: { short: () => HERO_GRID, long: () => HERO_LONG },
-  },
-  // She wears her own hair, so both lengths resolve to the same grids.
-  female: {
-    bare: { short: () => HERO_BASE_F, long: () => HERO_BASE_F },
-    clothed: { short: () => HERO_F, long: () => HERO_F },
-  },
+  male: { bare: () => HERO_BASE, clothed: () => HERO_GRID },
+  female: { bare: () => HERO_BASE_F, clothed: () => HERO_F },
 }
 
 export const AVATAR_BODIES = [
@@ -2277,21 +2145,20 @@ export const AVATAR_BODIES = [
   { id: 'female', label: 'FEMALE' },
 ]
 
-const gridFor = (body, dress, hairLength) =>
-  (HERO_BODIES[body] ?? HERO_BODIES.male)[dress][hairLength === 'long' ? 'long' : 'short']()
+const gridFor = (body, dress) => (HERO_BODIES[body] ?? HERO_BODIES.male)[dress]()
 
 /**
  * The bare body. Armour is drawn onto this rather than over a clothed sprite,
  * which is what stops garments showing through at the edges.
  */
-export function heroSprite(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short', body = 'male') {
-  const grid = gridFor(body, 'bare', hairLength)
+export function heroSprite(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, body = 'male') {
+  const grid = gridFor(body, 'bare')
   return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
 }
 
 /** The fully dressed build, for anywhere that wants the character as drawn. */
-export function heroClothed(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, hairLength = 'short', body = 'male') {
-  const grid = gridFor(body, 'clothed', hairLength)
+export function heroClothed(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, body = 'male') {
+  const grid = gridFor(body, 'clothed')
   return { w: grid[0].length, h: grid.length, palette: heroPalette(skin, hair, shirt), grid }
 }
 
@@ -2309,8 +2176,8 @@ const BUST_ROWS = 31
  * the loadout screen shows full length, so a purple-haired woman in the
  * character sheet is a purple-haired woman in the corner of the header.
  */
-export function heroBust(skin, hair, shirt, hairLength = 'short', body = 'male') {
-  const full = heroClothed(skin, hair, shirt, hairLength, body)
+export function heroBust(skin, hair, shirt, body = 'male') {
+  const full = heroClothed(skin, hair, shirt, body)
   return { w: full.w, h: BUST_ROWS, palette: full.palette, grid: full.grid.slice(0, BUST_ROWS) }
 }
 

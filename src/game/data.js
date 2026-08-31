@@ -155,7 +155,6 @@ function makeFriend(i, power, extra = {}) {
       body: i % 3 === 1 ? 'female' : 'male',
       skin: AVATAR_SKINS[i % AVATAR_SKINS.length],
       hair: AVATAR_HAIR[i % AVATAR_HAIR.length],
-      hairLength: i % 2 ? 'long' : 'short',
     },
     status: ['training', 'in-game', 'offline', 'in-game', 'training'][i % 5],
     game: ['Valorant', 'CS2', 'Fortnite', 'League', 'Overwatch 2'][i % 5],
@@ -414,7 +413,7 @@ export const INITIAL_STATE = {
     shields: 1,
     cores: 1840,
     stats: { STR: 9200, END: 12400, AGI: 7600, VIT: 10100, FOCUS: 5400 },
-    avatar: { seed: 0, body: 'male', skin: SKIN_BASE, hair: HAIR_BASE, hairLength: 'short', shirt: TUNIC },
+    avatar: { seed: 0, body: 'male', skin: SKIN_BASE, hair: HAIR_BASE, shirt: TUNIC },
     games: [],
     equipped: { helm: 'i1', chest: 'i2', legs: 'i3', gloves: 'i4', boots: 'i5', offhand: 'i6' },
     // A mixed kit, the way a real run looks part-way through: mostly iron, one
