@@ -283,28 +283,35 @@ function RouteView({ routes }) {
   const shown = pickedId === 'all' ? routes : routes.filter((r) => r.id === pickedId)
   const totalKm = routes.reduce((n, r) => n + r.km, 0)
 
-  if (!routes.length) {
-    return (
-      <div className="py-10 text-center">
-        <div className="font-pixel text-[9px] text-ink-faint">NOTHING WALKED YET</div>
-        <p className="text-[11px] text-ink-dim mt-3 leading-relaxed px-2">
-          Track a walk, a run or a ride from TRAIN with location on, and the line you made lands here on a real map.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <>
-      <RouteMap routes={shown.map((r) => ({ id: r.id, points: r.points, colour: r.colour }))} height={300} className="border border-line" />
+      {/* The map is here whether or not there is a line on it yet — an empty
+          street map you can pan is a map; a paragraph explaining that you have
+          not walked anywhere is not. */}
+      <RouteMap
+        routes={shown.map((r) => ({ id: r.id, points: r.points, colour: r.colour }))}
+        height={300}
+        locate={!routes.length}
+        className="border border-line"
+      />
 
-      <div className="flex items-center justify-between mt-3">
-        <span className="font-pixel text-[7px] text-ink-faint">
-          {routes.length} {routes.length === 1 ? 'ROUTE' : 'ROUTES'}
-        </span>
-        <span className="font-mono text-[11px] text-lime">{totalKm.toFixed(1)} km</span>
-      </div>
+      {!routes.length && (
+        <p className="text-[11px] text-ink-dim mt-3 leading-relaxed">
+          Nothing walked yet. Track a walk, a run or a ride from TRAIN with location switched on, and the line you make
+          lands here.
+        </p>
+      )}
 
+      {routes.length > 0 && (
+        <div className="flex items-center justify-between mt-3">
+          <span className="font-pixel text-[7px] text-ink-faint">
+            {routes.length} {routes.length === 1 ? 'ROUTE' : 'ROUTES'}
+          </span>
+          <span className="font-mono text-[11px] text-lime">{totalKm.toFixed(1)} km</span>
+        </div>
+      )}
+
+      {routes.length > 0 && (
       <div className="mt-2 border-t border-line pt-2 space-y-1">
         <button
           onClick={() => setPickedId('all')}
@@ -334,6 +341,7 @@ function RouteView({ routes }) {
           </button>
         ))}
       </div>
+      )}
     </>
   )
 }
@@ -417,7 +425,9 @@ export default function MapSheet({ onClose }) {
     [state.log],
   )
 
-  const [view, setView] = useState(routes.length ? 'routes' : 'world')
+  // Opens on the street map. The drawn Sydney is the game's board and it is one
+  // tap away, but "where did I walk" is the question the button gets asked.
+  const [view, setView] = useState('routes')
 
   return (
     <>

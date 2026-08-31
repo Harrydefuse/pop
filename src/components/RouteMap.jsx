@@ -25,7 +25,7 @@ const ATTRIB = '© OpenStreetMap'
 /** Long enough for a slow connection, short enough not to feel broken. */
 const TILE_GRACE_MS = 5000
 
-export default function RouteMap({ routes = [], height = 300, className = '' }) {
+export default function RouteMap({ routes = [], height = 300, locate = false, className = '' }) {
   const host = useRef(null)
   const map = useRef(null)
   const layer = useRef(null)
@@ -68,6 +68,21 @@ export default function RouteMap({ routes = [], height = 300, className = '' }) 
       layer.current = null
     }
   }, [])
+
+  // With nothing recorded yet the map would open on a default city nobody
+  // chose. One position fix puts it where the person holding the phone is.
+  useEffect(() => {
+    if (!locate || routes.length || !navigator.geolocation) return
+    let live = true
+    navigator.geolocation.getCurrentPosition(
+      (pos) => live && map.current?.setView([pos.coords.latitude, pos.coords.longitude], 15),
+      () => {},
+      { maximumAge: 60000, timeout: 8000 },
+    )
+    return () => {
+      live = false
+    }
+  }, [locate, routes.length])
 
   // Redraw the lines whenever the set of routes changes.
   useEffect(() => {
@@ -113,8 +128,12 @@ export default function RouteMap({ routes = [], height = 300, className = '' }) 
       <div ref={host} className="absolute inset-0 route-map" />
       {tiles === 'blocked' && (
         <div className="absolute left-2 top-2 right-14 pointer-events-none">
-          <div className="font-mono text-[10px] text-ink-faint bg-panel/90 border border-line px-2 py-1 leading-snug">
-            No street tiles on this connection. The line is still yours.
+          <div className="bg-panel/95 border border-line px-2 py-1.5 leading-snug">
+            <div className="font-pixel text-[6px] text-ink-dim">NO STREET TILES HERE</div>
+            <div className="font-mono text-[10px] text-ink-faint mt-1">
+              Streets come from OpenStreetMap over the internet, and this page cannot reach it. Open the app from a
+              normal URL and they appear under your line.
+            </div>
           </div>
         </div>
       )}

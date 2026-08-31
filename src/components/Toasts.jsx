@@ -60,7 +60,7 @@ export default function Toasts() {
   const { state, dismissToast } = useGame()
   const shown = state.toasts.slice(-3)
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[76px] z-40 flex flex-col gap-1.5 px-2.5">
+    <div className="pointer-events-none absolute inset-x-0 top-[96px] z-40 flex flex-col gap-1.5 px-2.5">
       {shown.map((t) => (
         <Toast key={t.id} t={t} onDone={() => dismissToast(t.id)} />
       ))}

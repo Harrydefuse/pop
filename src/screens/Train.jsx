@@ -72,6 +72,13 @@ function useTrace(session, onFix) {
       setStatus('unavailable')
       return
     }
+    // Browsers refuse location outright on an insecure page, and the refusal
+    // looks identical to a denied permission from in here. Saying which it is
+    // is the difference between "grant it" and "you cannot from this URL".
+    if (window.isSecureContext === false) {
+      setStatus('insecure')
+      return
+    }
     setStatus('waiting')
     const id = navigator.geolocation.watchPosition(
       (pos) => {
@@ -94,8 +101,9 @@ function useTrace(session, onFix) {
 const GPS_NOTE = {
   on: 'Following your route',
   waiting: 'Looking for a signal',
-  denied: 'No location — counting by time',
-  unavailable: 'No location on this device — counting by time',
+  denied: 'Location is off — allow it to draw the route. The clock still counts.',
+  unavailable: 'This browser will not share location — counting by time.',
+  insecure: 'Location needs a secure page (https) — counting by time.',
   off: null,
 }
 

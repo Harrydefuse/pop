@@ -16,8 +16,17 @@ import { alpha } from '../game/color'
  * level in the corner, a marker if it is currently worn. Small enough that a
  * full collection fits on one screen instead of a long scrolling list.
  */
-function Tile({ rarity, level, equipped, label, onClick, children }) {
+function Tile({ rarity, level, equipped, weapon, label, onClick, children }) {
   const color = RARITY[rarity].color
+  // A blade and a breastplate were the same tile in the same colours, and the
+  // weapon art is thin where the armour art is a solid block — so the weapons
+  // were the ones that disappeared. They get their own light: rarity still owns
+  // the border and the ground, steel owns the ring around it.
+  const ring = weapon
+    ? `0 0 0 2px ${WEAPON_GLOW}, 0 0 16px -3px ${WEAPON_GLOW}${equipped ? `, 0 0 0 4px ${color}` : ''}`
+    : equipped
+      ? `0 0 0 2px ${color}, 0 0 14px -4px ${color}`
+      : undefined
   return (
     <button
       onClick={onClick}
@@ -26,7 +35,7 @@ function Tile({ rarity, level, equipped, label, onClick, children }) {
       style={{
         borderColor: color,
         background: alpha(color, equipped ? 40 : 22),
-        boxShadow: equipped ? `0 0 0 2px ${color}, 0 0 14px -4px ${color}` : undefined,
+        boxShadow: ring,
       }}
     >
       {children}
@@ -168,6 +177,7 @@ function PetSheet({ pet, onClose }) {
 
 const FILTERS = [
   { id: 'all', label: 'YOURS' },
+  { id: 'upgrade', label: 'UPGRADE' },
   { id: 'pets', label: 'PETS' },
   { id: 'armoury', label: 'ARMOURY' },
   { id: 'weapons', label: 'WEAPONS' },
@@ -186,6 +196,12 @@ const FILTERS = [
 const ARMOUR_KINDS = ['helm', 'chest', 'legs', 'gloves', 'boots', 'shield']
 const WEAPON_KINDS = ['sword', 'axe', 'dagger', 'spear', 'bow', 'staff']
 
+/** Weapons carry a light of their own, in a hue no rarity uses. The glow is
+ *  for the ring around a tile; the deeper twin is the one that carries words. */
+const WEAPON_GLOW = 'var(--color-cyan-glow)'
+const WEAPON_INK = 'var(--color-cyan)'
+const isWeapon = (item) => WEAPON_KINDS.includes(item.kind)
+
 function kindName(kind) {
   return (
     OFFHAND_KINDS.find((k) => k.id === kind)?.name ??
@@ -194,7 +210,7 @@ function kindName(kind) {
   )
 }
 
-function Collection({ kinds, owned, onPick }) {
+function Collection({ kinds, owned, onPick, weapons }) {
   const have = useMemo(() => new Set(owned.map((i) => `${i.set}:${i.kind}`)), [owned])
   return (
     <>
@@ -221,13 +237,15 @@ function Collection({ kinds, owned, onPick }) {
                     className="relative grid place-items-center aspect-square border transition-transform active:scale-95"
                     style={{
                       borderColor: mine ? color : 'var(--color-line)',
-                      background: mine ? alpha(color, 20) : 'transparent',
+                      background: mine ? alpha(color, 20) : 'var(--color-panel-2)',
+                      boxShadow: mine && weapons ? `0 0 0 2px ${WEAPON_GLOW}, 0 0 14px -4px ${WEAPON_GLOW}` : undefined,
                     }}
                   >
                     {/* Dimmed, not hidden — the point is seeing what is out
-                        there — and the padlock sits in the corner rather than
-                        over the top, so it says why without covering it. */}
-                    <span style={mine ? undefined : { filter: 'grayscale(1) brightness(1.1)', opacity: 0.55 }}>
+                        there. Darkened rather than faded, too: a locked piece
+                        used to be a pale ghost of grey metal on a pale ground,
+                        which is a way of showing something by hiding it. */}
+                    <span style={mine ? undefined : { filter: 'grayscale(1) brightness(0.45) contrast(1.3)', opacity: 0.7 }}>
                       <GearIcon slot={g.slot} kind={g.kind} set={g.set} size={26} />
                     </span>
                     {!mine && (
@@ -242,6 +260,88 @@ function Collection({ kinds, owned, onPick }) {
           </div>
         )
       })}
+    </>
+  )
+}
+
+/**
+ * The bench. Everything you own, what the next level costs, and whether you
+ * can pay for it.
+ *
+ * Upgrading was buried one tap inside each item's sheet, which meant the only
+ * way to find out what your cores were for was to open nine things one at a
+ * time. Cheapest first, because that is the order anyone actually spends in.
+ */
+function Bench({ items, cores, worn, onUpgrade, onOpen }) {
+  const rows = useMemo(
+    () => [...items].map((i) => ({ item: i, cost: upgradeCost(i) })).sort((a, b) => a.cost - b.cost),
+    [items],
+  )
+  const affordable = rows.filter((r) => r.cost <= cores).length
+
+  if (!rows.length) {
+    return <div className="text-[11px] text-ink-faint text-center py-6">Nothing to upgrade yet. Open a chest.</div>
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-pixel text-[7px] text-ink-faint">THE BENCH</span>
+        <span className="flex items-center gap-1.5">
+          <Icon name="core" size={11} color="var(--color-gold)" />
+          <span className="font-mono text-[13px] text-gold tabular-nums">{fmt(cores)}</span>
+        </span>
+      </div>
+
+      <div className="text-[11px] text-ink-dim leading-snug mb-3">
+        Cores come out of chests and sessions. Every level on a piece is about a third more of what it already gives
+        you. {affordable > 0 ? `You can afford ${affordable} of these right now.` : 'Nothing here is in reach yet.'}
+      </div>
+
+      <div className="space-y-1.5">
+        {rows.map(({ item, cost }) => {
+          const can = cores >= cost
+          const color = RARITY[item.rarity].color
+          const equipped = worn[item.slot]?.id === item.id
+          return (
+            <div key={item.id} className="flex items-center gap-2.5 border border-line p-2">
+              <button
+                onClick={() => onOpen(item)}
+                aria-label={`Open ${item.name}`}
+                className="grid place-items-center w-11 h-11 shrink-0 border"
+                style={{
+                  borderColor: color,
+                  background: alpha(color, 18),
+                  boxShadow: isWeapon(item) ? `0 0 0 2px ${WEAPON_GLOW}` : undefined,
+                }}
+              >
+                <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={26} />
+              </button>
+
+              <div className="min-w-0 flex-1">
+                <div className="font-mono text-[12px] text-ink truncate">{item.name}</div>
+                <div className="font-mono text-[10px] text-ink-faint mt-0.5">
+                  LV {item.level} → {item.level + 1}
+                  {equipped ? ' · worn' : ''}
+                </div>
+              </div>
+
+              <button
+                onClick={() => onUpgrade(item.id, cost)}
+                disabled={!can}
+                className="font-pixel text-[7px] min-h-[44px] px-2.5 border shrink-0 disabled:opacity-40 active:brightness-125"
+                style={{
+                  color: can ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
+                  background: can ? 'var(--color-gold)' : 'transparent',
+                  borderColor: can ? 'var(--color-gold)' : 'var(--color-line)',
+                }}
+              >
+                {fmt(cost)}
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </>
   )
 }
@@ -274,7 +374,7 @@ function CodexSheet({ piece, onClose }) {
 
 export default function Hero() {
   const [saving, setSaving] = useState(false)
-  const { state, equipBest } = useGame()
+  const { state, equipBest, upgrade } = useGame()
   const p = state.player
   const cls = classById(p.classId)
   const power = powerScore(p)
@@ -298,6 +398,10 @@ export default function Hero() {
 
   const byRarity = (a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || itemScore(b) - itemScore(a)
   const gear = useMemo(() => [...p.inventory].sort(byRarity), [p.inventory])
+  // Split rather than mixed. A glow says which is which; two headings say it
+  // before you have to look.
+  const arms = useMemo(() => gear.filter(isWeapon), [gear])
+  const armour = useMemo(() => gear.filter((i) => !isWeapon(i)), [gear])
   const pets = useMemo(
     () => [...p.pets].sort((a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || b.level - a.level),
     [p.pets],
@@ -367,12 +471,12 @@ export default function Hero() {
       {saving && <SaveSheet onClose={() => setSaving(false)} />}
 
       {/* ---------------------------------------------------------- filter */}
-      <div className="grid grid-cols-4 border border-line bg-panel">
+      <div className="grid grid-cols-5 border border-line bg-panel">
         {FILTERS.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className="font-pixel text-[8px] py-2.5 min-h-[44px] border-r border-line last:border-0 transition-colors active:brightness-125"
+            className="font-pixel text-[7px] py-2.5 min-h-[44px] border-r border-line last:border-0 transition-colors active:brightness-125"
             style={{
               color: filter === f.id ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
               background: filter === f.id ? 'var(--color-neon)' : 'transparent',
@@ -385,26 +489,41 @@ export default function Hero() {
 
       {/* ----------------------------------------------------------- tiles */}
       <Panel className="p-3">
+        {filter === 'upgrade' && (
+          <Bench items={p.inventory} cores={p.cores} worn={worn} onUpgrade={upgrade} onOpen={setOpenItem} />
+        )}
         {filter === 'armoury' && <Collection kinds={ARMOUR_KINDS} owned={p.inventory} onPick={setOpenCodex} />}
-        {filter === 'weapons' && <Collection kinds={WEAPON_KINDS} owned={p.inventory} onPick={setOpenCodex} />}
+        {filter === 'weapons' && <Collection kinds={WEAPON_KINDS} owned={p.inventory} onPick={setOpenCodex} weapons />}
 
         {showGear && (
           <>
-            <div className="font-pixel text-[7px] text-ink-faint mb-2.5">GEAR · {gear.length}</div>
-            <div className="grid grid-cols-5 gap-2">
-              {gear.map((i) => (
-                <Tile
-                  key={i.id}
-                  rarity={i.rarity}
-                  level={i.level}
-                  equipped={p.equipped[i.slot] === i.id}
-                  label={`${i.name}, ${RARITY[i.rarity].label}, level ${i.level}`}
-                  onClick={() => setOpenItem(i)}
-                >
-                  <GearIcon slot={i.slot} kind={i.kind} set={i.set} size={30} />
-                </Tile>
-              ))}
-            </div>
+            {[
+              ['WEAPONS', arms, WEAPON_INK],
+              ['ARMOUR', armour, 'var(--color-ink-faint)'],
+            ].map(([heading, list, tone], section) =>
+              list.length ? (
+                <div key={heading} className={section ? 'mt-4' : ''}>
+                  <div className="font-pixel text-[7px] mb-2.5" style={{ color: tone }}>
+                    {heading} · {list.length}
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {list.map((i) => (
+                      <Tile
+                        key={i.id}
+                        rarity={i.rarity}
+                        level={i.level}
+                        weapon={isWeapon(i)}
+                        equipped={p.equipped[i.slot] === i.id}
+                        label={`${i.name}, ${RARITY[i.rarity].label}, level ${i.level}`}
+                        onClick={() => setOpenItem(i)}
+                      >
+                        <GearIcon slot={i.slot} kind={i.kind} set={i.set} size={30} />
+                      </Tile>
+                    ))}
+                  </div>
+                </div>
+              ) : null,
+            )}
           </>
         )}
 
