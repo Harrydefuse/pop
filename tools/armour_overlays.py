@@ -39,29 +39,29 @@ import math
 MALE = dict(
     w=44, h=59, cx=22,
     dome_top=6, brow=17, dome_hw=11,
-    face_rows=(18, 25), eye_rows=(19, 21),
+    face_rows=(18, 24), eye_rows=(19, 21),
     eyes=((16, 19), (25, 28)), cheek=((11, 15), (29, 33)),
-    neck_rows=(25, 28), neck=(18, 26),
-    shoulder_row=28, sh_l=(6, 16), sh_r=(28, 38),
-    torso_rows=(28, 41), torso=(13, 31), waist=(15, 29),
-    fauld_rows=(42, 46), fauld=(14, 30),
-    arm_l=(8, 14), arm_r=(30, 36), arm_rows=(36, 45),
+    neck_rows=(25, 27), neck=(18, 26),
+    shoulder_row=29, sh_l=(6, 14), sh_r=(30, 38),
+    torso_rows=(29, 40), torso=(13, 31), waist=(15, 29),
+    fauld_rows=(41, 44), fauld=(14, 30),
+    arm_l=(8, 14), arm_r=(30, 36), arm_rows=(39, 45),
     leg_rows=(46, 52), leg_l=(13, 21), leg_r=(23, 31), knee=49,
-    boot_rows=(52, 58), boot_l=(12, 21), boot_r=(23, 32),
+    boot_rows=(54, 58), boot_l=(12, 21), boot_r=(23, 32),
 )
 
 FEMALE = dict(
     w=42, h=65, cx=20,
     dome_top=5, brow=17, dome_hw=10,
-    face_rows=(18, 25), eye_rows=(19, 22),
+    face_rows=(18, 24), eye_rows=(19, 22),
     eyes=((15, 18), (23, 26)), cheek=((9, 13), (27, 31)),
-    neck_rows=(25, 28), neck=(16, 24),
-    shoulder_row=28, sh_l=(6, 15), sh_r=(26, 35),
-    torso_rows=(28, 42), torso=(11, 30), waist=(13, 28),
-    fauld_rows=(43, 48), fauld=(12, 29),
+    neck_rows=(25, 27), neck=(16, 24),
+    shoulder_row=29, sh_l=(5, 13), sh_r=(27, 35),
+    torso_rows=(29, 41), torso=(11, 30), waist=(13, 28),
+    fauld_rows=(42, 46), fauld=(12, 29),
     arm_l=(7, 14), arm_r=(26, 33), arm_rows=(39, 48),
-    leg_rows=(48, 56), leg_l=(12, 19), leg_r=(21, 29), knee=52,
-    boot_rows=(56, 64), boot_l=(11, 19), boot_r=(21, 29),
+    leg_rows=(48, 55), leg_l=(12, 19), leg_r=(21, 29), knee=52,
+    boot_rows=(57, 64), boot_l=(11, 19), boot_r=(21, 29),
 )
 
 # ------------------------------------------------------------------- profiles
@@ -227,6 +227,16 @@ class Piece:
     def stud(self, x, y, key='A'):
         self.paint([(x, y)], key)
 
+    def gem(self, cx, cy, rx, ry, core):
+        """Facet a boss from the middle out — the auto-lighting rounds a diamond
+        into an egg, and an egg on a breastplate reads as a belly."""
+        for y in range(cy - ry, cy + ry + 1):
+            for x in range(cx - rx, cx + rx + 1):
+                if (x, y) not in self.reach:
+                    continue
+                t = abs(x - cx) / rx + abs(y - cy) / ry
+                self.px[(x, y)] = core if t < 0.4 else 'l' if t < 0.75 else 'm' if t < 1.05 else 'd'
+
     def sparkle(self, spots):
         for (x, y) in spots:
             if 0 <= x < self.f['w'] and 0 <= y < self.f['h'] and (x, y) not in self.reach:
@@ -284,7 +294,7 @@ def helm(f, pr):
         skull.taper(brow + 1, fr1 + 1, (ec0 - 1, ec3 + 1), (ec0 + 3, ec3 - 3))
         skull.cut(fr0, fr0 + 3, ec1 + 1, ec2 - 1)      # a slot, not an open face
         skull.rect(brow, fr1, cx - 1, cx + 1)          # nasal splitting the slot
-    skull.taper(fr1 + 2, g1 + 1, (nl - 1, nr + 1), (nl + 2, nr - 2))
+    skull.taper(fr1 + 1, g1, (nl - 1, nr + 1), (nl + 2, nr - 2))
     p.draw(skull)
 
     comb = p.layer()
@@ -310,7 +320,7 @@ def helm(f, pr):
         p.line(brow - 9 + i, cx - 9 + i, cx - 6 + i, 'l')
     p.line(brow - 1, cx - hw + 1, cx + hw - 1, 's')
     p.line(brow, cx - hw + 1, cx + hw - 1, 'A')
-    p.line(fr1 + 2, nl, nr, 'A')
+    p.line(fr1 + 1, nl, nr, 'A')
     p.line(g1, nl + 1, nr - 1, 's')
 
     if pr == 'regal':
@@ -330,8 +340,8 @@ def helm(f, pr):
     else:
         p.col(cx, brow + 1, fr1, 'l')
         p.col(cx + 1, brow + 1, fr1, 'd')
-        p.line(fr0 + 4, ec0 + 3, ec3 - 3, 's')       # the mouth of the bevor
-        p.line(fr0 + 5, ec0 + 4, ec3 - 4, 's')
+        p.line(fr0 + 4, ec0 + 3, ec3 - 3, 'd')       # the mouth of the bevor
+        p.line(fr0 + 5, ec0 + 4, ec3 - 4, 'l')
         if pr == 'spiked':
             p.stud(cx, brow - 2, 'A')
     return p.emit()
@@ -342,13 +352,13 @@ def _pauldron(p, f, pr, side):
     tier hangs off its outer edge."""
     lo, hi = f['sh_l'] if side < 0 else f['sh_r']
     cx = (lo + hi) // 2
-    top = f['shoulder_row'] - 1
+    top = f['shoulder_row']
     hw = (hi - lo) // 2
     if pr == 'rough':
         pad = p.layer()
-        pad.lens(top + 1, top + 7, cx, hw - 1, fat=0.75)
+        pad.lens(top, top + 8, cx, hw, fat=0.8)
         p.draw(pad)
-        p.line(top + 4, cx - hw + 3, cx + hw - 3, 's')
+        p.line(top + 4, cx - hw + 2, cx + hw - 2, 's')
         return
 
     reach = hw
@@ -363,9 +373,9 @@ def _pauldron(p, f, pr, side):
     # A fan, raked back and up. The tips are angled to land just inside the
     # frame on both builds — a blade that runs off the edge reads as a mistake.
     if pr == 'spiked':
-        blades = ((top + 1, 8, 0.32, 4), (top + 3, 9, 0.52, 4), (top + 5, 7, 0.68, 4))
+        blades = ((top + 1, 9, 0.32, 3), (top + 3, 10, 0.52, 3), (top + 5, 8, 0.68, 3))
     elif pr == 'regal':
-        blades = ((top, 10, 0.32, 3), (top + 3, 12, 0.50, 4), (top + 6, 10, 0.66, 3), (top + 9, 7, 0.80, 3))
+        blades = ((top, 11, 0.30, 3), (top + 3, 13, 0.48, 3), (top + 6, 11, 0.64, 3), (top + 9, 8, 0.78, 3))
     else:
         return
     edge = p.layer()
@@ -389,13 +399,11 @@ def chest(f, pr):
     body.taper(t0, t1, (tl + 1, tr - 1), (wl, wr))
     body.taper(f0, f1, (wl, wr), (fl, fr))
     if pr == 'rough':
-        body.rect(t0 - 1, t0, cx - 6, cx + 6)
+        body.rect(t0, t0 + 1, cx - 6, cx + 6)
     else:
-        body.rect(t0 - 1, t0 + 1, tl + 2, tr - 2)
+        body.rect(t0, t0 + 1, tl + 2, tr - 2)
         for i in range(3):                                # a collar for the gorget
-            body.cut(t0 - 1, t0 + i, cx - 4 + i * 2, cx + 4 - i * 2)
-    for (lo, hi) in (f['arm_l'], f['arm_r']):             # rebrace on the bicep
-        body.taper(f['arm_rows'][0], f['arm_rows'][0] + 5, (lo, hi), (lo + 1, hi - 1))
+            body.cut(t0, t0 + i, cx - 4 + i * 2, cx + 4 - i * 2)
     p.draw(body)
 
     if pr == 'rough':
@@ -411,13 +419,12 @@ def chest(f, pr):
     else:
         p.col(cx, t0 + 4, t1 - 1, 'l')                    # centre ridge
         p.col(cx + 1, t0 + 4, t1 - 1, 'd')
-        for i in range(5):                                # trim down the V
+        for i in range(4):                                # trim down the V
             p.paint([(cx - 5 + i, t0 + i), (cx + 5 - i, t0 + i)], 'A')
         p.line(t1, wl + 1, wr - 1, 'A')                   # hem of the cuirass
-        p.line(t1 - 1, wl + 1, wr - 1, 's')
-        for y in (f0 + 2, f0 + 4):                        # fauld lames
-            p.line(y, fl, fr, 's')
-            p.line(y + 1, fl, fr, 'l')
+        lames = 3 if f1 - f0 >= 5 else 2                  # one seam in a short fauld
+        for k in range(1, lames):
+            p.line(f0 + round((f1 - f0) * k / lames), fl, fr, 's')
         p.line(f1, fl, fr, 'A')
         for x in (tl + 3, tr - 3):
             p.stud(x, t0 + 5, 'A')
@@ -425,17 +432,10 @@ def chest(f, pr):
 
     if pr in ('spiked', 'regal'):
         boss = p.layer()
-        mid = (t0 + t1) // 2
-        boss.diamond(cx, mid, 5, 5)
+        mid = (t0 + t1) // 2 + 1
+        boss.diamond(cx, mid, 4, 4)
         p.draw(boss)
-        if pr == 'regal':
-            for i in range(4):
-                p.paint([(cx - 3 + i, mid - 3 + i), (cx + 3 - i, mid - 3 + i),
-                         (cx - 3 + i, mid + 3 - i), (cx + 3 - i, mid + 3 - i)], 'E')
-            p.box(mid - 1, mid + 1, cx - 1, cx + 1, 'E')
-        else:
-            p.box(mid - 1, mid + 1, cx - 1, cx + 1, 'A')
-            p.line(mid - 2, cx - 2, cx + 2, 'l')
+        p.gem(cx, mid, 4, 4, 'E' if pr == 'regal' else 'A')
     if pr == 'regal':
         for x in (wl + 1, wr - 1):
             p.col(x, t0 + 5, t1 - 2, 'A')
@@ -485,9 +485,10 @@ def boots(f, pr):
     for i, (lo, hi) in enumerate((f['boot_l'], f['boot_r'])):
         side = -1 if i == 0 else 1
         toe = lo if side < 0 else hi
+        ankle = y0 + 2
         boot = p.layer()
-        boot.taper(y0, y0 + 3, (lo + 2, hi - 2), (lo + 1, hi - 1))
-        boot.taper(y0 + 4, y1 - 1, (lo + 1, hi - 1), (lo, hi))
+        boot.taper(y0, ankle - 1, (lo + 2, hi - 2), (lo + 1, hi - 1))
+        boot.taper(ankle, y1 - 1, (lo + 1, hi - 1), (lo, hi))
         boot.span(y1, lo, hi)
         p.draw(boot)
         if pr == 'rough':
@@ -495,8 +496,8 @@ def boots(f, pr):
             p.line(y1, lo + 1, hi - 1, 's')
         else:
             p.line(y0, lo + 2, hi - 2, 'A')
-            p.line(y0 + 4, lo + 1, hi - 1, 's')
-            p.line(y0 + 5, lo + 1, hi - 1, 'l')
+            p.line(ankle, lo + 1, hi - 1, 's')
+            p.line(ankle + 1, lo + 1, hi - 1, 'l')
             p.line(y1, lo + 1, hi - 1, 'A')
         if pr == 'spiked':
             s = p.layer()
@@ -504,18 +505,17 @@ def boots(f, pr):
             p.draw(s)
         if pr == 'regal':
             fin = p.layer()
-            fin.spike(toe, y0 + 4, 7, side * 0.75, base=5)
+            fin.spike(toe, ankle, 7, side * 0.75, base=5)
             p.draw(fin)
-            p.stud((lo + hi) // 2, y0 + 2, 'E')
+            p.stud((lo + hi) // 2, y0 + 1, 'E')
     return p.emit()
 
 
 def gloves(f, pr):
     p = Piece(f)
-    ar1 = f['arm_rows'][1]
+    top, ar1 = f['arm_rows']
     for i, (lo, hi) in enumerate((f['arm_l'], f['arm_r'])):
         side = -1 if i == 0 else 1
-        top = ar1 - (5 if pr == 'rough' else 8)
         hand = p.layer()
         if pr == 'regal':
             hand.taper(top, top + 3, (lo + 1, hi - 1), (lo - 2, hi + 2))
@@ -528,7 +528,6 @@ def gloves(f, pr):
         else:
             p.line(top, lo + 1, hi - 1, 'A')
             p.line(top + 3, lo - 1, hi + 1, 's')
-            p.line(top + 4, lo, hi, 'A')
         if pr in ('spiked', 'regal'):
             knuck = p.layer()          # a scalloped ridge, not three loose pins
             for k in range(3):

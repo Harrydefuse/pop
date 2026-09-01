@@ -69,8 +69,12 @@ export function GearIcon({ slot, kind, set = 'leather', size = 34 }) {
 export function PetView({ refId, level = 1, size = 72, float, className = '' }) {
   const sprite = PET_SPRITES[refId] ?? PET_SPRITES.pup
   const stage = petStage(level)
+  // An ascended pet scales past the size it was given, so the box has to grow
+  // with it — otherwise the sprite spills over its own name.
+  const px = Math.round(size * stage.scale * 0.92)
+  const box = Math.max(size, px)
   return (
-    <div className={`relative grid place-items-center ${className}`} style={{ width: size, height: size }}>
+    <div className={`relative grid place-items-center ${className}`} style={{ width: box, height: box }}>
       {stage.aura && (
         <span
           className="absolute inset-0 pointer-events-none"
@@ -82,7 +86,7 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
       )}
       <PixelSprite
         sprite={sprite}
-        size={Math.round(size * stage.scale * 0.92)}
+        size={px}
         className={float ? 'float-soft relative' : 'relative'}
       />
     </div>

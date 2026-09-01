@@ -428,12 +428,15 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Gear is drawn onto the body, and the pet stands beside them. */}
-        <div className="flex items-end justify-center gap-4 mt-3">
-          <HeroView av={p.avatar} equipped={worn} height={168} />
+        {/* Gear is drawn onto the body, and the pet stands beside them. The
+            character is the point of this screen, so it gets the room: at 168
+            the helm, the pauldrons and the gauntlets ran together into one
+            shape and you could not tell which piece was which. */}
+        <div className="flex items-end justify-center gap-3 mt-3">
+          <HeroView av={p.avatar} equipped={worn} height={250} />
           {pet && (
             <button onClick={() => setOpenPet(pet)} className="text-center shrink-0 active:brightness-125">
-              <PetView refId={pet.ref} level={pet.level} size={76} float />
+              <PetView refId={pet.ref} level={pet.level} size={64} float />
               <div className="font-pixel text-[7px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
                 {pet.name}
               </div>
