@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, WORN_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -45,9 +45,11 @@ function gearAura(equipped) {
   if (best < 2) return null
   const matching = worn.filter((i) => RARITY_ORDER.indexOf(i.rarity) === best).length
   const tier = RARITY[RARITY_ORDER[best]]
+  // A set that emits lights the room in its own colour. Anything else falls
+  // back to the rarity's decorative twin — never the one that carries text.
+  const lit = worn.find((i) => RARITY_ORDER.indexOf(i.rarity) === best && ARMOUR_PALETTES[i.set]?.E)
   return {
-    // The bright twin, not the one that carries text: this is light.
-    color: tier.glow ?? tier.color,
+    color: (best >= 3 && lit && ARMOUR_PALETTES[lit.set].E) || tier.glow || tier.color,
     // A single rare piece is a faint halo; six legendaries light the room.
     strength: Math.min(1, (best - 1) / 3 + matching / 12),
     sparks: best >= 3 ? (best >= 4 ? 6 : 3) : 0,
@@ -100,7 +102,6 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   const build = av.body ?? 'male'
   // Every build has a set cut to its own silhouette now, so there is no longer
   // a question of whether armour can be drawn — only which set of art to use.
-  const plate = WORN_OVERLAYS[build] ?? WORN_OVERLAYS.male
   const armoured = equipped
   // With a helm on, the hair goes with it.
   const body = armoured.helm ? underHelm(drawn) : drawn
@@ -159,7 +160,7 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
         // gauntlets after it, so the hand closes over the grip instead of the
         // weapon sitting on top of the fist.
         if (slot === 'offhand' || slot === 'gloves') return null
-        const overlay = plate[item?.kind ?? slot]
+        const overlay = wornOverlay(build, item, slot)
         if (!overlay || !item) return null
         return (
           <PixelSprite
@@ -180,10 +181,10 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
       )}
 
       {/* Last, so a gauntlet grips the weapon rather than being covered by it. */}
-      {armoured.gloves && plate.gloves && (
+      {armoured.gloves && wornOverlay(build, armoured.gloves, 'gloves') && (
         <PixelSprite
           sprite={{
-            ...plate.gloves,
+            ...wornOverlay(build, armoured.gloves, 'gloves'),
             palette:
               armoured.gloves.set === 'founder'
                 ? FOUNDER_PALETTE

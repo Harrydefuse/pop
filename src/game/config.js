@@ -400,8 +400,8 @@ export const ARMOUR_SETS = [
     blurb: 'Pale and light. Cut from something that used to walk.' },
   { id: 'verdant', name: 'Verdant Mail', short: 'Verdant', rarity: 'epic',
     blurb: 'Still growing. Warm to the touch after a long day.' },
-  { id: 'gilded', name: 'Gilded Regalia', short: 'Gilded', rarity: 'legendary',
-    blurb: 'Absurd, impractical, and worth every kilometre.' },
+  { id: 'gilded', name: 'Astral Regalia', short: 'Astral', rarity: 'legendary',
+    blurb: 'Crystal and gold, lit from the inside. Absurd, impractical, and worth every kilometre.' },
 ]
 
 /**
