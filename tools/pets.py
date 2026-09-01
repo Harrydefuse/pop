@@ -111,16 +111,6 @@ class Grid:
         return [''.join(r) for r in self.g]
 
 
-# The LVL100 mark used to be a bar across the forehead. On a sixteen-pixel blob
-# that was fine; on a thirty-two-pixel animal it reads as a bandana, and every
-# creature came out looking like a person in fancy dress. It sits at the throat
-# now, where a collar goes, which is where you would put a name tag anyway.
-COLLAR = [
-    'oHHHHHHHHHo',
-    'oHSHSSHSHHo',
-]
-
-
 def check(name, grid):
     bad = [(i, len(r)) for i, r in enumerate(grid) if len(r) != W]
     if bad or len(grid) != H:
@@ -150,7 +140,6 @@ def emit(name, ident, palette, grid):
 ZEUS_PAL = dict(
     o='#2a1206', m='#7d4109', n='#bd6d0d', y='#eda227', b='#e0a844', l='#f7d489',
     d='#a9701f', e='#8bf0ff', k='#0d1020', w='#fff6e0', z='#d6f8ff', p='#7c4318',
-    H='#191a2e', S='#f2ecff',
 )
 
 ZEUS_FACE = [
@@ -186,7 +175,6 @@ def zeus():
     g.mirror()
     g.radial(15, 13, 11, 10, 'nnyyyynnm')
     g.blit(ZEUS_FACE, 8, 6)
-    g.blit(COLLAR, 10, 23)
     for x, y in ((10, 4), (11, 3), (10, 2)):
         g.px(x, y, 'z')                       # the storm, sitting in the mane
         g.px(30 - x, y, 'z')
@@ -200,7 +188,7 @@ def zeus():
 
 DRAKE_PAL = dict(
     o='#17240f', g='#4f7a3c', l='#7fb45c', d='#33532a', y='#efe0a8', r='#f2803a',
-    R='#ffc23d', k='#101018', e='#ffcf4d', w='#f4f0e0', H='#191a2e', S='#f2ecff',
+    R='#ffc23d', k='#101018', e='#ffcf4d', w='#f4f0e0',
 )
 
 DRAKE_WING = [
@@ -266,7 +254,6 @@ def drake():
     g.blit(DRAKE_BODY, 10, 21)
     g.blit(DRAKE_HEAD, 9, 6)
     g.blit(DRAKE_SNOUT, 11, 17)
-    g.blit(COLLAR, 10, 23)
     g.outline('o')
     return g.rows()
 
@@ -277,7 +264,7 @@ def drake():
 
 EMBER_PAL = dict(
     o='#221a1e', a='#4a4048', b='#6b6068', l='#948a92', r='#ff6a2a', R='#ffc23d',
-    y='#fff0b8', k='#0d0a10', e='#ffd166', w='#e8e2d8', H='#191a2e', S='#f2ecff',
+    y='#fff0b8', k='#0d0a10', e='#ffd166', w='#e8e2d8',
 )
 
 EMBER_HEAD = [
@@ -310,7 +297,6 @@ def ember():
         for dx, dy, k in ((0, 0, 'R'), (1, 1, 'r'), (-1, 1, 'r'), (0, -1, 'y' if i % 2 else 'r')):
             g.px(x + dx, y + dy, k)
     g.blit(EMBER_HEAD, 9, 3)
-    g.blit(COLLAR, 9, 14)
     g.outline('o')
     return g.rows()
 
@@ -321,7 +307,7 @@ def ember():
 
 TUSK_PAL = dict(
     o='#1c2a12', g='#5f8a3a', l='#83b154', d='#3d5c26', t='#f4eed4', e='#fbbf24',
-    k='#101018', w='#ffffff', h='#3a2a16', H='#191a2e', S='#f2ecff',
+    k='#101018', w='#ffffff', h='#3a2a16',
 )
 
 # Long uniform runs are spelled as products rather than as walls of letters —
@@ -352,9 +338,9 @@ TUSK_HEAD = [
 
 def tuskling():
     g = Grid()
-    g.disc(15, 28, 6, 4, 'g')                 # chest
-    g.disc(15, 29, 4, 2, 'l')
-    g.disc(5, 27, 3, 3, 'g')                  # arm, with daylight either side of it
+    g.disc(15, 26, 6, 5, 'g')                 # chest, up under the jaw
+    g.disc(15, 28, 4, 2, 'l')
+    g.disc(5, 25, 3, 4, 'g')                  # arm, with daylight either side of it
     g.spike(6, 13, -1, -0.3, 6, 4, 'd')       # ear
     g.spike(9, 5, -0.5, -1, 4, 3, 'h')        # hair
     g.spike(13, 3, -0.15, -1, 4, 3, 'h')
@@ -362,7 +348,6 @@ def tuskling():
     g.blit(TUSK_HEAD, 6, 2)
     g.spike(11, 18, -0.5, -1, 6, 2, 't')      # tusks, up past the lip
     g.spike(20, 18, 0.5, -1, 6, 2, 't')
-    g.blit(COLLAR, 10, 23)
     g.blit(['oglllgo..oglllgo'], 8, 30)       # fists
     g.outline('o')
     return g.rows()
