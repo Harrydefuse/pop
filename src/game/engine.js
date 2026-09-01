@@ -378,8 +378,12 @@ export function resolveFight(player, log, boss, damageSoFar = 0, rng = Math.rand
   let bossHp = startHp
   let myHp = me.hp
   const rounds = []
+  // No single blow takes more than a bite. Without a cap, a character carrying
+  // late-game kit ended the first three bosses in one swing — correct on the
+  // numbers, and a fight nobody gets to watch.
+  const bite = Math.max(1, Math.round(boss.hp * 0.28))
   for (let i = 0; i < FIGHT_ROUNDS && bossHp > 0 && myHp > 0; i++) {
-    const mine = Math.round(me.attack * (0.6 + rng() * 0.8))
+    const mine = Math.min(bite, Math.round(me.attack * (0.6 + rng() * 0.8)))
     bossHp -= mine
     const theirs = bossHp > 0 ? Math.round(bossAttack * (0.6 + rng() * 0.8)) : 0
     myHp -= theirs
@@ -404,7 +408,7 @@ export function resolveFight(player, log, boss, damageSoFar = 0, rng = Math.rand
 export function fightOdds(player, log, boss, damageSoFar = 0) {
   const me = fightPower(player, log)
   const need = Math.max(1, boss.hp - damageSoFar)
-  const canDeal = me.attack * FIGHT_ROUNDS
+  const canDeal = Math.min(me.attack, Math.round(boss.hp * 0.28)) * FIGHT_ROUNDS
   return Math.min(0.97, Math.max(0.03, (canDeal / need) * 0.62))
 }
 

@@ -3,7 +3,6 @@
 
 import { AVATAR_HAIR, AVATAR_SKINS, HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
 import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, SLOT_STATS, armourSet, offhandKind } from './config'
-import { CAMPAIGN } from './campaign'
 
 // ------------------------------------------------------------------- catalogues
 
@@ -457,11 +456,14 @@ export const TEST_ACCOUNT = {
     })),
     activePetId: 't_zeus',
     stones: ['power', 'space', 'reality', 'soul', 'time', 'mind'],
-    titles: CAMPAIGN.map((b) => b.reward.title).filter(Boolean),
+    titles: [],
     lifetime: { volume: 1840000, distance: 6120, sessions: 2140, coop: 410, streak: 214, balance: 812, bossKm: 964 },
     week: { activeMinutes: 640, gamingHours: 18, km: 74.5, sessions: 11 },
   },
-  campaign: { defeated: CAMPAIGN.map((b) => b.id), damage: 0 },
+  // Everything the grind pays out, and none of the story: the whole point of
+  // the test account is walking a maxed character up to a boss that is still
+  // standing, so the fight is the thing being tested rather than skipped.
+  campaign: { defeated: [], damage: 0 },
   gift: { pending: false, opened: true },
   chest: { unlocked: true, openedToday: false },
   session: null,

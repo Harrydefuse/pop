@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Bar, Btn, Chip, Modal, Panel, SectionTitle } from './ui'
 import Icon from './Icon'
 import LogSheet from './LogSheet'
@@ -67,11 +67,23 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
         <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
       </div>
 
-      {/* Sessions wear it down between visits; the arena is where it actually
-          falls, and where you can fail. */}
-      <Btn full variant="danger" className="mt-3" onClick={onArena}>
-        ENTER THE ARENA
-      </Btn>
+      {/* This is the tab's whole reason to exist, so it gets the whole width
+          and twice the height of an ordinary button. Sessions wear the boss
+          down between visits; the arena is where it actually falls, and where
+          you can fail. */}
+      <button
+        onClick={onArena}
+        className="w-full mt-3.5 py-4 border-2 font-pixel text-[13px] transition-transform active:scale-[0.98]"
+        style={{
+          borderColor: 'var(--color-danger)',
+          background: 'var(--color-danger)',
+          color: 'var(--color-on-accent)',
+          boxShadow: `0 0 26px -6px var(--color-danger)`,
+        }}
+      >
+        BATTLE
+        <span className="block font-pixel text-[7px] mt-1.5 opacity-80">{boss.name}</span>
+      </button>
       <Btn full variant="ghost" size="sm" className="mt-1.5" onClick={onFight}>
         WHAT AM I FIGHTING?
       </Btn>
@@ -254,6 +266,16 @@ export default function CampaignSheet({ onClose, embedded }) {
   const [fighting, setFighting] = useState(null)
   const [arena, setArena] = useState(null)
   const c = campaignState(state.player, state.campaign)
+  // Everything you have put down, the one you are on, and one silhouette of
+  // what comes next — nothing further.
+  const seen = useMemo(() => {
+    const out = CAMPAIGN.filter((b) => c.defeated.includes(b.id)).map((b) => b.id)
+    if (c.current) out.push(c.current.id)
+    const rest = CAMPAIGN.filter((b) => !out.includes(b.id))
+    if (rest.length) out.push(rest[0].id)
+    return out
+  }, [c])
+  const ahead = CAMPAIGN.length - seen.length
 
   return (
     <>
@@ -302,10 +324,18 @@ export default function CampaignSheet({ onClose, embedded }) {
               <Bar pct={c.cleared / c.total} color="var(--color-neon)" height={6} className="mt-2" />
             </Panel>
 
-            <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">your road</span>}>THE PATH</SectionTitle>
+            <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">what you have walked</span>}>
+              THE PATH
+            </SectionTitle>
+            {/* Only what you have actually met: the ones you put down, the one
+                in front of you, and a silhouette of whatever is next. Listing
+                all ten from the first session gave the story away and buried
+                the only boss you can reach under nine you cannot. */}
             {ACTS.map((act) => {
-              const bosses = CAMPAIGN.filter((b) => b.act === act.id)
-              const done = bosses.filter((b) => c.defeated.includes(b.id)).length
+              const bosses = CAMPAIGN.filter((b) => b.act === act.id && seen.includes(b.id))
+              if (!bosses.length) return null
+              const all = CAMPAIGN.filter((b) => b.act === act.id)
+              const done = all.filter((b) => c.defeated.includes(b.id)).length
               return (
                 <div key={act.id}>
                   <div className="flex items-center gap-2 px-0.5 mb-1.5">
@@ -314,7 +344,7 @@ export default function CampaignSheet({ onClose, embedded }) {
                     </span>
                     <span className="font-pixel text-[7px] text-ink-faint truncate">{act.name}</span>
                     <span className="ml-auto font-mono text-[10px] text-ink-faint shrink-0">
-                      {done}/{bosses.length}
+                      {done}/{all.length}
                     </span>
                   </div>
                   <Panel corners={false} className="p-0.5">
@@ -331,6 +361,14 @@ export default function CampaignSheet({ onClose, embedded }) {
                 </div>
               )
             })}
+            {ahead > 0 && (
+              <Panel corners={false} className="p-3 text-center">
+                <div className="font-pixel text-[8px] text-ink-faint">{ahead} MORE AHEAD</div>
+                <div className="text-[11px] text-ink-dim mt-1.5">
+                  You meet them one at a time. Put this one down and the next comes into view.
+                </div>
+              </Panel>
+            )}
           </div>
         )}
       </Shell>

@@ -690,7 +690,7 @@ function reducer(state, action) {
           explored: state.explored?.length ? state.explored : INITIAL_STATE.explored,
           dailies: freshDailies(),
         },
-        { kind: 'level', title: 'TEST ACCOUNT', body: 'Level 100, full gilded set, every boss down.' },
+        { kind: 'level', title: 'TEST ACCOUNT', body: 'Level 100 and every drop. Ten bosses still standing.' },
       )
 
     case 'reset':
