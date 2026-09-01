@@ -156,6 +156,10 @@ export default function Onboarding({ onContinue }) {
   const { state, onboard, testAccount } = useGame()
   const has = state.onboarded
   const [step, setStep] = useState(0)
+  // The test account used to skip character creation entirely, which meant
+  // testing the game as whoever happened to be in state. It goes through the
+  // same step now and the maxed save lands on top of the character you built.
+  const [testing, setTesting] = useState(false)
 
   // Seeded from the character already on this device, so coming back to change
   // one thing does not mean typing all of it again.
@@ -191,8 +195,8 @@ export default function Onboarding({ onContinue }) {
                   the reducer case behind it come out before anyone else plays. */}
               <MenuItem
                 onClick={() => {
-                  testAccount()
-                  onContinue?.()
+                  setTesting(true)
+                  setStep(1)
                 }}
               >
                 TEST ACCOUNT
@@ -225,6 +229,11 @@ export default function Onboarding({ onContinue }) {
         {step === 1 && (
           <div className="flex-1 flex flex-col">
             <div className="font-pixel text-[11px] text-neon">WHO ARE YOU?</div>
+            {testing && (
+              <div className="font-pixel text-[7px] text-gold mt-1.5">
+                TEST ACCOUNT · LEVEL 100 AND EVERY DROP, AS WHOEVER YOU BUILD
+              </div>
+            )}
 
             <div className="flex justify-center my-5">
               <div
@@ -288,10 +297,11 @@ export default function Onboarding({ onContinue }) {
                     games: [],
                     health: [],
                   })
+                  if (testing) testAccount()
                   onContinue?.()
                 }}
               >
-                START PLAYING
+                {testing ? 'START MAXED' : 'START PLAYING'}
               </Btn>
             </div>
           </div>

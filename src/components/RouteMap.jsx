@@ -23,7 +23,7 @@ const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const ATTRIB = '© OpenStreetMap'
 
 /** Long enough for a slow connection, short enough not to feel broken. */
-const TILE_GRACE_MS = 5000
+const TILE_GRACE_MS = 2500
 
 export default function RouteMap({ routes = [], height = 300, locate = false, className = '' }) {
   const host = useRef(null)

@@ -50,6 +50,113 @@ function Tile({ rarity, level, equipped, weapon, label, onClick, children }) {
   )
 }
 
+/* ---------------------------------------------------------------- loadout --- */
+
+/**
+ * The six slots, and everything you own that fits each one.
+ *
+ * Putting a piece on was always possible, but only by finding it in a grid of
+ * every item in the game and opening its sheet — which is fine once you know
+ * where the boots are and hopeless the first time. This is the other direction:
+ * start from the empty slot, see the candidates, tap one.
+ */
+function SlotPicker({ slot, onClose }) {
+  const { state, equip, unequip } = useGame()
+  const p = state.player
+  const name = EQUIP_SLOTS.find((x) => x.key === slot)?.name ?? slot
+  const fits = useMemo(
+    () => p.inventory.filter((i) => i.slot === slot).sort((a, b) => itemScore(b) - itemScore(a)),
+    [p.inventory, slot],
+  )
+
+  return (
+    <Modal open onClose={onClose} title={name.toUpperCase()} accent="var(--color-neon)">
+      {fits.length === 0 ? (
+        <div className="text-[11px] text-ink-faint py-4 text-center">
+          Nothing for this slot yet. Chests and bosses drop them.
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {fits.map((item) => {
+            const on = p.equipped[slot] === item.id
+            const color = RARITY[item.rarity].color
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (!on) equip(item.id)
+                  onClose()
+                }}
+                className="w-full flex items-center gap-3 min-h-[44px] px-2 py-1.5 border text-left transition-colors active:brightness-125"
+                style={{ borderColor: on ? color : 'var(--color-line)', background: on ? alpha(color, 18) : 'transparent' }}
+              >
+                <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={30} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-pixel text-[8px] truncate" style={{ color }}>
+                    {item.name.toUpperCase()}
+                  </div>
+                  <div className="font-mono text-[11px] text-ink-faint">
+                    LV {item.level} · {RARITY[item.rarity].label} · {Math.round(itemScore(item))} pwr
+                  </div>
+                </div>
+                {on && <span className="font-pixel text-[7px] shrink-0" style={{ color }}>ON</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {p.equipped[slot] && (
+        <Btn
+          full
+          variant="ghost"
+          className="mt-3"
+          onClick={() => {
+            unequip(slot)
+            onClose()
+          }}
+        >
+          TAKE OFF
+        </Btn>
+      )}
+    </Modal>
+  )
+}
+
+function Loadout({ player, onPick }) {
+  return (
+    <div className="grid grid-cols-6 gap-1.5">
+      {EQUIP_SLOTS.map((s) => {
+        const item = player.inventory.find((i) => i.id === player.equipped[s.key])
+        const color = item ? RARITY[item.rarity].color : 'var(--color-line-hot)'
+        return (
+          <button
+            key={s.key}
+            onClick={() => onPick(s.key)}
+            aria-label={item ? `${s.name}: ${item.name}. Change` : `${s.name}: empty. Choose one`}
+            className="relative grid place-items-center aspect-square border-2 min-h-[44px] transition-transform active:scale-95"
+            style={{ borderColor: color, background: item ? alpha(color, 26) : 'transparent' }}
+          >
+            {item ? (
+              <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={26} />
+            ) : (
+              <Icon name={s.icon} size={16} color="var(--color-ink-faint)" />
+            )}
+            {item && (
+              <span
+                className="absolute bottom-0 right-0 font-pixel text-[6px] px-0.5 leading-none"
+                style={{ background: 'var(--color-panel)', color }}
+              >
+                {item.level}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /* ----------------------------------------------------------------- detail --- */
 
 function ItemSheet({ item, onClose }) {
@@ -384,6 +491,7 @@ export default function Hero() {
 
   const [filter, setFilter] = useState('all')
   const [openItem, setOpenItem] = useState(null)
+  const [openSlot, setOpenSlot] = useState(null)
   const [openCodex, setOpenCodex] = useState(null)
   const [openPet, setOpenPet] = useState(null)
 
@@ -460,6 +568,12 @@ export default function Hero() {
             {next ? `${fmt(next.min - power)} to ${next.name}` : 'MAX RANK'}
           </div>
         </div>
+
+        {/* Six slots and what is in them. Tap one to see everything you own
+            that fits it — the way in that starting from a grid of every item in
+            the game never was. */}
+        <div className="font-pixel text-[7px] text-ink-faint mt-3.5 mb-2">LOADOUT</div>
+        <Loadout player={p} onPick={setOpenSlot} />
 
         <div className="grid grid-cols-2 gap-1.5 mt-3">
           <Btn size="sm" variant="ghost" onClick={equipBest}>
@@ -557,6 +671,7 @@ export default function Hero() {
         )}
       </Panel>
 
+      {openSlot && <SlotPicker slot={openSlot} onClose={() => setOpenSlot(null)} />}
       {openItem && <ItemSheet item={openItem} onClose={() => setOpenItem(null)} />}
       {openCodex && <CodexSheet piece={openCodex} onClose={() => setOpenCodex(null)} />}
       {openPet && <PetSheet pet={openPet} onClose={() => setOpenPet(null)} />}

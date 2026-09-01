@@ -3,7 +3,7 @@ import Icon from './Icon'
 const TABS = [
   { key: 'home', label: 'TODAY', icon: 'home' },
   { key: 'train', label: 'TRAIN', icon: 'bolt' },
-  { key: 'bosses', label: 'BOSSES', icon: 'skull' },
+  { key: 'bosses', label: 'BATTLE', icon: 'skull' },
   { key: 'friends', label: 'FRIENDS', icon: 'trophy' },
   { key: 'hero', label: 'HERO', icon: 'person' },
 ]

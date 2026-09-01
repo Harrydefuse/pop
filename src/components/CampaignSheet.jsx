@@ -3,6 +3,7 @@ import { Bar, Btn, Chip, Modal, Panel, SectionTitle } from './ui'
 import Icon from './Icon'
 import LogSheet from './LogSheet'
 import { BossArt, PetView } from './Sprites'
+import Arena from './Arena'
 import { useGame } from '../game/useGame'
 import { ACTIVITIES, RARITY } from '../game/config'
 import { ACTS, CAMPAIGN, actById } from '../game/campaign'
@@ -29,7 +30,7 @@ function statusOf(boss, player, c) {
 const SILHOUETTE = { filter: 'grayscale(1) brightness(0.45)', opacity: 0.7 }
 
 /** The boss you are standing in front of. One target, one action. */
-function CurrentBoss({ boss, damage, onFight }) {
+function CurrentBoss({ boss, damage, onFight, onArena }) {
   const act = actById(boss.act)
 
   return (
@@ -66,8 +67,13 @@ function CurrentBoss({ boss, damage, onFight }) {
         <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
       </div>
 
-      <Btn full variant="danger" className="mt-3" onClick={onFight}>
-        FIGHT IT
+      {/* Sessions wear it down between visits; the arena is where it actually
+          falls, and where you can fail. */}
+      <Btn full variant="danger" className="mt-3" onClick={onArena}>
+        ENTER THE ARENA
+      </Btn>
+      <Btn full variant="ghost" size="sm" className="mt-1.5" onClick={onFight}>
+        WHAT AM I FIGHTING?
       </Btn>
     </Panel>
   )
@@ -246,6 +252,7 @@ export default function CampaignSheet({ onClose, embedded }) {
   const { state } = useGame()
   const [detail, setDetail] = useState(null)
   const [fighting, setFighting] = useState(null)
+  const [arena, setArena] = useState(null)
   const c = campaignState(state.player, state.campaign)
 
   return (
@@ -270,7 +277,12 @@ export default function CampaignSheet({ onClose, embedded }) {
         ) : (
           <div className="space-y-3">
             {c.current ? (
-              <CurrentBoss boss={c.current} damage={c.damage} onFight={() => setFighting(c.current)} />
+              <CurrentBoss
+                boss={c.current}
+                damage={c.damage}
+                onFight={() => setFighting(c.current)}
+                onArena={() => setArena(c.current)}
+              />
             ) : c.locked ? (
               <Gated boss={c.locked} levels={c.gatedBy} />
             ) : (
@@ -331,6 +343,8 @@ export default function CampaignSheet({ onClose, embedded }) {
           onClose={() => setFighting(null)}
         />
       )}
+
+      {arena && <Arena boss={arena} onClose={() => setArena(null)} />}
     </>
   )
 }

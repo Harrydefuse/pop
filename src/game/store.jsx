@@ -4,7 +4,7 @@ import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, 
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { revealAt } from './mapgrid'
-import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress } from './engine'
+import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
 
 const SAVE_KEY = 'lvl100.save.v11' // v11: the map got bigger, so explored cells mean something else
 
@@ -619,6 +619,31 @@ function reducer(state, action) {
         { kind: 'gear', title: 'SESSION UNLOCKED', body: `${action.name} · lifetime access` },
       )
 
+    // One trip to the arena a day. The damage sticks whether you win or lose,
+    // so a bad week costs you the kill rather than the progress — but it does
+    // cost you, because you cannot simply swing again until it works.
+    case 'battle': {
+      const { current } = campaignState(state.player, state.campaign)
+      if (!current) return state
+      const day = todayKey()
+      if (state.campaign.lastFightDay === day) return state
+      const dealt = Math.max(0, Math.min(current.hp, Math.round(action.dealt ?? 0)))
+      const total = state.campaign.damage + dealt
+      const base = { ...state, campaign: { ...state.campaign, lastFightDay: day } }
+      if (!action.won || total < current.hp) {
+        return {
+          ...base,
+          campaign: { ...base.campaign, damage: Math.min(current.hp - 1, total) },
+        }
+      }
+      let next = {
+        ...base,
+        campaign: { ...base.campaign, defeated: [...state.campaign.defeated, current.id], damage: 0 },
+      }
+      next = toast(next, { kind: 'boss', title: `${current.name} DOWN`, body: current.title })
+      return grantBossReward(next, current)
+    }
+
     case 'bossTick':
       return { ...state, world: { ...state.world, bossKm: state.world.bossKm + action.km } }
 
@@ -732,6 +757,7 @@ export function GameProvider({ children }) {
       newDay: () => dispatch({ type: 'newDay' }),
       restore: (next) => dispatch({ type: 'restore', state: next }),
       reset: () => dispatch({ type: 'reset' }),
+      battle: (result) => dispatch({ type: 'battle', ...result }),
       testAccount: () => dispatch({ type: 'testAccount' }),
     }),
     [],

@@ -317,6 +317,97 @@ export function bestLoadout(inventory) {
   return Object.fromEntries(Object.entries(best).map(([slot, item]) => [slot, item.id]))
 }
 
+// ------------------------------------------------------------------ the arena
+// Sessions wear a boss down between visits. The arena is where you go and
+// finish it — and where you can fail, which is the point of it. Two things
+// decide a fight, and both are things the player controls: the week they have
+// just had, and the kit they chose to walk in wearing.
+
+const FIGHT_ROUNDS = 6
+const FORM_WINDOW_MS = 7 * 24 * 3600 * 1000
+
+/** Four sessions in seven days is par. Below it you swing tired. */
+export function formOf(log, now = Date.now()) {
+  const recent = (log ?? []).filter((l) => l.at >= now - FORM_WINDOW_MS)
+  const sessions = recent.length
+  const xp = recent.reduce((n, l) => n + (l.xp ?? 0), 0)
+  const mult = Math.min(1.7, Math.max(0.5, 0.5 + sessions * 0.13 + Math.min(0.35, xp / 5000)))
+  const band =
+    mult >= 1.35
+      ? { label: 'PEAKING', color: 'var(--color-lime)' }
+      : mult >= 1.05
+        ? { label: 'SHARP', color: 'var(--color-cyan)' }
+        : mult >= 0.8
+          ? { label: 'RUSTY', color: 'var(--color-gold)' }
+          : { label: 'COLD', color: 'var(--color-danger)' }
+  return { sessions, xp, mult, ...band }
+}
+
+/** What you bring: the kit on your back, sharpened or blunted by the week. */
+export function fightPower(player, log, now) {
+  const gear = Object.values(player.equipped).reduce((n, id) => {
+    const item = player.inventory.find((i) => i.id === id)
+    return n + (item ? itemScore(item) : 0)
+  }, 0)
+  const form = formOf(log, now)
+  const bonus = gearBonuses(player)
+  return {
+    gear: Math.round(gear),
+    form,
+    attack: Math.max(12, Math.round((gear * 2.4 + player.level * 5) * form.mult)),
+    // The week decides how long you last as well as how hard you hit. Without
+    // that, a fully geared character who had not trained in a fortnight still
+    // walked out of every fight standing, and the mechanic had no teeth.
+    hp: Math.round((140 + gear * 1.6 + bonus.VIT * 3 + player.level * 7) * (0.65 + form.mult * 0.35)),
+  }
+}
+
+/**
+ * Six rounds, or until somebody drops. Damage sticks either way — a fight you
+ * lost still took a bite out of the boss, so a bad week costs you the kill
+ * rather than the progress.
+ */
+export function resolveFight(player, log, boss, damageSoFar = 0, rng = Math.random) {
+  const me = fightPower(player, log)
+  // Scaled off the boss's level rather than its health pool. Health runs from
+  // 900 to 60,000 across the ladder while a player's does not, so sizing the
+  // punch off it meant the last boss took a fully geared character down in two
+  // rounds. Level is the number that tracks what the player brings.
+  const bossAttack = Math.round(34 + boss.level * 2.8)
+  const startHp = Math.max(1, boss.hp - damageSoFar)
+  let bossHp = startHp
+  let myHp = me.hp
+  const rounds = []
+  for (let i = 0; i < FIGHT_ROUNDS && bossHp > 0 && myHp > 0; i++) {
+    const mine = Math.round(me.attack * (0.6 + rng() * 0.8))
+    bossHp -= mine
+    const theirs = bossHp > 0 ? Math.round(bossAttack * (0.6 + rng() * 0.8)) : 0
+    myHp -= theirs
+    rounds.push({ mine, theirs, bossHp: Math.max(0, bossHp), myHp: Math.max(0, myHp) })
+  }
+  return {
+    rounds,
+    won: bossHp <= 0,
+    dealt: startHp - Math.max(0, bossHp),
+    attack: me.attack,
+    hp: me.hp,
+    gear: me.gear,
+    form: me.form,
+    bossAttack,
+  }
+}
+
+/**
+ * Roughly how it should go, for the card you read before walking in. Not the
+ * roll — the roll is the whole reason to press the button.
+ */
+export function fightOdds(player, log, boss, damageSoFar = 0) {
+  const me = fightPower(player, log)
+  const need = Math.max(1, boss.hp - damageSoFar)
+  const canDeal = me.attack * FIGHT_ROUNDS
+  return Math.min(0.97, Math.max(0.03, (canDeal / need) * 0.62))
+}
+
 // ----------------------------------------------------------------------- quests
 
 // ----------------------------------------------------------------------- stones

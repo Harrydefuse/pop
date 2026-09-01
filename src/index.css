@@ -383,12 +383,19 @@ button:disabled {
    palette so a real street map does not sit inside the game wearing a
    different set of clothes — and give the ground a drawn grid for when the
    tiles cannot be reached at all. */
+/* What sits under the route line when the street tiles cannot be fetched — on
+   a plane, behind a firewall, or inside a sandboxed preview whose CSP blocks
+   the tile host. Graph paper read as a broken map; two grids at different
+   weights read as blocks and the roads between them, which is enough for the
+   line on top to make sense. */
 .route-ground {
   background-color: var(--color-panel-2);
   background-image:
-    linear-gradient(var(--color-line-hot) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-line-hot) 1px, transparent 1px);
-  background-size: 26px 26px;
+    linear-gradient(var(--color-line-hot) 3px, transparent 3px),
+    linear-gradient(90deg, var(--color-line-hot) 3px, transparent 3px),
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 104px 104px, 104px 104px, 26px 26px, 26px 26px;
 }
 .route-map.leaflet-container {
   background: transparent;
