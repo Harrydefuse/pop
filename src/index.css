@@ -1,116 +1,741 @@
 @import 'tailwindcss';
 
-@theme {
-  /* Relay — industrial signal palette */
-  --color-panel: #0b0e14; /* body background — deep graphite blue, not pure black */
-  --color-panel-raised: #131826; /* card / surface */
-  --color-panel-line: #232a3d; /* hairline borders on dark */
-  --color-signal: #ff7a33; /* amber — primary indicator / CTA */
-  --color-signal-dim: #b5551f; /* amber, low state */
-  --color-relay: #5fd4c4; /* teal — secondary signal / success */
-  --color-brass: #c08552; /* brass — structural accent, headings rules */
-  --color-ink: #f4f1ea; /* warm off-white text on dark */
-  --color-ink-dim: #9aa2b8; /* steel muted text */
-  --color-ink-faint: #5a6178; /* captions / disabled */
+/* Self-hosted so the app has no CDN dependency: it renders correctly offline,
+   inside a sandboxed page, and without a render-blocking round-trip. */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/pressstart2p.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/chakra-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/chakra-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/chakra-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/chakra-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plexmono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plexmono-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
 
-  --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+/* The framed-device presentation needs vertical room, not just width. A phone in
+   landscape is wide enough to trip `sm:` but far too short to host a 860px
+   frame, so both breakpoints gate on height as well and short viewports get the
+   full-bleed app instead. */
+@custom-variant device (@media (min-width: 640px) and (min-height: 720px));
+@custom-variant pitch (@media (min-width: 1024px) and (min-height: 720px));
+
+@theme {
+  /* LVL100 — arcade palette on paper.
+     Fluorescent colour is the point, but a 400-weight neon on white is around
+     2:1 and unreadable. Every accent keeps its hue and goes deep enough to
+     clear 4.5:1 on the page — and deep enough that white sits on it when it is
+     used as a fill, which is the other half of the same problem. */
+  --color-void: #f6f4ef; /* the page */
+  --color-panel: #ffffff; /* card surface */
+  --color-panel-2: #f1eef7; /* raised surface / rows */
+  --color-line: #ddd7e8; /* hairline border */
+  --color-line-hot: #b9aed4; /* border on active/hover */
+
+  --color-neon: #6d28d9; /* primary violet — 7.1:1 on paper */
+  --color-neon-bright: #7c3aed;
+  --color-neon-dim: #a78bfa;
+  --color-cyan: #0e7490; /* secondary signal */
+  --color-lime: #3f6212; /* success / gains */
+  --color-gold: #92400e; /* currency, legendary */
+  --color-danger: #be123c; /* boss / warnings */
+
+  /* Kept for glow, wash and anything decorative that never carries a word. */
+  --color-neon-glow: #a855f7;
+  --color-cyan-glow: #22d3ee;
+  --color-lime-glow: #a3e635;
+  --color-gold-glow: #fbbf24;
+
+  /* All three clear 4.5:1 on every surface in this app — captions are set as
+     small as 9px, so "muted" can never mean "below the contrast floor". */
+  --color-ink: #1a1526; /* 15.6:1 on panel */
+  --color-ink-dim: #4f4866; /* 8.2:1 */
+  --color-ink-faint: #6b6484; /* 5.4:1 */
+
+  /* Colours the game data reaches for by name that are not one of the five
+     signals above — ranks, acts, slots, sources. They live here rather than as
+     hex in config so a theme swap moves them too. */
+  --tone-green: #166534;
+  --tone-sky: #0369a1;
+  --tone-slate: #64748b;
+  --tone-orange: #c2410c;
+  --tone-jade: #0f766e;
+  --tone-blue: #1d4ed8;
+  --tone-bronze: #92400e;
+
+  /* What sits on top of a filled accent. On paper the accents are deep and
+     this is white; on a dark screen they are fluorescent and it inverts. */
+  --color-on-accent: #ffffff;
+
+  /* The decorative twins of the top three rarities. A glow is light, so it has
+     to be bright — the text-safe ladder below is deep on purpose and reads as
+     rust when it is used for a spark. Never put a word in these. */
+  --color-r-rare-glow: #0ea5e9;
+  --color-r-epic-glow: #a855f7;
+  --color-r-legendary-glow: #f59e0b;
+
+  /* rarity ladder — matches the pet-collection art */
+  --color-r-common: #64748b;
+  --color-r-uncommon: #166534;
+  --color-r-rare: #0369a1;
+  --color-r-epic: #7c3aed;
+  --color-r-legendary: #92400e;
+
+  --font-pixel: 'Press Start 2P', 'Courier New', monospace;
+  --font-body: 'Chakra Petch', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  --breakpoint-xs: 30rem;
+  --breakpoint-xs: 26rem;
+}
+
+/* Chrome is drawn from the ink colour, not from black, so it has to move with
+   the theme as well: a 55% drop shadow reads as depth on a dark screen and as
+   grime on paper, and the dither has to be dark specks on light or light specks
+   on dark. Everything decorative is named here once. */
+:root {
+  color-scheme: light;
+  --chrome-wash: rgba(168, 85, 247, 0.1);
+  --chrome-dither: rgba(26, 21, 38, 0.04);
+  --chrome-drop: rgba(26, 21, 38, 0.14);
+  --bevel-lit: rgba(255, 255, 255, 0.34);
+  --bevel-shade: rgba(0, 0, 0, 0.3);
+  --bevel-drop: rgba(26, 21, 38, 0.28);
+  --bevel-ghost-drop: rgba(26, 21, 38, 0.2);
+  --chrome-scan: rgba(26, 21, 38, 0.028);
+  --chrome-scan-opacity: 0.55;
+  --chrome-vignette: rgba(26, 21, 38, 0.09);
+  --chrome-vignette-stop: 62%;
+  --scrim: rgba(26, 21, 38, 0.55);
+  --scrim-strong: rgba(26, 21, 38, 0.65);
+}
+
+/* The night side. Every token above keeps its role and changes its value —
+   nothing here introduces a colour the light theme does not have a twin for,
+   which is what stops the two themes drifting apart as the app grows.
+   Specificity beats the bare :root that @theme emits, so these win. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-void: #07060d;
+  --color-panel: #120d20;
+  --color-panel-2: #1a1230;
+  --color-line: #3a2a57;
+  --color-line-hot: #4c3378;
+
+  /* A hair brighter than the old dark violet: at #a855f7 the rank chip, which
+     sets its own colour on a ten-per-cent wash of itself, came out at 4.35:1
+     and missed AA by a whisker. */
+  --color-neon: #b168f8;
+  --color-neon-bright: #c894fd;
+  --color-neon-dim: #6d28d9;
+  --color-cyan: #22d3ee;
+  --color-lime: #a3e635;
+  --color-gold: #fbbf24;
+  --color-danger: #f43f5e;
+
+  /* On a dark ground the accents are already fluorescent, so the decorative
+     "glow" variants are the accents themselves rather than brighter ones. */
+  --color-neon-glow: #c084fc;
+  --color-cyan-glow: #67e8f9;
+  --color-lime-glow: #bef264;
+  --color-gold-glow: #fcd34d;
+
+  --color-ink: #f2ecff;
+  --color-ink-dim: #a394c4;
+  --color-ink-faint: #8b7dae;
+
+  --tone-green: #4ade80;
+  --tone-sky: #38bdf8;
+  --tone-slate: #c5cdd8;
+  --tone-orange: #fb923c;
+  --tone-jade: #5eead4;
+  --tone-blue: #60a5fa;
+  --tone-bronze: #b07a4a;
+
+  --color-on-accent: #12081f;
+
+  --color-r-rare-glow: #7dd3fc;
+  --color-r-epic-glow: #d8b4fe;
+  --color-r-legendary-glow: #fcd34d;
+
+  --color-r-common: #b8bfcc;
+  --color-r-uncommon: #4ade80;
+  --color-r-rare: #38bdf8;
+  --color-r-epic: #c084fc;
+  --color-r-legendary: #f59e0b;
+
+  --chrome-wash: rgba(168, 85, 247, 0.13);
+  --chrome-dither: rgba(255, 255, 255, 0.028);
+  --chrome-drop: rgba(0, 0, 0, 0.55);
+  --bevel-lit: rgba(255, 255, 255, 0.28);
+  --bevel-shade: rgba(0, 0, 0, 0.45);
+  --bevel-drop: rgba(0, 0, 0, 0.5);
+  --bevel-ghost-drop: rgba(0, 0, 0, 0.45);
+  --chrome-scan: rgba(0, 0, 0, 0.22);
+  --chrome-scan-opacity: 0.5;
+  --chrome-vignette: rgba(0, 0, 0, 0.45);
+  --chrome-vignette-stop: 55%;
+  --scrim: rgba(5, 3, 10, 0.85);
+  --scrim-strong: rgba(5, 3, 10, 0.92);
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
-  margin: 0;
-  background: var(--color-panel);
+  background: var(--color-void);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
 }
 
 ::selection {
-  background: var(--color-signal);
-  color: #12100c;
+  background: var(--color-neon);
+  color: var(--color-on-accent);
+}
+
+/* Browsers default <button> to the arrow cursor, and every control in this app
+   is a button. Opt them all back in, and kill the 300ms mobile tap delay. */
+button,
+[role='button'],
+label,
+summary {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Fixed top/bottom chrome must clear the notch and the gesture home indicator.
+   These resolve to 0 anywhere without safe areas, so they are safe globally. */
+.pad-safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+.pad-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 3px;
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
 }
 
-.font-display {
-  font-family: var(--font-display);
+/* Pixel type is only legible with room to breathe — never for long copy. */
+.font-pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0.04em;
+  line-height: 1.65;
 }
 
 .font-mono {
   font-family: var(--font-mono);
 }
 
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+/* Hard-edged sprite scaling */
+.pixelated {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
 }
 
-@keyframes signal-travel {
-  0% {
-    top: 0%;
+/* Thin scrollbars that don't break the dark shell */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-hot) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-line-hot);
+  border-radius: 3px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Backdrop. A dither rather than a gradient: two hard tones on a 4px checker,
+   which is how a 16-bit console shaded a wall when it only had two colours to
+   do it with. Smooth gradients are the one thing that reads instantly as "web
+   page" rather than "game". */
+.arcade-bg {
+  background-color: var(--color-void);
+  background-image:
+    radial-gradient(circle at 50% -10%, var(--chrome-wash), transparent 62%),
+    repeating-conic-gradient(var(--chrome-dither) 0% 25%, transparent 0% 50%);
+  background-size:
+    100% 100%,
+    4px 4px;
+}
+
+/* Chrome drawn the way a sprite is: a solid offset block, no blur. Nothing in
+   pixel art has a soft shadow, because nothing in pixel art has a sub-pixel. */
+.pixel-drop {
+  box-shadow: 3px 3px 0 0 var(--chrome-drop);
+}
+
+/* A raised face: light along the top-left, dark along the bottom-right, one
+   pixel each. The oldest trick in interface design and still the fastest way
+   to say "this is a button". */
+.bevel {
+  box-shadow:
+    inset 1px 1px 0 0 var(--bevel-lit),
+    inset -1px -1px 0 0 var(--bevel-shade),
+    2px 2px 0 0 var(--bevel-drop);
+}
+
+.bevel:active:not(:disabled) {
+  box-shadow:
+    inset 1px 1px 0 0 var(--bevel-shade),
+    inset -1px -1px 0 0 var(--bevel-lit),
+    0 0 0 0 var(--bevel-drop);
+}
+
+/* Ghost buttons get the same geometry without the lit face, so a row of mixed
+   buttons still sits on one plane. */
+.bevel-ghost {
+  box-shadow: 2px 2px 0 0 var(--bevel-ghost-drop);
+}
+
+.bevel-ghost:active:not(:disabled) {
+  box-shadow: 0 0 0 0 var(--bevel-ghost-drop);
+}
+
+/* CRT scanlines — decorative only, sits above the shell at very low opacity */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--chrome-scan) 0px,
+    var(--chrome-scan) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: var(--chrome-scan-opacity);
+}
+
+/* The corners of a CRT were always darker than the middle. Cheap, and it stops
+   the screen reading as a flat rectangle of app. */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent var(--chrome-vignette-stop),
+    var(--chrome-vignette) 100%
+  );
+}
+
+/* Leaflet arrives with its own look. These pull its chrome onto the app's
+   palette so a real street map does not sit inside the game wearing a
+   different set of clothes — and give the ground a drawn grid for when the
+   tiles cannot be reached at all. */
+/* What sits under the route line when the street tiles cannot be fetched — on
+   a plane, behind a firewall, or inside a sandboxed preview whose CSP blocks
+   the tile host. Graph paper read as a broken map; two grids at different
+   weights read as blocks and the roads between them, which is enough for the
+   line on top to make sense. */
+.route-ground {
+  background-color: var(--color-panel-2);
+  background-image:
+    linear-gradient(var(--color-line-hot) 3px, transparent 3px),
+    linear-gradient(90deg, var(--color-line-hot) 3px, transparent 3px),
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 104px 104px, 104px 104px, 26px 26px, 26px 26px;
+}
+.route-map.leaflet-container {
+  background: transparent;
+  font-family: var(--font-mono);
+}
+.route-map .leaflet-control-attribution {
+  background: var(--color-panel);
+  color: var(--color-ink-faint);
+  font-size: 9px;
+  border: 1px solid var(--color-line);
+  border-right: 0;
+  border-bottom: 0;
+}
+.route-map .leaflet-control-attribution a {
+  color: var(--color-ink-dim);
+}
+.route-map .leaflet-bar a {
+  background: var(--color-panel);
+  color: var(--color-ink);
+  border-bottom-color: var(--color-line);
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+}
+.route-map .leaflet-bar a:hover {
+  background: var(--color-panel-2);
+  color: var(--color-ink);
+}
+.route-map .leaflet-bar {
+  border-color: var(--color-line-hot);
+  border-radius: 0;
+}
+.route-map .leaflet-bar a:first-child,
+.route-map .leaflet-bar a:last-child {
+  border-radius: 0;
+}
+
+@keyframes xp-shine {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(220%);
+  }
+}
+.xp-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: xp-shine 2.4s ease-in-out infinite;
+}
+
+/* Worn rarity, made visible on the character rather than in a label.
+   A blink rather than a fade: nothing in pixel art crossfades, and a sparkle
+   that eases in and out reads as a web page effect sitting on top of the art
+   instead of part of it. */
+@keyframes gear-aura {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+.gear-aura {
+  animation: gear-aura 3s ease-in-out infinite;
+}
+
+@keyframes gear-spark {
+  0%,
+  100% {
     opacity: 0;
+    transform: scale(0.5);
   }
   8% {
     opacity: 1;
+    transform: scale(1);
   }
-  92% {
+  16% {
     opacity: 1;
+    transform: scale(0.7);
   }
-  100% {
-    top: 100%;
+  24% {
     opacity: 0;
+    transform: scale(0.5);
   }
 }
-
-.signal-pulse-travel {
-  animation: signal-travel 3.4s linear infinite;
-  box-shadow: 0 0 10px 2px var(--color-relay);
+.gear-spark {
+  animation: gear-spark 2.4s steps(3, end) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .signal-pulse-travel {
+  .gear-aura,
+  .gear-spark {
     animation: none;
-    display: none;
+  }
+  .gear-spark {
+    opacity: 0.85;
   }
 }
 
-/* subtle schematic grid used behind panels */
-.grid-schematic {
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.float-soft {
+  animation: float-soft 3.6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(244, 63, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes loot-pop {
+  0% {
+    transform: scale(0.4) rotate(-8deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+.loot-pop {
+  animation: loot-pop 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+@keyframes sheen-sweep {
+  from {
+    background-position: -180% 0;
+  }
+  to {
+    background-position: 280% 0;
+  }
+}
+.legendary-text {
+  background: linear-gradient(90deg, #f59e0b 20%, #fff3c4 45%, #f59e0b 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sheen-sweep 3.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------- founder gift reveal */
+/* The one moment in the app that is allowed to be loud. Every animation here is
+   transform/opacity only so it stays on the compositor, and the whole thing is
+   cut to a plain fade under prefers-reduced-motion. */
+
+@keyframes gift-in {
+  0%   { transform: translateY(14px) scale(0.9); opacity: 0; }
+  60%  { transform: translateY(-3px) scale(1.03); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.gift-in { animation: gift-in 520ms cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+
+@keyframes gift-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-5px) rotate(2deg); }
+}
+.gift-bob { animation: gift-bob 2.4s ease-in-out infinite; }
+
+@keyframes chest-rattle {
+  0%, 100%      { transform: translateX(0) rotate(0deg); }
+  10%, 30%, 50% { transform: translateX(-3px) rotate(-4deg); }
+  20%, 40%, 60% { transform: translateX(3px) rotate(4deg); }
+  75%           { transform: translateY(-10px) scale(1.12); }
+  100%          { transform: translateY(0) scale(1); }
+}
+.chest-rattle { animation: chest-rattle 1100ms ease-in-out both; }
+
+@keyframes burst {
+  0%   { transform: scale(0.2); opacity: 0.95; }
+  100% { transform: scale(3.4); opacity: 0; }
+}
+.burst { animation: burst 700ms ease-out both; }
+
+/* The reveal: rises, then keeps turning. rotateY on a pixel sprite squashes it
+   horizontally, which is exactly what a spin looks like at this resolution. */
+@keyframes loot-rise {
+  0%   { transform: translateY(46px) scale(0.4); opacity: 0; }
+  55%  { transform: translateY(-8px) scale(1.12); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.loot-rise { animation: loot-rise 900ms cubic-bezier(0.15, 1.2, 0.35, 1) both; }
+
+@keyframes loot-spin {
+  0%   { transform: perspective(320px) rotateY(0deg) translateY(0); }
+  50%  { transform: perspective(320px) rotateY(180deg) translateY(-7px); }
+  100% { transform: perspective(320px) rotateY(360deg) translateY(0); }
+}
+/* Two full turns for the reveal, then it settles into a rock-and-float. A pixel
+   sprite is edge-on and invisible at 90deg, so it cannot spin forever without
+   looking broken half the time. */
+@keyframes loot-rock {
+  0%, 100% { transform: perspective(320px) rotateY(-26deg) translateY(0); }
+  50%      { transform: perspective(320px) rotateY(26deg) translateY(-8px); }
+}
+.loot-spin {
+  animation: loot-spin 1.5s ease-in-out 1, loot-rock 3.4s ease-in-out 1.5s infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes halo {
+  0%, 100% { opacity: 0.5; transform: scale(0.94); }
+  50%      { opacity: 1; transform: scale(1.08); }
+}
+.halo { animation: halo 2.6s ease-in-out infinite; }
+
+@keyframes shine-sweep {
+  0%   { transform: translateX(-140%) rotate(14deg); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateX(340%) rotate(14deg); opacity: 0; }
+}
+.shine-sweep { animation: shine-sweep 4.2s ease-in-out infinite; filter: blur(5px); }
+
+@keyframes confetti-fall {
+  0%   { transform: translate3d(0, -12px, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(var(--dx, 0), 300px, 0) rotate(var(--spin, 540deg)); opacity: 0; }
+}
+.confetti { animation: confetti-fall var(--dur, 2.2s) ease-in var(--delay, 0ms) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gift-in, .gift-bob, .chest-rattle, .burst,
+  .loot-rise, .loot-spin, .loot-rock, .halo, .shine-sweep, .confetti {
+    animation: none !important;
+  }
+  .confetti { opacity: 0; }
+  .loot-rise { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------------------- arena
+   A fight the player watches rather than reads. Every one of these is a
+   transform or an opacity so it stays on the compositor, and the whole set is
+   cut under prefers-reduced-motion — the fight still resolves, it just stops
+   moving, because the numbers are the part that matters. */
+
+@keyframes arena-lunge-r {
+  0% { transform: translateX(0); }
+  28% { transform: translateX(-7px); }
+  52% { transform: translateX(30px); }
+  100% { transform: translateX(0); }
+}
+@keyframes arena-lunge-l {
+  0% { transform: translateX(0); }
+  28% { transform: translateX(7px); }
+  52% { transform: translateX(-30px); }
+  100% { transform: translateX(0); }
+}
+@keyframes arena-hurt {
+  0%, 100% { transform: translateX(0); filter: none; }
+  10% { filter: brightness(2.4) saturate(0.2); }
+  20% { transform: translateX(8px); }
+  40% { transform: translateX(-7px); filter: brightness(2.4) saturate(0.2); }
+  60% { transform: translateX(5px); filter: none; }
+  80% { transform: translateX(-3px); }
+}
+@keyframes arena-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.75); }
+  22% { opacity: 1; transform: translateY(-4px) scale(1.12); }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
+@keyframes arena-jolt {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 2px); }
+  50% { transform: translate(3px, -2px); }
+  75% { transform: translate(-2px, -1px); }
+}
+@keyframes arena-fall {
+  to { transform: translateY(16px) rotate(-14deg); opacity: 0.3; filter: grayscale(1); }
+}
+@keyframes arena-torch {
+  0%, 100% { opacity: 0.7; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.22); }
+}
+
+.arena-attack-r { animation: arena-lunge-r 620ms ease-out; }
+.arena-attack-l { animation: arena-lunge-l 620ms ease-out; }
+.arena-hurt { animation: arena-hurt 520ms ease-out; }
+.arena-pop { animation: arena-pop 900ms ease-out forwards; }
+.arena-jolt { animation: arena-jolt 260ms steps(4); }
+.arena-fall { animation: arena-fall 700ms ease-in forwards; }
+.arena-torch { animation: arena-torch 1.1s ease-in-out infinite; transform-origin: bottom center; }
+
+/* The floor, laid back into the screen. A flat band under two sprites reads as
+   a shelf; the same band with a horizon over it reads as somewhere to stand. */
+.arena-floor {
   background-image:
-    linear-gradient(to right, var(--color-panel-line) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--color-panel-line) 1px, transparent 1px);
-  background-size: 48px 48px;
+    repeating-linear-gradient(90deg, var(--arena-line) 0 2px, transparent 2px 42px),
+    repeating-linear-gradient(0deg, var(--arena-line) 0 2px, transparent 2px 30px);
+  transform: perspective(240px) rotateX(52deg);
+  transform-origin: top center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-attack-r,
+  .arena-attack-l,
+  .arena-hurt,
+  .arena-jolt,
+  .arena-torch {
+    animation: none;
+  }
+  .arena-pop { animation: arena-pop 900ms linear forwards; }
+  .arena-fall { animation: none; opacity: 0.3; filter: grayscale(1); }
 }
