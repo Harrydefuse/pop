@@ -30,6 +30,17 @@ than one blob. Palette keys are the set ramp the icons already use:
 
 import math
 
+# Every piece is drawn at twice the frame's logical resolution.
+#
+# The anchors below, and every number in the piece functions, stay in the
+# character's own coordinates — the ones that line up with the hero art. The
+# primitives rasterise into a grid twice that size, sampling curves at the finer
+# pitch as they go. So an arc is computed at double the resolution rather than
+# doubled after the fact: a pauldron's edge comes out as a curve instead of four
+# steps, a spike comes to an actual point, and trim can be a line rather than a
+# bar. Straight edges simply double and lose nothing.
+S = 2
+
 # --------------------------------------------------------------------- frames
 
 # Where the body is on each build. Both frames carry six blank columns either
@@ -42,7 +53,7 @@ MALE = dict(
     face_rows=(18, 24), eye_rows=(19, 21),
     eyes=((16, 19), (25, 28)), cheek=((11, 15), (29, 33)),
     neck_rows=(25, 27), neck=(18, 26),
-    shoulder_row=29, sh_l=(6, 14), sh_r=(30, 38),
+    shoulder_row=29, sh_l=(5, 15), sh_r=(29, 39),
     torso_rows=(29, 40), torso=(13, 31), waist=(15, 29),
     fauld_rows=(41, 44), fauld=(14, 30),
     arm_l=(8, 14), arm_r=(30, 36), arm_rows=(39, 45),
@@ -56,7 +67,7 @@ FEMALE = dict(
     face_rows=(18, 24), eye_rows=(19, 22),
     eyes=((15, 18), (23, 26)), cheek=((9, 13), (27, 31)),
     neck_rows=(25, 27), neck=(16, 24),
-    shoulder_row=29, sh_l=(5, 13), sh_r=(27, 35),
+    shoulder_row=29, sh_l=(4, 14), sh_r=(26, 36),
     torso_rows=(29, 41), torso=(11, 30), waist=(13, 28),
     fauld_rows=(42, 46), fauld=(12, 29),
     arm_l=(7, 14), arm_r=(26, 33), arm_rows=(39, 48),
@@ -87,77 +98,94 @@ class Layer:
         self.cells = set()
 
     # -- primitives ---------------------------------------------------------
+    # All of these take logical coordinates and fill scaled cells. Anything with
+    # a curve iterates over the scaled rows so the curve is sampled at the finer
+    # pitch; anything straight just covers the S cells it maps onto.
+
+    def srow(self, sy, x0, x1):
+        """One scaled row, from float logical x to float logical x."""
+        if sy < 0 or sy >= self.f['h'] * S:
+            return
+        a = max(0, round(x0 * S))
+        b = min(self.f['w'] * S - 1, round(x1 * S) + S - 1)
+        for sx in range(a, b + 1):
+            self.cells.add((sx, sy))
+
+    def srows(self, y0, y1):
+        """The scaled rows covering logical rows y0..y1, and their logical y."""
+        for sy in range(round(y0 * S), round(y1 * S) + S):
+            yield sy, sy / S
 
     def span(self, y, x0, x1):
-        if y < 0 or y >= self.f['h']:
-            return
-        for x in range(max(0, x0), min(self.f['w'] - 1, x1) + 1):
-            self.cells.add((x, y))
+        for sy, _ in self.srows(y, y):
+            self.srow(sy, x0, x1)
 
     def rect(self, y0, y1, x0, x1):
-        for y in range(y0, y1 + 1):
-            self.span(y, x0, x1)
+        for sy, _ in self.srows(y0, y1):
+            self.srow(sy, x0, x1)
 
     def taper(self, y0, y1, top, bottom):
         """A trapezoid: (l, r) at the top easing to (l, r) at the bottom."""
         rows = max(1, y1 - y0)
-        for y in range(y0, y1 + 1):
-            t = (y - y0) / rows
-            l = round(top[0] + (bottom[0] - top[0]) * t)
-            r = round(top[1] + (bottom[1] - top[1]) * t)
-            self.span(y, l, r)
+        for sy, y in self.srows(y0, y1):
+            t = min(1.0, max(0.0, (y - y0) / rows))
+            self.srow(sy, top[0] + (bottom[0] - top[0]) * t, top[1] + (bottom[1] - top[1]) * t)
 
     def dome(self, y_top, y_bottom, cx, hw, flat=1.05):
         """An arc — the top of a helm, the cap of a pauldron."""
         h = max(1, y_bottom - y_top)
-        for y in range(y_top, y_bottom + 1):
+        for sy, y in self.srows(y_top, y_bottom):
             t = (y_bottom - y) / (h * flat)
-            w = max(1, round(hw * math.sqrt(max(0.0, 1 - t * t))))
-            self.span(y, cx - w, cx + w)
+            w = max(0.5, hw * math.sqrt(max(0.0, 1 - t * t)))
+            self.srow(sy, cx - w, cx + w)
 
     def bowl(self, y_top, y_bottom, cx, hw, flat=1.05):
         """The same arc upside down — the skirt of a pauldron, a shield foot."""
         h = max(1, y_bottom - y_top)
-        for y in range(y_top, y_bottom + 1):
+        for sy, y in self.srows(y_top, y_bottom):
             t = (y - y_top) / (h * flat)
-            w = max(1, round(hw * math.sqrt(max(0.0, 1 - t * t))))
-            self.span(y, cx - w, cx + w)
+            w = max(0.5, hw * math.sqrt(max(0.0, 1 - t * t)))
+            self.srow(sy, cx - w, cx + w)
 
     def lens(self, y_top, y_bottom, cx, hw, fat=0.55):
         """Narrow, wide, narrow — a shoulder cap seen from the front."""
         n = y_bottom - y_top + 1
-        for i in range(n):
-            w = max(1, round(hw * math.sin(math.pi * (i + 0.6) / (n + 0.2)) ** fat))
-            self.span(y_top + i, cx - w, cx + w)
+        for sy, y in self.srows(y_top, y_bottom):
+            i = y - y_top
+            w = max(0.5, hw * math.sin(math.pi * (i + 0.6) / (n + 0.2)) ** fat)
+            self.srow(sy, cx - w, cx + w)
 
     def spike(self, x, y, length, dx=0.0, base=3, up=True):
         """A blade from a base of `base` cells narrowing to a point."""
         step = -1 if up else 1
-        for i in range(length):
+        for j in range(length * S):
+            i = j / S
             t = i / max(1, length - 1)
-            w = max(0, round((base / 2) * (1 - t)))
-            cx = round(x + dx * i)
-            self.span(y + step * i, cx - w, cx + w)
+            w = max(0.0 if t > 0.86 else 0.4, (base / 2) * (1 - t))
+            cx = x + dx * i
+            self.srow(round((y + step * i) * S), cx - w, cx + w)
 
     def diamond(self, cx, cy, rx, ry):
-        for y in range(cy - ry, cy + ry + 1):
-            w = round(rx * (1 - abs(y - cy) / (ry + 0.4)))
-            self.span(y, cx - w, cx + w)
+        for sy, y in self.srows(cy - ry, cy + ry):
+            w = rx * (1 - abs(y - cy) / (ry + 0.4))
+            if w > 0:
+                self.srow(sy, cx - w, cx + w)
 
     def blob(self, cx, cy, rx, ry):
-        for y in range(cy - ry, cy + ry + 1):
+        for sy, y in self.srows(cy - ry, cy + ry):
             t = (y - cy) / max(1, ry)
-            w = round(rx * math.sqrt(max(0.0, 1 - t * t)))
-            self.span(y, cx - w, cx + w)
+            w = rx * math.sqrt(max(0.0, 1 - t * t))
+            if w > 0:
+                self.srow(sy, cx - w, cx + w)
 
     def cut(self, y0, y1, x0, x1):
-        for y in range(y0, y1 + 1):
-            for x in range(x0, x1 + 1):
-                self.cells.discard((x, y))
+        for sy in range(round(y0 * S), round(y1 * S) + S):
+            for sx in range(round(x0 * S), round(x1 * S) + S):
+                self.cells.discard((sx, sy))
 
     def mirror(self):
         """Reflect everything about the frame centre — draw one side, get two."""
-        cx2 = self.f['cx'] * 2
+        cx2 = self.f['cx'] * 2 * S + S - 1
         for (x, y) in list(self.cells):
             self.cells.add((cx2 - x, y))
 
@@ -182,7 +210,7 @@ class Piece:
             for (x, y) in m:
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)):
                     n = (x + dx, y + dy)
-                    if n not in m and 0 <= n[0] < self.f['w'] and 0 <= n[1] < self.f['h']:
+                    if n not in m and 0 <= n[0] < self.f['w'] * S and 0 <= n[1] < self.f['h'] * S:
                         self.px[n] = 'o'
         for (x, y) in m:
             self.px[(x, y)] = self.tone(m, x, y) if shade else 'm'
@@ -193,7 +221,7 @@ class Piece:
         thin lame ramps light-to-dark and a thick plate keeps a mid interior."""
         def run(dx, dy):
             n = 0
-            while n < 3 and (x + dx * (n + 1), y + dy * (n + 1)) in m:
+            while n < 3 * S and (x + dx * (n + 1), y + dy * (n + 1)) in m:
                 n += 1
             return n
         dn, rt, up, lf = run(0, 1), run(1, 0), run(0, -1), run(-1, 0)
@@ -208,12 +236,16 @@ class Piece:
     # -- decoration ---------------------------------------------------------
 
     def paint(self, cells, key, only_on=True):
+        """Logical cells in, scaled cells out — one logical pixel of trim is S
+        across, which keeps a gold line reading as a line at the new pitch."""
         for (x, y) in cells:
-            if not (0 <= x < self.f['w'] and 0 <= y < self.f['h']):
-                continue
-            if only_on and (x, y) not in self.reach:
-                continue
-            self.px[(x, y)] = key
+            for sy in range(round(y * S), round(y * S) + S):
+                for sx in range(round(x * S), round(x * S) + S):
+                    if not (0 <= sx < self.f['w'] * S and 0 <= sy < self.f['h'] * S):
+                        continue
+                    if only_on and (sx, sy) not in self.reach:
+                        continue
+                    self.px[(sx, sy)] = key
 
     def line(self, y, x0, x1, key, only_on=True):
         self.paint([(x, y) for x in range(x0, x1 + 1)], key, only_on)
@@ -246,8 +278,8 @@ class Piece:
 
     def emit(self):
         rows = {}
-        for y in range(self.f['h']):
-            line = ''.join(self.px.get((x, y), '.') for x in range(self.f['w']))
+        for y in range(self.f['h'] * S):
+            line = ''.join(self.px.get((x, y), '.') for x in range(self.f['w'] * S))
             if line.strip('.'):
                 rows[y] = line
         return rows
@@ -362,8 +394,13 @@ def _pauldron(p, f, pr, side):
         return
 
     reach = hw
+    # A cap, not a disc. A lens closes into a circle, and at the finer pitch the
+    # outline round the inner edge turned both shoulders into wheels bolted to
+    # the side of the chest. Domed on top, straight down the sides, and reaching
+    # far enough inboard that it reads as sitting on the cuirass.
     cap = p.layer()
-    cap.lens(top, top + 8, cx, reach)
+    cap.dome(top, top + 3, cx, reach, flat=1.5)
+    cap.taper(top + 3, top + 9, (cx - reach, cx + reach), (cx - reach + 1, cx + reach - 1))
     p.draw(cap)
     p.line(top + 1, cx - reach + 2, cx + reach - 2, 'A')
     for y in (top + 3, top + 6):
