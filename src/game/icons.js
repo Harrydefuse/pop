@@ -1,9 +1,7 @@
 // 8x8 monochrome glyphs. 'A' is the accent slot, recoloured per use.
 
 const P = { A: '#a855f7' }
-// `crisp` keeps these out of the upscaler: a one-pixel stroke has no interior
-// for corner-rounding to preserve, so smoothing turns every glyph to mush.
-const g = (grid) => ({ w: 8, h: 8, palette: P, crisp: true, grid })
+const g = (grid) => ({ w: 8, h: 8, palette: P, grid })
 
 export const ICONS = {
   home: g([
