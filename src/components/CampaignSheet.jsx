@@ -257,7 +257,7 @@ function Shell({ embedded, onClose, title, accent, children }) {
       </Modal>
     )
   }
-  return <div className="p-3">{children}</div>
+  return <div className="stack-in p-3">{children}</div>
 }
 
 export default function CampaignSheet({ onClose, embedded }) {

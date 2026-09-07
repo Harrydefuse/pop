@@ -503,7 +503,7 @@ function Running({ session, act }) {
   const tint = TINT[act.id] ?? 'var(--color-lime)'
 
   return (
-    <div className="p-3 space-y-3">
+    <div className="stack-in p-3 space-y-3">
       <Panel className="p-4 text-center" accent={tint}>
         <SectionTitle color={tint}>
           {session.paused ? (auto.current ? 'AUTO-PAUSED' : 'PAUSED') : act.name.toUpperCase()}
@@ -719,7 +719,7 @@ function History({ log }) {
 function Pick() {
   const { state, startSession } = useGame()
   return (
-    <div className="p-3 space-y-3">
+    <div className="stack-in p-3 space-y-3">
       <div>
         <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">the app counts it</span>}>
           WHAT ARE YOU DOING?

@@ -105,7 +105,7 @@ export default function Friends() {
   }
 
   return (
-    <div className="p-3 space-y-3.5">
+    <div className="stack-in p-3 space-y-3.5">
       <ModeSwitch mode={mode} setMode={setMode} />
       <Panel className="p-3.5" accent="var(--color-neon)">
         <div className="font-pixel text-[10px] text-neon">YOUR CIRCLE</div>

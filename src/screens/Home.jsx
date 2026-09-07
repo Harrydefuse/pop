@@ -14,7 +14,7 @@ import { streakTier } from '../game/engine'
  */
 function GiftCard({ onOpen }) {
   return (
-    <button onClick={onOpen} className="gift-in w-full text-left active:brightness-125">
+    <button onClick={onOpen} className="motion-own gift-in w-full text-left active:brightness-125">
       <Panel className="p-3 relative overflow-hidden" accent="var(--color-gold)">
         <span
           className="shine-sweep absolute top-0 left-0 h-full w-14 pointer-events-none"
@@ -251,7 +251,7 @@ export default function Home({ onGo }) {
   const slotState = (id) => state.dailies.find((d) => d.id === id) ?? { minutes: 0, done: false }
 
   return (
-    <div className="p-3 space-y-3">
+    <div className="stack-in p-3 space-y-3">
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <FirstSteps state={state} onGo={onGo} />

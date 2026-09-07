@@ -9,8 +9,22 @@ const TABS = [
 ]
 
 export default function TabBar({ tab, setTab, badges = {} }) {
+  // One marker for the whole bar rather than one per tab: a marker that belongs
+  // to the active tab can only appear and disappear, where a single marker
+  // positioned by percentage travels, and the travel is what tells you which
+  // way you moved.
+  const index = Math.max(0, TABS.findIndex((t) => t.key === tab))
   return (
     <nav className="relative z-20 border-t border-line bg-panel/95 backdrop-blur grid grid-cols-5 pad-safe-bottom">
+      <span
+        aria-hidden="true"
+        className="tab-marker absolute top-0 h-0.5 w-8 -translate-x-1/2"
+        style={{
+          left: `${(index + 0.5) * 20}%`,
+          background: 'var(--color-neon)',
+          boxShadow: '0 0 10px var(--color-neon)',
+        }}
+      />
       {TABS.map((t) => {
         const active = tab === t.key
         return (
@@ -20,13 +34,9 @@ export default function TabBar({ tab, setTab, badges = {} }) {
             className="relative py-2.5 min-h-[52px] flex flex-col items-center justify-center gap-1.5 transition-colors active:bg-panel-2"
             aria-current={active ? 'page' : undefined}
           >
-            {active && (
-              <span
-                className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8"
-                style={{ background: 'var(--color-neon)', boxShadow: '0 0 10px var(--color-neon)' }}
-              />
-            )}
-            <Icon name={t.icon} size={14} color={active ? 'var(--color-neon)' : 'var(--color-ink-faint)'} />
+            <span key={active ? 'on' : 'off'} className={active ? 'tick-pop' : undefined}>
+              <Icon name={t.icon} size={14} color={active ? 'var(--color-neon)' : 'var(--color-ink-faint)'} />
+            </span>
             <span
               className="font-pixel text-[6px] leading-none"
               style={{ color: active ? 'var(--color-neon)' : 'var(--color-ink-faint)' }}

@@ -1,8 +1,64 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RARITY } from '../game/config'
 import { alpha } from '../game/color'
 
+/** Someone who has asked their system to stop moving things gets no roll. */
+const prefersStill = () =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
 /* ------------------------------------------------------------------ surfaces */
+
+/**
+ * A number that travels to its new value instead of cutting to it.
+ *
+ * Cores, power and XP are the app's whole feedback loop, and they used to jump:
+ * you logged a session, looked up, and the number was simply different. Rolling
+ * it puts the gain on screen as something that happened rather than something
+ * that is now true. Short — a quarter of a second — because a counter that
+ * takes a full second to settle is a counter you are waiting on.
+ *
+ * Steps rather than a smooth ramp, to sit with the rest of the art, and no
+ * roll at all on the first render or for a drop: an opening balance has not
+ * gone up, and watching a currency tick downwards is a different feeling
+ * altogether.
+ */
+export function Num({ value, format = (n) => String(n), className = '', style }) {
+  const [shown, setShown] = useState(value)
+  const from = useRef(value)
+  const first = useRef(true)
+
+  useEffect(() => {
+    if (first.current) {
+      first.current = false
+      from.current = value
+      setShown(value)
+      return
+    }
+    const start = from.current
+    from.current = value
+    if (value <= start || prefersStill()) {
+      setShown(value)
+      return
+    }
+    const t0 = performance.now()
+    let raf = 0
+    const tick = (now) => {
+      const t = Math.min(1, (now - t0) / 260)
+      // Ease out, then quantise, so it lands in visible increments.
+      const eased = 1 - (1 - t) ** 3
+      setShown(Math.round(start + (value - start) * eased))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+
+  return (
+    <span key={value} className={`${shown !== value ? '' : 'tick-pop'} inline-block ${className}`} style={style}>
+      {format(shown)}
+    </span>
+  )
+}
 
 export function Panel({ children, className = '', accent, corners = true, as: Tag = 'div', ...rest }) {
   return (
@@ -164,11 +220,11 @@ export function Modal({ open, onClose, title, children, accent = 'var(--color-ne
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 backdrop-blur-[2px] cursor-default"
+        className="scrim-in absolute inset-0 backdrop-blur-[2px] cursor-default"
         style={{ background: 'var(--scrim)' }}
       />
       <div
-        className={`relative w-full ${wide ? 'max-w-[400px]' : 'max-w-[340px]'} m-3 border bg-panel max-h-[85%] flex flex-col`}
+        className={`sheet-in relative w-full ${wide ? 'max-w-[400px]' : 'max-w-[340px]'} m-3 border bg-panel max-h-[85%] flex flex-col`}
         style={{ borderColor: accent, boxShadow: `0 0 40px -12px ${accent}` }}
         role="dialog"
         aria-modal="true"

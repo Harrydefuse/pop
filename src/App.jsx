@@ -85,7 +85,11 @@ function Device() {
         {/* Caps the measure when the app runs full-bleed on a wide, short
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}
-        <div className="mx-auto w-full max-w-[520px]">
+        {/* Keyed on the tab so React tears the old screen down and mounts the
+            new one — which is what lets it animate in. Without the key, React
+            reconciles the two screens into one and nothing has a mount to
+            animate from. */}
+        <div key={tab} className="screen-in mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
           {tab === 'train' && <Train />}
           {tab === 'bosses' && <Bosses />}

@@ -30,7 +30,7 @@ function Toast({ t, onDone }) {
   return (
     // Never interactive: a toast must not swallow a tap meant for the screen behind it.
     <div
-      className="loot-pop flex items-start gap-2.5 border bg-[#0f0a1c]/97 px-3 py-2.5 backdrop-blur"
+      className="toast-in flex items-start gap-2.5 border bg-[#0f0a1c]/97 px-3 py-2.5 backdrop-blur"
       style={{ borderColor: color, boxShadow: `0 0 24px -10px ${color}` }}
       role="status"
     >

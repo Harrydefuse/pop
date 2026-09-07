@@ -3,7 +3,7 @@ import Avatar from './Avatar'
 import PixelSprite from './PixelSprite'
 import { MAP_ICON } from '../game/sprites'
 import Icon from './Icon'
-import { Bar } from './ui'
+import { Bar, Num } from './ui'
 import { useGame } from '../game/useGame'
 import { classById, fmt, powerScore, rankFor, streakTier, xpToNext } from '../game/engine'
 import { MAX_LEVEL } from '../game/config'
@@ -69,7 +69,9 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
               {rank.name}
             </span>
             <span className="text-ink-faint text-[10px] shrink-0">·</span>
-            <span className="font-mono text-[10px] text-ink-dim truncate">{fmt(power)} PWR</span>
+            <span className="font-mono text-[10px] text-ink-dim truncate">
+              <Num value={power} format={fmt} /> PWR
+            </span>
           </div>
         </div>
 
@@ -115,7 +117,9 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
         </span>
         <span className="flex items-center gap-1 shrink-0" title="Cores">
           <Icon name="core" size={10} color="var(--color-gold)" />
-          <span className="font-pixel text-[8px] text-gold">{fmt(p.cores)}</span>
+          <span className="font-pixel text-[8px] text-gold">
+            <Num value={p.cores} format={fmt} />
+          </span>
         </span>
       </div>
     </header>

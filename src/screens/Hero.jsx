@@ -31,7 +31,7 @@ function Tile({ rarity, level, equipped, weapon, label, onClick, children }) {
     <button
       onClick={onClick}
       aria-label={label}
-      className="relative grid place-items-center aspect-square border-2 transition-transform active:scale-95"
+      className="relative grid place-items-center aspect-square border-2 press"
       style={{
         borderColor: color,
         background: alpha(color, equipped ? 40 : 22),
@@ -134,7 +134,7 @@ function Loadout({ player, onPick }) {
             key={s.key}
             onClick={() => onPick(s.key)}
             aria-label={item ? `${s.name}: ${item.name}. Change` : `${s.name}: empty. Choose one`}
-            className="relative grid place-items-center aspect-square border-2 min-h-[44px] transition-transform active:scale-95"
+            className="relative grid place-items-center aspect-square border-2 min-h-[44px] press"
             style={{ borderColor: color, background: item ? alpha(color, 26) : 'transparent' }}
           >
             {item ? (
@@ -341,7 +341,7 @@ function Collection({ kinds, owned, onPick, weapons }) {
                     key={g.set}
                     onClick={() => onPick(g)}
                     aria-label={`${g.name}${mine ? '' : ', locked'}`}
-                    className="relative grid place-items-center aspect-square border transition-transform active:scale-95"
+                    className="relative grid place-items-center aspect-square border press"
                     style={{
                       borderColor: mine ? color : 'var(--color-line)',
                       background: mine ? alpha(color, 20) : 'var(--color-panel-2)',
@@ -519,7 +519,7 @@ export default function Hero() {
   const showPets = filter === 'all' || filter === 'pets'
 
   return (
-    <div className="p-3 space-y-3">
+    <div className="stack-in p-3 space-y-3">
       {/* -------------------------------------------------- the character */}
       <Panel accent={cls.color} className="p-3.5">
         <div className="flex items-center justify-between gap-2">
