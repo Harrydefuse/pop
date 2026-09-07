@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
+import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -176,11 +176,16 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
         )
       })}
 
+      {/* Steel, not the set's plate colours, and thrown into relief against
+          whatever it is standing on. Painted in the armour's own palette it
+          vanished — worst of all at the top of the game, where a gilded blade
+          on gilded plate was violet on violet. */}
       {weapon && (
         <PixelSprite
-          sprite={{ ...weapon, palette: ARMOUR_PALETTES[held.set] ?? ARMOUR_PALETTES.leather }}
+          sprite={{ ...weapon, palette: WEAPON_PALETTES[held.set] ?? WEAPON_PALETTES.leather }}
           size={width}
           className="absolute inset-0"
+          style={{ filter: `drop-shadow(0 0 3px ${alpha('#000000', 85)}) drop-shadow(0 0 7px ${alpha(RARITY[held.rarity].color, 70)})` }}
         />
       )}
 

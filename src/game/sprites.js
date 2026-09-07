@@ -727,6 +727,24 @@ export const ARMOUR_PALETTES = {
   gilded: { o: '#0e0620', s: '#331c5e', d: '#502d92', m: '#7d55cc', l: '#bda2f2', A: '#ffd77a', E: '#8ff8ff' },
 }
 
+/**
+ * What a weapon is made of, which is not what the armour is made of.
+ *
+ * A blade used to be painted in the set's own palette, so a gilded sword on
+ * gilded plate was violet on violet and simply disappeared — the one thing the
+ * player chose to carry was the one thing they could not see. A weapon has a
+ * bright edge and dark furniture no matter what its owner is wearing, so the
+ * blade keeps a steel ramp and the set only shows in the guard, the grip and
+ * the stone in the pommel. It still reads as belonging to the set; it stops
+ * dissolving into it.
+ */
+export const WEAPON_PALETTES = Object.fromEntries(
+  Object.entries(ARMOUR_PALETTES).map(([set, p]) => [
+    set,
+    { o: '#0a0d13', s: '#2f3742', d: '#5d6877', m: '#93a0b1', l: '#f2f7ff', A: p.A, E: p.E ?? p.A },
+  ]),
+)
+
 /** One slot + one set = one sprite, built on demand. */
 // The Founder's Cuirass — the beta gift, and the only piece of gear that is not
 // part of a set.
