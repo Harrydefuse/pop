@@ -285,6 +285,25 @@ export function itemScore(item) {
   return base * RARITY[item.rarity].mult * (1 + (item.level - 1) * 0.35)
 }
 
+/**
+ * What the player is actually wearing, as items rather than as ids.
+ *
+ * `player.equipped` is a map of slot to inventory id, which is the right thing
+ * to store and the wrong thing to draw: everything that paints a character
+ * needs the item — its set for the palette, its rarity for the aura. Each
+ * caller was doing this lookup for itself, and the one that forgot handed the
+ * arena a map of bare strings, so the hero walked into every fight in his
+ * underclothes with a maxed set of legendary plate in the bag.
+ */
+export function wornGear(player) {
+  const out = {}
+  for (const [slot, id] of Object.entries(player.equipped ?? {})) {
+    const item = player.inventory?.find((i) => i.id === id)
+    if (item) out[slot] = item
+  }
+  return out
+}
+
 export function bestLoadout(inventory) {
   const best = {}
   for (const item of inventory) {

@@ -224,6 +224,35 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
 export function ChestArt({ size = 48, className = '', style }) {
   return <PixelSprite sprite={CHEST_SPRITE} size={size} className={className} style={style} />
 }
+/**
+ * A boss's head, at portrait size.
+ *
+ * A whole boss shrunk into a thirty-pixel box is a grey smudge — every one of
+ * them reads the same. They are all drawn standing, head at the top of the
+ * frame, so scaling up and pinning the head to the middle of the box gives a
+ * face you can tell apart at a glance.
+ */
+export function BossFace({ sprite = 'ogre', size = 30, className = '', style }) {
+  const art = BOSS_SPRITES[sprite] ?? CAMPAIGN_SPRITES[sprite] ?? BOSS_SPRITES.ogre
+  const w = size * 2.6
+  const h = (w * art.h) / art.w
+  // Where the head sits in the frame, as a fraction of its height. Measured
+  // rather than guessed: a boss with empty rows above it would otherwise
+  // portrait as blank sky.
+  const top = art.grid.findIndex((row) => /[^.\s]/.test(row))
+  const head = (Math.max(0, top) + art.h * 0.1) / art.h
+  return (
+    <span className={`relative block overflow-hidden ${className}`} style={{ width: size, height: size, ...style }}>
+      <PixelSprite
+        sprite={art}
+        size={w}
+        className="absolute left-1/2"
+        style={{ transform: 'translateX(-50%)', top: size / 2 - head * h }}
+      />
+    </span>
+  )
+}
+
 export function BossArt({ sprite = 'ogre', size = 180, className = '', style }) {
   const art = BOSS_SPRITES[sprite] ?? CAMPAIGN_SPRITES[sprite] ?? BOSS_SPRITES.ogre
   // Fit to a square box rather than to width. Boss grids are all different

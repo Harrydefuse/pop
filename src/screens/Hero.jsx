@@ -6,7 +6,7 @@ import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
 import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
-import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor } from '../game/engine'
+import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor, wornGear } from '../game/engine'
 import { alpha } from '../game/color'
 
 /* ------------------------------------------------------------------ tiles --- */
@@ -495,14 +495,7 @@ export default function Hero() {
   const [openCodex, setOpenCodex] = useState(null)
   const [openPet, setOpenPet] = useState(null)
 
-  const worn = useMemo(() => {
-    const out = {}
-    for (const [slot, id] of Object.entries(p.equipped)) {
-      const item = p.inventory.find((i) => i.id === id)
-      if (item) out[slot] = item
-    }
-    return out
-  }, [p.equipped, p.inventory])
+  const worn = useMemo(() => wornGear(p), [p])
 
   const byRarity = (a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || itemScore(b) - itemScore(a)
   const gear = useMemo(() => [...p.inventory].sort(byRarity), [p.inventory])

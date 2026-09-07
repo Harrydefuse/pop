@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import PixelSprite from './PixelSprite'
 import { armSprite } from '../game/wallArms'
 import { CHEST_SPRITE } from '../game/sprites'
+import { glow, makeCanvas, paintFloor, paintWall, sconce } from '../game/pixelRoom'
 
 /**
  * The room behind the title card: a stone wall hung with racks of arms, lit by
@@ -99,85 +100,12 @@ export function ArmsRack({ arms, size = 46, gap = 4, className = '' }) {
   )
 }
 
-/** Deterministic noise, so the room is the same every time it opens. */
-function rand(seed) {
-  let s = seed >>> 0
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0
-    return s / 4294967296
-  }
-}
-
-function makeCanvas(w, h) {
-  const c = document.createElement('canvas')
-  c.width = w
-  c.height = h
-  return c
-}
-
-/**
- * Courses of block, offset every other row, each shaded off a seeded roll. The
- * variation is the whole job: a wall of identical rectangles reads as graph
- * paper, and it is the handful of lighter and darker stones that make it read
- * as masonry.
- */
-function paintWall(W, H, floorY, seed) {
-  const c = makeCanvas(W, H)
-  const g = c.getContext('2d')
-  const r = rand(seed)
-  const bh = 7
-  const bw = 13
-  g.fillStyle = C.mortar
-  g.fillRect(0, 0, W, H)
-  for (let row = 0, y = -3; y < floorY; row++, y += bh) {
-    const offset = row % 2 ? -Math.round(bw / 2) : 0
-    for (let x = offset; x < W; x += bw) {
-      const roll = r()
-      const face = roll > 0.88 ? C.stoneHot : roll > 0.6 ? C.stoneLit : roll > 0.18 ? C.stone : C.stoneDark
-      g.fillStyle = face
-      g.fillRect(x + 1, y + 1, bw - 1, bh - 1)
-      // A lit top edge on the stones that catch the light, so the courses read
-      // as having depth rather than being tiles.
-      if (roll > 0.5) {
-        g.fillStyle = C.stoneHot
-        g.fillRect(x + 1, y + 1, bw - 1, 1)
-      }
-      g.fillStyle = C.stoneDark
-      g.fillRect(x + 1, y + bh - 1, bw - 1, 1)
-    }
-  }
-  return c
-}
-
-/** Flagstones running away from the wall, packing as they recede. */
-function paintFloor(g, W, H, floorY) {
-  g.fillStyle = C.floor
-  g.fillRect(0, floorY, W, H - floorY)
-  g.fillStyle = C.floorLit
-  g.fillRect(0, floorY, W, 2)
-  const depth = H - floorY
-  for (let i = 1; i < 7; i++) {
-    const y = floorY + Math.round(depth * (i / 7) ** 1.6)
-    g.fillStyle = C.floorLine
-    g.fillRect(0, y, W, 1)
-  }
-  for (let i = -4; i < 10; i++) {
-    const x = Math.round(W / 2 + (i * W) / 7)
-    g.strokeStyle = C.floorLine
-    g.lineWidth = 1
-    g.beginPath()
-    g.moveTo(Math.round(W / 2 + (x - W / 2) * 0.25), floorY)
-    g.lineTo(x, H)
-    g.stroke()
-  }
-}
-
 /** The static half of the room, painted once per size. */
 function paintRoom(W, H, floorY, seed) {
   const c = makeCanvas(W, H)
   const g = c.getContext('2d')
-  g.drawImage(paintWall(W, H, floorY, seed), 0, 0)
-  paintFloor(g, W, H, floorY)
+  paintWall(g, W, floorY, C, seed)
+  paintFloor(g, W, H, floorY, C)
   return c
 }
 
@@ -210,27 +138,6 @@ export default function ArmouryScene({ className = '', style }) {
       lights = LIGHTS.map((L) => ({ ...L, px: Math.round(W * L.x), py: Math.round(H * L.y) }))
     }
 
-    /**
-     * An iron bracket off the wall with a burning brand in it. The bracket is
-     * what sells it: a flame floating on bare stone reads as a bug.
-     */
-    const sconce = (g, x, y, t) => {
-      g.fillStyle = C.iron
-      g.fillRect(x - 4, y + 8, 9, 2)
-      g.fillRect(x - 1, y + 6, 3, 6)
-      g.fillStyle = C.ironLit
-      g.fillRect(x - 4, y + 8, 9, 1)
-      g.fillStyle = C.torchWood
-      g.fillRect(x - 1, y, 3, 9)
-      const h = Math.round(9 + Math.sin(t) * 3)
-      g.fillStyle = C.flameLow
-      g.fillRect(x - 3, y - h, 7, h)
-      g.fillStyle = C.flameMid
-      g.fillRect(x - 2, y - h + 2, 5, h - 1)
-      g.fillStyle = C.flameHot
-      g.fillRect(x - 1, y - h + 4, 3, Math.max(1, h - 4))
-    }
-
     const draw = (now) => {
       const g = cv.getContext('2d')
       g.clearRect(0, 0, W, H)
@@ -238,14 +145,8 @@ export default function ArmouryScene({ className = '', style }) {
 
       for (const L of lights) {
         const t = still ? 0 : now * L.speed + L.phase
-        const pulse = 0.85 + Math.sin(t) * 0.15
-        const grad = g.createRadialGradient(L.px, L.py, 0, L.px, L.py, L.r * pulse)
-        grad.addColorStop(0, 'rgba(255,186,102,0.5)')
-        grad.addColorStop(0.5, 'rgba(226,120,44,0.2)')
-        grad.addColorStop(1, 'rgba(226,89,31,0)')
-        g.fillStyle = grad
-        g.fillRect(L.px - L.r * 2, L.py - L.r * 2, L.r * 4, L.r * 4)
-        if (L.torch) sconce(g, L.px, L.py, t)
+        glow(g, L.px, L.py, L.r * (0.85 + Math.sin(t) * 0.15))
+        if (L.torch) sconce(g, L.px, L.py, t, C)
       }
 
       // The room falls away at the edges, which is what keeps the eye on the
