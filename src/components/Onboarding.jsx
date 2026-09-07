@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Btn } from './ui'
 import { HeroView, PetView } from './Sprites'
 import PixelSprite from './PixelSprite'
-import ArmouryScene, { ArmsRack } from './ArmouryScene'
+import TitleRoom from './TitleRoom'
 import { useGame } from '../game/useGame'
 import { AVATAR_BODIES, AVATAR_HAIR, AVATAR_SKINS, TITLE_SWORD, TUNIC } from '../game/sprites'
 
@@ -153,31 +153,6 @@ function Swatch({ color, selected, onClick, label }) {
 }
 
 /** Every rarity gets a turn on the wall, best kept for the top rack. */
-/**
- * The arms hung across the room, biggest rack lowest. What of it actually fits
- * is decided at runtime — see the gap measurement in the title card.
- */
-const WALL_ARMS = [
-  {
-    needs: 132, size: 36, gap: 6,
-    arms: [
-      ['sword', '#7d55cc', '#8ff8ff'],
-      ['shield', '#35a294', '#7ef2d8'],
-      ['sword', '#c9a227', '#f2d571'],
-    ],
-  },
-  {
-    needs: 62, size: 46, gap: 4,
-    arms: [
-      ['sword', '#35a294', '#7ef2d8'],
-      ['dagger', '#a06b45', '#c9a227'],
-      ['shield', '#c9a227', '#ffe9a8'],
-      ['mace', '#98a1ae', '#dbe7f5'],
-      ['bow', '#a06b45', '#c9a227'],
-    ],
-  },
-]
-
 export default function Onboarding({ onContinue }) {
   const { state, onboard, testAccount } = useGame()
   const has = state.onboarded
@@ -198,19 +173,6 @@ export default function Onboarding({ onContinue }) {
 
   const preview = { body, skin, hair, shirt: TUNIC }
 
-  // How much bare wall the title card has left between the menu and the floor.
-  // The racks are hung out of this rather than off a percentage of the window:
-  // the menu is a stack of fixed-height boards, so it eats a bigger share of a
-  // short window, and a rack pinned to a percentage went straight behind it.
-  const gapRef = useRef(null)
-  const [wall, setWall] = useState(0)
-  useEffect(() => {
-    const el = gapRef.current
-    if (!el) return
-    const ro = new ResizeObserver(() => setWall(el.getBoundingClientRect().height))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [step])
 
 
   // The title card is its own screen, not a step in a form: full bleed art, the
@@ -218,7 +180,7 @@ export default function Onboarding({ onContinue }) {
   if (step === 0) {
     return (
       <div className="absolute inset-0 z-50 overflow-hidden select-none">
-        <ArmouryScene className="absolute inset-0" />
+        <TitleRoom className="absolute inset-0" />
 
         <div className="absolute inset-0 flex flex-col items-center px-6 pt-[9%] pb-6">
           <TitleLogo />
@@ -245,10 +207,7 @@ export default function Onboarding({ onContinue }) {
             </div>
           </div>
 
-          {/* The bare wall, and whatever fits on it. */}
-          <div ref={gapRef} className="flex-1 w-full min-h-0 flex flex-col justify-end gap-3 pb-4">
-            {WALL_ARMS.map((rack, i) => (wall >= rack.needs ? <ArmsRack key={i} {...rack} /> : null))}
-          </div>
+          <div className="flex-1" />
 
           <div className="flex items-end gap-1">
             <PetView refId="pup" level={1} size={34} />

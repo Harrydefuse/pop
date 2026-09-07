@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Btn } from './ui'
 import Avatar from './Avatar'
 import { BossArt, BossFace, HeroView } from './Sprites'
 import { useGame } from '../game/useGame'
-import ArenaStage from './ArenaStage'
 import { fightOdds, fightPower, fmtFull, resolveFight, todayKey, wornGear } from '../game/engine'
 
 /**
@@ -133,6 +132,54 @@ function Stat({ label, value, tone }) {
   )
 }
 
+/**
+ * The room, in four bands: wall, the line where it meets the ground, the
+ * ground, and the dark the edges fall away into.
+ *
+ * It was a painted canvas — arches, sconces, scuffed sand, a ring scratched
+ * into the floor — and at that size it was a cathedral with two dolls standing
+ * in it. A fight wants the fighters big and the room out of the way, so the
+ * room is four gradients now and nothing else.
+ */
+// Where the wall meets the floor. Fixed, because the fighters are placed
+// against it rather than the other way round.
+const HORIZON = '50%'
+
+function Stage() {
+  const y = HORIZON
+  return (
+    <div className="absolute inset-0" aria-hidden="true">
+      <div
+        className="absolute inset-x-0 top-0"
+        style={{ height: y, background: 'linear-gradient(180deg, #08050e 0%, #1a1019 58%, #33202a 100%)' }}
+      />
+      <div
+        className="absolute inset-x-0 bottom-0"
+        style={{ top: y, background: 'linear-gradient(180deg, #4c3826 0%, #241a14 62%, #120c10 100%)' }}
+      />
+      <div className="absolute inset-x-0 h-[3px]" style={{ top: y, background: '#7d5e3f' }} />
+      {/* Two lamps off the back wall, so the fighters are lit from behind and
+          keep an edge against it. */}
+      {[18, 82].map((x) => (
+        <div
+          key={x}
+          className="arena-torch absolute"
+          style={{
+            left: `${x}%`,
+            top: y,
+            width: 190,
+            height: 190,
+            marginLeft: -95,
+            marginTop: -150,
+            background: 'radial-gradient(circle, rgba(255,168,84,0.32), transparent 66%)',
+          }}
+        />
+      ))}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 66%, transparent 28%, rgba(0,0,0,0.78) 100%)' }} />
+    </div>
+  )
+}
+
 /** The ring of light thrown off a blow, at the point where it lands. */
 function Spark({ seed, color, side }) {
   return (
@@ -148,6 +195,28 @@ function Spark({ seed, color, side }) {
         borderRadius: '50%',
         border: `3px solid ${color}`,
         boxShadow: `0 0 18px 4px ${color}`,
+      }}
+    />
+  )
+}
+
+/**
+ * The dark each fighter stands in.
+ *
+ * Two sprites on a coloured band read as two sprites in front of a wall. A
+ * shadow pooled under the feet is the whole difference between that and two
+ * fighters standing on a floor, and it is one element each.
+ */
+function Shade({ w }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+      style={{
+        bottom: -w * 0.03,
+        width: w * 0.8,
+        height: w * 0.16,
+        background: 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.62), transparent 70%)',
       }}
     />
   )
@@ -225,6 +294,35 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
   const bossDown = over && fight.won
   const round = fight ? Math.min(fight.rounds.length, Math.floor(step / 2) + 1) : 0
 
+  // How big the two of them are, measured off the whole screen rather than off
+  // the stage — the stage's own height is derived from this, and a stage that
+  // sized the fighters that sized the stage would chase its own tail.
+  //
+  // Budgeted on the FRAME, not on the drawing: the hero is 32 pixels of ink in
+  // a 44-wide frame, so sizing off how big he looks put a third of him past the
+  // edge of the screen.
+  const shell = useRef(null)
+  const [box, setBox] = useState({ w: 375, h: 812 })
+  useLayoutEffect(() => {
+    const el = shell.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect()
+      setBox({ w: r.width, h: r.height })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const fighter = Math.round(Math.max(110, Math.min(box.w * 0.58, box.h * 0.42, 320)))
+  // The boss gets the full box. At 0.86 the thing the whole campaign is
+  // about stood shorter than the person fighting it.
+  const bossBox = fighter
+  // The stage is a band, not a hall. Left to fill the screen it put a storey of
+  // empty dark over their heads; capped against their height and centred in
+  // what is left, the two of them fill the frame and the rest reads as the
+  // letterbox on an arcade cabinet.
+  const stageH = Math.round(fighter * 2.3)
+
   const skip = () => {
     setStep(beats.length - 1)
     setPhase('done')
@@ -237,7 +335,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: DECK.ink, color: '#ffeccd' }}>
+    <div ref={shell} className="fixed inset-0 z-[200] flex flex-col" style={{ background: DECK.ink, color: '#ffeccd' }}>
       {/* ---------------------------------------------------------- the crown */}
       <div
         className="flex items-center gap-2 px-3 pt-[max(10px,env(safe-area-inset-top))] pb-2 shrink-0"
@@ -297,18 +395,19 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
       </div>
 
       {/* ---------------------------------------------------------- the stage */}
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      <div className="relative flex-1 min-h-0 my-auto w-full overflow-hidden" style={{ maxHeight: stageH }}>
         <div className={`absolute inset-0 ${heroHit || bossHit ? 'arena-jolt' : ''}`}>
-          <ArenaStage flash={step + 1} className="absolute inset-0" />
+          <Stage />
         </div>
 
-        {/* The fighters stand on the sand rather than at the bottom of the box:
-            the wall behind them ends at 46% and the ring is drawn under their
-            feet, so they are placed against the floor, not the frame. */}
-        <div className="absolute inset-x-0 bottom-0 h-[62%] flex items-end justify-between px-4 pb-[6%]">
+        {/* Squared up in the middle of the floor, close enough to reach each
+            other. Pushed out to the two edges they read as two menu icons on
+            either side of an empty room. */}
+        <div className="absolute inset-x-0 bottom-[12%] flex items-end justify-center">
           <div className="relative">
+            <Shade w={fighter * 0.75} />
             <div className={heroHit ? 'arena-hurt' : bossHit ? 'arena-attack-r' : heroDown ? 'arena-fall' : 'arena-idle'}>
-              <HeroView av={p.avatar} equipped={worn} height={150} />
+              <HeroView av={p.avatar} equipped={worn} height={fighter} />
             </div>
             {bossHit && <Dust key={`dh${step}`} side="right" />}
             {heroHit && <Spark seed={`s${step}`} color={DECK.theirs} side="right" />}
@@ -323,9 +422,13 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
             )}
           </div>
 
-          <div className="relative">
+          {/* Pulled in over the hero's frame, which carries six blank columns
+              down each side — squared up on the frames they stood a body apart
+              and neither of them could reach the other. */}
+          <div className="relative" style={{ marginLeft: -Math.round(fighter * 0.12) }}>
+            <Shade w={bossBox} />
             <div className={bossHit ? 'arena-hurt' : heroHit ? 'arena-attack-l' : bossDown ? 'arena-fall' : 'float-soft'}>
-              <BossArt sprite={boss.sprite} size={142} />
+              <BossArt sprite={boss.sprite} size={bossBox} />
             </div>
             {heroHit && <Dust key={`db${step}`} side="left" />}
             {bossHit && <Spark seed={`s${step}`} color={DECK.land} side="left" />}
