@@ -111,6 +111,15 @@ function Health({ label, hp, max, color, portrait, align = 'left' }) {
   )
 }
 
+/**
+ * The form band's own colours, not the page's.
+ *
+ * `formOf` hands back theme variables, and the theme can be light — where
+ * `--color-danger` is a crimson that reads at 3.2:1 on this panel. The arena
+ * fixes its own ground in both themes, so it has to fix its own type too.
+ */
+const FORM_TONE = { PEAKING: DECK.mine, SHARP: '#8ff8ff', RUSTY: '#ffd166', COLD: DECK.theirs }
+
 function Stat({ label, value, tone }) {
   return (
     <div className="flex-1 px-2 py-1.5 text-center" style={{ background: 'rgba(0,0,0,0.4)', boxShadow: `inset 0 0 0 1px ${DECK.edge}` }}>
@@ -375,7 +384,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
         {phase === 'ready' && (
           <div className="stack-in">
             <div className="flex gap-1.5">
-              <Stat label="FORM" value={me.form.label} tone={me.form.color} />
+              <Stat label="FORM" value={me.form.label} tone={FORM_TONE[me.form.label] ?? DECK.chip} />
               <Stat label="GEAR" value={me.gear} tone="#8ff8ff" />
               <Stat label="PER HIT" value={me.attack} tone={DECK.mine} />
               <Stat

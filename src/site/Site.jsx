@@ -26,7 +26,9 @@ function useReveal() {
   useEffect(() => {
     const root = document.documentElement
     root.classList.add('js-motion')
-    const nodes = Array.from(document.querySelectorAll('.reveal'))
+    // Three kinds of group share one observer: a block that rises, a row whose
+    // children arrive one after another, and the hero's hand-timed sequence.
+    const nodes = Array.from(document.querySelectorAll('.reveal, .stagger, .lift'))
     const show = (el) => el.classList.add('in')
 
     if (!('IntersectionObserver' in window)) {
@@ -56,6 +58,94 @@ function useReveal() {
       root.classList.remove('js-motion')
     }
   }, [])
+}
+
+/**
+ * The two things that follow the scrollbar: how far down the page you are, and
+ * whether the nav has left the top.
+ *
+ * Both are written straight to the DOM inside one rAF-throttled listener rather
+ * than through state. A scroll handler that calls setState re-renders the whole
+ * page on every frame of every flick, and this page is nine sections of static
+ * copy — there is nothing in it worth re-rendering sixty times a second.
+ */
+function useScrollFx(nav, rail) {
+  useEffect(() => {
+    let raf = 0
+    const apply = () => {
+      raf = 0
+      const doc = document.documentElement
+      const max = doc.scrollHeight - doc.clientHeight
+      const y = window.scrollY
+      rail.current?.style.setProperty('--read', String(max > 0 ? Math.min(1, y / max) : 0))
+      nav.current?.classList.toggle('stuck', y > 24)
+      // How far into the first screen we are, which is all the hero card's
+      // drift is allowed to know about.
+      document.documentElement.style.setProperty('--drift', String(Math.min(1, y / Math.max(1, doc.clientHeight))))
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(apply)
+    }
+    apply()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [nav, rail])
+}
+
+/**
+ * A number that counts up the first time it is scrolled to.
+ *
+ * The figures in the integrity row are the argument of that section — five
+ * services, half pay, zero ways to buy in — and a number that lands rather than
+ * simply being printed is a number people read.
+ */
+function Count({ to, suffix = '', ms = 900 }) {
+  const [n, setN] = useState(0)
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || to === 0) return
+    let raf = 0
+    const run = () => {
+      const t0 = performance.now()
+      const tick = (now) => {
+        const t = Math.min(1, (now - t0) / ms)
+        // Eased so it decelerates into the answer instead of stopping dead.
+        setN(Math.round(to * (1 - (1 - t) ** 3)))
+        if (t < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    if (!('IntersectionObserver' in window)) {
+      setN(to)
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          run()
+          io.disconnect()
+        }
+      },
+      { threshold: 0.4 },
+    )
+    io.observe(el)
+    return () => {
+      cancelAnimationFrame(raf)
+      io.disconnect()
+    }
+  }, [to, ms])
+  return (
+    <span ref={ref}>
+      {n}
+      {suffix}
+    </span>
+  )
 }
 
 /* ------------------------------------------------------------------ hero --- */
@@ -101,7 +191,7 @@ function LiveRig() {
   const pct = Math.min(100, (player.xp / need) * 100)
 
   return (
-    <div className="rig">
+    <div className={`rig${leveled ? ' levelled' : ''}`}>
       <div className="rig-head">
         <div>
           <div className="pix" style={{ color: 'var(--ink-3)' }}>Your level</div>
@@ -183,7 +273,7 @@ function ChestOdds() {
         <span style={{ color: 'var(--on-deep-2)' }}>{DAILY_CHEST.note}</span>
       </div>
 
-      <div className="odds">
+      <div className="odds stagger">
         {RARITY_ORDER.map((k) => (
           <div className="odd" key={k}>
             <span className="odd-bar" style={{ background: RARITY[k].color, height: `${18 + RARITY[k].weight * 1.1}px` }} />
@@ -204,7 +294,10 @@ function ChestOdds() {
 /* ------------------------------------------------------------------ page --- */
 
 export default function Site({ onEnterApp }) {
+  const nav = useRef(null)
+  const rail = useRef(null)
   useReveal()
+  useScrollFx(nav, rail)
 
   const go = (e) => {
     e.preventDefault()
@@ -213,7 +306,7 @@ export default function Site({ onEnterApp }) {
 
   return (
     <div className="site">
-      <header className="site-nav">
+      <header className="site-nav" ref={nav}>
         <div className="wrap bar">
           <a className="mark" href="#top">
             LVL<span className="hundred">100</span>
@@ -223,16 +316,21 @@ export default function Site({ onEnterApp }) {
             Try the prototype
           </a>
         </div>
+        {/* How far through the page you are. It reads as part of the nav's
+            bottom rule rather than as a bar of its own. */}
+        <span className="scroll-rail" aria-hidden="true">
+          <span className="scroll-bar" ref={rail} />
+        </span>
       </header>
 
       <main id="top">
         {/* ------------------------------------------------------------ hero */}
         <section className="hero">
           <div className="wrap hero-grid">
-            <div className="stack wide reveal">
+            <div className="stack wide lift">
               <h1>
-                Don&rsquo;t quit gaming
-                <span className="soft">to get fit.</span>
+                <span className="line">Don&rsquo;t quit gaming</span>
+                <span className="line soft">to get fit.</span>
               </h1>
               <p className="lede">
                 LVL100 is an RPG you play by moving. Ten bosses, three acts and an ending — and the
@@ -251,7 +349,7 @@ export default function Site({ onEnterApp }) {
               </span>
             </div>
 
-            <div className="reveal">
+            <div className="reveal pop rig-shell">
               <LiveRig />
             </div>
           </div>
@@ -260,10 +358,10 @@ export default function Site({ onEnterApp }) {
         {/* ------------------------------------------------------ permission */}
         <section className="sink">
           <div className="wrap split">
-            <div className="stack reveal">
+            <div className="stack reveal from-l">
               <h2>Nobody here thinks your hobby is the problem.</h2>
             </div>
-            <div className="stack reveal">
+            <div className="stack reveal from-r">
               <p className="lede">
                 Most fitness apps are built on guilt. Miss a day and they let you know. Play games
                 instead of training and the message is that you picked wrong.
@@ -285,7 +383,7 @@ export default function Site({ onEnterApp }) {
               <p className="lede">In this order, every session, whether it&rsquo;s a 5k or a walk to the shops.</p>
             </div>
 
-            <div className="steps reveal">
+            <div className="steps stagger">
               <div className="step">
                 <span className="bar" />
                 <h3>You start it in the app</h3>
@@ -337,10 +435,10 @@ export default function Site({ onEnterApp }) {
         {/* ------------------------------------------------------------- map */}
         <section id="map">
           <div className="wrap split">
-            <div className="stack reveal">
+            <div className="stack reveal from-l">
               <h2>Your city, drawn as a world map.</h2>
             </div>
-            <div className="stack reveal">
+            <div className="stack reveal from-r">
               <p className="lede">
                 Eighteen kilometres of Sydney, hand-drawn a hundred metres at a time: the harbour, the
                 Bridge, the beaches, the bush, every suburb named. It opens under haze.
@@ -365,7 +463,7 @@ export default function Site({ onEnterApp }) {
                   from distance, vitality from sleep and steps. Nothing decorative — every number has a
                   behaviour behind it.
                 </p>
-                <ul className="plain-list">
+                <ul className="plain-list stagger">
                   <li>
                     <span className="tick">✓</span>
                     <span>A hundred levels and eight ranks, earned on power rather than on turning up recently.</span>
@@ -392,7 +490,7 @@ export default function Site({ onEnterApp }) {
               </div>
             </div>
 
-            <div className="shots reveal" role="group" aria-label="Screens from the prototype">
+            <div className="shots stagger" role="group" aria-label="Screens from the prototype">
               <div className="device">
                 <img
                   src="/shots/home.webp"
@@ -456,16 +554,16 @@ export default function Site({ onEnterApp }) {
                 only way to spend XP&rsquo;s currency is to spend the hour.
               </p>
             </div>
-            <div className="facts reveal">
+            <div className="facts stagger">
               <div className="fact">
-                <span className="n">5</span>
+                <span className="n"><Count to={5} /></span>
                 <p>
                   Health services it reads from — Apple Health, Health Connect, Strava, Garmin and
                   WHOOP. If none of them recorded it, it doesn&rsquo;t score.
                 </p>
               </div>
               <div className="fact">
-                <span className="n">50%</span>
+                <span className="n"><Count to={50} suffix="%" /></span>
                 <p>
                   What a manual entry pays. It still builds your character, because your training is
                   yours — it just can&rsquo;t climb past anyone.
@@ -486,10 +584,10 @@ export default function Site({ onEnterApp }) {
         <section className="deep">
           <div className="wrap stack wide">
             <div className="split">
-              <div className="reveal" style={{ display: 'flex', justifyContent: 'center' }}>
+              <div className="reveal pop" style={{ display: 'flex', justifyContent: 'center' }}>
                 <BossArt size={280} />
               </div>
-              <div className="stack reveal">
+              <div className="stack reveal from-r">
                 <h2>Everybody&rsquo;s kilometres hit the same health bar.</h2>
                 <p className="lede">
                   Once a season the whole app fights one thing. The Couch Titan has{' '}
@@ -512,7 +610,7 @@ export default function Site({ onEnterApp }) {
                 Five companions, from the pup everyone starts with to a storm lion one player in a
                 hundred sees. They gain XP from your sessions, and they cannot out-level you.
               </p>
-              <div className="pet-row">
+              <div className="pet-row stagger">
                 {[
                   ['pup', 20, 'Pup', 'Common'],
                   ['turbo', 40, 'Turbo', 'Uncommon'],
@@ -540,10 +638,10 @@ export default function Site({ onEnterApp }) {
         {/* ------------------------------------------------------ for anyone */}
         <section className="sink">
           <div className="wrap split">
-            <div className="stack reveal">
+            <div className="stack reveal from-l">
               <h2>You don&rsquo;t have to play anything to use this.</h2>
             </div>
-            <div className="stack reveal">
+            <div className="stack reveal from-r">
               <p className="lede">
                 Half the people this is built for already train and just want their effort to add up to
                 something. The other half haven&rsquo;t moved much in a while and need a reason that
@@ -560,13 +658,13 @@ export default function Site({ onEnterApp }) {
 
         {/* ------------------------------------------------------------ close */}
         <section className="close-cta">
-          <div className="wrap stack wide" style={{ alignItems: 'center' }}>
-            <h2 className="reveal">It&rsquo;s already built. Go and poke at it.</h2>
-            <p className="lede reveal" style={{ textAlign: 'center' }}>
+          <div className="wrap stack wide lift" style={{ alignItems: 'center' }}>
+            <h2>It&rsquo;s already built. Go and poke at it.</h2>
+            <p className="lede" style={{ textAlign: 'center' }}>
               The whole thing runs in your browser — make a character, time a session, open a chest,
               walk some of the map clear. No sign-up, and nothing leaves your device.
             </p>
-            <a className="btn reveal" href="#/app" onClick={go}>
+            <a className="btn" href="#/app" onClick={go}>
               Try the prototype
             </a>
           </div>

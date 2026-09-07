@@ -679,18 +679,179 @@
 /* -------------------------------------------------------------- motion --- */
 /* Content is visible by default. The from-state only applies once JS has
    marked the document ready, so a headless render or a hidden tab still
-   ships the full page rather than a blank one. */
+   ships the full page rather than a blank one.
+
+   Everything below moves a transform or an opacity and nothing else, so the
+   whole page stays on the compositor while it scrolls. */
+
+.site {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-pop: cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
 .js-motion .reveal {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(22px);
 }
 .js-motion .reveal.in {
   opacity: 1;
   transform: none;
   transition:
-    opacity 0.7s var(--ease),
-    transform 0.7s var(--ease);
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out);
 }
+
+/* Direction, for the two-column rows: the halves come in towards each other
+   rather than both rising, so a split reads as one movement instead of two. */
+.js-motion .reveal.from-l { transform: translateX(-28px); }
+.js-motion .reveal.from-r { transform: translateX(28px); }
+.js-motion .reveal.pop { transform: scale(0.94); }
+.js-motion .reveal.from-l.in,
+.js-motion .reveal.from-r.in,
+.js-motion .reveal.pop.in { transform: none; }
+
+/* A group whose children arrive one after another. The delay is on the child
+   and the trigger is on the parent, so one observer drives a whole row. */
+.js-motion .stagger > * {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.js-motion .stagger.in > * {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.62s var(--ease-out),
+    transform 0.62s var(--ease-out);
+}
+.js-motion .stagger.in > *:nth-child(1) { transition-delay: 0ms; }
+.js-motion .stagger.in > *:nth-child(2) { transition-delay: 90ms; }
+.js-motion .stagger.in > *:nth-child(3) { transition-delay: 180ms; }
+.js-motion .stagger.in > *:nth-child(4) { transition-delay: 260ms; }
+.js-motion .stagger.in > *:nth-child(5) { transition-delay: 330ms; }
+.js-motion .stagger.in > *:nth-child(6) { transition-delay: 390ms; }
+
+/* The hero, which is the one place worth choreographing by hand: two lines of
+   headline, then the sentence, then the buttons, then the footnote. */
+.js-motion .lift > * {
+  opacity: 0;
+  transform: translateY(26px);
+}
+.js-motion .lift.in > * {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.8s var(--ease-out),
+    transform 0.8s var(--ease-out);
+}
+.js-motion .lift.in > *:nth-child(1) { transition-delay: 60ms; }
+.js-motion .lift.in > *:nth-child(2) { transition-delay: 220ms; }
+.js-motion .lift.in > *:nth-child(3) { transition-delay: 320ms; }
+.js-motion .lift.in > *:nth-child(4) { transition-delay: 400ms; }
+
+h1 .line { display: block; }
+.js-motion h1 .line { opacity: 0; transform: translateY(30px); }
+.js-motion .lift.in h1 .line {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.8s var(--ease-out),
+    transform 0.8s var(--ease-out);
+}
+.js-motion .lift.in h1 .line:nth-child(2) { transition-delay: 130ms; }
+
+/* Bars that draw themselves. A rule that is simply present is punctuation; a
+   rule that arrives is the start of a section. */
+.js-motion .step .bar { transform: scaleX(0); transform-origin: left; }
+.js-motion .stagger.in .step .bar {
+  transform: none;
+  transition: transform 0.6s var(--ease-out) 0.25s;
+}
+
+/* The drop table grows out of the floor, which is the one chart on the page
+   where the height IS the number. */
+.js-motion .odds .odd-bar { transform: scaleY(0); transform-origin: bottom; }
+.js-motion .odds.in .odd-bar {
+  transform: none;
+  transition: transform 0.7s var(--ease-pop);
+}
+.js-motion .odds.in .odd:nth-child(2) .odd-bar { transition-delay: 70ms; }
+.js-motion .odds.in .odd:nth-child(3) .odd-bar { transition-delay: 140ms; }
+.js-motion .odds.in .odd:nth-child(4) .odd-bar { transition-delay: 210ms; }
+.js-motion .odds.in .odd:nth-child(5) .odd-bar { transition-delay: 280ms; }
+
+/* ------------------------------------------------------------- scroll ---- */
+/* How far down the page you are, as a line under the nav. Two pieces of state
+   drive it, both written from one rAF-throttled scroll listener: this width,
+   and whether the nav has left the top. */
+.scroll-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scroll-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--brand);
+  transform: scaleX(var(--read, 0));
+  transform-origin: left;
+}
+.site-nav {
+  transition: box-shadow 0.3s var(--ease-out), background-color 0.3s var(--ease-out);
+}
+.site-nav.stuck {
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  box-shadow: 0 6px 24px -14px rgba(0, 0, 0, 0.5);
+}
+.site-nav .bar { transition: min-height 0.3s var(--ease-out); }
+.site-nav.stuck .bar { min-height: 3.25rem; }
+
+/* The hero card drifts a little slower than the page. Small on purpose — the
+   card is a live demo people are meant to click, and a panel sliding under the
+   cursor is a panel you miss. */
+.rig-shell { will-change: transform; }
+.js-motion .rig-shell { transform: translateY(calc(var(--drift, 0) * -22px)); }
+
+/* ------------------------------------------------------------ pointer ---- */
+/* Same reason as the pet cells: the closing button is a direct child of a
+   sequence, and the sequence sets a transform on its children. */
+.site .btn:hover { transform: translateY(-2px); }
+.site .btn:active { transform: translateY(1px); }
+.btn {
+  transition:
+    transform 0.16s var(--ease-pop),
+    box-shadow 0.16s var(--ease-out),
+    background-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out);
+}
+.device {
+  transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+}
+.shots .device:hover {
+  transform: translateY(-6px);
+  box-shadow: 14px 16px 0 0 rgba(0, 0, 0, 0.22);
+}
+.pet-cell {
+  transition: transform 0.35s var(--ease-pop);
+}
+/* Written through .pet-row so it outweighs the stagger's own `transform: none`
+   on the same children — otherwise arriving in a row costs a cell its hover. */
+.pet-row .pet-cell:hover { transform: translateY(-6px) scale(1.04); }
+.pick { transition: transform 0.14s var(--ease-pop), border-color 0.2s var(--ease-out); }
+.pick:active { transform: scale(0.95); }
+
+/* The rig flashes when a session takes you up a level — the demo's whole job is
+   to show that logging something pays, and a number quietly incrementing is not
+   a payment. */
+@keyframes rig-levelled {
+  0% { box-shadow: 8px 8px 0 0 var(--brand-wash), 0 0 0 0 var(--brand); }
+  30% { box-shadow: 8px 8px 0 0 var(--brand-wash), 0 0 0 8px color-mix(in oklab, var(--brand) 30%, transparent); }
+  100% { box-shadow: 8px 8px 0 0 var(--brand-wash), 0 0 0 0 transparent; }
+}
+.rig.levelled { animation: rig-levelled 1.2s var(--ease-out); }
 
 @media (prefers-reduced-motion: reduce) {
   .site *,
@@ -699,9 +860,16 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  /* The reveal becomes an instant appearance, not a removal. */
-  .js-motion .reveal { opacity: 1; transform: none; }
-  .btn:hover, .pick:hover { transform: none; }
+  /* The reveals become an instant appearance, not a removal. */
+  .js-motion .reveal,
+  .js-motion .stagger > *,
+  .js-motion .lift > *,
+  .js-motion h1 .line { opacity: 1; transform: none; }
+  .js-motion .step .bar,
+  .js-motion .odds .odd-bar { transform: none; }
+  .js-motion .rig-shell { transform: none; }
+  .site .btn:hover, .site .btn:active, .pick:hover,
+  .pet-row .pet-cell:hover, .shots .device:hover { transform: none; }
 }
 
 /* ------------------------------------------------------------ chest odds ---- */
