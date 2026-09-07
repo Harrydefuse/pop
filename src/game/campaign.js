@@ -185,7 +185,3 @@ export function bossById(id) {
 export function actById(id) {
   return ACTS.find((a) => a.id === id) ?? ACTS[0]
 }
-
-export function bossesInAct(actId) {
-  return CAMPAIGN.filter((b) => b.act === actId)
-}

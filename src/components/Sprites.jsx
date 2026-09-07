@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, STONE_SPRITE, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
+import { ARMOUR_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -219,11 +219,6 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
 export function ChestArt({ size = 48, className = '', style }) {
   return <PixelSprite sprite={CHEST_SPRITE} size={size} className={className} style={style} />
 }
-
-export function StoneIcon({ color, size = 22, dim }) {
-  return <PixelSprite sprite={STONE_SPRITE} size={size} accent={color} style={dim ? { opacity: 0.25, filter: 'grayscale(1)' } : undefined} />
-}
-
 export function BossArt({ sprite = 'ogre', size = 180, className = '', style }) {
   const art = BOSS_SPRITES[sprite] ?? CAMPAIGN_SPRITES[sprite] ?? BOSS_SPRITES.ogre
   // Fit to a square box rather than to width. Boss grids are all different

@@ -46,15 +46,6 @@ export function grantXp(level, xp, amount) {
 export function statLevel(statXp) {
   return Math.max(1, Math.floor(Math.pow(statXp / 55, 0.62)) + 1)
 }
-
-export function statProgress(statXp) {
-  const lv = statLevel(statXp)
-  const floorXp = Math.round(55 * Math.pow(lv - 1, 1 / 0.62))
-  const ceilXp = Math.round(55 * Math.pow(lv, 1 / 0.62))
-  const span = Math.max(1, ceilXp - floorXp)
-  return { level: lv, pct: Math.min(1, Math.max(0, (statXp - floorXp) / span)), into: statXp - floorXp, span }
-}
-
 // ---------------------------------------------------------------------- streaks
 
 export function streakTier(days) {
@@ -200,20 +191,6 @@ export function bossHit(boss, act, xp) {
   if (!boss) return { damage: 0, weak: false }
   const weak = Boolean(boss.weak && act.tag === boss.weak)
   return { damage: Math.round(xp * (weak ? WEAK_MULT : 1)), weak }
-}
-
-/** Per-boss state for the path list: cleared / fighting / ahead / locked. */
-export function bossStatus(boss, player, campaign) {
-  if ((campaign?.defeated ?? []).includes(boss.id)) return 'cleared'
-  if (player.level < boss.level) return 'locked'
-  const { current } = campaignState(player, campaign)
-  return current && current.id === boss.id ? 'fighting' : 'ahead'
-}
-
-/** Rough days left at the player's recent pace — the "how far in am I" number. */
-export function bossEta(boss, damage, xpPerDay) {
-  if (!boss || xpPerDay <= 0) return null
-  return Math.max(1, Math.ceil((boss.hp - damage) / xpPerDay))
 }
 
 // -------------------------------------------------------------------- activities
@@ -461,15 +438,6 @@ export function fmt(n) {
 export function fmtFull(n) {
   return Math.round(n).toLocaleString('en-US')
 }
-
-export function relTime(ts, now = Date.now()) {
-  const s = Math.max(1, Math.round((now - ts) / 1000))
-  if (s < 60) return `${s}s`
-  if (s < 3600) return `${Math.round(s / 60)}m`
-  if (s < 86400) return `${Math.round(s / 3600)}h`
-  return `${Math.round(s / 86400)}d`
-}
-
 export function todayKey(d = new Date()) {
   return d.toISOString().slice(0, 10)
 }

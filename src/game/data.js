@@ -95,24 +95,6 @@ export const GEAR_CATALOG = ARMOUR_SETS.flatMap((set) =>
 
 export const CATALOG = { pets: PET_CATALOG, gear: GEAR_CATALOG }
 
-// ------------------------------------------------------------ health & game links
-
-export const HEALTH_PROVIDERS = [
-  { id: 'apple', name: 'Apple Health', note: 'Workouts, steps, sleep, HR', color: 'var(--color-ink)' },
-  { id: 'google', name: 'Health Connect', note: 'Android workouts & steps', color: 'var(--tone-green)' },
-  { id: 'strava', name: 'Strava', note: 'Runs & rides with GPS traces', color: '#fc4c02' },
-  { id: 'garmin', name: 'Garmin', note: 'Full session + recovery data', color: 'var(--tone-sky)' },
-  { id: 'whoop', name: 'WHOOP', note: 'Strain, recovery, sleep', color: 'var(--color-lime)' },
-]
-
-export const GAME_ACCOUNTS = [
-  { id: 'riot', name: 'Riot Games', titles: 'Valorant, League, TFT', color: 'var(--color-danger)' },
-  { id: 'steam', name: 'Steam', titles: 'CS2, Apex, everything else', color: 'var(--tone-sky)' },
-  { id: 'epic', name: 'Epic Games', titles: 'Fortnite, Rocket League', color: 'var(--color-ink)' },
-  { id: 'blizzard', name: 'Battle.net', titles: 'Overwatch 2, WoW, Diablo', color: 'var(--color-neon)' },
-  { id: 'xbox', name: 'Xbox Live', titles: 'Game Pass library', color: 'var(--tone-green)' },
-]
-
 // ---------------------------------------------------------------------- roster
 
 const NAMES = [
@@ -221,32 +203,6 @@ const SEASONS = [
 
 /** The raid everything points at. Past seasons stay for the archive. */
 export const BOSS = SEASONS.find((b) => b.active)
-export const PAST_SEASONS = SEASONS.filter((b) => !b.active)
-
-// ----------------------------------------------------------------- achievements
-
-export const ACHIEVEMENTS = [
-  { id: 'a1', name: 'FIRST BLOOD', desc: 'Log your first verified session', rarity: 'common', earned: true, at: 'Jan 4' },
-  { id: 'a2', name: 'WEEK ONE', desc: 'Hold a 7-day streak', rarity: 'common', earned: true, at: 'Jan 11' },
-  { id: 'a3', name: 'SUB-25', desc: 'Run 5 km under 25:00', rarity: 'uncommon', earned: true, at: 'Feb 2' },
-  { id: 'a4', name: 'BODYWEIGHT BENCH', desc: 'Bench your own bodyweight', rarity: 'rare', earned: true, at: 'Mar 18' },
-  { id: 'a5', name: 'CENTURION', desc: 'Complete 100 verified sessions', rarity: 'rare', earned: true, at: 'May 30' },
-  { id: 'a6', name: 'RACE DAY', desc: 'Finish a registered event', rarity: 'epic', earned: true, at: 'Jun 9' },
-  { id: 'a7', name: 'HALF MARATHON', desc: 'Cover 21.1 km in one session', rarity: 'epic', earned: false },
-  { id: 'a8', name: 'THE HUNDRED', desc: 'Reach a 100-day streak', rarity: 'legendary', earned: false },
-  { id: 'a9', name: 'GAUNTLET', desc: 'Collect all six stones', rarity: 'legendary', earned: false },
-]
-
-// ------------------------------------------------------------------- community
-
-export const CHANNELS = [
-  { id: 'general', name: '#general', desc: 'Everything and nothing' },
-  { id: 'gym-help', name: '#gym-help', desc: 'Form checks, programmes, questions' },
-  { id: 'aim-lab', name: '#aim-lab', desc: 'Routines, sens, crosshairs' },
-  { id: 'pb-flex', name: '#pb-flex', desc: 'Post your personal bests' },
-  { id: 'lfg', name: '#lfg', desc: 'Find a duo, in game or at the gym' },
-]
-
 const H = 1000 * 60 * 60
 
 export const FEED = [
@@ -301,55 +257,6 @@ export const FEED = [
     tags: ['streak'],
     likes: 2210,
     replies: 187,
-  },
-]
-
-// -------------------------------------------------------------------- coaching
-
-export const COACHES = [
-  {
-    id: 'c1',
-    name: 'Mara "REP" Ellis',
-    role: 'Strength coach · CSCS',
-    price: 5,
-    rating: 4.9,
-    students: 3120,
-    tag: 'FITNESS',
-    color: 'var(--color-danger)',
-    lessons: ['Squat setup that stops knee pain', 'Progressive overload without a spreadsheet', '45-min gamer PPL'],
-  },
-  {
-    id: 'c2',
-    name: 'Sen',
-    role: 'Radiant · ex-VCT analyst',
-    price: 5,
-    rating: 4.8,
-    students: 8940,
-    tag: 'VALORANT',
-    color: 'var(--color-neon)',
-    lessons: ['Crosshair placement drills', 'Reading the retake', 'Warm-up that beats 40 min of DM'],
-  },
-  {
-    id: 'c3',
-    name: 'Kova',
-    role: 'Top 500 OW2 support',
-    price: 5,
-    rating: 4.7,
-    students: 2410,
-    tag: 'OVERWATCH',
-    color: 'var(--color-gold)',
-    lessons: ['Positioning as Ana', 'Cooldown tracking habits', 'Wrist care for 8-hour days'],
-  },
-  {
-    id: 'c4',
-    name: 'Dr. Yun',
-    role: 'Sleep & performance',
-    price: 5,
-    rating: 5.0,
-    students: 6180,
-    tag: 'RECOVERY',
-    color: 'var(--color-cyan)',
-    lessons: ['Fixing a 4am sleep schedule', 'Caffeine timing for late queues', 'Deload weeks'],
   },
 ]
 

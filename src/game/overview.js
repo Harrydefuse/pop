@@ -165,15 +165,6 @@ export const ROUTES = [
   ['vaucluse', 'watsons'],
 ]
 
-/** Route ends, resolved to coarse-grid points. Unknown ids drop out. */
-export function routeLines() {
-  const at = (id) => {
-    const p = SYDNEY.places.find((q) => q.id === id)
-    return p ? overCell(p.lon, p.lat) : null
-  }
-  return ROUTES.map(([a, b]) => [at(a), at(b)]).filter(([a, b]) => a && b)
-}
-
 /** Which coarse cells a set of fine explored cells lights up. One walked street
  *  opens the block it is in, which is the right unit at this scale. */
 export function coarseExplored(fine) {

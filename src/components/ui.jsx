@@ -118,19 +118,6 @@ export function Bar({ pct, color = 'var(--color-neon)', height = 8, shine, track
     </div>
   )
 }
-
-export function StatNum({ label, value, color = 'var(--color-ink)', sub }) {
-  return (
-    <div className="min-w-0">
-      <div className="font-pixel text-[7px] text-ink-faint truncate">{label}</div>
-      <div className="font-pixel text-[13px] mt-1.5 truncate" style={{ color }}>
-        {value}
-      </div>
-      {sub && <div className="text-[11px] text-ink-dim mt-1 truncate">{sub}</div>}
-    </div>
-  )
-}
-
 /* -------------------------------------------------------------------- rarity */
 
 export function RarityTag({ rarity, className = '' }) {
@@ -204,12 +191,3 @@ export function Modal({ open, onClose, title, children, accent = 'var(--color-ne
   )
 }
 
-/* ------------------------------------------------------------------- empties */
-
-export function Empty({ children }) {
-  return (
-    <div className="border border-dashed border-line px-4 py-8 text-center">
-      <div className="text-[12px] text-ink-faint">{children}</div>
-    </div>
-  )
-}

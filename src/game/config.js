@@ -488,9 +488,6 @@ export const STONES = [
     reward: 'Focus gains doubled',
   },
 ]
-
-export const CURRENCY = { cores: 'CORES', shards: 'SHARDS' }
-
 // Upgrading equipment costs cores and scales with both level and rarity, so a
 // legendary is a long project rather than an instant power spike.
 export function upgradeCost(item) {
@@ -499,38 +496,3 @@ export function upgradeCost(item) {
 }
 
 
-// The games someone actually plays, captured at sign-up. This is social data,
-// not an account link: it drives friend suggestions and game-specific
-// challenges later, so it needs a genre rather than a login.
-export const GAME_CATALOG = [
-  { id: 'valorant', name: 'Valorant', genre: 'Tac shooter' },
-  { id: 'cs2', name: 'CS2', genre: 'Tac shooter' },
-  { id: 'r6', name: 'Rainbow Six', genre: 'Tac shooter' },
-  { id: 'overwatch', name: 'Overwatch 2', genre: 'Hero shooter' },
-  { id: 'rivals', name: 'Marvel Rivals', genre: 'Hero shooter' },
-  { id: 'thefinals', name: 'The Finals', genre: 'Hero shooter' },
-  { id: 'fortnite', name: 'Fortnite', genre: 'Battle royale' },
-  { id: 'warzone', name: 'Warzone', genre: 'Battle royale' },
-  { id: 'apex', name: 'Apex Legends', genre: 'Battle royale' },
-  { id: 'pubg', name: 'PUBG', genre: 'Battle royale' },
-  { id: 'lol', name: 'League of Legends', genre: 'MOBA' },
-  { id: 'dota', name: 'Dota 2', genre: 'MOBA' },
-  { id: 'deadlock', name: 'Deadlock', genre: 'MOBA' },
-  { id: 'wow', name: 'World of Warcraft', genre: 'MMO' },
-  { id: 'ffxiv', name: 'Final Fantasy XIV', genre: 'MMO' },
-  { id: 'osrs', name: 'Old School RuneScape', genre: 'MMO' },
-  { id: 'rocketleague', name: 'Rocket League', genre: 'Sports' },
-  { id: 'eafc', name: 'EA FC', genre: 'Sports' },
-  { id: 'nba2k', name: 'NBA 2K', genre: 'Sports' },
-  { id: 'tekken', name: 'Tekken 8', genre: 'Fighting' },
-  { id: 'sf6', name: 'Street Fighter 6', genre: 'Fighting' },
-  { id: 'smash', name: 'Smash Bros', genre: 'Fighting' },
-  { id: 'minecraft', name: 'Minecraft', genre: 'Sandbox' },
-  { id: 'gta', name: 'GTA', genre: 'Sandbox' },
-  { id: 'roblox', name: 'Roblox', genre: 'Sandbox' },
-  { id: 'eldenring', name: 'Elden Ring', genre: 'Single player' },
-  { id: 'destiny', name: 'Destiny 2', genre: 'Looter shooter' },
-  { id: 'poe', name: 'Path of Exile', genre: 'Looter shooter' },
-]
-
-export const GAME_GENRES = [...new Set(GAME_CATALOG.map((g) => g.genre))]

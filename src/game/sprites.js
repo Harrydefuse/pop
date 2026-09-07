@@ -852,26 +852,6 @@ export const CHEST_SPRITE = {
   ],
 }
 
-// ----------------------------------------------------------------- STONE / GEM
-// One 10x10 gem, recoloured per stone via the `A` accent slot.
-export const STONE_SPRITE = {
-  w: 10,
-  h: 10,
-  palette: { o: '#0d0a16', A: '#a855f7', h: '#ffffff', d: '#3b1d63' },
-  grid: [
-    '...oooo...',
-    '..ohhAAo..',
-    '.ohAAAAAo.',
-    'ohAAAAAAAo',
-    'oAAAAAAAdo',
-    'oAAAAAAddo',
-    '.oAAAAddo.',
-    '..oAAddo..',
-    '...oddo...',
-    '....oo....',
-  ],
-}
-
 // ------------------------------------------------------------------ WORLD BOSS
 // The Couch Titan — the app-wide raid target.
 export const BOSS_SPRITE = {
