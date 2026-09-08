@@ -39,32 +39,32 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
         ACT {act.numeral} · {act.name}
       </Chip>
       <BossArt sprite={boss.sprite} size={116} className="mx-auto float-soft" />
-      <div className="font-pixel text-[12px] mt-2" style={{ color: act.color }}>
+      <div className="font-display text-[20px] mt-2" style={{ color: act.color }}>
         {boss.name}
       </div>
-      <div className="text-[11px] text-ink-dim mt-1">{boss.title}</div>
+      <div className="text-[14px] text-ink-dim mt-1">{boss.title}</div>
 
       <div className="mt-3.5">
         <Bar pct={damage / boss.hp} color="var(--color-danger)" height={12} shine />
         <div className="flex justify-between mt-1.5">
-          <span className="font-mono text-[11px] text-danger">{fmtFull(Math.round(damage))}</span>
-          <span className="font-mono text-[11px] text-ink-faint">{fmtFull(boss.hp)} HP</span>
+          <span className="text-[14px] text-danger">{fmtFull(Math.round(damage))}</span>
+          <span className="text-[14px] text-ink-faint">{fmtFull(boss.hp)} HP</span>
         </div>
       </div>
 
       <div className="mt-3 border p-2.5 text-left" style={{ borderColor: alpha(act.color, 40), background: alpha(act.color, 8) }}>
         <div className="flex items-center gap-2">
-          <span className="font-pixel text-[7px] text-ink-faint">WEAK TO</span>
+          <span className="font-display text-[12px] text-ink-faint">Weak to</span>
           {boss.weak && (
-            <span className="font-pixel text-[7px] px-1.5 py-0.5" style={{ background: act.color, color: 'var(--color-on-accent)' }}>
+            <span className="font-display text-[12px] px-1.5 py-0.5" style={{ background: act.color, color: 'var(--color-on-accent)' }}>
               x2 DMG
             </span>
           )}
         </div>
-        <div className="text-[12px] mt-1.5" style={{ color: act.color }}>
+        <div className="text-[15px] mt-1.5" style={{ color: act.color }}>
           {boss.weakLabel}
         </div>
-        <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
+        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
       </div>
 
       {/* This is the tab's whole reason to exist, so it gets the whole width
@@ -73,7 +73,7 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
           you can fail. */}
       <button
         onClick={onArena}
-        className="w-full mt-3.5 py-4 border-2 font-pixel text-[13px] transition-transform active:scale-[0.98]"
+        className="w-full mt-3.5 py-4 border-2 font-display text-[22px] transition-transform active:scale-[0.98]"
         style={{
           borderColor: 'var(--color-danger)',
           background: 'var(--color-danger)',
@@ -81,11 +81,11 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
           boxShadow: `0 0 26px -6px var(--color-danger)`,
         }}
       >
-        BATTLE
-        <span className="block font-pixel text-[7px] mt-1.5 opacity-80">{boss.name}</span>
+        Battle
+        <span className="block font-display text-[12px] mt-1.5 opacity-80">{boss.name}</span>
       </button>
       <Btn full variant="ghost" size="sm" className="mt-1.5" onClick={onFight}>
-        WHAT AM I FIGHTING?
+        What am i fighting?
       </Btn>
     </Panel>
   )
@@ -96,11 +96,11 @@ function Gated({ boss, levels }) {
   return (
     <Panel accent="var(--color-gold)" className="p-3.5 text-center">
       <Chip color="var(--color-gold)" className="mb-3">
-        ROAD CLEAR
+        Road clear
       </Chip>
       <BossArt sprite={boss.sprite} size={96} className="mx-auto" style={SILHOUETTE} />
-      <div className="font-pixel text-[11px] text-gold mt-2.5">{boss.name} IS WAITING</div>
-      <div className="text-[12px] text-ink-dim mt-2 leading-snug">
+      <div className="font-display text-[18px] text-gold mt-2.5">{boss.name} IS WAITING</div>
+      <div className="text-[15px] text-ink-dim mt-2 leading-snug">
         You have beaten everything on this stretch of road. {levels === 1 ? 'One more level' : `${levels} more levels`} and it
         opens.
       </div>
@@ -134,7 +134,7 @@ function PathRow({ boss, status, damage, onOpen }) {
 
         <div className="min-w-0 flex-1">
           <div
-            className="font-pixel text-[8px] truncate"
+            className="font-display text-[13px] truncate"
             style={{ color: fighting ? act.color : cleared ? 'var(--color-ink-faint)' : 'var(--color-ink)' }}
           >
             {boss.name}
@@ -144,7 +144,7 @@ function PathRow({ boss, status, damage, onOpen }) {
           ) : (
             // A boss you already have the level for is queued, not locked, so it
             // shows its name rather than a requirement you have already met.
-            <div className="text-[10px] text-ink-faint mt-1 truncate">
+            <div className="text-[14px] text-ink-faint mt-1 truncate">
               {locked ? `Opens at level ${boss.level}` : boss.title}
             </div>
           )}
@@ -152,12 +152,12 @@ function PathRow({ boss, status, damage, onOpen }) {
 
         {cleared && <Icon name="check" size={13} color="var(--color-lime)" />}
         {fighting && (
-          <span className="font-mono text-[11px] shrink-0" style={{ color: act.color }}>
+          <span className="text-[14px] shrink-0" style={{ color: act.color }}>
             {Math.round((damage / boss.hp) * 100)}%
           </span>
         )}
         {locked && <Icon name="lock" size={12} color="var(--color-ink-faint)" />}
-        {status === 'ahead' && <span className="font-pixel text-[7px] text-ink-faint shrink-0">LV {boss.level}</span>}
+        {status === 'ahead' && <span className="font-display text-[12px] text-ink-faint shrink-0">LV {boss.level}</span>}
       </div>
     </button>
   )
@@ -170,72 +170,72 @@ function Detail({ boss, status, damage, onBack, onFight }) {
 
   return (
     <>
-      <button onClick={onBack} className="font-pixel text-[8px] text-ink-faint min-h-[44px] flex items-center active:brightness-125">
+      <button onClick={onBack} className="font-display text-[13px] text-ink-faint min-h-[44px] flex items-center active:brightness-125">
         ← THE PATH
       </button>
 
       <div className="text-center">
         <BossArt sprite={boss.sprite} size={108} className="mx-auto" style={status === 'locked' ? SILHOUETTE : undefined} />
-        <div className="font-pixel text-[11px] mt-2" style={{ color: act.color }}>
+        <div className="font-display text-[18px] mt-2" style={{ color: act.color }}>
           {boss.name}
         </div>
-        <div className="text-[12px] text-ink-dim mt-1.5">{boss.title}</div>
-        <div className="font-pixel text-[7px] mt-2.5" style={{ color: act.color }}>
+        <div className="text-[15px] text-ink-dim mt-1.5">{boss.title}</div>
+        <div className="font-display text-[12px] mt-2.5" style={{ color: act.color }}>
           ACT {act.numeral} · OPENS AT LEVEL {boss.level}
         </div>
       </div>
 
-      <p className="text-[12px] text-ink-dim mt-3.5 leading-relaxed">{boss.lore}</p>
+      <p className="text-[15px] text-ink-dim mt-3.5 leading-relaxed">{boss.lore}</p>
 
       {status === 'fighting' && (
         <div className="mt-3.5">
           <Bar pct={damage / boss.hp} color="var(--color-danger)" height={8} />
           <div className="flex justify-between mt-1.5">
-            <span className="font-mono text-[11px] text-danger">{fmtFull(Math.round(damage))}</span>
-            <span className="font-mono text-[11px] text-ink-faint">{fmtFull(boss.hp)} HP</span>
+            <span className="text-[14px] text-danger">{fmtFull(Math.round(damage))}</span>
+            <span className="text-[14px] text-ink-faint">{fmtFull(boss.hp)} HP</span>
           </div>
         </div>
       )}
       {status === 'cleared' && (
         <div className="flex items-center gap-2 mt-3.5 border border-lime p-2.5">
           <Icon name="check" size={13} color="var(--color-lime)" />
-          <span className="font-pixel text-[8px] text-lime">CLEARED</span>
+          <span className="font-display text-[13px] text-lime">Cleared</span>
         </div>
       )}
 
       <div className="mt-3 border border-line bg-panel-2 p-2.5">
-        <div className="font-pixel text-[7px] text-ink-faint">WEAK TO {boss.weak && '· x2 DAMAGE'}</div>
-        <div className="text-[12px] mt-1.5" style={{ color: act.color }}>
+        <div className="font-display text-[12px] text-ink-faint">WEAK TO {boss.weak && '· x2 DAMAGE'}</div>
+        <div className="text-[15px] mt-1.5" style={{ color: act.color }}>
           {boss.weakLabel}
         </div>
-        <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
+        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
       </div>
 
       <div className="mt-3 border border-line bg-panel-2 p-2.5">
-        <div className="font-pixel text-[7px] text-ink-faint">DROPS</div>
+        <div className="font-display text-[12px] text-ink-faint">DROPS</div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
           <span className="flex items-center gap-1.5">
             <Icon name="core" size={12} color="var(--color-gold)" />
-            <span className="font-mono text-[11px] text-gold">{fmtFull(r.cores)}</span>
+            <span className="text-[14px] text-gold">{fmtFull(r.cores)}</span>
           </span>
           {r.gear && (
-            <span className="font-pixel text-[7px]" style={{ color: RARITY[r.gear].color }}>
+            <span className="font-display text-[12px]" style={{ color: RARITY[r.gear].color }}>
               {RARITY[r.gear].label} GEAR
             </span>
           )}
           {r.pet && (
             <span className="flex items-center gap-1.5">
               <PetView refId={r.pet} level={1} size={24} />
-              <span className="font-pixel text-[7px] text-cyan">COMPANION</span>
+              <span className="font-display text-[12px] text-cyan">Companion</span>
             </span>
           )}
-          {r.title && <span className="text-[11px] text-ink-dim">Title · {r.title}</span>}
+          {r.title && <span className="text-[14px] text-ink-dim">Title · {r.title}</span>}
         </div>
       </div>
 
       {status === 'fighting' && (
         <Btn full variant="danger" className="mt-3.5" onClick={onFight}>
-          FIGHT IT
+          Fight it
         </Btn>
       )}
     </>
@@ -249,15 +249,15 @@ function Detail({ boss, status, damage, onBack, onFight }) {
  */
 /** On its own tab there is no dialog to be inside — the same content just sits
  *  on the page. `embedded` is which of the two it is. */
-function Shell({ embedded, onClose, title, accent, children }) {
+function Shell({ embedded, onClose, title, children }) {
   if (!embedded) {
     return (
-      <Modal open onClose={onClose} wide title={title} accent={accent}>
+      <Modal open onClose={onClose} wide title={title}>
         {children}
       </Modal>
     )
   }
-  return <div className="stack-in p-3">{children}</div>
+  return <div className="stack-in p-4">{children}</div>
 }
 
 export default function CampaignSheet({ onClose, embedded }) {
@@ -283,7 +283,6 @@ export default function CampaignSheet({ onClose, embedded }) {
         embedded={embedded}
         onClose={onClose}
         title={detail ? 'BOSS' : 'YOUR STORY'}
-        accent={detail ? actById(detail.act).color : 'var(--color-neon)'}
       >
         {detail ? (
           <Detail
@@ -309,23 +308,23 @@ export default function CampaignSheet({ onClose, embedded }) {
               <Gated boss={c.locked} levels={c.gatedBy} />
             ) : (
               <Panel accent="var(--color-gold)" className="p-4 text-center">
-                <div className="font-pixel text-[12px] text-gold">STORY COMPLETE</div>
-                <div className="text-[12px] text-ink-dim mt-2">Every boss down. You are the thing on the box.</div>
+                <div className="font-display text-[20px] text-gold">Story complete</div>
+                <div className="text-[15px] text-ink-dim mt-2">Every boss down. You are the thing on the box.</div>
               </Panel>
             )}
 
-            <Panel corners={false} className="p-2.5">
+            <Panel className="p-2.5">
               <div className="flex items-center justify-between">
-                <span className="font-pixel text-[8px] text-ink-faint">BOSSES DOWN</span>
-                <span className="font-mono text-[12px] text-neon-bright">
+                <span className="font-display text-[13px] text-ink-faint">Bosses down</span>
+                <span className="text-[15px] text-neon-bright">
                   {c.cleared} / {c.total}
                 </span>
               </div>
               <Bar pct={c.cleared / c.total} color="var(--color-neon)" height={6} className="mt-2" />
             </Panel>
 
-            <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">what you have walked</span>}>
-              THE PATH
+            <SectionTitle right={<span className="text-[14px] text-ink-faint">what you have walked</span>}>
+              The path
             </SectionTitle>
             {/* Only what you have actually met: the ones you put down, the one
                 in front of you, and a silhouette of whatever is next. Listing
@@ -339,15 +338,15 @@ export default function CampaignSheet({ onClose, embedded }) {
               return (
                 <div key={act.id}>
                   <div className="flex items-center gap-2 px-0.5 mb-1.5">
-                    <span className="font-pixel text-[8px]" style={{ color: act.color }}>
+                    <span className="font-display text-[13px]" style={{ color: act.color }}>
                       ACT {act.numeral}
                     </span>
-                    <span className="font-pixel text-[7px] text-ink-faint truncate">{act.name}</span>
-                    <span className="ml-auto font-mono text-[10px] text-ink-faint shrink-0">
+                    <span className="font-display text-[12px] text-ink-faint truncate">{act.name}</span>
+                    <span className="ml-auto text-[14px] text-ink-faint shrink-0">
                       {done}/{all.length}
                     </span>
                   </div>
-                  <Panel corners={false} className="p-0.5">
+                  <Panel className="p-0.5">
                     {bosses.map((b) => (
                       <PathRow
                         key={b.id}
@@ -362,9 +361,9 @@ export default function CampaignSheet({ onClose, embedded }) {
               )
             })}
             {ahead > 0 && (
-              <Panel corners={false} className="p-3 text-center">
-                <div className="font-pixel text-[8px] text-ink-faint">{ahead} MORE AHEAD</div>
-                <div className="text-[11px] text-ink-dim mt-1.5">
+              <Panel className="p-3 text-center">
+                <div className="font-display text-[13px] text-ink-faint">{ahead} MORE AHEAD</div>
+                <div className="text-[14px] text-ink-dim mt-1.5">
                   You meet them one at a time. Put this one down and the next comes into view.
                 </div>
               </Panel>

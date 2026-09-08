@@ -191,26 +191,26 @@ function DistanceReadout({ session, ms }) {
           small finishes, and this is the one you are currently chasing. */}
       <div className="mt-3 text-left">
         <div className="flex justify-between items-baseline">
-          <span className="font-pixel text-[6px] text-ink-faint">KM {splits.length + 1}</span>
-          <span className="font-mono text-[10px] text-ink-faint">{Math.round(intoKm * 100)}%</span>
+          <span className="font-display text-[11px] text-ink-faint">KM {splits.length + 1}</span>
+          <span className="text-[14px] text-ink-faint">{Math.round(intoKm * 100)}%</span>
         </div>
         <Bar pct={intoKm} height={6} color="var(--color-lime)" className="mt-1" />
       </div>
 
       {splits.length > 0 && (
         <div className="mt-3 border-t border-line pt-3 text-left">
-          <div className="font-pixel text-[6px] text-ink-faint mb-2">SPLITS</div>
+          <div className="font-display text-[11px] text-ink-faint mb-2">Splits</div>
           <div className="space-y-1">
             {splits.slice(-6).map((sp) => (
               <div key={sp.km} className="flex items-center gap-2">
-                <span className="font-mono text-[10px] text-ink-faint w-7 shrink-0">{sp.km}k</span>
+                <span className="text-[14px] text-ink-faint w-7 shrink-0">{sp.km}k</span>
                 <span className="h-2 border border-line flex-1 overflow-hidden">
                   <span
                     className="block h-full"
                     style={{ width: `${Math.max(12, (best / sp.ms) * 100)}%`, background: sp.ms === best ? 'var(--color-lime)' : 'var(--color-line-hot)' }}
                   />
                 </span>
-                <span className="font-mono text-[11px] text-ink w-[52px] text-right shrink-0">{splitPace(sp.ms)}</span>
+                <span className="text-[14px] text-ink w-[52px] text-right shrink-0">{splitPace(sp.ms)}</span>
               </div>
             ))}
           </div>
@@ -224,22 +224,22 @@ function DistanceReadout({ session, ms }) {
 function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix = '' }) {
   return (
     <div className="border border-line p-2">
-      <div className="font-pixel text-[6px] text-ink-faint">{label}</div>
+      <div className="font-display text-[11px] text-ink-faint">{label}</div>
       <div className="flex items-center gap-1 mt-1">
         <button
           onClick={() => onChange(Math.max(min, value - step))}
-          className="w-9 min-h-[44px] font-pixel text-[12px] text-ink-dim active:text-ink"
+          className="w-9 min-h-[44px] font-display text-[20px] text-ink-dim active:text-ink"
           aria-label={`Less ${label.toLowerCase()}`}
         >
           −
         </button>
-        <span className="font-mono text-[18px] text-ink flex-1 text-center tabular-nums">
+        <span className="text-[18px] text-ink flex-1 text-center tabular-nums">
           {value}
           {suffix}
         </span>
         <button
           onClick={() => onChange(Math.min(max, value + step))}
-          className="w-9 min-h-[44px] font-pixel text-[12px] text-ink-dim active:text-ink"
+          className="w-9 min-h-[44px] font-display text-[20px] text-ink-dim active:text-ink"
           aria-label={`More ${label.toLowerCase()}`}
         >
           +
@@ -283,8 +283,8 @@ function StrengthReadout({ session, ms }) {
         aria-expanded={pickingLift}
         className="w-full min-h-[44px] border border-line mt-3 px-3 flex items-center justify-between active:brightness-125"
       >
-        <span className="font-pixel text-[6px] text-ink-faint">EXERCISE</span>
-        <span className="font-mono text-[13px] text-ink truncate ml-2">{lift}</span>
+        <span className="font-display text-[11px] text-ink-faint">Exercise</span>
+        <span className="text-[15px] text-ink truncate ml-2">{lift}</span>
       </button>
 
       {pickingLift && (
@@ -297,7 +297,7 @@ function StrengthReadout({ session, ms }) {
                 setPickingLift(false)
               }}
               aria-pressed={lift === name}
-              className="font-mono text-[11px] min-h-[44px] px-2 border text-left truncate active:brightness-125"
+              className="text-[14px] min-h-[44px] px-2 border text-left truncate active:brightness-125"
               style={{
                 color: lift === name ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
                 background: lift === name ? 'var(--color-gold)' : 'transparent',
@@ -321,7 +321,7 @@ function StrengthReadout({ session, ms }) {
           suffix={weight === 0 ? '' : 'kg'}
         />
       </div>
-      {weight === 0 && <div className="font-mono text-[10px] text-ink-faint mt-1">Bodyweight — reps only.</div>}
+      {weight === 0 && <div className="text-[14px] text-ink-faint mt-1">Bodyweight — reps only.</div>}
 
       <Btn
         full
@@ -335,9 +335,9 @@ function StrengthReadout({ session, ms }) {
       {sets.length > 0 && (
         <div className="mt-3 border-t border-line pt-3 text-left">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-pixel text-[6px] text-ink-faint">TODAY</span>
-            <button onClick={sessionUndoSet} className="font-pixel text-[6px] text-ink-faint min-h-[44px] px-2 active:text-danger">
-              UNDO LAST
+            <span className="font-display text-[11px] text-ink-faint">TODAY</span>
+            <button onClick={sessionUndoSet} className="font-display text-[11px] text-ink-faint min-h-[44px] px-2 active:text-danger">
+              Undo last
             </button>
           </div>
 
@@ -347,8 +347,8 @@ function StrengthReadout({ session, ms }) {
             {perLift.map((g) => (
               <div key={g.lift}>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-[12px] text-ink truncate">{g.lift}</span>
-                  <span className="font-mono text-[10px] text-ink-faint ml-auto shrink-0">
+                  <span className="text-[15px] text-ink truncate">{g.lift}</span>
+                  <span className="text-[14px] text-ink-faint ml-auto shrink-0">
                     {g.volume ? `${Math.round(g.volume)}kg` : `${g.reps} reps`}
                   </span>
                 </div>
@@ -358,7 +358,7 @@ function StrengthReadout({ session, ms }) {
                     .map((set, i) => (
                       <span
                         key={`${g.lift}-${set.at}-${i}`}
-                        className="font-mono text-[10px] px-1.5 py-0.5 border border-line text-ink-dim"
+                        className="text-[14px] px-1.5 py-0.5 border border-line text-ink-dim"
                       >
                         {set.reps}
                         {set.weight ? ` × ${set.weight}kg` : ''}
@@ -371,7 +371,7 @@ function StrengthReadout({ session, ms }) {
         </div>
       )}
 
-      <div className="font-mono text-[10px] text-ink-faint mt-3">{clock(ms)} under the bar</div>
+      <div className="text-[14px] text-ink-faint mt-3">{clock(ms)} under the bar</div>
     </>
   )
 }
@@ -390,10 +390,10 @@ function IntervalReadout({ session, ms }) {
   return (
     <>
       <div className="mt-4 border p-3" style={{ borderColor: tone, background: alpha(tone, 10) }}>
-        <div className="font-pixel text-[8px]" style={{ color: tone }}>
+        <div className="font-display text-[13px]" style={{ color: tone }}>
           {working ? 'WORK' : 'REST'}
         </div>
-        <div className="font-mono text-[40px] leading-none tabular-nums mt-1" style={{ color: tone }}>
+        <div className="text-[40px] leading-none tabular-nums mt-1" style={{ color: tone }}>
           {at.left}
         </div>
         <Bar pct={1 - at.left / span} height={6} color={tone} className="mt-2" />
@@ -414,19 +414,19 @@ function IntervalReadout({ session, ms }) {
             ['REST', rest, (n) => sessionInterval(work, n)],
           ].map(([label, value, set]) => (
             <div key={label} className="border border-line p-2">
-              <div className="font-pixel text-[6px] text-ink-faint">{label}</div>
+              <div className="font-display text-[11px] text-ink-faint">{label}</div>
               <div className="flex items-center gap-1 mt-1">
                 <button
                   onClick={() => set(value - 5)}
-                  className="w-9 min-h-[44px] font-pixel text-[11px] text-ink-dim active:text-ink"
+                  className="w-9 min-h-[44px] font-display text-[18px] text-ink-dim active:text-ink"
                   aria-label={`Five seconds less ${label.toLowerCase()}`}
                 >
                   −
                 </button>
-                <span className="font-mono text-[15px] text-ink flex-1 text-center tabular-nums">{value}s</span>
+                <span className="text-[15px] text-ink flex-1 text-center tabular-nums">{value}s</span>
                 <button
                   onClick={() => set(value + 5)}
-                  className="w-9 min-h-[44px] font-pixel text-[11px] text-ink-dim active:text-ink"
+                  className="w-9 min-h-[44px] font-display text-[18px] text-ink-dim active:text-ink"
                   aria-label={`Five seconds more ${label.toLowerCase()}`}
                 >
                   +
@@ -453,8 +453,8 @@ function SteadyReadout({ act, ms, preview }) {
 function Stat({ label, value, tone = 'var(--color-ink)' }) {
   return (
     <div className="border border-line p-2.5">
-      <div className="font-pixel text-[6px] text-ink-faint">{label}</div>
-      <div className="font-mono text-[16px] mt-1 tabular-nums" style={{ color: tone }}>
+      <div className="font-display text-[11px] text-ink-faint">{label}</div>
+      <div className="text-[16px] mt-1 tabular-nums" style={{ color: tone }}>
         {value}
       </div>
     </div>
@@ -503,12 +503,12 @@ function Running({ session, act }) {
   const tint = TINT[act.id] ?? 'var(--color-lime)'
 
   return (
-    <div className="stack-in p-3 space-y-3">
+    <div className="stack-in p-4 space-y-4">
       <Panel className="p-4 text-center" accent={tint}>
         <SectionTitle color={tint}>
           {session.paused ? (auto.current ? 'AUTO-PAUSED' : 'PAUSED') : act.name.toUpperCase()}
         </SectionTitle>
-        <div className="font-mono text-[44px] leading-none text-ink tabular-nums" aria-live="off">
+        <div className="text-[44px] leading-none text-ink tabular-nums" aria-live="off">
           {clock(ms)}
         </div>
 
@@ -520,12 +520,12 @@ function Running({ session, act }) {
         {GPS_NOTE[gps] && (
           <div className="flex items-center justify-center gap-1.5 mt-3">
             <Icon name="pin" size={10} color={gps === 'on' ? 'var(--color-lime)' : 'var(--color-ink-faint)'} />
-            <span className="text-[11px] text-ink-faint">{GPS_NOTE[gps]}</span>
+            <span className="text-[14px] text-ink-faint">{GPS_NOTE[gps]}</span>
           </div>
         )}
 
         {!ready && (
-          <div className="text-[11px] text-ink-faint mt-3">
+          <div className="text-[14px] text-ink-faint mt-3">
             Sessions count from one minute. {MIN_SESSION_S - secs}s to go.
           </div>
         )}
@@ -540,11 +540,11 @@ function Running({ session, act }) {
                 resumeSession()
               }}
             >
-              RESUME
+              Resume
             </Btn>
           ) : (
             <Btn full variant="ghost" onClick={pauseSession}>
-              PAUSE
+              Pause
             </Btn>
           )}
           <Btn
@@ -553,24 +553,24 @@ function Running({ session, act }) {
             onClick={finishSession}
             style={ready ? { background: 'var(--color-lime)', borderColor: 'var(--color-lime)', color: 'var(--color-on-accent)' } : undefined}
           >
-            FINISH
+            Finish
           </Btn>
         </div>
         <button
           onClick={discardSession}
-          className="font-pixel text-[7px] text-ink-faint mt-3 min-h-[44px] w-full active:text-danger"
+          className="font-display text-[12px] text-ink-faint mt-3 min-h-[44px] w-full active:text-danger"
         >
-          THROW IT AWAY
+          Throw it away
         </button>
       </Panel>
 
       {mode === 'distance' && (
-        <Panel corners={false} className="p-3">
-          <div className="font-pixel text-[7px] text-ink-faint">YOUR ROUTE</div>
+        <Panel className="p-3">
+          <div className="font-display text-[12px] text-ink-faint">Your route</div>
           {session.points.length > 1 ? (
             <RouteTrace points={session.points} />
           ) : (
-            <div className="h-[132px] grid place-items-center text-[11px] text-ink-faint text-center px-4">
+            <div className="h-[132px] grid place-items-center text-[14px] text-ink-faint text-center px-4">
               {gps === 'on' || gps === 'waiting'
                 ? 'The line appears once you have covered some ground.'
                 : 'No location, so there is no line to draw. The clock still counts.'}
@@ -579,20 +579,20 @@ function Running({ session, act }) {
         </Panel>
       )}
 
-      <Panel corners={false} className="p-3">
-        <div className="font-pixel text-[7px] text-ink-faint">WHAT THIS IS WORTH</div>
+      <Panel className="p-3">
+        <div className="font-display text-[12px] text-ink-faint">What this is worth</div>
         <div className="flex items-baseline gap-2 mt-2">
-          <span className="font-mono text-[18px] text-lime">+{preview.xp}</span>
-          <span className="text-[11px] text-ink-dim">XP</span>
+          <span className="text-[18px] text-lime">+{preview.xp}</span>
+          <span className="text-[14px] text-ink-dim">XP</span>
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
           {Object.entries(preview.statGains).map(([k, v]) => (
-            <span key={k} className="font-mono text-[11px] text-ink-dim">
+            <span key={k} className="text-[14px] text-ink-dim">
               {k} +{v}
             </span>
           ))}
         </div>
-        <div className="text-[10px] text-ink-faint mt-3 leading-relaxed">
+        <div className="text-[14px] text-ink-faint mt-3 leading-relaxed">
           It keeps running if you close the app — the clock is a start time, not a timer, so locking your phone mid-run
           costs you nothing.
         </div>
@@ -657,9 +657,9 @@ function History({ log }) {
   if (!log.length) {
     return (
       <div>
-        <SectionTitle>YOUR SESSIONS</SectionTitle>
-        <Panel corners={false} className="p-4">
-          <div className="text-[11px] text-ink-dim text-center leading-snug">
+        <SectionTitle>Your sessions</SectionTitle>
+        <Panel className="p-4">
+          <div className="text-[14px] text-ink-dim text-center leading-snug">
             Nothing here yet. Start something above and it lands here the moment you stop the clock.
           </div>
         </Panel>
@@ -669,10 +669,10 @@ function History({ log }) {
 
   return (
     <div>
-      <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">last 7 days</span>}>
-        YOUR SESSIONS
+      <SectionTitle right={<span className="text-[14px] text-ink-faint">last 7 days</span>}>
+        Your sessions
       </SectionTitle>
-      <Panel corners={false} className="p-3">
+      <Panel className="p-3">
         <div className="grid grid-cols-4 gap-2">
           {[
             [totals.sessions, 'SESSIONS'],
@@ -681,8 +681,8 @@ function History({ log }) {
             [totals.xp, 'XP'],
           ].map(([n, label]) => (
             <div key={label} className="border border-line p-2 text-center">
-              <div className="font-mono text-[15px] text-ink tabular-nums">{n}</div>
-              <div className="font-pixel text-[6px] text-ink-faint mt-1">{label}</div>
+              <div className="text-[15px] text-ink tabular-nums">{n}</div>
+              <div className="font-display text-[11px] text-ink-faint mt-1">{label}</div>
             </div>
           ))}
         </div>
@@ -696,16 +696,16 @@ function History({ log }) {
               <div key={l.id}>
                 <div className="flex items-center gap-2.5">
                   <Icon name={act.icon} size={12} color={TINT[act.id] ?? 'var(--color-ink-faint)'} />
-                  <span className="font-pixel text-[7px] text-ink-dim w-[74px] shrink-0">{act.name.toUpperCase()}</span>
-                  <span className="font-mono text-[11px] text-ink">
+                  <span className="font-display text-[12px] text-ink-dim w-[74px] shrink-0">{act.name.toUpperCase()}</span>
+                  <span className="text-[14px] text-ink">
                     {l.amount} {l.amount === 1 ? act.unit.replace(/s$/, '') : act.unit}
                   </span>
-                  <span className="font-mono text-[11px] text-lime ml-auto">+{l.xp}</span>
-                  <span className="font-mono text-[10px] text-ink-faint w-[62px] text-right shrink-0">{ago(l.at)}</span>
+                  <span className="text-[14px] text-lime ml-auto">+{l.xp}</span>
+                  <span className="text-[14px] text-ink-faint w-[62px] text-right shrink-0">{ago(l.at)}</span>
                 </div>
                 {/* The amount is one number and every session collapses into
                     it. This is the part worth reading back. */}
-                {detail && <div className="font-mono text-[10px] text-ink-faint ml-[24px] mb-0.5">{detail}</div>}
+                {detail && <div className="text-[14px] text-ink-faint ml-[24px] mb-0.5">{detail}</div>}
               </div>
             )
           })}
@@ -719,12 +719,12 @@ function History({ log }) {
 function Pick() {
   const { state, startSession } = useGame()
   return (
-    <div className="stack-in p-3 space-y-3">
+    <div className="stack-in p-4 space-y-4">
       <div>
-        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">the app counts it</span>}>
-          WHAT ARE YOU DOING?
+        <SectionTitle right={<span className="label text-ink-faint shrink-0">the app counts it</span>}>
+          What are you doing?
         </SectionTitle>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {TRACKED.map((a) => (
             <button
               key={a.id}
@@ -732,23 +732,23 @@ function Pick() {
               className="text-left active:brightness-125"
               aria-label={`Start a ${a.name} session`}
             >
-              <Panel corners={false} className="p-2.5 h-full" style={{ borderColor: alpha(TINT[a.id], 45) }}>
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="grid place-items-center w-11 h-11 shrink-0 border"
-                    style={{ borderColor: alpha(TINT[a.id], 55), background: alpha(TINT[a.id], 10) }}
-                  >
-                    <Icon name={a.icon} size={20} color={TINT[a.id]} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-pixel text-[8px]" style={{ color: TINT[a.id] }}>
-                      {a.name.toUpperCase()}
-                    </div>
-                    <div className="font-mono text-[10px] text-ink-faint mt-1">
-                      {a.xp} XP / {a.per} {a.per === 1 ? a.unit.replace(/s$/, '') : a.unit}
-                    </div>
-                    <div className="font-mono text-[9px] text-ink-faint mt-0.5 truncate">{MODE_NOTE[modeOf(a.id)]}</div>
+              {/* Stacked, not side by side. Two columns of a 375px screen leave
+                  about 150px for the text, and an icon beside it left barely a
+                  hundred — every name wrapped and every rate line broke in the
+                  middle of "10 min". */}
+              <Panel className="p-3 h-full flex flex-col gap-2.5">
+                <span
+                  className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
+                  style={{ background: alpha(TINT[a.id], 14) }}
+                >
+                  <Icon name={a.icon} size={20} color={TINT[a.id]} />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-display text-[15px] text-ink leading-tight">{a.name}</div>
+                  <div className="label text-ink-dim mt-1.5">
+                    {a.xp} XP / {a.per} {a.per === 1 ? a.unit.replace(/s$/, '') : a.unit}
                   </div>
+                  <div className="text-[12px] text-ink-faint mt-1 truncate">{MODE_NOTE[modeOf(a.id)]}</div>
                 </div>
               </Panel>
             </button>
@@ -789,8 +789,8 @@ export function SessionBar({ onOpen }) {
       className="w-full flex items-center gap-2.5 px-3 min-h-[44px] border-t border-line bg-panel active:brightness-125"
     >
       <span className={`w-2 h-2 shrink-0 ${session.paused ? '' : 'pulse-ring'}`} style={{ background: 'var(--color-lime)' }} />
-      <span className="font-pixel text-[7px] text-ink-dim">{act?.name.toUpperCase()}</span>
-      <span className="font-mono text-[13px] text-lime ml-auto tabular-nums">{clock(elapsedMs(session))}</span>
+      <span className="font-display text-[12px] text-ink-dim">{act?.name.toUpperCase()}</span>
+      <span className="text-[15px] text-lime ml-auto tabular-nums">{clock(elapsedMs(session))}</span>
       <Icon name="chevron" size={10} color="var(--color-ink-faint)" />
     </button>
   )

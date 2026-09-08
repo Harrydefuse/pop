@@ -48,7 +48,7 @@ export default function SaveSheet({ onClose }) {
               setNote(null)
             }}
             aria-pressed={mode === id}
-            className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+            className="font-display text-[13px] min-h-[44px] border transition-colors active:brightness-125"
             style={{
               color: mode === id ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
               background: mode === id ? 'var(--color-cyan)' : 'transparent',
@@ -62,7 +62,7 @@ export default function SaveSheet({ onClose }) {
 
       {mode === 'copy' ? (
         <>
-          <div className="text-[11px] text-ink-dim mt-3 leading-snug">
+          <div className="text-[14px] text-ink-dim mt-3 leading-snug">
             This is your whole character — level, gear, streak, everything you have walked. Copy it, open the app on
             your phone, and paste it into RESTORE.
           </div>
@@ -70,16 +70,16 @@ export default function SaveSheet({ onClose }) {
             readOnly
             value={mine}
             onFocus={(e) => e.target.select()}
-            className="w-full h-24 bg-panel border border-line p-2 mt-3 font-mono text-[10px] text-ink-dim scroll-thin"
+            className="w-full h-24 bg-panel border border-line p-2 mt-3 text-[14px] text-ink-dim scroll-thin"
             aria-label="Your character code"
           />
           <Btn full className="mt-2" onClick={copy}>
-            COPY THE CODE
+            Copy the code
           </Btn>
         </>
       ) : (
         <>
-          <div className="text-[11px] text-ink-dim mt-3 leading-snug">
+          <div className="text-[14px] text-ink-dim mt-3 leading-snug">
             Paste a character code here. It replaces whatever is on this device, so copy this one out first if you want
             to keep it.
           </div>
@@ -87,23 +87,23 @@ export default function SaveSheet({ onClose }) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="LVL100.1|..."
-            className="w-full h-24 bg-panel border border-line p-2 mt-3 font-mono text-[10px] text-ink placeholder:text-ink-faint focus:border-cyan outline-none scroll-thin"
+            className="w-full h-24 bg-panel border border-line p-2 mt-3 text-[14px] text-ink placeholder:text-ink-faint focus:border-cyan outline-none scroll-thin"
             aria-label="Paste a character code"
           />
           <Btn full className="mt-2" disabled={!code.trim()} onClick={paste}>
-            RESTORE THIS CHARACTER
+            Restore this character
           </Btn>
         </>
       )}
 
-      {note && <div className="text-[11px] text-cyan mt-2 leading-snug">{note}</div>}
+      {note && <div className="text-[14px] text-cyan mt-2 leading-snug">{note}</div>}
 
-      <Panel corners={false} className="p-3 mt-4">
+      <Panel className="p-3 mt-4">
         <div className="flex items-start gap-2">
           <span className="mt-0.5 shrink-0">
             <Icon name="spark" size={11} color="var(--color-ink-faint)" />
           </span>
-          <p className="text-[10px] text-ink-faint leading-relaxed">
+          <p className="text-[14px] text-ink-faint leading-relaxed">
             Nothing here is sent anywhere — your character lives in this browser and nowhere else. Clearing your
             browsing data deletes it, so keep a code somewhere if you care about the streak.
           </p>
@@ -115,7 +115,7 @@ export default function SaveSheet({ onClose }) {
               onClose()
             } else setNote('confirm-reset')
           }}
-          className="font-pixel text-[7px] mt-3 min-h-[44px] w-full border border-line active:brightness-125"
+          className="font-display text-[12px] mt-3 min-h-[44px] w-full border border-line active:brightness-125"
           style={{ color: note === 'confirm-reset' ? 'var(--color-danger)' : 'var(--color-ink-faint)' }}
         >
           {note === 'confirm-reset' ? 'TAP AGAIN TO DELETE EVERYTHING' : 'START OVER'}

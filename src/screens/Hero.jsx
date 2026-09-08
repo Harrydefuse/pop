@@ -40,7 +40,7 @@ function Tile({ rarity, level, equipped, weapon, label, onClick, children }) {
     >
       {children}
       <span
-        className="absolute bottom-0 right-0 font-pixel text-[6px] px-1 py-0.5 leading-none"
+        className="absolute bottom-0 right-0 font-display text-[11px] px-1 py-0.5 leading-none"
         style={{ background: 'var(--color-panel)', color }}
       >
         {level}
@@ -72,7 +72,7 @@ function SlotPicker({ slot, onClose }) {
   return (
     <Modal open onClose={onClose} title={name.toUpperCase()} accent="var(--color-neon)">
       {fits.length === 0 ? (
-        <div className="text-[11px] text-ink-faint py-4 text-center">
+        <div className="text-[14px] text-ink-faint py-4 text-center">
           Nothing for this slot yet. Chests and bosses drop them.
         </div>
       ) : (
@@ -92,14 +92,14 @@ function SlotPicker({ slot, onClose }) {
               >
                 <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={30} />
                 <div className="min-w-0 flex-1">
-                  <div className="font-pixel text-[8px] truncate" style={{ color }}>
+                  <div className="font-display text-[13px] truncate" style={{ color }}>
                     {item.name.toUpperCase()}
                   </div>
-                  <div className="font-mono text-[11px] text-ink-faint">
+                  <div className="text-[14px] text-ink-faint">
                     LV {item.level} · {RARITY[item.rarity].label} · {Math.round(itemScore(item))} pwr
                   </div>
                 </div>
-                {on && <span className="font-pixel text-[7px] shrink-0" style={{ color }}>ON</span>}
+                {on && <span className="font-display text-[12px] shrink-0" style={{ color }}>ON</span>}
               </button>
             )
           })}
@@ -116,7 +116,7 @@ function SlotPicker({ slot, onClose }) {
             onClose()
           }}
         >
-          TAKE OFF
+          Take off
         </Btn>
       )}
     </Modal>
@@ -144,7 +144,7 @@ function Loadout({ player, onPick }) {
             )}
             {item && (
               <span
-                className="absolute bottom-0 right-0 font-pixel text-[6px] px-0.5 leading-none"
+                className="absolute bottom-0 right-0 font-display text-[11px] px-0.5 leading-none"
                 style={{ background: 'var(--color-panel)', color }}
               >
                 {item.level}
@@ -168,7 +168,7 @@ function ItemSheet({ item, onClose }) {
   const slotName = EQUIP_SLOTS.find((s) => s.key === item.slot)?.name ?? item.slot
 
   return (
-    <Modal open onClose={onClose} title={item.name.toUpperCase()} accent={color}>
+    <Modal open onClose={onClose} title={item.name}>
       <div className="flex items-center gap-3">
         <div
           className="grid place-items-center w-16 h-16 shrink-0 border-2"
@@ -181,22 +181,22 @@ function ItemSheet({ item, onClose }) {
             <RarityTag rarity={item.rarity} />
             <Chip color="var(--color-ink-faint)">{slotName}</Chip>
           </div>
-          <div className="font-pixel text-[10px] mt-2" style={{ color }}>
+          <div className="font-display text-[16px] mt-2" style={{ color }}>
             LEVEL {item.level}
           </div>
         </div>
       </div>
 
       <div className="mt-3.5 border border-line bg-panel-2 p-3">
-        <div className="font-pixel text-[7px] text-ink-faint mb-2">STATS</div>
+        <div className="font-display text-[12px] text-ink-faint mb-2">STATS</div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(item.stats).map(([k, v]) => (
-            <span key={k} className="font-mono text-[12px] text-lime">
+            <span key={k} className="text-[15px] text-lime">
               +{Math.round(v * RARITY[item.rarity].mult * (1 + (item.level - 1) * 0.35))} {k}
             </span>
           ))}
         </div>
-        <div className="text-[10px] text-ink-faint mt-2.5">
+        <div className="text-[14px] text-ink-faint mt-2.5">
           Rarity multiplies every point, so a legendary at level 1 can still beat a common at level 5.
         </div>
       </div>
@@ -232,7 +232,7 @@ function PetSheet({ pet, onClose }) {
   const stage = petStage(pet.level)
 
   return (
-    <Modal open onClose={onClose} title={pet.name} accent={color}>
+    <Modal open onClose={onClose} title={pet.name}>
       <div className="text-center">
         <PetView refId={pet.ref} level={pet.level} size={104} float className="mx-auto" />
         <div className="flex items-center justify-center gap-1.5 mt-2">
@@ -243,8 +243,8 @@ function PetSheet({ pet, onClose }) {
 
       <div className="mt-3.5">
         <div className="flex justify-between mb-1.5">
-          <span className="font-pixel text-[8px]" style={{ color }}>LEVEL {pet.level}</span>
-          <span className="font-mono text-[10px] text-ink-faint">
+          <span className="font-display text-[13px]" style={{ color }}>LEVEL {pet.level}</span>
+          <span className="text-[14px] text-ink-faint">
             {fmt(pet.xp)}/{fmt(petXpToNext(pet.level))} XP
           </span>
         </div>
@@ -253,7 +253,7 @@ function PetSheet({ pet, onClose }) {
 
       {/* Evolution is the whole point of levelling a pet, so show the ladder. */}
       <div className="mt-3.5 border border-line bg-panel-2 p-3">
-        <div className="font-pixel text-[7px] text-ink-faint mb-2.5">EVOLUTION</div>
+        <div className="font-display text-[12px] text-ink-faint mb-2.5">Evolution</div>
         <div className="flex items-end justify-between gap-1">
           {[1, 25, 50, 75, 100].map((lv) => {
             const reached = pet.level >= lv
@@ -263,14 +263,14 @@ function PetSheet({ pet, onClose }) {
                   <PetView refId={pet.ref} level={lv} size={38} />
                 </div>
                 <div className="h-1 mt-1" style={{ background: reached ? color : 'var(--color-panel-2)' }} />
-                <div className="font-pixel text-[6px] mt-1" style={{ color: reached ? color : 'var(--color-ink-faint)' }}>
+                <div className="font-display text-[11px] mt-1" style={{ color: reached ? color : 'var(--color-ink-faint)' }}>
                   {lv}
                 </div>
               </div>
             )
           })}
         </div>
-        <div className="text-[11px] text-lime mt-3">+{Math.round((3 + pet.level * 0.12) * RARITY[pet.rarity].mult)}% {pet.stat}</div>
+        <div className="text-[14px] text-lime mt-3">+{Math.round((3 + pet.level * 0.12) * RARITY[pet.rarity].mult)}% {pet.stat}</div>
       </div>
 
       <Btn full className="mt-3.5" variant={active ? 'dim' : 'primary'} disabled={active} onClick={() => { setPet(pet.id); onClose() }}>
@@ -283,11 +283,11 @@ function PetSheet({ pet, onClose }) {
 /* ------------------------------------------------------------------- root --- */
 
 const FILTERS = [
-  { id: 'all', label: 'YOURS' },
-  { id: 'upgrade', label: 'UPGRADE' },
-  { id: 'pets', label: 'PETS' },
-  { id: 'armoury', label: 'ARMOURY' },
-  { id: 'weapons', label: 'WEAPONS' },
+  { id: 'all', label: 'Yours' },
+  { id: 'upgrade', label: 'Upgrade' },
+  { id: 'pets', label: 'Pets' },
+  { id: 'armoury', label: 'Armoury' },
+  { id: 'weapons', label: 'Weapons' },
 ]
 
 /**
@@ -327,8 +327,8 @@ function Collection({ kinds, owned, onPick, weapons }) {
         return (
           <div key={kind} className="mb-3.5 last:mb-0">
             <div className="flex items-baseline justify-between mb-2">
-              <span className="font-pixel text-[7px] text-ink-dim">{kindName(kind).toUpperCase()}</span>
-              <span className="font-mono text-[10px] text-ink-faint">
+              <span className="font-display text-[12px] text-ink-dim">{kindName(kind).toUpperCase()}</span>
+              <span className="text-[14px] text-ink-faint">
                 {got}/{row.length}
               </span>
             </div>
@@ -387,20 +387,20 @@ function Bench({ items, cores, worn, onUpgrade, onOpen }) {
   const affordable = rows.filter((r) => r.cost <= cores).length
 
   if (!rows.length) {
-    return <div className="text-[11px] text-ink-faint text-center py-6">Nothing to upgrade yet. Open a chest.</div>
+    return <div className="text-[14px] text-ink-faint text-center py-6">Nothing to upgrade yet. Open a chest.</div>
   }
 
   return (
     <>
       <div className="flex items-center justify-between mb-3">
-        <span className="font-pixel text-[7px] text-ink-faint">THE BENCH</span>
+        <span className="font-display text-[12px] text-ink-faint">The bench</span>
         <span className="flex items-center gap-1.5">
           <Icon name="core" size={11} color="var(--color-gold)" />
-          <span className="font-mono text-[13px] text-gold tabular-nums">{fmt(cores)}</span>
+          <span className="text-[15px] text-gold tabular-nums">{fmt(cores)}</span>
         </span>
       </div>
 
-      <div className="text-[11px] text-ink-dim leading-snug mb-3">
+      <div className="text-[14px] text-ink-dim leading-snug mb-3">
         Cores come out of chests and sessions. Every level on a piece is about a third more of what it already gives
         you. {affordable > 0 ? `You can afford ${affordable} of these right now.` : 'Nothing here is in reach yet.'}
       </div>
@@ -426,8 +426,8 @@ function Bench({ items, cores, worn, onUpgrade, onOpen }) {
               </button>
 
               <div className="min-w-0 flex-1">
-                <div className="font-mono text-[12px] text-ink truncate">{item.name}</div>
-                <div className="font-mono text-[10px] text-ink-faint mt-0.5">
+                <div className="text-[15px] text-ink truncate">{item.name}</div>
+                <div className="text-[14px] text-ink-faint mt-0.5">
                   LV {item.level} → {item.level + 1}
                   {equipped ? ' · worn' : ''}
                 </div>
@@ -436,7 +436,7 @@ function Bench({ items, cores, worn, onUpgrade, onOpen }) {
               <button
                 onClick={() => onUpgrade(item.id, cost)}
                 disabled={!can}
-                className="font-pixel text-[7px] min-h-[44px] px-2.5 border shrink-0 disabled:opacity-40 active:brightness-125"
+                className="font-display text-[12px] min-h-[44px] px-2.5 border shrink-0 disabled:opacity-40 active:brightness-125"
                 style={{
                   color: can ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
                   background: can ? 'var(--color-gold)' : 'transparent',
@@ -456,7 +456,7 @@ function Bench({ items, cores, worn, onUpgrade, onOpen }) {
 /** A piece you have not found yet: what it is, and what it would do. */
 function CodexSheet({ piece, onClose }) {
   return (
-    <Modal open onClose={onClose} title={piece.name.toUpperCase()} accent={RARITY[piece.rarity].color}>
+    <Modal open onClose={onClose} title={piece.name}>
       <div className="flex items-center gap-3">
         <span className="grid place-items-center w-16 h-16 shrink-0 border" style={{ borderColor: RARITY[piece.rarity].color }}>
           <GearIcon slot={piece.slot} kind={piece.kind} set={piece.set} size={48} />
@@ -465,14 +465,14 @@ function CodexSheet({ piece, onClose }) {
           <RarityTag rarity={piece.rarity} />
           <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
             {Object.entries(piece.stats).map(([k, v]) => (
-              <span key={k} className="font-mono text-[11px] text-ink-dim">
+              <span key={k} className="text-[14px] text-ink-dim">
                 {k} +{v}
               </span>
             ))}
           </div>
         </div>
       </div>
-      <div className="text-[11px] text-ink-dim mt-3 leading-snug">
+      <div className="text-[14px] text-ink-dim mt-3 leading-snug">
         Comes out of chests. The rarer the set, the longer you will be waiting — a legendary is a one-in-a-hundred day.
       </div>
     </Modal>
@@ -517,15 +517,15 @@ export default function Hero() {
       <Panel accent={cls.color} className="p-3.5">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <div className="font-pixel text-[10px]">{p.name}</div>
+            <div className="font-display text-[16px]">{p.name}</div>
             <div className="flex items-center gap-1.5 mt-1.5">
               <Chip color={cls.color}>{cls.name}</Chip>
               <Chip color={rank.color}>{rank.name}</Chip>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="font-pixel text-[18px] text-neon">{p.level}</div>
-            <div className="font-pixel text-[6px] text-ink-faint mt-1">LEVEL</div>
+            <div className="font-display text-[28px] text-neon">{p.level}</div>
+            <div className="font-display text-[11px] text-ink-faint mt-1">LEVEL</div>
           </div>
         </div>
 
@@ -538,26 +538,26 @@ export default function Hero() {
           {pet && (
             <button onClick={() => setOpenPet(pet)} className="text-center shrink-0 active:brightness-125">
               <PetView refId={pet.ref} level={pet.level} size={64} float />
-              <div className="font-pixel text-[7px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
+              <div className="font-display text-[12px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
                 {pet.name}
               </div>
-              <div className="font-mono text-[10px] text-ink-faint">
+              <div className="text-[14px] text-ink-faint">
                 LV {pet.level} · {petStage(pet.level).name}
               </div>
-              {bonus && <div className="font-mono text-[10px] text-lime mt-0.5">+{bonus.pct}% {bonus.stat}</div>}
+              {bonus && <div className="text-[14px] text-lime mt-0.5">+{bonus.pct}% {bonus.stat}</div>}
             </button>
           )}
         </div>
 
         <div className="mt-3">
           <div className="flex items-baseline justify-between mb-1.5">
-            <span className="font-pixel text-[8px] text-ink-faint">POWER</span>
-            <span className="font-pixel text-[12px]" style={{ color: rank.color }}>
+            <span className="font-display text-[13px] text-ink-faint">POWER</span>
+            <span className="font-display text-[20px]" style={{ color: rank.color }}>
               {fmtFull(power)}
             </span>
           </div>
           <Bar pct={pct} color={rank.color} height={7} />
-          <div className="font-mono text-[10px] text-ink-faint mt-1.5 text-right">
+          <div className="text-[14px] text-ink-faint mt-1.5 text-right">
             {next ? `${fmt(next.min - power)} to ${next.name}` : 'MAX RANK'}
           </div>
         </div>
@@ -565,15 +565,15 @@ export default function Hero() {
         {/* Six slots and what is in them. Tap one to see everything you own
             that fits it — the way in that starting from a grid of every item in
             the game never was. */}
-        <div className="font-pixel text-[7px] text-ink-faint mt-3.5 mb-2">LOADOUT</div>
+        <div className="font-display text-[12px] text-ink-faint mt-3.5 mb-2">Loadout</div>
         <Loadout player={p} onPick={setOpenSlot} />
 
         <div className="grid grid-cols-2 gap-1.5 mt-3">
           <Btn size="sm" variant="ghost" onClick={equipBest}>
-            <Icon name="swap" size={10} color="currentColor" /> EQUIP BEST
+            <Icon name="swap" size={10} color="currentColor" /> Equip best
           </Btn>
           <Btn size="sm" variant="ghost" onClick={() => setSaving(true)}>
-            <Icon name="link" size={10} color="currentColor" /> MY CHARACTER
+            <Icon name="link" size={10} color="currentColor" /> My character
           </Btn>
         </div>
       </Panel>
@@ -581,15 +581,16 @@ export default function Hero() {
       {saving && <SaveSheet onClose={() => setSaving(false)} />}
 
       {/* ---------------------------------------------------------- filter */}
-      <div className="grid grid-cols-5 border border-line bg-panel">
+      <div className="grid grid-cols-5 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
         {FILTERS.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className="font-pixel text-[7px] py-2.5 min-h-[44px] border-r border-line last:border-0 transition-colors active:brightness-125"
+            className="font-display text-[13px] py-2 min-h-[44px] rounded-[calc(var(--radius-sm)-2px)] transition-colors"
             style={{
-              color: filter === f.id ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
-              background: filter === f.id ? 'var(--color-neon)' : 'transparent',
+              color: filter === f.id ? 'var(--color-ink)' : 'var(--color-ink-faint)',
+              background: filter === f.id ? 'var(--color-panel)' : 'transparent',
+              boxShadow: filter === f.id ? 'var(--elev)' : undefined,
             }}
           >
             {f.label}
@@ -613,7 +614,7 @@ export default function Hero() {
             ].map(([heading, list, tone], section) =>
               list.length ? (
                 <div key={heading} className={section ? 'mt-4' : ''}>
-                  <div className="font-pixel text-[7px] mb-2.5" style={{ color: tone }}>
+                  <div className="font-display text-[12px] mb-2.5" style={{ color: tone }}>
                     {heading} · {list.length}
                   </div>
                   <div className="grid grid-cols-5 gap-2">
@@ -639,7 +640,7 @@ export default function Hero() {
 
         {showPets && (
           <>
-            <div className={`font-pixel text-[7px] text-ink-faint mb-2.5 ${showGear ? 'mt-4' : ''}`}>
+            <div className={`font-display text-[12px] text-ink-faint mb-2.5 ${showGear ? 'mt-4' : ''}`}>
               PETS · {pets.length}
             </div>
             <div className="grid grid-cols-5 gap-2">
@@ -660,7 +661,7 @@ export default function Hero() {
         )}
 
         {(filter === 'all' || filter === 'pets') && !gear.length && !pets.length && (
-          <div className="text-[11px] text-ink-faint text-center py-6">Open a chest to start collecting.</div>
+          <div className="text-[14px] text-ink-faint text-center py-6">Open a chest to start collecting.</div>
         )}
       </Panel>
 

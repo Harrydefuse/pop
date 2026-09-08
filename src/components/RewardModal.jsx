@@ -16,15 +16,15 @@ function BossDefeat({ reward, onDismiss }) {
   const act = actById(boss?.act)
 
   return (
-    <Modal open onClose={onDismiss} title="BOSS DEFEATED" accent={act.color}>
+    <Modal open onClose={onDismiss} title="Boss defeated">
       <div className="text-center">
         <div className="loot-pop inline-grid place-items-center">
           <BossArt sprite={boss?.sprite} size={104} style={{ filter: 'grayscale(0.75)', opacity: 0.75 }} />
         </div>
-        <div className="font-pixel text-[13px] mt-2.5" style={{ color: act.color }}>
+        <div className="font-display text-[22px] mt-2.5" style={{ color: act.color }}>
           {reward.bossName}
         </div>
-        <div className="font-pixel text-[7px] text-ink-faint mt-2">
+        <div className="font-display text-[12px] text-ink-faint mt-2">
           ACT {act.numeral} · {act.name}
         </div>
         {reward.title && (
@@ -34,14 +34,14 @@ function BossDefeat({ reward, onDismiss }) {
         )}
         <div className="flex items-center justify-center gap-1.5 mt-3">
           <Icon name="core" size={13} color="var(--color-gold)" />
-          <span className="font-pixel text-[13px] text-gold">+{fmtFull(reward.cores)}</span>
+          <span className="font-display text-[22px] text-gold">+{fmtFull(reward.cores)}</span>
         </div>
       </div>
 
       <Drops drops={reward.drops} />
 
       <Btn full className="mt-4" onClick={onDismiss} style={{ background: act.color, borderColor: act.color, color: 'var(--color-on-accent)' }}>
-        COLLECT
+        Collect
       </Btn>
     </Modal>
   )
@@ -60,14 +60,14 @@ function Drops({ drops }) {
             {d.kind === 'pet' ? <PetView refId={d.ref} level={1} size={38} /> : <GearIcon slot={d.slot} kind={d.side ?? d.slot} set={d.set} size={28} />}
           </RarityFrame>
           <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[9px] truncate" style={{ color: RARITY[d.rarity].color }}>
+            <div className="font-display text-[15px] truncate" style={{ color: RARITY[d.rarity].color }}>
               {d.name}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               <RarityTag rarity={d.rarity} />
-              <span className="text-[10px] text-ink-faint">{d.kind === 'pet' ? 'COMPANION' : 'EQUIPMENT'}</span>
+              <span className="text-[14px] text-ink-faint">{d.kind === 'pet' ? 'COMPANION' : 'EQUIPMENT'}</span>
             </div>
-            {d.duplicate && <div className="text-[10px] text-ink-dim mt-1">Already owned — converted to cores</div>}
+            {d.duplicate && <div className="text-[14px] text-ink-dim mt-1">Already owned — converted to cores</div>}
           </div>
         </div>
       ))}
@@ -88,22 +88,22 @@ export default function RewardModal() {
   const accent = RARITY[best].color
 
   return (
-    <Modal open onClose={dismissReward} title={DAILY_CHEST.name} accent={accent}>
+    <Modal open onClose={dismissReward} title={DAILY_CHEST.name}>
       <div className="text-center">
         <div className="loot-pop inline-grid place-items-center">
           <ChestArt size={60} />
         </div>
-        <div className="font-pixel text-[8px] text-ink-faint mt-3">TODAY&apos;S PULL</div>
+        <div className="font-display text-[13px] text-ink-faint mt-3">TODAY&apos;S PULL</div>
         <div className="flex items-center justify-center gap-1.5 mt-2.5">
           <Icon name="core" size={13} color="var(--color-gold)" />
-          <span className="font-pixel text-[13px] text-gold">+{fmtFull(reward.cores)}</span>
+          <span className="font-display text-[22px] text-gold">+{fmtFull(reward.cores)}</span>
         </div>
       </div>
 
       <Drops drops={reward.drops} />
 
       <Btn full className="mt-4" onClick={dismissReward} style={{ background: accent, borderColor: accent, color: 'var(--color-on-accent)' }}>
-        COLLECT
+        Collect
       </Btn>
     </Modal>
   )

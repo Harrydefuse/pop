@@ -41,31 +41,31 @@ export default function WorldRaid() {
           {BOSS.subtitle} · {daysLeft} DAYS LEFT
         </Chip>
         <BossArt sprite={BOSS.sprite} size={128} className="mx-auto" />
-        <div className="font-pixel text-[13px] text-danger mt-2">{BOSS.name}</div>
-        <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">
+        <div className="font-display text-[22px] text-danger mt-2">{BOSS.name}</div>
+        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
           Everyone in LVL100 is hitting this one at the same time. Kilometres are the only thing that moves it.
         </div>
 
         <div className="mt-4">
           <Bar pct={pct} color="var(--color-danger)" height={12} shine />
           <div className="flex justify-between mt-1.5">
-            <span className="font-mono text-[10px] text-ink-dim">{fmtFull(km)} km</span>
-            <span className="font-mono text-[10px] text-ink-faint">{fmtFull(BOSS.goalKm)} km</span>
+            <span className="text-[14px] text-ink-dim">{fmtFull(km)} km</span>
+            <span className="text-[14px] text-ink-faint">{fmtFull(BOSS.goalKm)} km</span>
           </div>
         </div>
 
         <Btn full variant="danger" className="mt-3.5" onClick={() => setLogging(true)}>
-          LOG DISTANCE
+          Log distance
         </Btn>
       </Panel>
 
       <Panel className="p-3.5" accent="var(--color-gold)">
-        <SectionTitle color="var(--color-gold)">SEASON REWARDS</SectionTitle>
+        <SectionTitle color="var(--color-gold)">Season rewards</SectionTitle>
         <div className="flex items-center gap-3">
           <PetView refId={petReward?.ref ?? 'zeus'} level={100} size={56} float />
           <div className="min-w-0">
-            <div className="font-pixel text-[9px] text-gold">{petReward?.name ?? 'SEASON REWARD'}</div>
-            <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">
+            <div className="font-display text-[15px] text-gold">{petReward?.name ?? 'SEASON REWARD'}</div>
+            <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
               Handed only to players who put damage on {BOSS.name} before the season closes. They never come back.
             </div>
           </div>
@@ -76,12 +76,12 @@ export default function WorldRaid() {
             return (
               <div key={r.at} className="flex items-center gap-2.5 border border-line p-2.5">
                 <span
-                  className="font-pixel text-[8px] w-9 shrink-0 text-center"
+                  className="font-display text-[13px] w-9 shrink-0 text-center"
                   style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-ink-faint)' }}
                 >
                   {r.at * 100}%
                 </span>
-                <span className="text-[11px] flex-1" style={{ color: unlocked ? 'var(--color-ink)' : 'var(--color-ink-faint)' }}>
+                <span className="text-[14px] flex-1" style={{ color: unlocked ? 'var(--color-ink)' : 'var(--color-ink-faint)' }}>
                   {r.name}
                 </span>
                 <Icon name={unlocked ? 'check' : 'lock'} size={11} color={unlocked ? 'var(--color-lime)' : 'var(--color-ink-faint)'} />
@@ -92,8 +92,8 @@ export default function WorldRaid() {
       </Panel>
 
       <div>
-        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">your friends only</span>}>
-          SQUAD DAMAGE
+        <SectionTitle right={<span className="text-[14px] text-ink-faint">your friends only</span>}>
+          Squad damage
         </SectionTitle>
         <Panel className="p-1">
           {board.map((f, i) => {
@@ -106,7 +106,7 @@ export default function WorldRaid() {
                 style={isMe ? { background: 'rgba(168, 85, 247, 0.10)' } : undefined}
               >
                 <span
-                  className="font-pixel text-[9px] w-5 text-center shrink-0"
+                  className="font-display text-[15px] w-5 text-center shrink-0"
                   style={{ color: isMe ? 'var(--color-neon-bright)' : 'var(--color-ink-faint)' }}
                 >
                   {i + 1}
@@ -114,12 +114,12 @@ export default function WorldRaid() {
                 <Avatar av={f.avatar} size={28} ring={isMe ? 'var(--color-neon)' : undefined} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-pixel text-[8px] truncate">{f.name}</span>
-                    {isMe && <span className="font-pixel text-[6px] text-neon-bright">YOU</span>}
+                    <span className="font-display text-[13px] truncate">{f.name}</span>
+                    {isMe && <span className="font-display text-[11px] text-neon-bright">YOU</span>}
                   </div>
                   <Bar pct={f.km / top} color="var(--color-danger)" height={4} className="mt-1.5" />
                 </div>
-                <span className="font-mono text-[11px] text-danger shrink-0">{f.km} km</span>
+                <span className="text-[14px] text-danger shrink-0">{f.km} km</span>
               </div>
             )
           })}

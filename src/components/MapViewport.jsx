@@ -182,7 +182,7 @@ export default function MapViewport({ w, h, content, children, label = 'Map', cl
             type="button"
             aria-label={name}
             onClick={() => zoomTo(factor, size.w / 2, size.h / 2)}
-            className="w-11 h-11 grid place-items-center font-pixel text-[12px] active:brightness-125"
+            className="w-11 h-11 grid place-items-center font-display text-[20px] active:brightness-125"
             style={{ background: '#2a1e12', color: '#f0e3bc', boxShadow: 'inset 0 0 0 1px #a16207' }}
           >
             {sign}
@@ -193,7 +193,7 @@ export default function MapViewport({ w, h, content, children, label = 'Map', cl
             type="button"
             aria-label="Show the whole map"
             onClick={() => setView({ s: fit, x: (size.w - w * fit) / 2, y: (size.h - h * fit) / 2 })}
-            className="w-11 h-11 grid place-items-center font-pixel text-[7px] active:brightness-125"
+            className="w-11 h-11 grid place-items-center font-display text-[12px] active:brightness-125"
             style={{ background: '#2a1e12', color: '#e8d9b4', boxShadow: 'inset 0 0 0 1px #a16207' }}
           >
             ALL

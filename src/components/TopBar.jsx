@@ -23,15 +23,7 @@ function ThemeToggle() {
     >
       {/* The icon is the mode you are about to get, not the one you are in:
           a moon to go dark, a sun to come back. */}
-      <span
-        className="grid place-items-center w-7 h-7 border"
-        style={{
-          borderColor: dark ? 'var(--color-gold)' : 'var(--color-neon)',
-          background: dark ? 'color-mix(in srgb, var(--color-gold) 14%, transparent)' : 'color-mix(in srgb, var(--color-neon) 10%, transparent)',
-        }}
-      >
-        <Icon name={dark ? 'sun' : 'moon'} size={13} color={dark ? 'var(--color-gold)' : 'var(--color-neon)'} />
-      </span>
+      <Icon name={dark ? 'sun' : 'moon'} size={19} color="var(--color-ink-dim)" />
     </button>
   )
 }
@@ -63,13 +55,13 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
           {/* No class chip. Nobody picks a class at sign-up, so the header was
               labelling the player with something they never chose — and the
               room it took is what the map needed. */}
-          <div className="font-pixel text-[10px] truncate">{p.name}</div>
+          <div className="font-display text-[19px] truncate leading-tight">{p.name}</div>
           <div className="flex items-center gap-1.5 mt-1 whitespace-nowrap overflow-hidden">
-            <span className="font-pixel text-[7px] shrink-0" style={{ color: rank.color }}>
+            <span className="label shrink-0" style={{ color: rank.color }}>
               {rank.name}
             </span>
-            <span className="text-ink-faint text-[10px] shrink-0">·</span>
-            <span className="font-mono text-[10px] text-ink-dim truncate">
+            <span className="text-ink-faint text-[14px] shrink-0">·</span>
+            <span className="text-[14px] text-ink-dim truncate">
               <Num value={power} format={fmt} /> PWR
             </span>
           </div>
@@ -87,37 +79,38 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
             className="shrink-0 grid place-items-center w-11 h-11 active:brightness-110"
             aria-label="Open the map of Sydney"
           >
-            <PixelSprite sprite={MAP_ICON} size={30} />
+            <PixelSprite sprite={MAP_ICON} size={28} />
           </button>
           <ThemeToggle />
+          {/* The one filled control up here, because it is the only one that
+              starts something rather than showing something. */}
           <button
             onClick={onOpenAxis}
-            className="grid place-items-center w-11 h-11 border border-cyan bg-cyan/10 hover:brightness-125 active:brightness-150"
-            style={{ boxShadow: '0 0 14px -6px var(--color-cyan)' }}
+            className="grid place-items-center w-11 h-11 rounded-full bg-neon active:scale-95 transition-transform"
             aria-label="Open AXIS coach"
             title="AXIS coach"
           >
-            <Icon name="spark" size={14} color="var(--color-cyan)" />
+            <Icon name="spark" size={18} color="var(--color-on-accent)" />
           </button>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mt-2.5">
-        <span className="font-pixel text-[8px] text-neon shrink-0">LV {p.level}</span>
+        <span className="figure text-[15px] text-neon shrink-0">LV {p.level}</span>
         <Bar pct={maxed ? 1 : p.xp / need} height={7} shine className="flex-1" />
-        <span className="font-mono text-[9px] text-ink-faint shrink-0 tabular-nums">
+        <span className="text-[13px] text-ink-faint shrink-0 tabular-nums">
           {maxed ? `MAX ${MAX_LEVEL}` : `${fmt(p.xp)}/${fmt(need)}`}
         </span>
         <span className="w-px h-3 bg-line shrink-0" />
         <span className="flex items-center gap-1 shrink-0" title={`${p.streak} day streak · ${streak.label}`}>
-          <Icon name="flame" size={10} color={p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)'} />
-          <span className="font-pixel text-[8px]" style={{ color: p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)' }}>
+          <Icon name="flame" size={13} color={p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)'} />
+          <span className="figure text-[14px]" style={{ color: p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)' }}>
             {p.streak}
           </span>
         </span>
         <span className="flex items-center gap-1 shrink-0" title="Cores">
-          <Icon name="core" size={10} color="var(--color-gold)" />
-          <span className="font-pixel text-[8px] text-gold">
+          <Icon name="core" size={13} color="var(--color-gold)" />
+          <span className="figure text-[14px] text-gold">
             <Num value={p.cores} format={fmt} />
           </span>
         </span>

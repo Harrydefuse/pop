@@ -24,17 +24,17 @@ export default function LogSheet({ title, accepts, accent = 'var(--color-cyan)',
   const busy = Boolean(state.session)
 
   return (
-    <Modal open onClose={onClose} title={title} accent={accent}>
+    <Modal open onClose={onClose} title={title}>
       {busy ? (
-        <Panel corners={false} className="p-3">
-          <div className="text-[12px] text-ink">A session is already running.</div>
-          <div className="text-[11px] text-ink-dim mt-2 leading-snug">
+        <Panel className="p-3">
+          <div className="text-[15px] text-ink">A session is already running.</div>
+          <div className="text-[14px] text-ink-dim mt-2 leading-snug">
             Finish it from the bar at the bottom of the screen, then start the next one.
           </div>
         </Panel>
       ) : (
         <>
-          <div className="text-[11px] text-ink-dim leading-snug">
+          <div className="text-[14px] text-ink-dim leading-snug">
             {minMinutes > 0
               ? `Pick one and the clock starts. ${minMinutes} minutes ticks this off.`
               : 'Pick one and the clock starts. Stop it when you are done.'}
@@ -51,15 +51,15 @@ export default function LogSheet({ title, accepts, accent = 'var(--color-cyan)',
                 className="w-full flex items-center gap-2.5 border border-line p-2.5 text-left min-h-[44px] active:brightness-125"
               >
                 <Icon name={a.icon} size={16} color={accent} />
-                <span className="font-pixel text-[8px] text-ink flex-1">{a.name.toUpperCase()}</span>
-                <span className="font-mono text-[11px] text-ink-faint">
+                <span className="font-display text-[13px] text-ink flex-1">{a.name.toUpperCase()}</span>
+                <span className="text-[14px] text-ink-faint">
                   {a.xp} XP / {a.per} {a.unit}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="text-[10px] text-ink-faint mt-3 leading-relaxed">
+          <div className="text-[14px] text-ink-faint mt-3 leading-relaxed">
             The app counts it, so nothing can be typed in and nothing can be made up. Lock your phone and go — the clock
             keeps its own time.
           </div>

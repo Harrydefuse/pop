@@ -36,7 +36,7 @@ function TitleLogo() {
         }}
       >
         <div
-          className="font-pixel text-[40px] leading-[0.95] tracking-tight"
+          className="font-pixel text-[40px] leading-[0.95]"
           style={{ color: '#ff7d5e', textShadow: `${OUTLINE('#2a0a08')}, 0 5px 0 #8f2a16` }}
         >
           LVL
@@ -53,7 +53,7 @@ function TitleLogo() {
         </div>
 
         <div
-          className="font-pixel text-[40px] leading-[0.95] tracking-tight mt-7"
+          className="font-pixel text-[40px] leading-[0.95] mt-7"
           style={{ color: '#ff7d5e', textShadow: `${OUTLINE('#2a0a08')}, 0 5px 0 #8f2a16` }}
         >
           100
@@ -62,10 +62,10 @@ function TitleLogo() {
 
       <div className="flex justify-center mt-5">
         <div
-          className="font-pixel text-[7px] tracking-[0.3em] px-3 py-2"
+          className="font-display text-[12px] tracking-[0.3em] px-3 py-2"
           style={{ ...BOARD, color: '#ffe6b0' }}
         >
-          A GAME YOU PLAY BY MOVING
+          A game you play by moving
         </div>
       </div>
     </div>
@@ -77,12 +77,12 @@ function MenuItem({ children, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="group w-full min-h-[48px] font-pixel text-[13px] flex items-center justify-center gap-3 active:translate-y-[2px]"
+      className="group w-full min-h-[48px] font-display text-[22px] flex items-center justify-center gap-3 active:translate-y-[2px]"
       style={{ color: '#ffffff', textShadow: `${OUTLINE('#10203a')}, 0 4px 0 rgba(8,16,30,0.4)` }}
     >
       <span
         aria-hidden="true"
-        className="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[10px]"
+        className="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[14px]"
         style={{ color: '#ffd97a', textShadow: OUTLINE('#3a1f05') }}
       >
         &#9656;
@@ -90,7 +90,7 @@ function MenuItem({ children, onClick }) {
       {children}
       <span
         aria-hidden="true"
-        className="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[10px]"
+        className="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[14px]"
         style={{ color: '#ffd97a', textShadow: OUTLINE('#3a1f05') }}
       >
         &#9666;
@@ -110,7 +110,7 @@ const DEFAULT_CLASS = 'ironstride'
 function Pick({ label, options, value, onChange }) {
   return (
     <>
-      <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">{label}</div>
+      <div className="font-display text-[12px] text-ink-faint mt-4 mb-2">{label}</div>
       <div className="grid grid-cols-2 gap-2">
         {options.map((o) => {
           const on = value === o.id
@@ -119,7 +119,7 @@ function Pick({ label, options, value, onChange }) {
               key={o.id}
               onClick={() => onChange(o.id)}
               aria-pressed={on}
-              className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+              className="font-display text-[13px] min-h-[44px] border transition-colors active:brightness-125"
               style={{
                 color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
                 background: on ? 'var(--color-neon)' : 'transparent',
@@ -217,7 +217,7 @@ export default function Onboarding({ onContinue }) {
             <PetView refId="zeus" level={100} size={34} />
           </div>
 
-          <p className="font-pixel text-[7px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>
+          <p className="font-display text-[12px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>
             {has ? `CARRY ON AS ${(state.player.name || 'ROOKIE').toUpperCase()}` : 'TEN BOSSES · THREE ACTS · ONE ENDING'}
           </p>
         </div>
@@ -226,14 +226,14 @@ export default function Onboarding({ onContinue }) {
   }
 
   return (
-    <div className="absolute inset-0 z-50 bg-void arcade-bg overflow-y-auto scroll-thin">
+    <div className="absolute inset-0 z-50 bg-void overflow-y-auto scroll-thin">
       <div className="min-h-full flex flex-col p-4">
         {/* ------------------------------------------------------ 1. the look */}
         {step === 1 && (
           <div className="flex-1 flex flex-col">
-            <div className="font-pixel text-[11px] text-neon">WHO ARE YOU?</div>
+            <div className="font-display text-[18px] text-neon">WHO ARE YOU?</div>
             {testing && (
-              <div className="font-pixel text-[7px] text-gold mt-1.5">
+              <div className="font-display text-[12px] text-gold mt-1.5">
                 TEST ACCOUNT · LEVEL 100 AND EVERY DROP, AS WHOEVER YOU BUILD
               </div>
             )}
@@ -249,7 +249,7 @@ export default function Onboarding({ onContinue }) {
 
             <Pick label="BODY" value={body} onChange={setBody} options={AVATAR_BODIES} />
 
-            <label className="font-pixel text-[7px] text-ink-faint mt-4" htmlFor="ob-name">
+            <label className="font-display text-[12px] text-ink-faint mt-4" htmlFor="ob-name">
               NAME
             </label>
             <input
@@ -257,28 +257,28 @@ export default function Onboarding({ onContinue }) {
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, 14))}
               placeholder="ROOKIE"
-              className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-pixel text-[10px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
+              className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-display text-[16px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
-            <label className="font-pixel text-[7px] text-ink-faint mt-3.5" htmlFor="ob-handle">
-              HANDLE
+            <label className="font-display text-[12px] text-ink-faint mt-3.5" htmlFor="ob-handle">
+              Handle
             </label>
             <input
               id="ob-handle"
               value={handle}
               onChange={(e) => setHandle(e.target.value.replace(/\s/g, '').slice(0, 18))}
               placeholder="newchallenger"
-              className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-mono text-[12px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
+              className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
-            <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">SKIN</div>
+            <div className="font-display text-[12px] text-ink-faint mt-4 mb-2">SKIN</div>
             <div className="flex gap-2 flex-wrap">
               {AVATAR_SKINS.map((c) => (
                 <Swatch key={c} color={c} selected={skin === c} onClick={() => setSkin(c)} label={`Skin ${c}`} />
               ))}
             </div>
 
-            <div className="font-pixel text-[7px] text-ink-faint mt-4 mb-2">HAIR COLOUR</div>
+            <div className="font-display text-[12px] text-ink-faint mt-4 mb-2">Hair colour</div>
             <div className="flex gap-2 flex-wrap">
               {AVATAR_HAIR.map((c) => (
                 <Swatch key={c} color={c} selected={hair === c} onClick={() => setHair(c)} label={`Hair ${c}`} />

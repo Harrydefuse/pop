@@ -77,10 +77,10 @@ function Health({ label, hp, max, color, portrait, align = 'left' }) {
       {portrait}
       <div className="flex-1 min-w-0">
         <div className={`flex items-baseline gap-2 mb-1 ${right ? 'flex-row-reverse' : ''}`}>
-          <span className="font-pixel text-[7px] truncate" style={{ color }}>
+          <span className="font-display text-[12px] truncate" style={{ color }}>
             {label}
           </span>
-          <span className="font-mono text-[10px] shrink-0" style={{ color: 'rgba(255,236,205,0.72)' }}>
+          <span className="text-[14px] shrink-0" style={{ color: 'rgba(255,236,205,0.72)' }}>
             {fmtFull(Math.max(0, Math.round(hp)))}
           </span>
         </div>
@@ -122,10 +122,10 @@ const FORM_TONE = { PEAKING: DECK.mine, SHARP: '#8ff8ff', RUSTY: '#ffd166', COLD
 function Stat({ label, value, tone }) {
   return (
     <div className="flex-1 px-2 py-1.5 text-center" style={{ background: 'rgba(0,0,0,0.4)', boxShadow: `inset 0 0 0 1px ${DECK.edge}` }}>
-      <div className="font-pixel text-[6px]" style={{ color: 'rgba(255,236,205,0.5)' }}>
+      <div className="font-display text-[11px]" style={{ color: 'rgba(255,236,205,0.5)' }}>
         {label}
       </div>
-      <div className="font-pixel text-[9px] mt-1" style={{ color: tone ?? '#ffeccd' }}>
+      <div className="font-display text-[15px] mt-1" style={{ color: tone ?? '#ffeccd' }}>
         {value}
       </div>
     </div>
@@ -342,7 +342,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
         style={{ background: DECK.panel, boxShadow: `inset 0 -1px 0 0 ${DECK.edge}` }}
       >
         <span
-          className="font-pixel text-[10px]"
+          className="font-display text-[16px]"
           style={{ color: over ? (fight.won ? DECK.mine : DECK.theirs) : tone }}
         >
           {over ? (fight.won ? 'VICTORY' : 'DEFEATED') : 'THE ARENA'}
@@ -351,7 +351,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
         {live ? (
           <button
             onClick={skip}
-            className="press font-pixel text-[7px] min-h-[44px] px-2"
+            className="press font-display text-[12px] min-h-[44px] px-2"
             style={{ color: 'rgba(255,236,205,0.6)' }}
           >
             SKIP
@@ -414,7 +414,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
             {heroHit && (
               <span
                 key={`h${step}`}
-                className="arena-pop absolute left-1/2 -translate-x-1/2 -top-2 font-pixel text-[16px]"
+                className="arena-pop absolute left-1/2 -translate-x-1/2 -top-2 font-display text-[26px]"
                 style={{ color: DECK.hit, textShadow: '0 2px 0 #12090f, 0 0 14px rgba(255,93,122,0.8)' }}
               >
                 -{beat.dmg}
@@ -435,7 +435,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
             {bossHit && (
               <span
                 key={`b${step}`}
-                className="arena-pop absolute left-1/2 -translate-x-1/2 -top-2 font-pixel text-[16px]"
+                className="arena-pop absolute left-1/2 -translate-x-1/2 -top-2 font-display text-[26px]"
                 style={{ color: DECK.land, textShadow: '0 2px 0 #12090f, 0 0 14px rgba(216,255,107,0.7)' }}
               >
                 -{beat.dmg}
@@ -448,7 +448,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
             fight and then gets out of the way of it. */}
         {live && step === 0 && (
           <span
-            className="arena-slam absolute left-1/2 top-[38%] font-pixel text-[34px] pointer-events-none"
+            className="arena-slam absolute left-1/2 top-[38%] font-display text-[38px] pointer-events-none"
             style={{ color: '#ffd166', textShadow: '0 4px 0 #12090f, 0 0 30px rgba(255,209,102,0.8)' }}
           >
             FIGHT
@@ -457,7 +457,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
         {live && step > 0 && (
           <span
             key={round}
-            className="arena-banner absolute left-1/2 -translate-x-1/2 top-2 font-pixel text-[8px] px-2.5 py-1 pointer-events-none"
+            className="arena-banner absolute left-1/2 -translate-x-1/2 top-2 font-display text-[13px] px-2.5 py-1 pointer-events-none"
             style={{ background: 'rgba(0,0,0,0.6)', color: '#ffd166', boxShadow: `inset 0 0 0 1px ${DECK.edge}` }}
           >
             ROUND {round} / {fight.rounds.length}
@@ -465,7 +465,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
         )}
         {over && (
           <span
-            className="arena-slam absolute left-1/2 top-[36%] font-pixel text-[30px] pointer-events-none"
+            className="arena-slam absolute left-1/2 top-[36%] font-display text-[34px] pointer-events-none"
             style={{
               color: fight.won ? DECK.mine : DECK.theirs,
               textShadow: `0 4px 0 #12090f, 0 0 30px ${fight.won ? 'rgba(182,242,74,0.7)' : 'rgba(255,61,99,0.7)'}`,
@@ -497,7 +497,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
               />
             </div>
 
-            <p className="text-[11px] mt-2.5 leading-snug" style={{ color: 'rgba(255,236,205,0.66)' }}>
+            <p className="text-[14px] mt-2.5 leading-snug" style={{ color: 'rgba(255,236,205,0.66)' }}>
               {me.form.sessions === 0
                 ? 'Nothing logged in seven days. You walk in cold — every swing is at half strength.'
                 : `${me.form.sessions} ${me.form.sessions === 1 ? 'session' : 'sessions'} behind you this week, and the kit you have on. Both go into every swing.`}
@@ -505,16 +505,16 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
 
             {spent ? (
               <div className="mt-3 p-2.5 text-center" style={{ background: 'rgba(0,0,0,0.4)', boxShadow: `inset 0 0 0 1px ${DECK.edge}` }}>
-                <div className="font-pixel text-[8px]" style={{ color: '#ffd166' }}>
-                  ALREADY FOUGHT TODAY
+                <div className="font-display text-[13px]" style={{ color: '#ffd166' }}>
+                  Already fought today
                 </div>
-                <div className="text-[11px] mt-1.5" style={{ color: 'rgba(255,236,205,0.66)' }}>
+                <div className="text-[14px] mt-1.5" style={{ color: 'rgba(255,236,205,0.66)' }}>
                   One trip a day. Go and train — it is what the next one is made of.
                 </div>
               </div>
             ) : (
               <Btn full variant="danger" className="mt-3 motion-own" onClick={start}>
-                STEP IN
+                Step in
               </Btn>
             )}
           </div>
@@ -523,10 +523,10 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
         {over && (
           <div className="stack-in">
             <div className="p-2.5" style={{ background: 'rgba(0,0,0,0.4)', boxShadow: `inset 0 0 0 1px ${fight.won ? DECK.mine : DECK.theirs}` }}>
-              <div className="font-pixel text-[8px]" style={{ color: fight.won ? DECK.mine : DECK.theirs }}>
+              <div className="font-display text-[13px]" style={{ color: fight.won ? DECK.mine : DECK.theirs }}>
                 {fight.won ? `${boss.name} IS DOWN` : 'IT IS STILL STANDING'}
               </div>
-              <div className="text-[11px] mt-1.5 leading-snug" style={{ color: 'rgba(255,236,205,0.7)' }}>
+              <div className="text-[14px] mt-1.5 leading-snug" style={{ color: 'rgba(255,236,205,0.7)' }}>
                 {fight.won
                   ? 'The road opens. Whatever it was carrying is yours.'
                   : `${
@@ -537,7 +537,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
               </div>
             </div>
             <Btn full className="mt-3 motion-own" onClick={onClose}>
-              LEAVE THE ARENA
+              Leave the arena
             </Btn>
           </div>
         )}

@@ -120,7 +120,7 @@ function applyBossDamage(state, act, xp) {
     if (weak) {
       next = toast(next, {
         kind: 'boss',
-        title: `WEAKNESS · ${damage} DMG`,
+        title: `Weakness · ${damage} damage`,
         body: `${current.name} takes double from ${act.name.toLowerCase()}`,
       })
     }
@@ -131,7 +131,7 @@ function applyBossDamage(state, act, xp) {
     ...state,
     campaign: { ...state.campaign, defeated: [...state.campaign.defeated, current.id], damage: 0 },
   }
-  next = toast(next, { kind: 'boss', title: `${current.name} DOWN`, body: current.title })
+  next = toast(next, { kind: 'boss', title: `${current.name} is down`, body: current.title })
   return grantBossReward(next, current)
 }
 
@@ -244,7 +244,7 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
     stats: result.statGains,
   })
   for (const lv of levelsGained) {
-    next = toast(next, { kind: 'level', title: `LEVEL ${lv}`, body: 'New level reached. Power recalculated.' })
+    next = toast(next, { kind: 'level', title: `Level ${lv}`, body: 'New level reached. Power recalculated.' })
   }
   if (petLeveled) {
     next = toast(next, { kind: 'pet', title: `${petLeveled.name} → LV ${petLeveled.level}`, body: 'Your pet levelled up' })
@@ -255,13 +255,13 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
   const activeDone = next.dailies.find((d) => d.id === 'active')?.done
   if (activeDone && !next.chest.unlocked && !next.chest.openedToday) {
     next = { ...next, chest: { ...next.chest, unlocked: true } }
-    next = toast(next, { kind: 'chest', title: 'CHEST UNLOCKED', body: 'Open it whenever you like.' })
+    next = toast(next, { kind: 'chest', title: 'Chest unlocked', body: 'Open it whenever you like.' })
   }
 
   const allDone = next.dailies.every((d) => d.done)
   if (allDone && !next.perfectToday) {
     next = { ...next, perfectToday: true, player: { ...next.player, cores: next.player.cores + 250 } }
-    next = toast(next, { kind: 'level', title: 'ALL THREE DONE', body: '+250 cores for a full day' })
+    next = toast(next, { kind: 'level', title: 'All three done', body: '+250 cores for a full day' })
   }
 
   next = applyBossDamage(next, act, result.xp)
@@ -274,7 +274,7 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
       player: { ...next.player, stones: [...next.player.stones, ...earned.map((s) => s.key)] },
     }
     for (const s of earned) {
-      next = toast(next, { kind: 'stone', title: `${s.name} STONE`, body: s.reward, color: s.color })
+      next = toast(next, { kind: 'stone', title: `${s.name} stone`, body: s.reward, color: s.color })
     }
   }
   return next
@@ -324,7 +324,7 @@ function reducer(state, action) {
           dailies: freshDailies(),
           links: { ...state.links, health },
         },
-        { kind: 'level', title: `WELCOME, ${name.toUpperCase()}`, body: 'Level 1. Everything from here is yours.' },
+        { kind: 'level', title: `Welcome, ${name}`, body: 'Level 1. Everything from here is yours.' },
       )
     }
 
@@ -477,7 +477,7 @@ function reducer(state, action) {
           gift: { pending: false, opened: true },
           player: { ...state.player, inventory: [...state.player.inventory, item], titles: [...state.player.titles, FOUNDER_GIFT.title] },
         },
-        { kind: 'level', title: 'BETA FOUNDER', body: `${FOUNDER_GIFT.name} added to your gear` },
+        { kind: 'level', title: 'Beta founder', body: `${FOUNDER_GIFT.name} added to your gear` },
       )
     }
 
@@ -535,7 +535,7 @@ function reducer(state, action) {
       const equipped = { ...state.player.equipped, ...bestLoadout(state.player.inventory) }
       return toast(
         { ...state, player: { ...state.player, equipped } },
-        { kind: 'gear', title: 'BEST GEAR ON', body: 'Highest-scoring item in every slot' },
+        { kind: 'gear', title: 'Best gear on', body: 'Highest-scoring item in every slot' },
       )
     }
 
@@ -616,7 +616,7 @@ function reducer(state, action) {
       if (state.purchased.includes(action.id)) return state
       return toast(
         { ...state, purchased: [...state.purchased, action.id] },
-        { kind: 'gear', title: 'SESSION UNLOCKED', body: `${action.name} · lifetime access` },
+        { kind: 'gear', title: 'Session unlocked', body: `${action.name} · lifetime access` },
       )
 
     // One trip to the arena a day. The damage sticks whether you win or lose,
@@ -640,7 +640,7 @@ function reducer(state, action) {
         ...base,
         campaign: { ...base.campaign, defeated: [...state.campaign.defeated, current.id], damage: 0 },
       }
-      next = toast(next, { kind: 'boss', title: `${current.name} DOWN`, body: current.title })
+      next = toast(next, { kind: 'boss', title: `${current.name} is down`, body: current.title })
       return grantBossReward(next, current)
     }
 
@@ -666,7 +666,7 @@ function reducer(state, action) {
       if (!next?.player?.name || !Array.isArray(next.player.inventory)) return state
       return toast({ ...next, toasts: state.toasts }, {
         kind: 'level',
-        title: `WELCOME BACK, ${String(next.player.name).toUpperCase()}`,
+        title: `Welcome back, ${next.player.name}`,
         body: 'Character restored on this device.',
       })
     }
@@ -690,7 +690,7 @@ function reducer(state, action) {
           explored: state.explored?.length ? state.explored : INITIAL_STATE.explored,
           dailies: freshDailies(),
         },
-        { kind: 'level', title: 'TEST ACCOUNT', body: 'Level 100 and every drop. Ten bosses still standing.' },
+        { kind: 'level', title: 'Test account', body: 'Level 100 and every drop. Ten bosses still standing.' },
       )
 
     case 'reset':

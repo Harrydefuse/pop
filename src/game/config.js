@@ -279,7 +279,7 @@ export const ACTIVITIES = [
 export const DAILY_SLOTS = [
   {
     id: 'active',
-    name: 'ACTIVE',
+    name: 'Active',
     rule: '20 minutes of anything active',
     detail: 'A walk counts. So does a run, a ride, a class or a kickabout.',
     examples: 'Walk · Run · Ride · Swim · HIIT · Sport',
@@ -292,7 +292,7 @@ export const DAILY_SLOTS = [
   },
   {
     id: 'aim',
-    name: 'AIM',
+    name: 'Aim',
     rule: '20 minutes on your game',
     detail: 'Aim trainer or reviewing a VOD. Both build the same thing.',
     examples: 'Aim trainer · VOD review',
@@ -304,7 +304,7 @@ export const DAILY_SLOTS = [
   },
   {
     id: 'recover',
-    name: 'RECOVER',
+    name: 'Recover',
     rule: 'Gym, mobility or sleep',
     detail: 'Anything that builds you back up. Sleep counts as training here.',
     examples: 'Gym · Calisthenics · Mobility · Sleep',

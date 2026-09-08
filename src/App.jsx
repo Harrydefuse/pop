@@ -28,15 +28,15 @@ function DesktopPitch({ onExit }) {
       {onExit && (
         <button
           onClick={onExit}
-          className="font-pixel text-[9px] text-ink-faint hover:text-neon self-start mb-6 min-h-[44px] flex items-center"
+          className="font-display text-[15px] text-ink-faint hover:text-neon self-start mb-6 min-h-[44px] flex items-center"
         >
           ← BACK TO SITE
         </button>
       )}
-      <div className="font-pixel text-[34px] leading-none">
+      <div className="font-display text-[38px] leading-none">
         LEVEL <span className="text-neon">100</span>
       </div>
-      <div className="font-pixel text-[9px] text-ink-faint mt-4 tracking-widest">FITNESS RPG</div>
+      <div className="font-display text-[15px] text-ink-faint mt-4 tracking-widest">FITNESS RPG</div>
 
       <p className="text-[15px] text-ink-dim mt-7 leading-relaxed">
         An RPG you play by moving. Verified workouts pay out XP, stats, loot and pets, and the whole thing runs as a
@@ -50,14 +50,14 @@ function DesktopPitch({ onExit }) {
               <Icon name="spark" size={12} color="var(--color-neon)" />
             </span>
             <div>
-              <div className="font-pixel text-[9px] text-ink">{t}</div>
-              <div className="text-[13px] text-ink-dim mt-1.5 leading-relaxed">{d}</div>
+              <div className="font-display text-[15px] text-ink">{t}</div>
+              <div className="text-[15px] text-ink-dim mt-1.5 leading-relaxed">{d}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="font-mono text-[11px] text-ink-faint mt-9 border-t border-line pt-4">
+      <div className="text-[14px] text-ink-faint mt-9 border-t border-line pt-4">
         Prototype · all data lives in your browser
       </div>
     </aside>
@@ -76,12 +76,12 @@ function Device() {
   const questsOpen = state.dailies.some((d) => !d.done)
 
   return (
-    <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 scanlines">
+    <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 device:rounded-[22px]">
       {!entered && <Onboarding onContinue={() => setEntered(true)} />}
 
       <TopBar onOpenProfile={() => setTab('hero')} onOpenAxis={() => setAxis(true)} onOpenMap={() => setMap(true)} />
 
-      <main className="flex-1 overflow-y-auto scroll-thin arcade-bg">
+      <main className="flex-1 overflow-y-auto scroll-thin app-bg">
         {/* Caps the measure when the app runs full-bleed on a wide, short
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}

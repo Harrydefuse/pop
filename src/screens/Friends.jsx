@@ -13,10 +13,10 @@ import WorldRaid from '../components/WorldRaid'
  */
 function ModeSwitch({ mode, setMode }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
       {[
-        ['squad', 'YOUR SQUAD'],
-        ['raid', 'WORLD RAID'],
+        ['squad', 'Your squad'],
+        ['raid', 'World raid'],
       ].map(([id, label]) => {
         const on = mode === id
         return (
@@ -24,11 +24,11 @@ function ModeSwitch({ mode, setMode }) {
             key={id}
             onClick={() => setMode(id)}
             aria-pressed={on}
-            className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+            className="font-display text-[14px] min-h-[44px] rounded-[calc(var(--radius-sm)-2px)] transition-colors"
             style={{
-              borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
-              background: on ? 'var(--color-neon)' : 'transparent',
-              color: on ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
+              background: on ? 'var(--color-panel)' : 'transparent',
+              color: on ? 'var(--color-ink)' : 'var(--color-ink-faint)',
+              boxShadow: on ? 'var(--elev)' : undefined,
             }}
           >
             {label}
@@ -108,8 +108,8 @@ export default function Friends() {
     <div className="stack-in p-3 space-y-3.5">
       <ModeSwitch mode={mode} setMode={setMode} />
       <Panel className="p-3.5" accent="var(--color-neon)">
-        <div className="font-pixel text-[10px] text-neon">YOUR CIRCLE</div>
-        <div className="text-[11px] text-ink-dim mt-2 leading-snug">
+        <div className="font-display text-[16px] text-neon">Your circle</div>
+        <div className="text-[14px] text-ink-dim mt-2 leading-snug">
           Ranked by level, so it comes down to who keeps showing up. You are{' '}
           <span className="text-ink">#{myPlace} of {board.length}</span>
           {above && (
@@ -125,7 +125,7 @@ export default function Friends() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="add by handle"
             aria-label="Friend handle"
-            className="flex-1 min-w-0 bg-panel-2 border border-line px-2.5 min-h-[44px] text-[12px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
+            className="flex-1 min-w-0 bg-panel-2 border border-line px-2.5 min-h-[44px] text-[15px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
           />
           <Btn size="sm" type="submit" disabled={!query.trim()}>
             <Icon name="plus" size={10} color="currentColor" /> ADD
@@ -134,8 +134,8 @@ export default function Friends() {
       </Panel>
 
       <div>
-        <SectionTitle right={<span className="font-mono text-[10px] text-ink-faint">by level</span>}>
-          LEADERBOARD
+        <SectionTitle right={<span className="text-[14px] text-ink-faint">by level</span>}>
+          Leaderboard
         </SectionTitle>
         <Panel className="p-1">
           {board.map((f, i) => {
@@ -149,7 +149,7 @@ export default function Friends() {
                 style={isMe ? { background: 'rgba(168, 85, 247, 0.10)' } : undefined}
               >
                 <span
-                  className="font-pixel text-[9px] w-6 text-center shrink-0"
+                  className="font-display text-[15px] w-6 text-center shrink-0"
                   style={{ color: medal ?? (isMe ? 'var(--color-neon-bright)' : 'var(--color-ink-faint)') }}
                 >
                   {i + 1}
@@ -157,21 +157,21 @@ export default function Friends() {
                 <Avatar av={f.avatar} size={32} ring={isMe ? 'var(--color-neon)' : cls.color} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-pixel text-[8px] truncate">{f.name}</span>
-                    {isMe && <span className="font-pixel text-[6px] text-neon-bright">YOU</span>}
-                    {f.fresh && <span className="font-pixel text-[6px] text-lime">NEW</span>}
+                    <span className="font-display text-[13px] truncate">{f.name}</span>
+                    {isMe && <span className="font-display text-[11px] text-neon-bright">YOU</span>}
+                    {f.fresh && <span className="font-display text-[11px] text-lime">NEW</span>}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                     <Icon name="flame" size={8} color="var(--tone-orange)" />
-                    <span className="font-mono text-[10px] text-ink-faint">{f.streak} day streak</span>
+                    <span className="text-[14px] text-ink-faint">{f.streak} day streak</span>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
-                  <div className="font-pixel text-[11px]" style={{ color: isMe ? 'var(--color-neon-bright)' : 'var(--color-ink)' }}>
+                  <div className="font-display text-[18px]" style={{ color: isMe ? 'var(--color-neon-bright)' : 'var(--color-ink)' }}>
                     {f.level}
                   </div>
-                  <div className="font-pixel text-[6px] text-ink-faint mt-0.5">LEVEL</div>
+                  <div className="font-display text-[11px] text-ink-faint mt-0.5">LEVEL</div>
                 </div>
 
                 {!isMe && (
@@ -198,13 +198,13 @@ export default function Friends() {
 
       <Panel className="p-3.5">
         <div className="flex items-baseline justify-between mb-1.5">
-          <span className="font-pixel text-[8px] text-ink-faint">YOUR NEXT LEVEL</span>
-          <span className="font-mono text-[10px] text-ink-dim">
+          <span className="font-display text-[13px] text-ink-faint">Your next level</span>
+          <span className="text-[14px] text-ink-dim">
             {Number.isFinite(xpToNext(p.level)) ? `${Math.round(p.xp)} / ${xpToNext(p.level)} XP` : 'MAX LEVEL'}
           </span>
         </div>
         <Bar pct={Number.isFinite(xpToNext(p.level)) ? p.xp / xpToNext(p.level) : 1} height={8} shine />
-        <div className="text-[11px] text-ink-dim mt-2.5 leading-snug">
+        <div className="text-[14px] text-ink-dim mt-2.5 leading-snug">
           No global board here on purpose. Ten people you actually know beats ten million you don&apos;t.
         </div>
       </Panel>

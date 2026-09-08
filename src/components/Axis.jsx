@@ -127,7 +127,7 @@ export default function Axis({ open, onClose }) {
 
   return (
     <Modal open={open} onClose={onClose} title="AXIS · COACH" accent="var(--color-cyan)" wide>
-      <div className="font-mono text-[10px] text-ink-faint border-b border-line pb-2.5 mb-3">{stats}</div>
+      <div className="text-[14px] text-ink-faint border-b border-line pb-2.5 mb-3">{stats}</div>
 
       <div className="space-y-2.5 max-h-[46vh] overflow-y-auto scroll-thin pr-1">
         {messages.map((m, i) => (
@@ -138,7 +138,7 @@ export default function Axis({ open, onClose }) {
               </span>
             )}
             <div
-              className="text-[12px] leading-relaxed whitespace-pre-line border p-2.5 max-w-[85%]"
+              className="text-[15px] leading-relaxed whitespace-pre-line border p-2.5 max-w-[85%]"
               style={{
                 borderColor: m.from === 'me' ? 'var(--color-neon)' : 'var(--color-line)',
                 background: m.from === 'me' ? 'rgba(168,85,247,0.12)' : 'var(--color-panel-2)',
@@ -171,10 +171,10 @@ export default function Axis({ open, onClose }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask AXIS…"
-          className="flex-1 min-w-0 bg-panel-2 border border-line p-2.5 text-[12px] text-ink placeholder:text-ink-faint focus:border-cyan outline-none"
+          className="flex-1 min-w-0 bg-panel-2 border border-line p-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-cyan outline-none"
         />
         <Btn variant="cyan" type="submit" disabled={!input.trim()}>
-          SEND
+          Send
         </Btn>
       </form>
     </Modal>

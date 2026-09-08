@@ -26,8 +26,8 @@ function GiftCard({ onOpen }) {
             <ChestArt size={44} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[9px] text-gold">BETA FOUNDER GIFT</div>
-            <div className="text-[11px] text-ink-dim mt-1.5 leading-snug">
+            <div className="font-display text-[16px] text-ink">Beta founder gift</div>
+            <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
               Free for everyone who signed up during the beta. One legendary, then it is gone.
             </div>
           </div>
@@ -53,28 +53,32 @@ function SlotRow({ slot, state, onOpen, last }) {
       onClick={onOpen}
       className={`w-full text-left active:brightness-125 ${last ? '' : 'border-b border-line'}`}
     >
-      <div className="p-2.5">
-        <div className="flex items-center gap-2.5">
+      <div className="px-3.5 py-3">
+        <div className="flex items-center gap-3">
+          {/* The slot's colour tints the tile and fills it when the slot is
+              done. It no longer also paints the border and the name — three
+              rows of that and the screen was a colour chart. */}
           <div
-            className="grid place-items-center w-9 h-9 shrink-0 border"
-            style={{ borderColor: slot.color, background: done ? slot.color : 'transparent' }}
+            className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
+            style={{ background: done ? slot.color : `color-mix(in srgb, ${slot.color} 14%, transparent)` }}
           >
-            <Icon name={slot.icon} size={16} color={done ? 'var(--color-on-accent)' : slot.color} />
+            <Icon name={slot.icon} size={18} color={done ? 'var(--color-on-accent)' : slot.color} />
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[9px]" style={{ color: slot.color }}>
-              {slot.name}
-            </div>
+            <div className="font-display text-[16px] text-ink">{slot.name}</div>
             {slot.minMinutes > 0 && !done && (
-              <div className="mt-1.5">
-                <Bar pct={pct} color={slot.color} height={4} />
+              <div className="mt-2">
+                <Bar pct={pct} color={slot.color} height={5} />
               </div>
             )}
           </div>
 
-          <span className="font-pixel text-[8px] shrink-0" style={{ color: done ? slot.color : 'var(--color-ink-faint)' }}>
-            {done ? 'DONE' : slot.minMinutes ? `${Math.round(state.minutes)}/${slot.minMinutes}m` : 'TODO'}
+          <span
+            className="label shrink-0"
+            style={{ color: done ? slot.color : 'var(--color-ink-faint)' }}
+          >
+            {done ? 'Done' : slot.minMinutes ? `${Math.round(state.minutes)}/${slot.minMinutes}m` : 'To do'}
           </span>
         </div>
       </div>
@@ -89,7 +93,7 @@ function SlotSheet({ slot, state, onClose, onLog }) {
   const done = state.done
 
   return (
-    <Modal open onClose={onClose} title={slot.name} accent={slot.color}>
+    <Modal open onClose={onClose} title={slot.name}>
       <div className="flex items-center gap-3">
         <div
           className="grid place-items-center w-12 h-12 shrink-0 border"
@@ -98,8 +102,8 @@ function SlotSheet({ slot, state, onClose, onLog }) {
           <Icon name={slot.icon} size={22} color={done ? 'var(--color-on-accent)' : slot.color} />
         </div>
         <div className="min-w-0">
-          <div className="text-[13px] text-ink">{slot.rule}</div>
-          <div className="text-[11px] text-ink-dim mt-1">{slot.detail}</div>
+          <div className="text-[15px] text-ink">{slot.rule}</div>
+          <div className="text-[14px] text-ink-dim mt-1">{slot.detail}</div>
         </div>
       </div>
 
@@ -107,29 +111,29 @@ function SlotSheet({ slot, state, onClose, onLog }) {
         <div className="mt-3.5">
           <Bar pct={Math.min(1, state.minutes / slot.minMinutes)} color={slot.color} height={8} />
           <div className="flex justify-between mt-1.5">
-            <span className="font-mono text-[11px]" style={{ color: done ? slot.color : 'var(--color-ink-dim)' }}>
+            <span className="text-[14px]" style={{ color: done ? slot.color : 'var(--color-ink-dim)' }}>
               {Math.round(state.minutes)} / {slot.minMinutes} min
             </span>
-            {state.loggedAs && <span className="font-mono text-[11px] text-ink-faint">{state.loggedAs}</span>}
+            {state.loggedAs && <span className="text-[14px] text-ink-faint">{state.loggedAs}</span>}
           </div>
         </div>
       )}
 
-      <div className="mt-3 border border-line bg-panel-2 p-2.5">
-        <div className="font-pixel text-[7px] text-ink-faint">WHAT COUNTS</div>
-        <div className="text-[11px] text-ink-dim mt-1.5">{slot.examples}</div>
+      <div className="mt-4 bg-panel-2 rounded-[var(--radius-sm)] p-3">
+        <div className="label text-ink-faint">What counts</div>
+        <div className="text-[14px] text-ink-dim mt-1.5">{slot.examples}</div>
       </div>
 
       <div className="flex items-center justify-between mt-3">
-        <span className="font-pixel text-[8px]" style={{ color: slot.color }}>
+        <span className="font-display text-[13px]" style={{ color: slot.color }}>
           +{slot.xp} XP
         </span>
-        {slot.unlocksChest && <span className="text-[11px] text-gold">Unlocks today&apos;s chest</span>}
+        {slot.unlocksChest && <span className="text-[14px] text-gold">Unlocks today&apos;s chest</span>}
       </div>
 
       <div className="flex gap-2 mt-3.5">
         <Btn full onClick={onLog} style={{ background: slot.color, borderColor: slot.color, color: 'var(--color-on-accent)' }}>
-          START A SESSION
+          Start a session
         </Btn>
         {/* Same reason as the log sheet: there is nowhere to link a provider
             while sync is out of the sign-up flow, so a disabled SYNC and an
@@ -142,7 +146,7 @@ function SlotSheet({ slot, state, onClose, onLog }) {
               onClose()
             }}
           >
-            SYNC
+            Sync
           </Btn>
         )}
       </div>
@@ -166,7 +170,7 @@ function FirstSteps({ state, onGo }) {
       done: state.log.length > 0,
       title: 'Track a session',
       note: 'Pick what you are doing and the app runs the clock. A minute counts.',
-      cta: 'GO TO TRAIN',
+      cta: 'Go to Train',
       go: 'train',
     },
     {
@@ -181,7 +185,7 @@ function FirstSteps({ state, onGo }) {
       done: (state.explored?.length ?? 0) > 0,
       title: 'Clear some of the map',
       note: 'Track a walk or a run outdoors and the ground you cover opens up.',
-      cta: 'SEE THE MAP',
+      cta: 'See the map',
       go: 'map',
     },
     {
@@ -197,12 +201,9 @@ function FirstSteps({ state, onGo }) {
   const next = steps.find((x) => !x.done)
 
   return (
-    <Panel accent="var(--color-cyan)" className="p-3.5">
-      <SectionTitle
-        color="var(--color-cyan)"
-        right={<span className="font-mono text-[10px] text-ink-faint">{doneCount}/{steps.length}</span>}
-      >
-        FIRST STEPS
+    <Panel className="p-4">
+      <SectionTitle right={<span className="label text-ink-faint">{doneCount} of {steps.length}</span>}>
+        First steps
       </SectionTitle>
       <div className="space-y-1.5">
         {steps.map((x) => (
@@ -210,13 +211,13 @@ function FirstSteps({ state, onGo }) {
             <span className="mt-[3px] shrink-0">
               <Icon
                 name={x.done ? 'check' : x.id === next.id ? 'spark' : 'lock'}
-                size={11}
-                color={x.done ? 'var(--color-lime)' : x.id === next.id ? 'var(--color-cyan)' : 'var(--color-ink-faint)'}
+                size={14}
+                color={x.done ? 'var(--color-lime)' : x.id === next.id ? 'var(--color-neon)' : 'var(--color-ink-faint)'}
               />
             </span>
             <div className="min-w-0">
               <div
-                className="text-[12px] leading-snug"
+                className="text-[15px] leading-snug"
                 style={{
                   color: x.done ? 'var(--color-ink-faint)' : x.id === next.id ? 'var(--color-ink)' : 'var(--color-ink-dim)',
                   textDecoration: x.done ? 'line-through' : undefined,
@@ -224,13 +225,13 @@ function FirstSteps({ state, onGo }) {
               >
                 {x.title}
               </div>
-              {x.id === next.id && <div className="text-[11px] text-ink-dim mt-0.5 leading-snug">{x.note}</div>}
+              {x.id === next.id && <div className="text-[14px] text-ink-dim mt-0.5 leading-snug">{x.note}</div>}
             </div>
           </div>
         ))}
       </div>
       {next.cta && (
-        <Btn full variant="cyan" size="sm" className="mt-3" onClick={() => onGo(next.go)}>
+        <Btn full size="sm" className="mt-4" onClick={() => onGo(next.go)}>
           {next.cta}
         </Btn>
       )}
@@ -251,32 +252,36 @@ export default function Home({ onGo }) {
   const slotState = (id) => state.dailies.find((d) => d.id === id) ?? { minutes: 0, done: false }
 
   return (
-    <div className="stack-in p-3 space-y-3">
+    <div className="stack-in p-4 space-y-4">
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <FirstSteps state={state} onGo={onGo} />
 
 
       {/* ------------------------------------------------------ streak strip */}
-      <Panel corners={false} className="p-2.5">
-        <div className="flex items-center gap-2.5">
-          <Icon name="flame" size={18} color="var(--tone-orange)" />
-          <span className="font-pixel text-[13px]" style={{ color: 'var(--tone-orange)' }}>
-            {p.streak}
-          </span>
-          <span className="font-pixel text-[7px] text-ink-faint">DAY STREAK</span>
-          <span className="ml-auto font-mono text-[11px] text-lime">×{streak.mult.toFixed(2)}</span>
+      <Panel className="px-3.5 py-3">
+        <div className="flex items-center gap-3">
           <span
-            className="font-pixel text-[10px]"
-            style={{ color: doneCount === 3 ? 'var(--color-lime)' : 'var(--color-ink-faint)' }}
+            className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
+            style={{ background: 'color-mix(in srgb, var(--tone-orange) 14%, transparent)' }}
           >
-            {doneCount}/3
+            <Icon name="flame" size={19} color="var(--tone-orange)" />
           </span>
+          <div className="min-w-0">
+            <div className="figure text-[24px] text-ink">{p.streak}</div>
+            <div className="label text-ink-faint mt-1">Day streak</div>
+          </div>
+          <div className="ml-auto text-right">
+            <div className="figure text-[18px]" style={{ color: doneCount === 3 ? 'var(--color-lime)' : 'var(--color-ink)' }}>
+              {doneCount}/3
+            </div>
+            <div className="label text-ink-faint mt-1">×{streak.mult.toFixed(2)} XP</div>
+          </div>
         </div>
       </Panel>
 
       {/* ------------------------------------------------------------ slots */}
-      <Panel corners={false}>
+      <Panel>
         {DAILY_SLOTS.map((slot, i) => (
           <SlotRow
             key={slot.id}
@@ -295,13 +300,10 @@ export default function Home({ onGo }) {
           className={`mx-auto ${chestReady ? 'float-soft' : ''}`}
           style={chestReady ? undefined : { filter: 'grayscale(1) brightness(0.55)', opacity: 0.7 }}
         />
-        <div
-          className="font-pixel text-[10px] mt-2.5"
-          style={{ color: chestReady ? 'var(--color-gold)' : 'var(--color-ink-faint)' }}
-        >
-          {state.chest.openedToday ? 'OPENED TODAY' : chestReady ? DAILY_CHEST.name : 'LOCKED'}
+        <div className="font-display text-[19px] mt-3 text-ink">
+          {state.chest.openedToday ? 'Opened today' : chestReady ? DAILY_CHEST.name : 'Locked'}
         </div>
-        <div className="text-[11px] text-ink-dim mt-1.5">
+        <div className="text-[14px] text-ink-dim mt-1.5">
           {state.chest.openedToday ? 'A fresh one tomorrow.' : chestReady ? DAILY_CHEST.note : 'Finish ACTIVE to unlock it.'}
         </div>
 
@@ -310,8 +312,11 @@ export default function Home({ onGo }) {
           {RARITY_ORDER.map((k) => (
             <span
               key={k}
-              className="font-pixel text-[6px] px-1.5 py-1 border"
-              style={{ color: RARITY[k].color, borderColor: RARITY[k].color, opacity: chestReady ? 1 : 0.4 }}
+              // On the raised surface rather than on a wash of its own colour:
+              // a tint pulls the ground towards the text, and the common slate
+              // at 14% took its own chip down to 4:1.
+              className="label px-2 py-1 rounded-full bg-panel-2"
+              style={{ color: RARITY[k].color, opacity: chestReady ? 1 : 0.45 }}
               title={RARITY[k].label}
             >
               {RARITY[k].weight}%
@@ -320,7 +325,7 @@ export default function Home({ onGo }) {
         </div>
 
         <Btn full variant={chestReady ? 'gold' : 'dim'} disabled={!chestReady} className="mt-3" onClick={openChest}>
-          {state.chest.openedToday ? 'COME BACK TOMORROW' : 'OPEN CHEST'}
+          {state.chest.openedToday ? 'Come back tomorrow' : 'Open chest'}
         </Btn>
       </Panel>
 

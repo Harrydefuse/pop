@@ -30,22 +30,26 @@ function Toast({ t, onDone }) {
   return (
     // Never interactive: a toast must not swallow a tap meant for the screen behind it.
     <div
-      className="toast-in flex items-start gap-2.5 border bg-[#0f0a1c]/97 px-3 py-2.5 backdrop-blur"
-      style={{ borderColor: color, boxShadow: `0 0 24px -10px ${color}` }}
+      className="toast-in flex items-start gap-3 border border-line bg-panel px-3.5 py-3 rounded-[var(--radius-md)]"
+      style={{ boxShadow: 'var(--elev-lift)' }}
       role="status"
     >
-      <span className="mt-0.5 shrink-0">
-        <Icon name={meta.icon} size={13} color={color} />
+      {/* The colour is the badge. It used to be the border, the glow and the
+          title all at once, on a panel that ignored the theme — three dark
+          boxes stacked over a light screen. */}
+      <span
+        className="mt-0.5 shrink-0 grid place-items-center w-7 h-7 rounded-full"
+        style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}
+      >
+        <Icon name={meta.icon} size={15} color={color} />
       </span>
       <div className="min-w-0">
-        <div className="font-pixel text-[9px]" style={{ color }}>
-          {t.title}
-        </div>
-        {t.body && <div className="text-[11px] text-ink-dim mt-1 leading-snug">{t.body}</div>}
+        <div className="font-display text-[15px] text-ink">{t.title}</div>
+        {t.body && <div className="text-[14px] text-ink-dim mt-0.5 leading-snug">{t.body}</div>}
         {t.stats && (
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {Object.entries(t.stats).map(([k, v]) => (
-              <span key={k} className="font-mono text-[10px] text-lime">
+              <span key={k} className="text-[14px] text-lime">
                 +{v} {k}
               </span>
             ))}
@@ -60,7 +64,10 @@ export default function Toasts() {
   const { state, dismissToast } = useGame()
   const shown = state.toasts.slice(-3)
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[96px] z-40 flex flex-col gap-1.5 px-2.5">
+    // Above the tab bar rather than under the header: the header's height moves
+    // with the name and the meters in it, and a toast pinned to a guessed
+    // offset landed on top of the first card on the screen.
+    <div className="pointer-events-none absolute inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-40 flex flex-col gap-2 px-3">
       {shown.map((t) => (
         <Toast key={t.id} t={t} onDone={() => dismissToast(t.id)} />
       ))}

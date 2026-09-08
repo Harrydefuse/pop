@@ -112,7 +112,7 @@ export default function GiftReveal({ onClose }) {
       <div className="relative w-full max-w-[340px] m-3 p-5 border bg-panel text-center" style={{ borderColor: accent, boxShadow: `0 0 60px -14px ${accent}` }}>
         {phase === 'revealed' && <Confetti />}
 
-        <div className="font-pixel text-[8px]" style={{ color: accent }}>
+        <div className="font-display text-[13px]" style={{ color: accent }}>
           {phase === 'revealed' ? 'BETA FOUNDER' : 'A GIFT IS WAITING'}
         </div>
 
@@ -153,30 +153,30 @@ export default function GiftReveal({ onClose }) {
 
         {phase === 'revealed' ? (
           <>
-            <div className="font-pixel text-[12px]" style={{ color: accent }}>
+            <div className="font-display text-[20px]" style={{ color: accent }}>
               {FOUNDER_GIFT.name.toUpperCase()}
             </div>
             <div className="flex items-center justify-center gap-2 mt-2.5">
-              <span className="font-pixel text-[7px] px-1.5 py-1 border" style={{ color: accent, borderColor: accent }}>
-                LEGENDARY
+              <span className="font-display text-[12px] px-1.5 py-1 border" style={{ color: accent, borderColor: accent }}>
+                Legendary
               </span>
-              <span className="text-[11px] text-ink-faint">Chest</span>
+              <span className="text-[14px] text-ink-faint">Chest</span>
             </div>
             <div className="flex items-center justify-center gap-3 mt-3">
               {Object.entries(FOUNDER_GIFT.stats).map(([k, v]) => (
-                <span key={k} className="font-mono text-[12px] text-lime">
+                <span key={k} className="text-[15px] text-lime">
                   +{v} {k}
                 </span>
               ))}
             </div>
-            <p className="text-[11px] text-ink-dim mt-3 leading-relaxed">{FOUNDER_GIFT.blurb}</p>
+            <p className="text-[14px] text-ink-dim mt-3 leading-relaxed">{FOUNDER_GIFT.blurb}</p>
             <Btn full className="mt-4" onClick={onClose} style={{ background: accent, borderColor: accent, color: 'var(--color-on-accent)' }}>
-              PUT IT ON
+              Put it on
             </Btn>
           </>
         ) : (
           <>
-            <p className="text-[12px] text-ink-dim leading-relaxed">
+            <p className="text-[15px] text-ink-dim leading-relaxed">
               You signed up while LVL100 was still being built. This one is only going to beta players, and then never
               again.
             </p>

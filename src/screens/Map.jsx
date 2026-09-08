@@ -248,7 +248,7 @@ function BigMap({ markers, onPick, revealed, fine, footer }) {
                       >
                         {!DRAWN.has(p.id) && <PixelSprite sprite={TOWN} size={13} />}
                         <span
-                          className="font-pixel text-[6px] leading-none whitespace-nowrap px-1 py-[3px] border mt-[1px]"
+                          className="font-display text-[11px] leading-none whitespace-nowrap px-1 py-[3px] border mt-[1px]"
                           style={{ color: '#33260f', background: '#f0e3bc', borderColor: '#7a6035' }}
                         >
                           {p.name}
@@ -268,7 +268,7 @@ function BigMap({ markers, onPick, revealed, fine, footer }) {
           <PixelSprite sprite={COMPASS} size={26} />
         </span>
       </Framed>
-      <div className="text-[10px] text-ink-faint mt-2.5 leading-relaxed">
+      <div className="text-[14px] text-ink-faint mt-2.5 leading-relaxed">
         Drag to move, pinch or use + to get closer — go far enough in and the drawing gives way to the streets. Tap a
         pennant for what is waiting there.
       </div>
@@ -296,7 +296,7 @@ function RouteView({ routes }) {
       />
 
       {!routes.length && (
-        <p className="text-[11px] text-ink-dim mt-3 leading-relaxed">
+        <p className="text-[14px] text-ink-dim mt-3 leading-relaxed">
           Nothing walked yet. Track a walk, a run or a ride from TRAIN with location switched on, and the line you make
           lands here.
         </p>
@@ -304,10 +304,10 @@ function RouteView({ routes }) {
 
       {routes.length > 0 && (
         <div className="flex items-center justify-between mt-3">
-          <span className="font-pixel text-[7px] text-ink-faint">
+          <span className="font-display text-[12px] text-ink-faint">
             {routes.length} {routes.length === 1 ? 'ROUTE' : 'ROUTES'}
           </span>
-          <span className="font-mono text-[11px] text-lime">{totalKm.toFixed(1)} km</span>
+          <span className="text-[14px] text-lime">{totalKm.toFixed(1)} km</span>
         </div>
       )}
 
@@ -322,7 +322,7 @@ function RouteView({ routes }) {
             className="w-2.5 h-2.5 shrink-0 border"
             style={{ borderColor: 'var(--color-line-hot)', background: pickedId === 'all' ? 'var(--color-neon)' : 'transparent' }}
           />
-          <span className="font-pixel text-[7px] text-ink-dim">EVERYTHING</span>
+          <span className="font-display text-[12px] text-ink-dim">Everything</span>
         </button>
         {routes.map((r) => (
           <button
@@ -335,9 +335,9 @@ function RouteView({ routes }) {
               className="w-2.5 h-2.5 shrink-0 border"
               style={{ borderColor: r.colour, background: pickedId === r.id ? r.colour : 'transparent' }}
             />
-            <span className="font-pixel text-[7px] text-ink-dim w-[62px] shrink-0">{r.label}</span>
-            <span className="font-mono text-[11px] text-ink">{r.km.toFixed(2)} km</span>
-            <span className="font-mono text-[10px] text-ink-faint ml-auto">{r.when}</span>
+            <span className="font-display text-[12px] text-ink-dim w-[62px] shrink-0">{r.label}</span>
+            <span className="text-[14px] text-ink">{r.km.toFixed(2)} km</span>
+            <span className="text-[14px] text-ink-faint ml-auto">{r.when}</span>
           </button>
         ))}
       </div>
@@ -360,7 +360,7 @@ function ViewSwitch({ value, onChange }) {
             key={id}
             onClick={() => onChange(id)}
             aria-pressed={on}
-            className="font-pixel text-[8px] min-h-[44px] border transition-colors active:brightness-125"
+            className="font-display text-[13px] min-h-[44px] border transition-colors active:brightness-125"
             style={{
               color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
               background: on ? 'var(--color-gold)' : 'transparent',
@@ -445,11 +445,11 @@ export default function MapSheet({ onClose }) {
           <>
             <div className="mt-3 pt-3 border-t border-line">
               <div className="flex items-center justify-between">
-                <span className="font-pixel text-[8px] text-ink-faint">SYDNEY EXPLORED</span>
-                <span className="font-mono text-[12px] text-lime">{(pct * 100).toFixed(1)}%</span>
+                <span className="font-display text-[13px] text-ink-faint">Sydney explored</span>
+                <span className="text-[15px] text-lime">{(pct * 100).toFixed(1)}%</span>
               </div>
               <Bar pct={pct} color="var(--color-lime)" height={6} className="mt-2" />
-              <div className="text-[11px] text-ink-dim mt-2 leading-snug">
+              <div className="text-[14px] text-ink-dim mt-2 leading-snug">
                 Ground you have not walked sits under haze. Every kilometre you cover clears more of it, and it stays
                 clear.
               </div>
@@ -461,12 +461,12 @@ export default function MapSheet({ onClose }) {
                   {shown.cleared ? 'CLEARED' : shown.current ? 'STANDING HERE NOW' : 'FURTHER ON'}
                 </SectionTitle>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-pixel text-[10px]" style={{ color: actById(shown.boss.act).color }}>
+                  <span className="font-display text-[16px]" style={{ color: actById(shown.boss.act).color }}>
                     {shown.boss.name}
                   </span>
-                  <span className="font-mono text-[11px] text-ink-faint">at {shown.place.name}</span>
+                  <span className="text-[14px] text-ink-faint">at {shown.place.name}</span>
                 </div>
-                <div className="text-[11px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
+                <div className="text-[14px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
                 {!shown.cleared && (
                   <Btn
                     full

@@ -129,8 +129,8 @@ export default function RouteMap({ routes = [], height = 300, locate = false, cl
       {tiles === 'blocked' && (
         <div className="absolute left-2 top-2 right-14 pointer-events-none">
           <div className="bg-panel/95 border border-line px-2 py-1.5 leading-snug">
-            <div className="font-pixel text-[6px] text-ink-dim">NO STREET TILES HERE</div>
-            <div className="font-mono text-[10px] text-ink-faint mt-1">
+            <div className="font-display text-[11px] text-ink-dim">No street tiles here</div>
+            <div className="text-[14px] text-ink-faint mt-1">
               Streets come from OpenStreetMap over the internet, and this page cannot reach it. Open the app from a
               normal URL and they appear under your line.
             </div>
