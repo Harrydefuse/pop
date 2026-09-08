@@ -3,7 +3,6 @@
 
 import {
   ACTIVITIES,
-  DAILY_SLOTS,
   DAILY_CHEST,
   CLASSES,
   MAX_LEVEL,
@@ -52,10 +51,6 @@ export function streakTier(days) {
   let tier = { days: 0, mult: 1, label: 'Cold' }
   for (const t of STREAK_TIERS) if (days >= t.days) tier = t
   return tier
-}
-
-export function nextStreakTier(days) {
-  return STREAK_TIERS.find((t) => days < t.days) ?? null
 }
 
 // -------------------------------------------------------------------- character
@@ -271,10 +266,6 @@ export function minutesOf(act, amount) {
   return (act.minPerUnit ?? 0) * amount
 }
 
-export function slotById(id) {
-  return DAILY_SLOTS.find((s) => s.id === id) ?? DAILY_SLOTS[0]
-}
-
 /**
  * Picks the strongest item per slot. Rarity multiplies everything, so a
  * legendary at level 1 can still beat a common at level 5 — this compares the
@@ -425,25 +416,6 @@ export function stoneProgress(player) {
 }
 
 // -------------------------------------------------------------------- balancing
-
-/**
- * The "healthy balance" read-out the whole product is pitched on: active minutes
- * against gaming hours for the week. Above 1.0 is not the goal — 0.5 to 1.5 is
- * the band we call balanced, because giving up games is not the ask.
- */
-export function balanceRatio(activeMinutes, gamingHours) {
-  if (!gamingHours) return activeMinutes > 0 ? 2 : 0
-  return activeMinutes / 60 / gamingHours
-}
-
-export function balanceVerdict(ratio) {
-  if (ratio === 0) return { label: 'NO DATA', color: 'var(--color-ink-faint)', note: 'Link a health app to start' }
-  if (ratio < 0.15)
-    return { label: 'GRIND HEAVY', color: 'var(--color-danger)', note: 'A lot of screen, not much movement' }
-  if (ratio < 0.35) return { label: 'TILTING', color: '#fb923c', note: 'One session away from balanced' }
-  if (ratio <= 1.2) return { label: 'BALANCED', color: 'var(--color-lime)', note: 'This is the zone. Hold it.' }
-  return { label: 'TOUCH GRASS PRO', color: 'var(--color-cyan)', note: 'Plenty of training — go enjoy a game' }
-}
 
 // -------------------------------------------------------------------- utilities
 

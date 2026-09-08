@@ -28,7 +28,7 @@ function ThemeToggle() {
   )
 }
 
-export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
+export default function TopBar({ onOpenProfile, onOpenMap }) {
   const { state } = useGame()
   const p = state.player
   const cls = classById(p.classId)
@@ -82,16 +82,6 @@ export default function TopBar({ onOpenProfile, onOpenAxis, onOpenMap }) {
             <PixelSprite sprite={MAP_ICON} size={28} />
           </button>
           <ThemeToggle />
-          {/* The one filled control up here, because it is the only one that
-              starts something rather than showing something. */}
-          <button
-            onClick={onOpenAxis}
-            className="grid place-items-center w-11 h-11 rounded-full bg-neon active:scale-95 transition-transform"
-            aria-label="Open AXIS coach"
-            title="AXIS coach"
-          >
-            <Icon name="spark" size={18} color="var(--color-on-accent)" />
-          </button>
         </div>
       </div>
 

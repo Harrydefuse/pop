@@ -6,7 +6,6 @@ import TabBar from './components/TabBar'
 import Toasts from './components/Toasts'
 import RewardModal from './components/RewardModal'
 import Onboarding from './components/Onboarding'
-import Axis from './components/Axis'
 import Icon from './components/Icon'
 import Home from './screens/Home'
 import Friends from './screens/Friends'
@@ -70,7 +69,6 @@ function Device() {
   // Deliberately not persisted: every open lands on the character screen, so
   // the build, the name and the look can all be changed before going in.
   const [entered, setEntered] = useState(false)
-  const [axis, setAxis] = useState(false)
   const [map, setMap] = useState(false)
 
   const questsOpen = state.dailies.some((d) => !d.done)
@@ -79,7 +77,7 @@ function Device() {
     <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 device:rounded-[22px]">
       {!entered && <Onboarding onContinue={() => setEntered(true)} />}
 
-      <TopBar onOpenProfile={() => setTab('hero')} onOpenAxis={() => setAxis(true)} onOpenMap={() => setMap(true)} />
+      <TopBar onOpenProfile={() => setTab('hero')} onOpenMap={() => setMap(true)} />
 
       <main className="flex-1 overflow-y-auto scroll-thin app-bg">
         {/* Caps the measure when the app runs full-bleed on a wide, short
@@ -104,7 +102,6 @@ function Device() {
 
       <Toasts />
       <RewardModal />
-      <Axis open={axis} onClose={() => setAxis(false)} />
       {map && <MapSheet onClose={() => setMap(false)} />}
     </div>
   )
