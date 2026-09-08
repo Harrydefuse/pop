@@ -9,6 +9,7 @@ const KIND = {
   chest: { icon: 'chest', color: 'var(--color-gold)' },
   stone: { icon: 'spark', color: 'var(--color-neon)' },
   gear: { icon: 'shield', color: 'var(--color-r-rare)' },
+  pr: { icon: 'trophy', color: 'var(--color-gold)' },
 }
 
 function Toast({ t, onDone }) {
@@ -48,11 +49,15 @@ function Toast({ t, onDone }) {
         {t.body && <div className="text-[14px] text-ink-dim mt-0.5 leading-snug">{t.body}</div>}
         {t.stats && (
           <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {Object.entries(t.stats).map(([k, v]) => (
-              <span key={k} className="text-[14px] text-lime">
-                +{v} {k}
-              </span>
-            ))}
+            {/* A stat that did not move is not news. Rounding meant short
+                sessions reported "+0 VIT" alongside the ones that counted. */}
+            {Object.entries(t.stats)
+              .filter(([, v]) => v > 0)
+              .map(([k, v]) => (
+                <span key={k} className="text-[14px] text-lime">
+                  +{v} {k}
+                </span>
+              ))}
           </div>
         )}
       </div>

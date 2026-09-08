@@ -306,6 +306,87 @@ export const FRESH_START = {
 }
 
 
+
+// --------------------------------------------------- a trained history, seeded
+
+/**
+ * Thirteen weeks of training and a board of bests, for the test account.
+ *
+ * The progress view is the one part of the app that cannot be judged on an
+ * empty state — a chart of nothing and a board with no lifts on it look
+ * identical whether they work or not. This is a plausible three months: four
+ * sessions a week, a fortnight off in the middle, and lifts that mostly go up.
+ */
+const WEEK_MS = 7 * 24 * 3600 * 1000
+
+function seededWeeks() {
+  // The dip at weeks 5 and 6 is deliberate. A chart where every bar is taller
+  // than the last is a chart nobody believes.
+  const shape = [126, 148, 155, 172, 40, 0, 96, 164, 178, 191, 186, 176, 214]
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
+  return shape
+    .map((minutes, i) => {
+      const at = start.getTime() - (shape.length - 1 - i) * WEEK_MS
+      return {
+        key: new Date(at).toISOString().slice(0, 10),
+        at,
+        minutes,
+        sessions: minutes ? Math.max(1, Math.round(minutes / 42)) : 0,
+        volume: Math.round(minutes * 88),
+        km: Math.round(minutes * 0.09 * 10) / 10,
+        xp: Math.round(minutes * 11),
+      }
+    })
+    .reverse()
+}
+
+const SEEDED_RECORDS = {
+  'Bench press': { e1rm: 96.7, reps: 6, weight: 80, at: Date.now() - 9 * 24 * 3600 * 1000 },
+  Squat: { e1rm: 141.7, reps: 5, weight: 120, at: Date.now() - 4 * 24 * 3600 * 1000 },
+  Deadlift: { e1rm: 170.5, reps: 3, weight: 155, at: Date.now() - 7 * 24 * 3600 * 1000 },
+  'Overhead press': { e1rm: 62.0, reps: 8, weight: 48, at: Date.now() - 11 * 24 * 3600 * 1000 },
+  'Barbell row': { e1rm: 88.0, reps: 8, weight: 68, at: Date.now() - 31 * 24 * 3600 * 1000 },
+}
+
+/** Gym sessions far enough apart to draw a line through. */
+function seededGymLog() {
+  const D = 24 * 3600 * 1000
+  // Days ago, so the list runs newest first and the weights have to get
+  // LIGHTER as you read down it — a seed where the old session is the heavy one
+  // draws every trend line pointing at the floor.
+  const plan = [
+    [3, { 'Bench press': 80, Squat: 120 }],
+    [7, { 'Bench press': 77.5, Deadlift: 155 }],
+    [10, { 'Bench press': 77.5, Squat: 115 }],
+    [14, { 'Bench press': 75, 'Overhead press': 48 }],
+    [18, { 'Bench press': 75, Squat: 112.5 }],
+    [24, { 'Bench press': 72.5, Deadlift: 147.5 }],
+    [31, { 'Bench press': 70, 'Barbell row': 68, Squat: 105 }],
+  ]
+  return plan.map(([days, lifts], i) => {
+    const groups = Object.entries(lifts).map(([lift, top]) => ({
+      lift,
+      sets: 4,
+      reps: 24,
+      volume: Math.round(top * 24 * 0.86),
+      top,
+    }))
+    const volume = groups.reduce((a, g) => a + g.volume, 0)
+    return {
+      id: `seed-gym-${i}`,
+      activityId: 'gym',
+      amount: 52,
+      verified: true,
+      at: Date.now() - days * D,
+      xp: 295,
+      source: 'tracked',
+      detail: { mode: 'strength', sets: groups.length * 4, reps: groups.length * 24, volume, lifts: groups },
+    }
+  })
+}
+
 // ------------------------------------------------------------- test account
 
 /**
@@ -374,6 +455,9 @@ export const TEST_ACCOUNT = {
   gift: { pending: false, opened: true },
   chest: { unlocked: true, openedToday: false },
   session: null,
+  records: SEEDED_RECORDS,
+  weeks: seededWeeks(),
+  log: seededGymLog(),
 }
 
 // ----------------------------------------------------------------- initial save

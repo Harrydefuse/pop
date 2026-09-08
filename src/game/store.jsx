@@ -5,6 +5,7 @@ import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARI
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
+import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldRecords, foldWeek, newRecords } from './progress'
 
 const SAVE_KEY = 'lvl100.save.v11' // v11: the map got bigger, so explored cells mean something else
 
@@ -18,6 +19,11 @@ function baseState() {
     liked: [],
     purchased: [],
     lastReward: null,
+    // Kept apart from `log`, which is trimmed to forty entries: a best from
+    // three months ago has to survive the sessions that pushed it off the list,
+    // and so does the shape of the last quarter.
+    records: {},
+    weeks: [],
   }
 }
 
@@ -165,13 +171,23 @@ function sessionDetail(s, ms) {
   return null
 }
 
-function applyLog(state, { activityId, amount, verified, source, detail }) {
+function applyLog(state, { activityId, amount, verified, source, detail, sets = [] }) {
   const player = state.player
   const result = resolveActivity(player, { activityId, amount, verified })
   const act = result.activity
 
-  // XP + levels
-  const { level, xp, levelsGained } = grantXp(player.level, player.xp, result.xp)
+  // What this session beat. Read before the board is updated, and only ever for
+  // a lift that already had a record — the first time you bench is not a
+  // personal best, it is the first entry.
+  //
+  // The sets come in whole rather than out of `detail`, which stores them
+  // grouped by lift: a group knows the heaviest weight in it but not the reps
+  // that went with it, and an estimated max needs both.
+  const prs = newRecords(state.records, sets).slice(0, PR_PER_SESSION)
+  const prXp = prs.length * PR_XP
+
+  // XP + levels. A record pays on top of the session that set it.
+  const { level, xp, levelsGained } = grantXp(player.level, player.xp, result.xp + prXp)
 
   // Stats
   const stats = { ...player.stats }
@@ -222,6 +238,8 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
     },
     dailies: bumpDailies(state.dailies, act, amount),
     world: { ...state.world, bossKm: state.world.bossKm + result.bossDamage },
+    records: foldRecords(state.records, sets),
+    weeks: foldWeek(state.weeks, { act, amount, xp: result.xp + prXp, detail }),
     log: [
       {
         id: nextId('l'),
@@ -229,8 +247,9 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
         amount,
         verified,
         at: Date.now(),
-        xp: result.xp,
+        xp: result.xp + prXp,
         source: source ?? (verified ? 'Health app' : 'Manual'),
+        ...(prs.length ? { prs: prs.map((r) => r.lift) } : null),
         ...(detail ? { detail } : null),
       },
       ...state.log,
@@ -239,10 +258,17 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
 
   next = toast(next, {
     kind: 'xp',
-    title: `+${result.xp} XP`,
+    title: `+${result.xp + prXp} XP`,
     body: `${act.name} · ${amount}${act.unit === 'kg volume' ? ' kg' : ` ${act.unit}`}${verified ? '' : ' · unverified, half rate'}`,
     stats: result.statGains,
   })
+  for (const pr of prs) {
+    next = toast(next, {
+      kind: 'pr',
+      title: `${pr.lift} · personal best`,
+      body: `${pr.reps} × ${pr.weight}kg — an estimated ${Math.round(pr.e1rm)}kg max, up from ${Math.round(pr.prev)}kg.`,
+    })
+  }
   for (const lv of levelsGained) {
     next = toast(next, { kind: 'level', title: `Level ${lv}`, body: 'New level reached. Power recalculated.' })
   }
@@ -264,7 +290,7 @@ function applyLog(state, { activityId, amount, verified, source, detail }) {
     next = toast(next, { kind: 'level', title: 'All three done', body: '+250 cores for a full day' })
   }
 
-  next = applyBossDamage(next, act, result.xp)
+  next = applyBossDamage(next, act, result.xp + prs.length * PR_DAMAGE)
 
   // Stones are checked last so a single session can complete one
   const earned = stoneProgress(next.player).filter((s) => s.pct >= 1 && !s.earned)
@@ -446,6 +472,7 @@ function reducer(state, action) {
         verified: true,
         source: 'tracked',
         detail: sessionDetail(s, ms),
+        sets: s.sets ?? [],
       })
       if (!s.points.length) return next
       const cells = new Set(next.explored)

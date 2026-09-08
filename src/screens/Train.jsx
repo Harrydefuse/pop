@@ -22,6 +22,7 @@ import {
 } from '../game/session'
 import { ACTIVITIES } from '../game/config'
 import { minutesOf, resolveActivity } from '../game/engine'
+import { WEEKS_KEPT, liftBoard, liftSeries, weekOverWeek, weekSeries } from '../game/progress'
 import { alpha } from '../game/color'
 
 /** What the tracker will actually do, said on the card you press. A run and a
@@ -715,11 +716,179 @@ function History({ log }) {
   )
 }
 
+/**
+ * How much of a week you have had, and how it compares to the last one.
+ *
+ * This is the first thing on the page now. It used to open on a wall of twelve
+ * activity cards, which is a menu — you look at a menu when you have already
+ * decided to do something, and the reason to open a tracking app on a day you
+ * have not decided is to see where you are.
+ */
+function WeekHeader({ weeks, streak }) {
+  const series = weekSeries(weeks, WEEKS_KEPT)
+  const top = Math.max(1, ...series.map((w) => w.minutes))
+  const mins = weekOverWeek(weeks, 'minutes')
+  const vol = weekOverWeek(weeks, 'volume')
+  const cur = series[series.length - 1]
+
+  // Volume only leads if there is any: a runner should not open the app to a
+  // kilogram figure that will read zero forever.
+  const lead = vol.now > 0
+    ? { label: 'Volume this week', value: `${Math.round(vol.now).toLocaleString()}kg`, cmp: vol }
+    : { label: 'Minutes this week', value: `${Math.round(mins.now)}`, cmp: mins }
+
+  return (
+    <Panel className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="label text-ink-faint">{lead.label}</div>
+          <div className="figure text-[34px] text-ink mt-1.5">{lead.value}</div>
+          <Delta cmp={lead.cmp} />
+        </div>
+        <div className="text-right shrink-0">
+          <div className="label text-ink-faint">Streak</div>
+          <div className="figure text-[24px] mt-1.5" style={{ color: 'var(--tone-orange)' }}>
+            {streak}
+          </div>
+          <div className="label text-ink-faint mt-1">{cur.sessions} {cur.sessions === 1 ? 'session' : 'sessions'}</div>
+        </div>
+      </div>
+
+      {/* A quarter of a year, one bar a week. The gaps are the point — a chart
+          that only plots the weeks you trained draws a straight line through a
+          fortnight off. */}
+      <div className="flex items-end gap-[3px] h-14 mt-4" aria-hidden="true">
+        {series.map((w, i) => {
+          const h = Math.max(2, Math.round((w.minutes / top) * 56))
+          const now = i === series.length - 1
+          return (
+            <span
+              key={w.key}
+              className="flex-1 rounded-t-[3px]"
+              style={{
+                height: h,
+                background: now ? 'var(--color-neon)' : w.minutes ? 'var(--color-line-hot)' : 'var(--color-line)',
+              }}
+            />
+          )
+        })}
+      </div>
+      <div className="flex justify-between mt-2">
+        <span className="label text-ink-faint">{WEEKS_KEPT} weeks ago</span>
+        <span className="label text-ink-faint">this week</span>
+      </div>
+    </Panel>
+  )
+}
+
+/** Up, down or level, said in one line. */
+function Delta({ cmp }) {
+  if (cmp.prev === 0 && cmp.now === 0) {
+    return <div className="text-[13px] text-ink-faint mt-1.5">Nothing logged yet this week.</div>
+  }
+  if (cmp.prev === 0) {
+    return <div className="text-[13px] text-ink-dim mt-1.5">First week with anything in it.</div>
+  }
+  const up = cmp.delta >= 0
+  return (
+    <div className="text-[13px] mt-1.5" style={{ color: up ? 'var(--color-lime)' : 'var(--color-ink-dim)' }}>
+      {up ? '▲' : '▼'} {Math.abs(cmp.pct)}% on last week
+    </div>
+  )
+}
+
+/** A line, drawn small enough to sit inside a row. */
+function Spark({ points, color = 'var(--color-neon)', w = 72, h = 22 }) {
+  if (points.length < 2) return <span className="inline-block" style={{ width: w, height: h }} />
+  const lo = Math.min(...points)
+  const hi = Math.max(...points)
+  const span = hi - lo || 1
+  const d = points
+    .map((v, i) => `${(i / (points.length - 1)) * w},${h - ((v - lo) / span) * (h - 3) - 1.5}`)
+    .join(' ')
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" className="overflow-visible">
+      <polyline points={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle
+        cx={w}
+        cy={h - ((points[points.length - 1] - lo) / span) * (h - 3) - 1.5}
+        r="2.5"
+        fill={color}
+      />
+    </svg>
+  )
+}
+
+/** How long ago a record was set, in the words you would use out loud. */
+function since(ms) {
+  const days = Math.floor((Date.now() - ms) / 86400000)
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 14) return `${days}d ago`
+  if (days < 60) return `${Math.round(days / 7)}w ago`
+  return `${Math.round(days / 30)}mo ago`
+}
+
+/**
+ * Every lift you have a best for.
+ *
+ * The number is an estimated one-rep max — Epley off the set that produced it —
+ * because nobody compares "eight at sixty" with "five at seventy" in their
+ * head. It says "est." everywhere it appears: it is a comparison, not a claim
+ * about what you can lift today.
+ */
+function LiftBoard({ records, log }) {
+  const board = liftBoard(records)
+  if (!board.length) {
+    return (
+      <div>
+        <SectionTitle>Your lifts</SectionTitle>
+        <Panel className="p-4">
+          <div className="text-[14px] text-ink-dim text-center leading-snug">
+            Log a gym session with weight on the bar and your bests land here — one per exercise,
+            and the app tells you when you beat one.
+          </div>
+        </Panel>
+      </div>
+    )
+  }
+  return (
+    <div>
+      <SectionTitle right={<span className="label text-ink-faint">est. 1RM</span>}>Your lifts</SectionTitle>
+      <Panel>
+        {board.map((r, i) => {
+          const series = liftSeries(log, r.lift).map((p) => p.top).filter(Boolean)
+          return (
+            <div
+              key={r.lift}
+              className={`flex items-center gap-3 px-3.5 py-3 ${i === board.length - 1 ? '' : 'border-b border-line'}`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-display text-[15px] text-ink truncate">{r.lift}</div>
+                <div className="label text-ink-faint mt-1">
+                  {r.reps} × {r.weight}kg · {since(r.at)}
+                </div>
+              </div>
+              <Spark points={series} color="var(--color-neon)" />
+              <div className="text-right shrink-0 w-[62px]">
+                <div className="figure text-[18px] text-ink">{Math.round(r.e1rm)}</div>
+                <div className="label text-ink-faint mt-0.5">kg</div>
+              </div>
+            </div>
+          )
+        })}
+      </Panel>
+    </div>
+  )
+}
+
 /** Pick something to do. */
 function Pick() {
   const { state, startSession } = useGame()
   return (
     <div className="stack-in p-4 space-y-4">
+      <WeekHeader weeks={state.weeks} streak={state.player.streak} />
+      <LiftBoard records={state.records} log={state.log} />
       <div>
         <SectionTitle right={<span className="label text-ink-faint shrink-0">the app counts it</span>}>
           What are you doing?
