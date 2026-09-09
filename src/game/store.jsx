@@ -27,6 +27,10 @@ function baseState() {
     // What you did last time, per lift, so the app can put it in front of you
     // at the moment you are deciding what to do today.
     lastSets: {},
+    // Saved plans. Most people do the same handful of lifts on the same days,
+    // and rebuilding that list every session is the friction that sends them
+    // back to a notes app.
+    routines: [],
   }
 }
 
@@ -371,6 +375,10 @@ function reducer(state, action) {
         ...state,
         session: {
           activityId: action.activityId,
+          // The lifts you meant to do, in order. A gym session started from a
+          // routine carries its plan so the app can work down the list with
+          // you rather than asking what is next nineteen times.
+          plan: action.plan ?? [],
           startedAt: Date.now(),
           accumulated: 0,
           paused: false,
@@ -417,6 +425,22 @@ function reducer(state, action) {
         },
       }
     }
+
+    case 'saveRoutine': {
+      const lifts = action.lifts.filter(Boolean)
+      if (!lifts.length) return state
+      const name = (action.name ?? '').trim() || lifts[0]
+      // Saving the same set of lifts twice replaces the first rather than
+      // stacking a second identical row up.
+      const same = (r) => r.lifts.length === lifts.length && r.lifts.every((l, i) => l === lifts[i])
+      const rest = state.routines.filter((r) => !same(r))
+      const routine = { id: nextId('r'), name, lifts, at: Date.now() }
+      const next = { ...state, routines: [routine, ...rest].slice(0, 12) }
+      return toast(next, { kind: 'gear', title: 'Routine saved', body: `${name} · ${lifts.length} lifts` })
+    }
+
+    case 'deleteRoutine':
+      return { ...state, routines: state.routines.filter((r) => r.id !== action.id) }
 
     case 'sessionUndoSet': {
       if (!state.session?.sets?.length) return state
@@ -760,7 +784,9 @@ export function GameProvider({ children }) {
     () => ({
       log: (payload) => dispatch({ type: 'log', ...payload }),
       sync: () => dispatch({ type: 'sync' }),
-      startSession: (activityId) => dispatch({ type: 'startSession', activityId }),
+      startSession: (activityId, plan) => dispatch({ type: 'startSession', activityId, plan }),
+      saveRoutine: (name, lifts) => dispatch({ type: 'saveRoutine', name, lifts }),
+      deleteRoutine: (id) => dispatch({ type: 'deleteRoutine', id }),
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),

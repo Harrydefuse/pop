@@ -126,6 +126,22 @@ export function foldRecords(records = {}, sets = [], at = Date.now()) {
 }
 
 /**
+ * The lifts of your most recent gym session, in the order you did them.
+ *
+ * What "repeat last session" repeats. Read off the log rather than off a saved
+ * routine, because the most common plan is the one you did on Tuesday and
+ * nobody sits down to write that one out.
+ */
+export function lastPlan(log = []) {
+  for (const entry of log) {
+    if (entry.detail?.mode !== 'strength') continue
+    const lifts = (entry.detail.lifts ?? []).map((g) => g.lift).filter(Boolean)
+    if (lifts.length) return { at: entry.at, lifts }
+  }
+  return null
+}
+
+/**
  * Which week a moment belongs to, as a sortable key.
  *
  * Weeks start on Monday, because a training week does and because "this week"

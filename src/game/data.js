@@ -484,6 +484,10 @@ export const TEST_ACCOUNT = {
   session: null,
   records: SEEDED_RECORDS,
   lastSets: SEEDED_LAST_SETS,
+  routines: [
+    { id: 'r_push', name: 'Push day', lifts: ['Bench press', 'Overhead press'], at: Date.now() - 3 * 24 * 3600 * 1000 },
+    { id: 'r_lower', name: 'Lower body', lifts: ['Squat', 'Deadlift'], at: Date.now() - 7 * 24 * 3600 * 1000 },
+  ],
   weeks: seededWeeks(),
   log: seededGymLog(),
 }

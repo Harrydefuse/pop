@@ -22,7 +22,7 @@ import {
 } from '../game/session'
 import { ACTIVITIES } from '../game/config'
 import { minutesOf, resolveActivity } from '../game/engine'
-import { WEEKS_KEPT, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
+import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { alpha } from '../game/color'
 
 /** What the tracker will actually do, said on the card you press. A run and a
@@ -250,6 +250,47 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
   )
 }
 
+/**
+ * The plan you are working down, and where you are in it.
+ *
+ * A routine is only worth saving if the session then knows about it. Each lift
+ * is a chip you can tap to switch to, and it ticks once you have logged a set
+ * of it — so the question "what's next" is answered by looking rather than by
+ * remembering.
+ */
+function PlanStrip({ plan, sets, lift, onPick }) {
+  if (!plan?.length) return null
+  const done = new Set(sets.map((s) => s.lift))
+  return (
+    <div className="mt-3 text-left">
+      <div className="label text-ink-faint">
+        Today&apos;s plan · {plan.filter((l) => done.has(l)).length} of {plan.length}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        {plan.map((name) => {
+          const isDone = done.has(name)
+          const active = name === lift
+          return (
+            <button
+              key={name}
+              onClick={() => onPick(name)}
+              aria-pressed={active}
+              className="label px-2.5 min-h-[34px] rounded-full inline-flex items-center gap-1.5 transition-colors"
+              style={{
+                background: active ? 'var(--color-neon)' : 'var(--color-panel-2)',
+                color: active ? 'var(--color-on-accent)' : isDone ? 'var(--color-ink-faint)' : 'var(--color-ink)',
+              }}
+            >
+              {isDone && <Icon name="check" size={11} color={active ? 'var(--color-on-accent)' : 'var(--color-lime)'} />}
+              {name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /** How long to sit down for, and the choices offered. */
 const REST_S = [60, 90, 120, 180]
 
@@ -344,14 +385,19 @@ function LastTime({ record, best }) {
  * typed weight cannot be turned into a level. It is a training record.
  */
 function StrengthReadout({ session, ms }) {
-  const { state, sessionSet, sessionUndoSet } = useGame()
+  const { state, sessionSet, sessionUndoSet, saveRoutine } = useGame()
   const [lift, setLift] = useState(session.lift ?? LIFTS[0])
   const [reps, setReps] = useState(8)
   const [weight, setWeight] = useState(40)
   const [pickingLift, setPickingLift] = useState(false)
   const [rest, setRest] = useState(90)
+  const [naming, setNaming] = useState(null)
   const sets = session.sets ?? []
   const lastTime = state.lastSets?.[lift]
+  const plan = session.plan ?? []
+  // What this session actually turned out to be, in the order it happened —
+  // which is the thing worth saving, not the plan you walked in with.
+  const done = [...new Set(sets.map((s) => s.lift))]
 
   // Pick a lift and the steppers land on the heaviest set you did of it last
   // time, so the common case — repeat, or add a little — is already dialled in.
@@ -388,6 +434,7 @@ function StrengthReadout({ session, ms }) {
       </button>
 
       {!pickingLift && <LastTime record={lastTime} best={state.records?.[lift]} />}
+      {!pickingLift && <PlanStrip plan={plan} sets={sets} lift={lift} onPick={setLift} />}
 
       {pickingLift && (
         <div className="grid grid-cols-2 gap-1.5 mt-2 max-h-[188px] overflow-y-auto scroll-thin">
@@ -440,7 +487,7 @@ function StrengthReadout({ session, ms }) {
         <div className="mt-3 border-t border-line pt-3 text-left">
           <div className="flex items-center justify-between mb-2">
             <span className="label text-ink-faint">This session</span>
-            <button onClick={sessionUndoSet} className="font-display text-[11px] text-ink-faint min-h-[44px] px-2 active:text-danger">
+            <button onClick={sessionUndoSet} className="label text-ink-faint min-h-[44px] px-2 active:text-danger">
               Undo last
             </button>
           </div>
@@ -474,6 +521,35 @@ function StrengthReadout({ session, ms }) {
           </div>
         </div>
       )}
+
+      {/* Saveable once there is a shape to save. One lift is not a routine. */}
+      {done.length > 1 &&
+        (naming === null ? (
+          <Btn variant="ghost" full size="sm" className="mt-3" onClick={() => setNaming(done[0])}>
+            Save these {done.length} as a routine
+          </Btn>
+        ) : (
+          <form
+            className="flex gap-2 mt-3"
+            onSubmit={(e) => {
+              e.preventDefault()
+              saveRoutine(naming, done)
+              setNaming(null)
+            }}
+          >
+            <input
+              value={naming}
+              autoFocus
+              onChange={(e) => setNaming(e.target.value.slice(0, 28))}
+              aria-label="Name this routine"
+              placeholder="Push day"
+              className="flex-1 min-w-0 bg-panel-2 rounded-[var(--radius-sm)] px-3 min-h-[44px] text-[15px] text-ink placeholder:text-ink-faint outline-none focus:ring-2 focus:ring-[var(--color-neon)]"
+            />
+            <Btn type="submit" size="sm" disabled={!naming.trim()}>
+              Save
+            </Btn>
+          </form>
+        ))}
 
       <div className="text-[14px] text-ink-faint mt-3">{clock(ms)} under the bar</div>
     </>
@@ -985,12 +1061,84 @@ function LiftBoard({ records, log }) {
   )
 }
 
+/**
+ * The plans you already have.
+ *
+ * Most people do the same handful of lifts on the same days, and the app made
+ * them rebuild that list from a twelve-item picker every single session — the
+ * friction that sends people back to a notes app. One tap starts the session
+ * with the plan already in it.
+ *
+ * "Last session" is offered without anyone having saved anything, because the
+ * most common plan is the one you did on Tuesday and nobody sits down to write
+ * that one out.
+ */
+function Plans({ routines, log, onStart, onDelete }) {
+  const last = lastPlan(log)
+  const saved = new Set(routines.map((r) => r.lifts.join('|')))
+  const showLast = last && !saved.has(last.lifts.join('|'))
+  if (!routines.length && !showLast) return null
+
+  const Row = ({ name, lifts, note, onGo, onBin }) => (
+    <div className="flex items-center gap-2 px-3.5 py-3 border-b border-line last:border-0">
+      <button onClick={onGo} className="min-w-0 flex-1 text-left active:brightness-95">
+        <div className="font-display text-[16px] text-ink truncate">{name}</div>
+        <div className="label text-ink-faint mt-1 truncate">
+          {note ? `${note} · ` : ''}
+          {lifts.join(' · ')}
+        </div>
+      </button>
+      {onBin && (
+        <button
+          onClick={onBin}
+          aria-label={`Delete the ${name} routine`}
+          className="shrink-0 grid place-items-center w-11 h-11 rounded-[var(--radius-sm)] text-[15px] text-ink-faint hover:text-danger"
+        >
+          ✕
+        </button>
+      )}
+      <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
+    </div>
+  )
+
+  return (
+    <div>
+      <SectionTitle>Start a plan</SectionTitle>
+      <Panel>
+        {showLast && (
+          <Row
+            name="Repeat last session"
+            lifts={last.lifts}
+            note={since(last.at)}
+            onGo={() => onStart(last.lifts)}
+          />
+        )}
+        {routines.map((r) => (
+          <Row
+            key={r.id}
+            name={r.name}
+            lifts={r.lifts}
+            onGo={() => onStart(r.lifts)}
+            onBin={() => onDelete(r.id)}
+          />
+        ))}
+      </Panel>
+    </div>
+  )
+}
+
 /** Pick something to do. */
 function Pick() {
-  const { state, startSession } = useGame()
+  const { state, startSession, deleteRoutine } = useGame()
   return (
     <div className="stack-in p-4 space-y-4">
       <WeekHeader weeks={state.weeks} streak={state.player.streak} />
+      <Plans
+        routines={state.routines ?? []}
+        log={state.log}
+        onStart={(lifts) => startSession('gym', lifts)}
+        onDelete={deleteRoutine}
+      />
       <LiftBoard records={state.records} log={state.log} />
       <div>
         <SectionTitle right={<span className="label text-ink-faint shrink-0">the app counts it</span>}>

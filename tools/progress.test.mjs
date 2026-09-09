@@ -16,7 +16,7 @@ const server = await createServer({
   appType: 'custom',
   logLevel: 'error',
 })
-const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, topSet, foldLastSets } =
+const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, topSet, foldLastSets, lastPlan } =
   await server.ssrLoadModule('/src/game/progress.js')
 // The real activity, not a stand-in: minutes are worked out from the activity's
 // own minPerUnit, so a hand-made stub without one quietly folds zero minutes
@@ -67,6 +67,17 @@ const lastB = foldLastSets(lastA, [{ lift: 'Squat', reps: 3, weight: 120 }], 900
 is('a new session replaces that lift', lastB.Squat, { at: 9000, sets: [{ reps: 3, weight: 120 }] })
 is('and leaves the lifts it did not touch', lastB['Bench press'].at, 5000)
 is('a session with no sets changes nothing', foldLastSets(lastA, [], 9999), lastA)
+
+console.log('\nrepeating a session')
+const gymLog = (at, lifts) => ({ at, activityId: 'gym', detail: { mode: 'strength', lifts: lifts.map((lift) => ({ lift })) } })
+is('the most recent gym session is the one repeated',
+  lastPlan([gymLog(300, ['Bench press', 'Squat']), gymLog(200, ['Deadlift'])]).lifts,
+  ['Bench press', 'Squat'])
+is('runs and walks are skipped',
+  lastPlan([{ at: 400, activityId: 'run' }, gymLog(200, ['Deadlift'])]).lifts, ['Deadlift'])
+is('a gym session that logged nothing is skipped',
+  lastPlan([gymLog(400, []), gymLog(200, ['Squat'])]).lifts, ['Squat'])
+is('and an empty log has nothing to repeat', lastPlan([]), null)
 
 console.log('\nthe rolling weeks')
 const act = gym
