@@ -74,6 +74,46 @@ export function newRecords(records = {}, sets = []) {
   return out.sort((a, b) => b.e1rm - b.prev - (a.e1rm - a.prev))
 }
 
+/**
+ * The heaviest set in a list, which is the one worth repeating.
+ *
+ * Not the last set: a session that finishes with a drop set would otherwise
+ * hand back the lightest thing you did and set you up to go backwards.
+ */
+export function topSet(sets = []) {
+  let best = null
+  for (const s of sets) {
+    if (!best) { best = s; continue }
+    const w = s.weight ?? 0
+    const bw = best.weight ?? 0
+    if (w > bw || (w === bw && s.reps > best.reps)) best = s
+  }
+  return best
+}
+
+/**
+ * What you did last time, per lift.
+ *
+ * Kept apart from the log for the same reason the records are: the log holds
+ * forty sessions, and the whole point of this is to still be there when you
+ * come back to a lift you have not touched in two months.
+ *
+ * Only the sets themselves are stored — no totals — because the question it
+ * answers is "what was I doing", and four numbers answer that better than one.
+ */
+export function foldLastSets(lastSets = {}, sets = [], at = Date.now()) {
+  const byLift = new Map()
+  for (const s of sets) {
+    const lift = s.lift ?? 'Other'
+    if (!byLift.has(lift)) byLift.set(lift, [])
+    byLift.get(lift).push({ reps: s.reps, weight: s.weight ?? 0 })
+  }
+  if (!byLift.size) return lastSets
+  const next = { ...lastSets }
+  for (const [lift, done] of byLift) next[lift] = { at, sets: done }
+  return next
+}
+
 /** The board after a session, whether or not anything on it was beaten. */
 export function foldRecords(records = {}, sets = [], at = Date.now()) {
   const next = { ...records }

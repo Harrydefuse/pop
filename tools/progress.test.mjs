@@ -16,7 +16,7 @@ const server = await createServer({
   appType: 'custom',
   logLevel: 'error',
 })
-const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey } =
+const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, topSet, foldLastSets } =
   await server.ssrLoadModule('/src/game/progress.js')
 // The real activity, not a stand-in: minutes are worked out from the activity's
 // own minPerUnit, so a hand-made stub without one quietly folds zero minutes
@@ -48,6 +48,25 @@ is('a lift with no record yet is not', newRecords(board, [{ lift: 'Squat', reps:
 is('bodyweight work can never be one', newRecords({ 'Pull-up': { e1rm: 0 } }, [{ lift: 'Pull-up', reps: 30, weight: 0 }]), [])
 const lighter = foldRecords(board, [{ lift: 'Bench press', reps: 3, weight: 70 }], 2000)
 is('an easy day does not lower the record', Math.round(lighter['Bench press'].e1rm * 10) / 10, 101.3)
+
+console.log('\nwhat you did last time')
+is('the top set is the heaviest, not the last',
+  topSet([{ reps: 8, weight: 60 }, { reps: 6, weight: 80 }, { reps: 12, weight: 40 }]),
+  { reps: 6, weight: 80 })
+is('and on a tie, the one with more reps',
+  topSet([{ reps: 5, weight: 80 }, { reps: 8, weight: 80 }]), { reps: 8, weight: 80 })
+is('nothing lifted, nothing to repeat', topSet([]), null)
+const lastA = foldLastSets({}, [
+  { lift: 'Bench press', reps: 8, weight: 60 },
+  { lift: 'Bench press', reps: 6, weight: 70 },
+  { lift: 'Squat', reps: 5, weight: 100 },
+], 5000)
+is('each lift keeps its own sets', Object.keys(lastA).sort(), ['Bench press', 'Squat'])
+is('in the order they were done', lastA['Bench press'].sets, [{ reps: 8, weight: 60 }, { reps: 6, weight: 70 }])
+const lastB = foldLastSets(lastA, [{ lift: 'Squat', reps: 3, weight: 120 }], 9000)
+is('a new session replaces that lift', lastB.Squat, { at: 9000, sets: [{ reps: 3, weight: 120 }] })
+is('and leaves the lifts it did not touch', lastB['Bench press'].at, 5000)
+is('a session with no sets changes nothing', foldLastSets(lastA, [], 9999), lastA)
 
 console.log('\nthe rolling weeks')
 const act = gym

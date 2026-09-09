@@ -22,7 +22,7 @@ import {
 } from '../game/session'
 import { ACTIVITIES } from '../game/config'
 import { minutesOf, resolveActivity } from '../game/engine'
-import { WEEKS_KEPT, liftBoard, liftSeries, weekOverWeek, weekSeries } from '../game/progress'
+import { WEEKS_KEPT, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { alpha } from '../game/color'
 
 /** What the tracker will actually do, said on the card you press. A run and a
@@ -250,6 +250,91 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
   )
 }
 
+/** How long to sit down for, and the choices offered. */
+const REST_S = [60, 90, 120, 180]
+
+/**
+ * The clock between sets.
+ *
+ * Counted off the last set's own timestamp rather than a ticking counter of its
+ * own, so it survives switching tabs, closing the app and coming back — the set
+ * already records when it happened, and a rest timer that forgets the moment
+ * you check a message is a rest timer nobody uses.
+ */
+function RestClock({ sets, ms, length, onLength }) {
+  const last = sets[sets.length - 1]
+  const rest = last ? Math.max(0, length - Math.round((ms - last.at) / 1000)) : null
+  const done = rest === 0
+  if (!last) return null
+  return (
+    <div
+      className="mt-3 rounded-[var(--radius-sm)] px-3.5 py-3"
+      style={{ background: done ? 'color-mix(in srgb, var(--color-lime) 14%, transparent)' : 'var(--color-panel-2)' }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="label text-ink-faint">{done ? 'Rest is up' : 'Resting'}</div>
+          <div className="figure text-[26px] mt-1" style={{ color: done ? 'var(--color-lime)' : 'var(--color-ink)' }}>
+            {done ? 'Go' : clock(rest * 1000)}
+          </div>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          {REST_S.map((n) => (
+            <button
+              key={n}
+              onClick={() => onLength(n)}
+              aria-pressed={length === n}
+              className="label min-w-[44px] min-h-[44px] rounded-[var(--radius-sm)] transition-colors"
+              style={{
+                background: length === n ? 'var(--color-panel)' : 'transparent',
+                color: length === n ? 'var(--color-ink)' : 'var(--color-ink-faint)',
+                boxShadow: length === n ? 'var(--elev)' : undefined,
+              }}
+            >
+              {n}s
+            </button>
+          ))}
+        </div>
+      </div>
+      {!done && (
+        <div className="mt-2.5">
+          <Bar pct={1 - rest / length} color="var(--color-neon)" height={4} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * What you did the last time you touched this lift.
+ *
+ * The single most useful thing a gym tracker does. Without it the steppers
+ * opened on eight reps at forty kilos every session regardless of what you had
+ * done on Tuesday, which meant the app knew your history and made you remember
+ * it anyway.
+ */
+function LastTime({ record, best }) {
+  if (!record) {
+    return <div className="text-[13px] text-ink-faint mt-2">First time on this one — the app will remember it.</div>
+  }
+  return (
+    <div className="mt-2.5">
+      <div className="flex items-baseline gap-2">
+        <span className="label text-ink-faint">Last time · {since(record.at)}</span>
+        {best ? <span className="label text-ink-faint ml-auto">best {Math.round(best.e1rm)}kg est.</span> : null}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mt-1.5">
+        {record.sets.map((set, i) => (
+          <span key={i} className="label px-2 py-1 rounded-full bg-panel-2 text-ink-dim">
+            {set.reps}
+            {set.weight ? ` × ${set.weight}kg` : ''}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /**
  * What you lifted, how many times, how heavy.
  *
@@ -259,12 +344,26 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
  * typed weight cannot be turned into a level. It is a training record.
  */
 function StrengthReadout({ session, ms }) {
-  const { sessionSet, sessionUndoSet } = useGame()
+  const { state, sessionSet, sessionUndoSet } = useGame()
   const [lift, setLift] = useState(session.lift ?? LIFTS[0])
   const [reps, setReps] = useState(8)
   const [weight, setWeight] = useState(40)
   const [pickingLift, setPickingLift] = useState(false)
+  const [rest, setRest] = useState(90)
   const sets = session.sets ?? []
+  const lastTime = state.lastSets?.[lift]
+
+  // Pick a lift and the steppers land on the heaviest set you did of it last
+  // time, so the common case — repeat, or add a little — is already dialled in.
+  // Only when the lift changes: typing over it mid-session would fight you.
+  useEffect(() => {
+    const top = topSet(lastTime?.sets ?? [])
+    if (!top) return
+    setReps(top.reps)
+    setWeight(top.weight ?? 0)
+    // The lift is the trigger; the record is looked up from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lift])
   const totals = setTotals(sets)
   const perLift = byLift(sets)
 
@@ -287,6 +386,8 @@ function StrengthReadout({ session, ms }) {
         <span className="font-display text-[11px] text-ink-faint">Exercise</span>
         <span className="text-[15px] text-ink truncate ml-2">{lift}</span>
       </button>
+
+      {!pickingLift && <LastTime record={lastTime} best={state.records?.[lift]} />}
 
       {pickingLift && (
         <div className="grid grid-cols-2 gap-1.5 mt-2 max-h-[188px] overflow-y-auto scroll-thin">
@@ -330,13 +431,15 @@ function StrengthReadout({ session, ms }) {
         onClick={() => sessionSet(lift, reps, weight)}
         style={{ background: 'var(--color-gold)', borderColor: 'var(--color-gold)', color: 'var(--color-on-accent)' }}
       >
-        LOG {reps} × {weight === 0 ? 'BODYWEIGHT' : `${weight}KG`}
+        Log {reps} × {weight === 0 ? 'bodyweight' : `${weight}kg`}
       </Btn>
+
+      <RestClock sets={sets} ms={ms} length={rest} onLength={setRest} />
 
       {sets.length > 0 && (
         <div className="mt-3 border-t border-line pt-3 text-left">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-display text-[11px] text-ink-faint">TODAY</span>
+            <span className="label text-ink-faint">This session</span>
             <button onClick={sessionUndoSet} className="font-display text-[11px] text-ink-faint min-h-[44px] px-2 active:text-danger">
               Undo last
             </button>

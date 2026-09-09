@@ -5,7 +5,7 @@ import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARI
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
-import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldRecords, foldWeek, newRecords } from './progress'
+import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 
 const SAVE_KEY = 'lvl100.save.v11' // v11: the map got bigger, so explored cells mean something else
 
@@ -24,6 +24,9 @@ function baseState() {
     // and so does the shape of the last quarter.
     records: {},
     weeks: [],
+    // What you did last time, per lift, so the app can put it in front of you
+    // at the moment you are deciding what to do today.
+    lastSets: {},
   }
 }
 
@@ -239,6 +242,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     dailies: bumpDailies(state.dailies, act, amount),
     world: { ...state.world, bossKm: state.world.bossKm + result.bossDamage },
     records: foldRecords(state.records, sets),
+    lastSets: foldLastSets(state.lastSets, sets),
     weeks: foldWeek(state.weeks, { act, amount, xp: result.xp + prXp, detail }),
     log: [
       {

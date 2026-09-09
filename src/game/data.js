@@ -342,6 +342,33 @@ function seededWeeks() {
     .reverse()
 }
 
+const SEEDED_LAST_SETS = {
+  'Bench press': {
+    at: Date.now() - 3 * 24 * 3600 * 1000,
+    sets: [{ reps: 8, weight: 72.5 }, { reps: 8, weight: 77.5 }, { reps: 6, weight: 80 }, { reps: 5, weight: 80 }],
+  },
+  Squat: {
+    at: Date.now() - 3 * 24 * 3600 * 1000,
+    sets: [{ reps: 8, weight: 100 }, { reps: 5, weight: 115 }, { reps: 5, weight: 120 }],
+  },
+  Deadlift: {
+    at: Date.now() - 7 * 24 * 3600 * 1000,
+    sets: [{ reps: 5, weight: 130 }, { reps: 3, weight: 150 }, { reps: 3, weight: 155 }],
+  },
+  'Overhead press': {
+    at: Date.now() - 11 * 24 * 3600 * 1000,
+    sets: [{ reps: 8, weight: 42.5 }, { reps: 8, weight: 48 }, { reps: 6, weight: 48 }],
+  },
+  'Barbell row': {
+    at: Date.now() - 31 * 24 * 3600 * 1000,
+    sets: [{ reps: 10, weight: 60 }, { reps: 8, weight: 68 }, { reps: 8, weight: 68 }],
+  },
+  'Pull-up': {
+    at: Date.now() - 9 * 24 * 3600 * 1000,
+    sets: [{ reps: 12, weight: 0 }, { reps: 10, weight: 0 }, { reps: 8, weight: 0 }],
+  },
+}
+
 const SEEDED_RECORDS = {
   'Bench press': { e1rm: 96.7, reps: 6, weight: 80, at: Date.now() - 9 * 24 * 3600 * 1000 },
   Squat: { e1rm: 141.7, reps: 5, weight: 120, at: Date.now() - 4 * 24 * 3600 * 1000 },
@@ -456,6 +483,7 @@ export const TEST_ACCOUNT = {
   chest: { unlocked: true, openedToday: false },
   session: null,
   records: SEEDED_RECORDS,
+  lastSets: SEEDED_LAST_SETS,
   weeks: seededWeeks(),
   log: seededGymLog(),
 }
