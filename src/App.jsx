@@ -74,7 +74,7 @@ function Device() {
   const questsOpen = state.dailies.some((d) => !d.done)
 
   return (
-    <div className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 device:rounded-[22px]">
+    <div data-shell className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 device:rounded-[22px]">
       {!entered && <Onboarding onContinue={() => setEntered(true)} />}
 
       <TopBar onOpenProfile={() => setTab('hero')} onOpenMap={() => setMap(true)} />

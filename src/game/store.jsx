@@ -6,6 +6,7 @@ import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmo
 import { revealAt } from './mapgrid'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
+import { challengeProgress } from './challenge'
 
 const SAVE_KEY = 'lvl100.save.v11' // v11: the map got bigger, so explored cells mean something else
 
@@ -31,6 +32,9 @@ function baseState() {
     // and rebuilding that list every session is the friction that sends them
     // back to a notes app.
     routines: [],
+    // Which week's challenge has been paid out. Keyed by the week so a new one
+    // reopens it and finishing twice inside one week cannot pay twice.
+    challenge: { week: null, claimed: false },
   }
 }
 
@@ -286,6 +290,21 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
 
   // Moving unlocks today's chest. There is no ladder to climb any more — one
   // chest a day, and every open can roll anything.
+  // The week's challenge, checked against the totals this session just changed.
+  const weekly = challengeProgress(next)
+  if (weekly.done && !weekly.claimed) {
+    next = {
+      ...next,
+      challenge: { week: weekly.key, claimed: true },
+      player: { ...next.player, cores: next.player.cores + weekly.challenge.cores },
+    }
+    next = toast(next, {
+      kind: 'chest',
+      title: 'Weekly challenge done',
+      body: `${weekly.challenge.name} · +${weekly.challenge.cores} cores`,
+    })
+  }
+
   const activeDone = next.dailies.find((d) => d.id === 'active')?.done
   if (activeDone && !next.chest.unlocked && !next.chest.openedToday) {
     next = { ...next, chest: { ...next.chest, unlocked: true } }

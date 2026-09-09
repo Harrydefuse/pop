@@ -337,7 +337,7 @@ export const STREAK_TIERS = [
 // One chest a day, unlocked by moving. Every open can roll anything — the pull
 // is the reward, not a ladder you have to keep climbing.
 export const DAILY_CHEST = {
-  name: 'DAILY CHEST',
+  name: 'Daily chest',
   cores: 220,
   rolls: 2,
   note: 'Any rarity, every single day.',

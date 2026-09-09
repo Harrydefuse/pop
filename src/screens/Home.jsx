@@ -7,6 +7,7 @@ import GiftReveal from '../components/GiftReveal'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
 import { streakTier } from '../game/engine'
+import { challengeLabel, challengeProgress } from '../game/challenge'
 
 /**
  * The beta gift, sat at the very top until it is claimed. It is the first thing
@@ -38,6 +39,47 @@ function GiftCard({ onOpen }) {
   )
 }
 
+
+/**
+ * This week's challenge.
+ *
+ * The one thing on the home screen that is different from what was there last
+ * week. Everything else — three slots, a chest, a streak — is identical every
+ * single day, which is precisely the trap the app this one resembles fell into
+ * before it closed.
+ */
+function WeeklyChallenge({ state }) {
+  const w = challengeProgress(state)
+  const paid = w.claimed
+  return (
+    <Panel className="p-4" accent={paid ? 'var(--color-lime)' : undefined}>
+      <div className="flex items-start gap-3">
+        <span
+          className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
+          style={{ background: `color-mix(in srgb, ${paid ? 'var(--color-lime)' : 'var(--color-neon)'} 14%, transparent)` }}
+        >
+          <Icon name={paid ? 'check' : 'trophy'} size={19} color={paid ? 'var(--color-lime)' : 'var(--color-neon)'} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="label text-ink-faint">This week</div>
+          <div className="font-display text-[17px] text-ink mt-1 leading-tight">{w.challenge.name}</div>
+          <div className="text-[13px] text-ink-dim mt-1.5 leading-snug">
+            {paid ? `Done — +${w.challenge.cores} cores. A new one lands on Monday.` : w.challenge.note}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3.5">
+        <Bar pct={w.pct} color={paid ? 'var(--color-lime)' : 'var(--color-neon)'} height={6} />
+        <div className="flex items-baseline justify-between mt-2">
+          <span className="label text-ink-faint">{challengeLabel(w)}</span>
+          <span className="label" style={{ color: paid ? 'var(--color-lime)' : 'var(--color-gold)' }}>
+            {paid ? 'Claimed' : `+${w.challenge.cores} cores`}
+          </span>
+        </div>
+      </div>
+    </Panel>
+  )
+}
 
 /**
  * A slot is a single small row: colour, name, state. Everything else — what
@@ -257,6 +299,8 @@ export default function Home({ onGo }) {
 
       <FirstSteps state={state} onGo={onGo} />
 
+      <WeeklyChallenge state={state} />
+
 
       {/* ------------------------------------------------------ streak strip */}
       <Panel className="px-3.5 py-3">
@@ -277,6 +321,24 @@ export default function Home({ onGo }) {
             </div>
             <div className="label text-ink-faint mt-1">×{streak.mult.toFixed(2)} XP</div>
           </div>
+        </div>
+
+        {/* The shields were real and invisible: they auto-spend on a missed day
+            and the only place that ever said so was a coach panel most people
+            never opened. A safety net nobody knows about protects nothing —
+            the fear of losing the streak is what makes people skip a rest day
+            they needed. */}
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
+          <Icon
+            name="shield"
+            size={15}
+            color={p.shields > 0 ? 'var(--color-cyan)' : 'var(--color-ink-faint)'}
+          />
+          <span className="text-[13px] text-ink-dim leading-snug">
+            {p.shields > 0
+              ? `${p.shields} rest ${p.shields === 1 ? 'day' : 'days'} banked. Miss one and a shield covers it — the streak holds.`
+              : 'No shields left. A missed day resets the streak from here.'}
+          </span>
         </div>
       </Panel>
 

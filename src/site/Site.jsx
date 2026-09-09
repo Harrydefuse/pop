@@ -484,7 +484,7 @@ export default function Site({ onEnterApp }) {
                     src="/shots/sheet.webp"
                     width="760"
                     height="1634"
-                    alt="The character sheet: five stat bars — strength, endurance, agility, vitality and focus — each with a level and the activities that raise it."
+                    alt="The character sheet: a level-100 character in full legendary armour, their power score, and the six equipped pieces underneath."
                   />
                 </div>
               </div>
@@ -496,7 +496,7 @@ export default function Site({ onEnterApp }) {
                   src="/shots/home.webp"
                   width="760"
                   height="1634"
-                  alt="The home screen: level and power, a six-day streak, three daily quests and a sealed chest."
+                  alt="The home screen: this week&apos;s challenge, a 214-day streak with rest days banked, the three daily slots and the daily chest."
                   loading="lazy"
                 />
               </div>
@@ -505,7 +505,7 @@ export default function Site({ onEnterApp }) {
                   src="/shots/pets.webp"
                   width="760"
                   height="1634"
-                  alt="The companion screen, showing a pet's five evolution stages from level one to a hundred."
+                  alt="The companion collection: seven pets, each with the level it has grown to alongside its owner."
                   loading="lazy"
                 />
               </div>
@@ -514,7 +514,7 @@ export default function Site({ onEnterApp }) {
                   src="/shots/guild.webp"
                   width="760"
                   height="1634"
-                  alt="The community feed, where players share training routines and verified personal bests."
+                  alt="The guild screen: your squad, and a leaderboard ranked by level with each player&apos;s streak beside them."
                   loading="lazy"
                 />
               </div>

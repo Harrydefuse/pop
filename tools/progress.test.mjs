@@ -68,6 +68,44 @@ is('a new session replaces that lift', lastB.Squat, { at: 9000, sets: [{ reps: 3
 is('and leaves the lifts it did not touch', lastB['Bench press'].at, 5000)
 is('a session with no sets changes nothing', foldLastSets(lastA, [], 9999), lastA)
 
+console.log('\nthe weekly challenge')
+const { challengeFor, challengeProgress, CHALLENGES } = await server.ssrLoadModule('/src/game/challenge.js')
+is('the same week always draws the same challenge',
+  challengeFor('2026-09-07').id, challengeFor('2026-09-07').id)
+is('and it is one from the rota',
+  CHALLENGES.some((c) => c.id === challengeFor('2026-09-07').id), true)
+{
+  // Spread the keys wide enough that a hash collapsing to one value shows up.
+  const picked = new Set()
+  for (let i = 1; i <= 40; i++) picked.add(challengeFor(`2026-01-${String(i).padStart(2, '0')}`).id)
+  is('different weeks do not all draw the same one', picked.size > 1, true)
+}
+{
+  const t = Date.now()
+  const wk = weekKey(t)
+  // Scored directly rather than through whichever one the hash draws — the
+  // first version of this test happened to draw the only challenge that reads
+  // the log, handed it an empty one, and reported a bug that was not there.
+  const week = { key: wk, at: t - 3600_000, sessions: 9, minutes: 600, volume: 99000, km: 99, xp: 0 }
+  const thisWeek = [{ at: t, activityId: 'run' }, { at: t, activityId: 'gym' },
+                    { at: t, activityId: 'swim' }, { at: t, activityId: 'mobility' }]
+  for (const c of CHALLENGES) {
+    is(`${c.id}: a big week clears it`, c.of(week, thisWeek) >= c.goal, true)
+    is(`${c.id}: an empty week does not`, c.of({ ...week, sessions: 0, minutes: 0, volume: 0, km: 0 }, []) >= c.goal, false)
+  }
+  is('sessions before this week do not count towards the spread',
+    CHALLENGES.find((c) => c.id === 'spread').of(week, [{ at: t - 99 * 3600_000, activityId: 'run' }]), 0)
+
+  const full = { weeks: [week], log: thisWeek }
+  is('a week that clears its challenge is done', challengeProgress(full, t).done, true)
+  is('and unclaimed until it is paid', challengeProgress(full, t).claimed, false)
+  is('a claim on this week reads as claimed',
+    challengeProgress({ ...full, challenge: { week: wk, claimed: true } }, t).claimed, true)
+  is('a claim on last week does not',
+    challengeProgress({ ...full, challenge: { week: '1999-01-04', claimed: true } }, t).claimed, false)
+  is('an empty week is not done', challengeProgress({ weeks: [], log: [] }, t).done, false)
+}
+
 console.log('\nrepeating a session')
 const gymLog = (at, lifts) => ({ at, activityId: 'gym', detail: { mode: 'strength', lifts: lifts.map((lift) => ({ lift })) } })
 is('the most recent gym session is the one repeated',
