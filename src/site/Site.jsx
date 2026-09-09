@@ -4,6 +4,7 @@ import { PetView, BossArt } from '../components/Sprites'
 import { ACTIVITIES, DAILY_CHEST, RARITY, RARITY_ORDER, STATS } from '../game/config'
 import { grantXp, resolveActivity, statLevel, xpToNext } from '../game/engine'
 import { BOSS } from '../game/data'
+import { canInstall, isIOS, isStandalone, promptInstall, subscribeInstall } from '../pwa'
 
 /* The demo below runs the app's real engine rather than a mock of it, so the
    numbers a visitor sees are the numbers they'd earn. */
@@ -293,6 +294,22 @@ function ChestOdds() {
 
 /* ------------------------------------------------------------------ page --- */
 
+/**
+ * The browser only offers an install when it decides the site qualifies, so
+ * this button appears rather than sitting there greyed out. iOS never offers,
+ * which is why the note under the buttons says what to do by hand.
+ */
+function InstallButton() {
+  const [ready, setReady] = useState(canInstall)
+  useEffect(() => subscribeInstall(() => setReady(canInstall())), [])
+  if (!ready || isStandalone()) return null
+  return (
+    <button className="btn ghost" onClick={() => promptInstall()}>
+      Install the app
+    </button>
+  )
+}
+
 export default function Site({ onEnterApp }) {
   const nav = useRef(null)
   const rail = useRef(null)
@@ -343,9 +360,12 @@ export default function Site({ onEnterApp }) {
                 <a className="btn ghost" href="#campaign">
                   See the game
                 </a>
+                <InstallButton />
               </div>
               <span className="hero-note">
-                No account, no download — it runs right here in your browser.
+                No account, no app store. It runs right here — and if you keep it, it installs to
+                your home screen and works with no signal.
+                {isIOS() && !isStandalone() ? ' On iPhone: Share, then Add to Home Screen.' : ''}
               </span>
             </div>
 

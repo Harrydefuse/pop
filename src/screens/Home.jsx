@@ -4,6 +4,7 @@ import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { ChestArt } from '../components/Sprites'
 import GiftReveal from '../components/GiftReveal'
+import InstallCard from '../components/InstallCard'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
 import { streakTier } from '../game/engine'
@@ -298,6 +299,8 @@ export default function Home({ onGo }) {
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <FirstSteps state={state} onGo={onGo} />
+
+      <InstallCard />
 
       <WeeklyChallenge state={state} />
 

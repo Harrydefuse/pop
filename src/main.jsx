@@ -4,6 +4,7 @@ import './index.css'
 // Imported for the side effect: it stamps the saved theme on <html> before the
 // first render, so the app never paints a frame in the wrong one.
 import './game/theme'
+import { registerServiceWorker } from './pwa'
 import App from './App.jsx'
 import Site from './site/Site.jsx'
 
@@ -29,6 +30,10 @@ export function Root() {
   if (route === 'app') return <App onExit={() => { window.location.hash = '' }} />
   return <Site onEnterApp={() => { window.location.hash = '#/app' }} />
 }
+
+// Once the app is on a home screen it has to work with no signal — a gym
+// basement, a plane, a dead phone plan. The worker precaches the whole build.
+registerServiceWorker()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
