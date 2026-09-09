@@ -77,7 +77,7 @@ export default function TopBar({ onOpenProfile, onOpenMap }) {
           <button
             onClick={onOpenMap}
             className="shrink-0 grid place-items-center w-11 h-11 active:brightness-110"
-            aria-label="Open the map of Sydney"
+            aria-label="Open the map"
           >
             <PixelSprite sprite={MAP_ICON} size={28} />
           </button>

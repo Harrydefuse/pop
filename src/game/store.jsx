@@ -3,12 +3,12 @@ import { GameContext } from './context'
 import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, gearPiece } from './data'
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
-import { revealAt } from './mapgrid'
+import { coverPoints } from './ground'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { challengeProgress } from './challenge'
 
-const SAVE_KEY = 'lvl100.save.v11' // v11: the map got bigger, so explored cells mean something else
+const SAVE_KEY = 'lvl100.save.v12' // v12: explored ground is real map tiles now, not cells of a drawn Sydney
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -522,9 +522,7 @@ function reducer(state, action) {
         sets: s.sets ?? [],
       })
       if (!s.points.length) return next
-      const cells = new Set(next.explored)
-      for (const pt of s.points) revealAt(cells, [pt.lon, pt.lat], 3)
-      return { ...next, explored: [...cells] }
+      return { ...next, explored: [...coverPoints(new Set(next.explored), s.points)] }
     }
 
     case 'sync': {
@@ -537,11 +535,6 @@ function reducer(state, action) {
 
     // The gift is claimed once, ever. It goes straight into the inventory so it
     // can be tried on immediately rather than sitting in a claim queue.
-    // Explored ground is permanent. It is the one thing in the game that only
-    // grows, and only by having actually been somewhere.
-    case 'explore':
-      return { ...state, explored: [...new Set([...state.explored, ...action.cells])] }
-
     case 'openGift': {
       if (!state.gift.pending) return state
       const item = { id: nextId('i'), ...FOUNDER_GIFT }
@@ -816,7 +809,6 @@ export function GameProvider({ children }) {
       discardSession: () => dispatch({ type: 'discardSession' }),
       openChest: () => dispatch({ type: 'openChest' }),
       openGift: () => dispatch({ type: 'openGift' }),
-      explore: (cells) => dispatch({ type: 'explore', cells }),
       dismissReward: () => dispatch({ type: 'dismissReward' }),
       equip: (itemId) => dispatch({ type: 'equip', itemId }),
       equipBest: () => dispatch({ type: 'equipBest' }),

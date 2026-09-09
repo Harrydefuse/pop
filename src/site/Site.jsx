@@ -426,7 +426,7 @@ export default function Site({ onEnterApp }) {
                 <h3>You get paid</h3>
                 <p>
                   XP toward your level, points into five stats, damage on whatever boss is in front of
-                  you, ground cleared on the map, and a chest at the end of the day.
+                  you, ground claimed on the map, and a chest at the end of the day.
                 </p>
               </div>
             </div>
@@ -456,17 +456,17 @@ export default function Site({ onEnterApp }) {
         <section id="map">
           <div className="wrap split">
             <div className="stack reveal from-l">
-              <h2>Your city, drawn as a world map.</h2>
+              <h2>Claim the ground you cover.</h2>
             </div>
             <div className="stack reveal from-r">
               <p className="lede">
-                Eighteen kilometres of Sydney, hand-drawn a hundred metres at a time: the harbour, the
-                Bridge, the beaches, the bush, every suburb named. It opens under haze.
+                A real map — your streets, wherever you live — with your routes drawn on it. Track a run
+                or a walk outdoors and the line lands here alongside every other one you have made.
               </p>
               <p>
-                Walking clears it. Track a run outdoors and the ground you actually covered lights up
-                and stays lit — and zoom in far enough and the drawing gives way to the streets. It is
-                the one thing in the game that only grows, and only by having been somewhere.
+                And the blocks you pass through turn green for good. It is the one thing in the game that
+                only grows, and only by having actually been somewhere. Bosses stand at real addresses on
+                the same map, so the next one is always a distance away rather than a menu item.
               </p>
             </div>
           </div>
@@ -682,7 +682,7 @@ export default function Site({ onEnterApp }) {
             <h2>It&rsquo;s already built. Go and poke at it.</h2>
             <p className="lede" style={{ textAlign: 'center' }}>
               The whole thing runs in your browser — make a character, time a session, open a chest,
-              walk some of the map clear. No sign-up, and nothing leaves your device.
+              claim some ground on the map. No sign-up, and nothing leaves your device.
             </p>
             <a className="btn" href="#/app" onClick={go}>
               Try the prototype

@@ -401,6 +401,59 @@ button:disabled {
   border-radius: 0;
 }
 
+/* A boss on the map: a dot on a stalk, the way every map app draws a pin. It
+   is built as a div rather than an image so it takes the act's colour and the
+   app's radii, and so the one you are on can breathe. */
+.world-pin-wrap {
+  background: none;
+  border: 0;
+}
+.world-pin {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  position: relative;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--pin);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.4);
+}
+.world-pin-live {
+  animation: pin-breathe 2.2s ease-in-out infinite;
+}
+/* A cleared boss keeps its pin but loses its shout: muted, with a tick. */
+.world-pin-tick {
+  position: absolute;
+  inset: 0;
+  transform: rotate(45deg);
+  display: grid;
+  place-items: center;
+}
+.world-pin-tick::before {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+@keyframes pin-breathe {
+  0%,
+  100% {
+    box-shadow: 0 2px 5px rgb(0 0 0 / 0.4), 0 0 0 0 color-mix(in srgb, var(--pin) 55%, transparent);
+  }
+  60% {
+    box-shadow: 0 2px 5px rgb(0 0 0 / 0.4), 0 0 0 11px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-pin-live {
+    animation: none;
+  }
+}
+
 @keyframes xp-shine {
   from {
     transform: translateX(-100%);

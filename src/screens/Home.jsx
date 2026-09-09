@@ -226,8 +226,8 @@ function FirstSteps({ state, onGo }) {
     {
       id: 'walk',
       done: (state.explored?.length ?? 0) > 0,
-      title: 'Clear some of the map',
-      note: 'Track a walk or a run outdoors and the ground you cover opens up.',
+      title: 'Claim some ground',
+      note: 'Track a walk or a run outdoors and the blocks you pass through turn green for good.',
       cta: 'See the map',
       go: 'map',
     },
