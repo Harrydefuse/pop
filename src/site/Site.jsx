@@ -414,10 +414,11 @@ export default function Site({ onEnterApp }) {
             <div className="steps stagger">
               <div className="step">
                 <span className="bar" />
-                <h3>You start it in the app</h3>
+                <h3>You press one button</h3>
                 <p>
-                  Walk, run, ride, swim, gym, HIIT, calisthenics, sport, mobility — thirteen kinds, and
-                  none of them require a gym. Pick one and the clock starts.
+                  Walk, run, ride, swim, gym, HIIT, calisthenics, sport, mobility — twelve kinds, and
+                  none of them require a gym. The ones you actually do sit at the top. Or import what
+                  your watch already recorded.
                 </p>
               </div>
               <div className="step">
@@ -425,8 +426,8 @@ export default function Site({ onEnterApp }) {
                 <h3>The app does the counting</h3>
                 <p>
                   Nothing is typed in, so nothing can be made up. Outdoors it follows your route, so
-                  distance and pace are measured rather than claimed — and the XP costs exactly the time
-                  it says it does.
+                  distance and pace are measured rather than claimed. Your bests come out of it — fastest
+                  5k, longest ride, heaviest set of eight — and three of them go on your profile.
                 </p>
               </div>
               <div className="step">

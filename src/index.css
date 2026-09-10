@@ -83,6 +83,9 @@
      signals above — ranks, acts, slots, sources. They live here rather than as
      hex in config so a theme swap moves them too. */
   --tone-green: #166534;
+  /* Go. The one button that starts a session, in the colour every training app
+     has already taught people to look for. Dark enough to carry white. */
+  --color-go: #15803d;
   --tone-sky: #0369a1;
   --tone-slate: #64748b;
   --tone-orange: #c2410c;
@@ -174,6 +177,9 @@
   --color-ink-faint: #87909f;
 
   --tone-green: #4ade80;
+  /* Dark carries dark text on its accents, so go gets brighter rather than
+     deeper — the same swap every other accent makes here. */
+  --color-go: #4ade80;
   --tone-sky: #38bdf8;
   --tone-slate: #c5cdd8;
   --tone-orange: #fb923c;
@@ -482,6 +488,76 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .map-sheet {
     transition: none;
+  }
+}
+
+/* The streak, burning.
+   A number that says 214 and looks exactly like a number that says 3 is a bad
+   reward for two hundred days. `--heat` runs 0 to 1 across the tiers and drives
+   everything: the glow behind the figure, how many embers are lit, and how fast
+   they climb. At zero it is a plain number, which is correct — there is nothing
+   to celebrate on day one. */
+.streak-flame {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  isolation: isolate;
+}
+.streak-flame > .streak-n {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 calc(10px * var(--heat)) color-mix(in srgb, var(--tone-orange) calc(70% * var(--heat)), transparent);
+}
+.streak-halo {
+  position: absolute;
+  z-index: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--tone-orange) calc(34% * var(--heat)), transparent) 0%,
+    transparent 68%
+  );
+  animation: streak-breathe calc(3.4s - 1.4s * var(--heat)) ease-in-out infinite;
+}
+.streak-ember {
+  position: absolute;
+  z-index: 0;
+  bottom: 4px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--tone-orange);
+  opacity: 0;
+  animation: streak-rise calc(2.6s - 1s * var(--heat)) linear infinite;
+}
+@keyframes streak-breathe {
+  50% {
+    transform: scale(1.12);
+    opacity: 0.82;
+  }
+}
+@keyframes streak-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 6px) scale(0.6);
+  }
+  18% {
+    opacity: calc(0.85 * var(--heat));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift, 0), -30px) scale(0.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .streak-halo,
+  .streak-ember {
+    animation: none;
+  }
+  .streak-ember {
+    opacity: calc(0.5 * var(--heat));
   }
 }
 

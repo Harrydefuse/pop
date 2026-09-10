@@ -103,6 +103,9 @@ const BTN_VARIANTS = {
   primary: 'bg-neon text-[var(--color-on-accent)] border-transparent hover:brightness-110',
   gold: 'bg-gold text-[var(--color-on-accent)] border-transparent hover:brightness-110',
   cyan: 'bg-cyan text-[var(--color-on-accent)] border-transparent hover:brightness-110',
+  // The one button on TRAIN that starts something. Green because every app
+  // that tracks training has taught people that green is go.
+  go: 'bg-[var(--color-go)] text-[var(--color-on-accent)] border-transparent hover:brightness-110',
   danger: 'bg-danger text-[var(--color-on-accent)] border-transparent hover:brightness-110',
   ghost: 'bg-transparent text-ink border-line-hot hover:border-neon hover:text-neon',
   dim: 'bg-panel-2 text-ink-dim border-transparent hover:text-ink',

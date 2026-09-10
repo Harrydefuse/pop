@@ -7,6 +7,7 @@ import { useGame } from '../game/useGame'
 import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
 import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor, wornGear } from '../game/engine'
+import { pinnedEfforts } from '../game/efforts'
 import { alpha } from '../game/color'
 
 /* ------------------------------------------------------------------ tiles --- */
@@ -496,6 +497,7 @@ export default function Hero() {
   const [openPet, setOpenPet] = useState(null)
 
   const worn = useMemo(() => wornGear(p), [p])
+  const pinned = useMemo(() => pinnedEfforts(state.bests ?? {}, p.efforts ?? []), [state.bests, p.efforts])
 
   const byRarity = (a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || itemScore(b) - itemScore(a)
   const gear = useMemo(() => [...p.inventory].sort(byRarity), [p.inventory])
@@ -567,6 +569,28 @@ export default function Hero() {
             the game never was. */}
         <div className="font-display text-[12px] text-ink-faint mt-3.5 mb-2">Loadout</div>
         <Loadout player={p} onPick={setOpenSlot} />
+
+        {/* The three bests they chose to show. Nothing is here unless they
+            picked something — a board that filled itself would put someone's
+            slowest ever kilometre on their profile. */}
+        {pinned.length > 0 && (
+          <div className="mt-3.5 pt-3.5 border-t border-line">
+            <div className="font-display text-[12px] text-ink-faint mb-2">Best efforts</div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {pinned.map((e) => (
+                <div key={e.id} className="min-w-0">
+                  <div className="figure text-[19px] text-ink leading-none">
+                    {e.value}
+                    {e.unit && <span className="text-[13px] text-ink-dim ml-0.5">{e.unit}</span>}
+                  </div>
+                  <div className="label text-ink-faint mt-1.5 truncate" title={e.name}>
+                    {e.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-1.5 mt-3">
           <Btn size="sm" variant="ghost" onClick={equipBest}>

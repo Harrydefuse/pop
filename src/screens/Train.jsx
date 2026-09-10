@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bar, Btn, Panel, SectionTitle } from '../components/ui'
+import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import { useGame } from '../game/useGame'
 import {
@@ -21,8 +21,10 @@ import {
   fixStep,
 } from '../game/session'
 import { ACTIVITIES } from '../game/config'
-import { minutesOf, resolveActivity } from '../game/engine'
+import { minutesOf, resolveActivity, streakTier } from '../game/engine'
 import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
+import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
+import { guessActivity, readWorkoutFile } from '../game/importFile'
 import { alpha } from '../game/color'
 
 /** What the tracker will actually do, said on the card you press. A run and a
@@ -810,16 +812,15 @@ function ago(ms) {
 }
 
 /**
- * What you have actually done.
+ * What you have actually done, in one line.
  *
- * Every session was already being recorded and nothing showed it, which made
- * the app feel like it forgot you the moment you stopped the clock. The week is
- * the number people check; the list underneath is the proof behind it.
+ * The full list used to sit open at the bottom of TRAIN, which made the screen
+ * long for something you look at once a week. The week's four numbers are what
+ * gets checked; the sessions behind them are one tap away.
  */
-function History({ log }) {
+function weekTotals(log) {
   const week = Date.now() - 7 * 24 * 3600 * 1000
-  const recent = log.slice(0, 12)
-  const totals = log
+  return log
     .filter((l) => l.at >= week)
     .reduce(
       (acc, l) => {
@@ -833,11 +834,14 @@ function History({ log }) {
       },
       { sessions: 0, xp: 0, minutes: 0, km: 0 },
     )
+}
 
+function SessionsRow({ log, onOpen }) {
+  const totals = weekTotals(log)
   if (!log.length) {
     return (
       <div>
-        <SectionTitle>Your sessions</SectionTitle>
+        <SectionTitle>View sessions</SectionTitle>
         <Panel className="p-4">
           <div className="text-[14px] text-ink-dim text-center leading-snug">
             Nothing here yet. Start something above and it lands here the moment you stop the clock.
@@ -846,37 +850,50 @@ function History({ log }) {
       </div>
     )
   }
-
   return (
     <div>
       <SectionTitle right={<span className="text-[14px] text-ink-faint">last 7 days</span>}>
-        Your sessions
+        View sessions
       </SectionTitle>
-      <Panel className="p-3">
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            [totals.sessions, 'SESSIONS'],
-            [Math.round(totals.minutes), 'MINUTES'],
-            [totals.km ? totals.km.toFixed(1) : '0', 'KM'],
-            [totals.xp, 'XP'],
-          ].map(([n, label]) => (
-            <div key={label} className="border border-line p-2 text-center">
-              <div className="text-[15px] text-ink tabular-nums">{n}</div>
-              <div className="font-display text-[11px] text-ink-faint mt-1">{label}</div>
-            </div>
-          ))}
-        </div>
+      <Panel>
+        <button onClick={onOpen} className="w-full flex items-center gap-3 p-3.5 text-left active:bg-panel-2">
+          <div className="grid grid-cols-4 gap-2 flex-1 min-w-0">
+            {[
+              [totals.sessions, 'SESSIONS'],
+              [Math.round(totals.minutes), 'MINUTES'],
+              [totals.km ? totals.km.toFixed(1) : '0', 'KM'],
+              [totals.xp, 'XP'],
+            ].map(([n, label]) => (
+              <div key={label}>
+                <div className="figure text-[17px] text-ink">{n}</div>
+                <div className="label text-ink-faint mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+          <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
+        </button>
+      </Panel>
+    </div>
+  )
+}
 
-        <div className="mt-3 pt-3 border-t border-line space-y-1.5">
-          {recent.map((l) => {
+/** Every session, newest first, with what each one actually was. */
+function SessionsSheet({ log, onClose }) {
+  return (
+    <Modal open onClose={onClose} title="YOUR SESSIONS" wide>
+      <Panel className="p-3">
+        <div className="space-y-2">
+          {log.map((l) => {
             const act = ACTIVITIES.find((a) => a.id === l.activityId)
             if (!act) return null
             const detail = detailLine(l.detail)
             return (
-              <div key={l.id}>
+              <div key={l.id} className="border-b border-line last:border-0 pb-2 last:pb-0">
                 <div className="flex items-center gap-2.5">
                   <Icon name={act.icon} size={12} color={TINT[act.id] ?? 'var(--color-ink-faint)'} />
-                  <span className="font-display text-[12px] text-ink-dim w-[74px] shrink-0">{act.name.toUpperCase()}</span>
+                  <span className="font-display text-[12px] text-ink-dim w-[74px] shrink-0">
+                    {act.name.toUpperCase()}
+                  </span>
                   <span className="text-[14px] text-ink">
                     {l.amount} {l.amount === 1 ? act.unit.replace(/s$/, '') : act.unit}
                   </span>
@@ -885,13 +902,16 @@ function History({ log }) {
                 </div>
                 {/* The amount is one number and every session collapses into
                     it. This is the part worth reading back. */}
-                {detail && <div className="text-[14px] text-ink-faint ml-[24px] mb-0.5">{detail}</div>}
+                {detail && <div className="text-[14px] text-ink-faint ml-[24px] mt-0.5">{detail}</div>}
+                {l.source && l.source !== 'tracked' && (
+                  <div className="label text-ink-faint ml-[24px] mt-1">{l.source}</div>
+                )}
               </div>
             )
           })}
         </div>
       </Panel>
-    </div>
+    </Modal>
   )
 }
 
@@ -903,12 +923,51 @@ function History({ log }) {
  * decided to do something, and the reason to open a tracking app on a day you
  * have not decided is to see where you are.
  */
+/**
+ * The streak, on fire.
+ *
+ * Two hundred days and three days rendered identically, which made the number
+ * the app asks you to protect the most look like the least. Heat runs from
+ * nothing at day zero to everything at a hundred, and it drives the glow, how
+ * many embers are lit and how quickly they climb — so the difference between a
+ * good week and a good year is visible from across the room.
+ */
+function StreakFlame({ days }) {
+  const tier = streakTier(days)
+  const heat = Math.min(1, days / 100)
+  const embers = days >= 3 ? Math.min(6, 1 + Math.floor(days / 14)) : 0
+
+  return (
+    <div className="text-right shrink-0">
+      <div className="label text-ink-faint">Streak</div>
+      <div className="streak-flame mt-1.5" style={{ '--heat': heat.toFixed(2) }}>
+        {heat > 0 && <span className="streak-halo" aria-hidden="true" />}
+        {Array.from({ length: embers }, (_, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            className="streak-ember"
+            style={{
+              left: `${18 + (i * 37) % 64}%`,
+              '--drift': `${(i % 2 ? 1 : -1) * (3 + i)}px`,
+              animationDelay: `${(i * 0.43).toFixed(2)}s`,
+            }}
+          />
+        ))}
+        <span className="streak-n figure text-[24px]" style={{ color: 'var(--tone-orange)' }}>
+          {days}
+        </span>
+      </div>
+      <div className="label text-ink-faint mt-1">{tier.label}</div>
+    </div>
+  )
+}
+
 function WeekHeader({ weeks, streak }) {
   const series = weekSeries(weeks, WEEKS_KEPT)
   const top = Math.max(1, ...series.map((w) => w.minutes))
   const mins = weekOverWeek(weeks, 'minutes')
   const vol = weekOverWeek(weeks, 'volume')
-  const cur = series[series.length - 1]
 
   // Volume only leads if there is any: a runner should not open the app to a
   // kilogram figure that will read zero forever.
@@ -924,13 +983,7 @@ function WeekHeader({ weeks, streak }) {
           <div className="figure text-[34px] text-ink mt-1.5">{lead.value}</div>
           <Delta cmp={lead.cmp} />
         </div>
-        <div className="text-right shrink-0">
-          <div className="label text-ink-faint">Streak</div>
-          <div className="figure text-[24px] mt-1.5" style={{ color: 'var(--tone-orange)' }}>
-            {streak}
-          </div>
-          <div className="label text-ink-faint mt-1">{cur.sessions} {cur.sessions === 1 ? 'session' : 'sessions'}</div>
-        </div>
+        <StreakFlame days={streak} />
       </div>
 
       {/* A quarter of a year, one bar a week. The gaps are the point — a chart
@@ -1062,122 +1115,464 @@ function LiftBoard({ records, log }) {
 }
 
 /**
- * The plans you already have.
+ * One green button.
  *
- * Most people do the same handful of lifts on the same days, and the app made
- * them rebuild that list from a twelve-item picker every single session — the
- * friction that sends people back to a notes app. One tap starts the session
- * with the plan already in it.
- *
- * "Last session" is offered without anyone having saved anything, because the
- * most common plan is the one you did on Tuesday and nobody sits down to write
- * that one out.
+ * TRAIN used to open on a wall of twelve activity cards and a list of plans
+ * above them — a menu you read before you had decided anything. You look at a
+ * menu when you have already decided to do something, so the menu moved behind
+ * the decision: press go, then say what.
  */
-function Plans({ routines, log, onStart, onDelete }) {
+function StartBlock({ onStart, onImport }) {
+  return (
+    <div className="space-y-2">
+      <Btn full size="lg" variant="go" onClick={onStart}>
+        START WORKOUT
+      </Btn>
+      <button
+        onClick={onImport}
+        className="w-full min-h-[44px] flex items-center justify-center gap-2 text-[14px] text-ink-dim hover:text-ink active:brightness-125"
+      >
+        <Icon name="swap" size={13} color="currentColor" />
+        Import a workout
+      </button>
+    </div>
+  )
+}
+
+/** How often each activity has been done lately, newest weighted heavier. */
+function byUse(log) {
+  const count = new Map()
+  for (const l of log.slice(0, 40)) count.set(l.activityId, (count.get(l.activityId) ?? 0) + 1)
+  return [...TRACKED].sort((a, b) => (count.get(b.id) ?? 0) - (count.get(a.id) ?? 0))
+}
+
+/**
+ * What are you doing — asked at the moment you are actually deciding.
+ *
+ * Ordered by what this person actually does rather than by what the config
+ * file happens to list first. Someone who runs four times a week should find
+ * RUN under their thumb, not eight rows down past three things they have never
+ * once opened.
+ */
+function StartSheet({ log, routines, onClose, onStart, onDeleteRoutine }) {
   const last = lastPlan(log)
   const saved = new Set(routines.map((r) => r.lifts.join('|')))
   const showLast = last && !saved.has(last.lifts.join('|'))
-  if (!routines.length && !showLast) return null
+  const order = byUse(log)
+  const usual = order.slice(0, 4)
+  const rest = order.slice(4)
 
-  const Row = ({ name, lifts, note, onGo, onBin }) => (
-    <div className="flex items-center gap-2 px-3.5 py-3 border-b border-line last:border-0">
-      <button onClick={onGo} className="min-w-0 flex-1 text-left active:brightness-95">
-        <div className="font-display text-[16px] text-ink truncate">{name}</div>
-        <div className="label text-ink-faint mt-1 truncate">
-          {note ? `${note} · ` : ''}
-          {lifts.join(' · ')}
-        </div>
-      </button>
-      {onBin && (
-        <button
-          onClick={onBin}
-          aria-label={`Delete the ${name} routine`}
-          className="shrink-0 grid place-items-center w-11 h-11 rounded-[var(--radius-sm)] text-[15px] text-ink-faint hover:text-danger"
-        >
-          ✕
-        </button>
-      )}
+  const Act = ({ a }) => (
+    <button
+      key={a.id}
+      onClick={() => onStart(a.id)}
+      aria-label={`Start a ${a.name} session`}
+      className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-line last:border-0 active:bg-panel-2"
+    >
+      <span
+        className="grid place-items-center w-9 h-9 shrink-0 rounded-[var(--radius-sm)]"
+        style={{ background: alpha(TINT[a.id], 14) }}
+      >
+        <Icon name={a.icon} size={18} color={TINT[a.id]} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-[16px] text-ink leading-tight">{a.name}</span>
+        <span className="block label text-ink-faint mt-1">{MODE_NOTE[modeOf(a.id)]}</span>
+      </span>
       <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
-    </div>
+    </button>
   )
 
   return (
-    <div>
-      <SectionTitle>Start a plan</SectionTitle>
-      <Panel>
-        {showLast && (
-          <Row
-            name="Repeat last session"
-            lifts={last.lifts}
-            note={since(last.at)}
-            onGo={() => onStart(last.lifts)}
-          />
-        )}
-        {routines.map((r) => (
-          <Row
-            key={r.id}
-            name={r.name}
-            lifts={r.lifts}
-            onGo={() => onStart(r.lifts)}
-            onBin={() => onDelete(r.id)}
-          />
+    <Modal open onClose={onClose} title="START WORKOUT">
+      {(showLast || routines.length > 0) && (
+        <>
+          <SectionTitle>Pick up where you left off</SectionTitle>
+          <Panel className="mb-4">
+            {showLast && (
+              <div className="flex items-center border-b border-line last:border-0">
+                {/* The padding lives on the button, not the row: a row that is
+                    tall enough to press and a target that is not is the same
+                    bug wearing a disguise. */}
+                <button
+                  onClick={() => onStart('gym', last.lifts)}
+                  className="min-w-0 flex-1 text-left px-3.5 py-3 min-h-[56px] active:bg-panel-2"
+                >
+                  <div className="font-display text-[16px] text-ink truncate">Repeat last session</div>
+                  <div className="label text-ink-faint mt-1 truncate">
+                    {since(last.at)} · {last.lifts.join(' · ')}
+                  </div>
+                </button>
+                <Icon name="chevron" size={12} color="var(--color-ink-faint)" className="mr-3.5 shrink-0" />
+              </div>
+            )}
+            {routines.map((r) => (
+              <div key={r.id} className="flex items-center border-b border-line last:border-0">
+                <button
+                  onClick={() => onStart('gym', r.lifts)}
+                  className="min-w-0 flex-1 text-left px-3.5 py-3 min-h-[56px] active:bg-panel-2"
+                >
+                  <div className="font-display text-[16px] text-ink truncate">{r.name}</div>
+                  <div className="label text-ink-faint mt-1 truncate">{r.lifts.join(' · ')}</div>
+                </button>
+                <button
+                  onClick={() => onDeleteRoutine(r.id)}
+                  aria-label={`Delete the ${r.name} routine`}
+                  className="shrink-0 grid place-items-center w-11 h-11 rounded-[var(--radius-sm)] text-[15px] text-ink-faint hover:text-danger"
+                >
+                  ✕
+                </button>
+                <Icon name="chevron" size={12} color="var(--color-ink-faint)" className="mr-3.5 shrink-0" />
+              </div>
+            ))}
+          </Panel>
+        </>
+      )}
+
+      <SectionTitle right={<span className="label text-ink-faint shrink-0">the app counts it</span>}>
+        {log.length ? 'What you usually do' : 'Pick one'}
+      </SectionTitle>
+      <Panel className="mb-4">
+        {usual.map((a) => (
+          <Act key={a.id} a={a} />
         ))}
       </Panel>
+
+      <SectionTitle>Everything else</SectionTitle>
+      <Panel>
+        {rest.map((a) => (
+          <Act key={a.id} a={a} />
+        ))}
+      </Panel>
+    </Modal>
+  )
+}
+
+/**
+ * A workout that happened somewhere else.
+ *
+ * Reading a file is the honest version of this until there is a server to hold
+ * a health-provider link: a GPX or TCX is what the watch itself recorded, so an
+ * imported session is evidence in exactly the way a typed one is not, and it
+ * earns the same XP.
+ */
+function ImportSheet({ onClose, onImport }) {
+  const [found, setFound] = useState(null)
+  const [error, setError] = useState(null)
+  const [act, setAct] = useState('run')
+  const file = useRef(null)
+
+  const read = async (f) => {
+    if (!f) return
+    setError(null)
+    setFound(null)
+    try {
+      const workout = readWorkoutFile(await f.text(), f.name)
+      setAct(guessActivity(workout))
+      setFound({ ...workout, name: f.name })
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const km = found ? found.metres / 1000 : 0
+
+  return (
+    <Modal open onClose={onClose} title="IMPORT A WORKOUT">
+      <p className="text-[14px] text-ink-dim leading-relaxed">
+        Already recorded it on a watch or in another app? Export that activity as <strong>GPX</strong> or{' '}
+        <strong>TCX</strong> — Strava, Garmin, Coros, Suunto and Apple&rsquo;s Fitness app all can — and drop the file
+        in. The route, the distance and the time come across, and it counts for XP the same as one tracked here.
+      </p>
+
+      <input
+        ref={file}
+        type="file"
+        accept=".gpx,.tcx,application/gpx+xml,application/xml,text/xml"
+        className="hidden"
+        onChange={(e) => read(e.target.files?.[0])}
+      />
+      <Btn full variant="cyan" className="mt-3" onClick={() => file.current?.click()}>
+        {found ? 'CHOOSE A DIFFERENT FILE' : 'CHOOSE A FILE'}
+      </Btn>
+
+      {error && (
+        <Panel className="p-3 mt-3" accent="var(--color-danger)">
+          <div className="text-[14px] text-ink-dim leading-snug">{error}</div>
+        </Panel>
+      )}
+
+      {found && (
+        <>
+          <div className="mt-4">
+            <SectionTitle right={<span className="label text-ink-faint truncate max-w-[150px]">{found.name}</span>}>
+              What came across
+            </SectionTitle>
+            <Panel className="p-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  [km >= 10 ? km.toFixed(1) : km.toFixed(2), 'KM'],
+                  [clock(found.ms), 'TIME'],
+                  [found.splits.length, found.splits.length === 1 ? 'SPLIT' : 'SPLITS'],
+                ].map(([v, label]) => (
+                  <div key={label}>
+                    <div className="figure text-[19px] text-ink">{v}</div>
+                    <div className="label text-ink-faint mt-1">{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[13px] text-ink-faint mt-3 pt-3 border-t border-line leading-snug">
+                Recorded {since(found.at)} · {found.points.length} points. The route lands on your map and the ground
+                you covered is claimed.
+              </div>
+            </Panel>
+          </div>
+
+          <div className="mt-3">
+            <SectionTitle>Count it as</SectionTitle>
+            <div className="grid grid-cols-4 gap-2">
+              {['walk', 'run', 'ride', 'swim'].map((id) => {
+                const a = TRACKED.find((x) => x.id === id)
+                const on = act === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setAct(id)}
+                    aria-pressed={on}
+                    className="grid place-items-center gap-1.5 py-2.5 min-h-[64px] border rounded-[var(--radius-sm)] transition-colors"
+                    style={{
+                      borderColor: on ? TINT[id] : 'var(--color-line)',
+                      background: on ? alpha(TINT[id], 12) : 'transparent',
+                    }}
+                  >
+                    <Icon name={a.icon} size={17} color={on ? TINT[id] : 'var(--color-ink-faint)'} />
+                    <span className="label" style={{ color: on ? 'var(--color-ink)' : 'var(--color-ink-faint)' }}>
+                      {a.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <Btn
+            full
+            variant="go"
+            className="mt-4"
+            onClick={() => {
+              onImport(act, found)
+              onClose()
+            }}
+          >
+            IMPORT IT
+          </Btn>
+        </>
+      )}
+    </Modal>
+  )
+}
+
+/**
+ * Best efforts.
+ *
+ * The lift board says how strong you are, one exercise at a time. It cannot say
+ * what your 5k is, and for most people that is the number they know by heart.
+ * These are the other kind of record — a time over a distance, a heaviest set
+ * at a given number of reps, the furthest you have gone — and they come from
+ * every discipline rather than only the gym.
+ *
+ * Three of them go on your profile, and only three, and only ones you chose.
+ * A board that filled itself would put your slowest ever kilometre in front of
+ * the people you least want to show it to.
+ */
+function BestEfforts({ bests, picks, onEdit }) {
+  const all = effortList(bests)
+  const pinned = pinnedEfforts(bests, picks)
+
+  if (!all.length) {
+    return (
+      <div>
+        <SectionTitle>Best efforts</SectionTitle>
+        <Panel className="p-4">
+          <div className="text-[14px] text-ink-dim text-center leading-snug">
+            Track a run, a swim or a gym session and your bests land here — fastest 5k, longest ride, heaviest set of
+            eight. Pick three for your profile.
+          </div>
+        </Panel>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <SectionTitle
+        right={
+          <button onClick={onEdit} className="label text-neon shrink-0 min-h-[44px] px-1">
+            {pinned.length ? 'CHANGE' : 'CHOOSE 3'}
+          </button>
+        }
+      >
+        Best efforts
+      </SectionTitle>
+
+      {pinned.length ? (
+        <Panel className="p-3">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {pinned.map((e) => (
+              <div key={e.id} className="min-w-0">
+                <div className="figure text-[19px] text-ink leading-none">
+                  {e.value}
+                  {e.unit && <span className="text-[13px] text-ink-dim ml-0.5">{e.unit}</span>}
+                </div>
+                <div className="label text-ink-faint mt-1.5 truncate" title={e.name}>
+                  {e.name}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-[13px] text-ink-faint mt-3 pt-3 border-t border-line leading-snug">
+            These three show on your profile. {all.length} bests on record.
+          </div>
+        </Panel>
+      ) : (
+        <Panel className="p-4">
+          <div className="text-[14px] text-ink-dim leading-snug">
+            {all.length} bests on record and none of them on your profile yet. Pick the three worth showing.
+          </div>
+          <Btn full size="sm" variant="ghost" className="mt-3" onClick={onEdit}>
+            CHOOSE THREE
+          </Btn>
+        </Panel>
+      )}
     </div>
+  )
+}
+
+/** Choosing which three go on the profile. */
+function EffortSheet({ bests, picks, onClose, onSave }) {
+  const all = effortList(bests)
+  const [draft, setDraft] = useState(picks)
+  const toggle = (id) =>
+    setDraft((d) => (d.includes(id) ? d.filter((x) => x !== id) : d.length >= EFFORT_SLOTS ? d : [...d, id]))
+
+  return (
+    <Modal open onClose={onClose} title="BEST EFFORTS">
+      <p className="text-[14px] text-ink-dim leading-relaxed">
+        Up to three, shown on your profile. Everything here was measured by the app — nothing on this list can be typed
+        in.
+      </p>
+      {['Distance', 'Lifts'].map((group) => {
+        const rows = all.filter((e) => e.group === group)
+        if (!rows.length) return null
+        return (
+          <div key={group} className="mt-4">
+            <SectionTitle>{group}</SectionTitle>
+            <Panel>
+              {rows.map((e, i) => {
+                const on = draft.includes(e.id)
+                const full = !on && draft.length >= EFFORT_SLOTS
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => toggle(e.id)}
+                    aria-pressed={on}
+                    disabled={full}
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 text-left ${
+                      i === rows.length - 1 ? '' : 'border-b border-line'
+                    } ${full ? 'opacity-40' : 'active:bg-panel-2'}`}
+                  >
+                    <span
+                      className="grid place-items-center w-5 h-5 shrink-0 rounded-full border"
+                      style={{
+                        borderColor: on ? 'var(--color-go)' : 'var(--color-line-hot)',
+                        background: on ? 'var(--color-go)' : 'transparent',
+                      }}
+                    >
+                      {on && <Icon name="check" size={11} color="var(--color-on-accent)" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-[15px] text-ink truncate">{e.name}</span>
+                      <span className="block label text-ink-faint mt-1">{since(e.at)}</span>
+                    </span>
+                    <span className="figure text-[16px] text-ink shrink-0">
+                      {e.value}
+                      {e.unit && <span className="text-[12px] text-ink-dim ml-0.5">{e.unit}</span>}
+                    </span>
+                  </button>
+                )
+              })}
+            </Panel>
+          </div>
+        )
+      })}
+      <Btn
+        full
+        variant="go"
+        className="mt-4"
+        onClick={() => {
+          onSave(draft)
+          onClose()
+        }}
+      >
+        {draft.length ? `SHOW THESE ${draft.length}` : 'SHOW NONE'}
+      </Btn>
+    </Modal>
   )
 }
 
 /** Pick something to do. */
 function Pick() {
-  const { state, startSession, deleteRoutine } = useGame()
+  const { state, startSession, deleteRoutine, setEfforts, importWorkout } = useGame()
+  const [starting, setStarting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [sessions, setSessions] = useState(false)
+  const [efforts, setEditingEfforts] = useState(false)
+
   return (
-    <div className="stack-in p-4 space-y-4">
-      <WeekHeader weeks={state.weeks} streak={state.player.streak} />
-      <Plans
-        routines={state.routines ?? []}
-        log={state.log}
-        onStart={(lifts) => startSession('gym', lifts)}
-        onDelete={deleteRoutine}
-      />
-      <LiftBoard records={state.records} log={state.log} />
-      <div>
-        <SectionTitle right={<span className="label text-ink-faint shrink-0">the app counts it</span>}>
-          What are you doing?
-        </SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-          {TRACKED.map((a) => (
-            <button
-              key={a.id}
-              onClick={() => startSession(a.id)}
-              className="text-left active:brightness-125"
-              aria-label={`Start a ${a.name} session`}
-            >
-              {/* Stacked, not side by side. Two columns of a 375px screen leave
-                  about 150px for the text, and an icon beside it left barely a
-                  hundred — every name wrapped and every rate line broke in the
-                  middle of "10 min". */}
-              <Panel className="p-3 h-full flex flex-col gap-2.5">
-                <span
-                  className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
-                  style={{ background: alpha(TINT[a.id], 14) }}
-                >
-                  <Icon name={a.icon} size={20} color={TINT[a.id]} />
-                </span>
-                <div className="min-w-0">
-                  <div className="font-display text-[15px] text-ink leading-tight">{a.name}</div>
-                  <div className="label text-ink-dim mt-1.5">
-                    {a.xp} XP / {a.per} {a.per === 1 ? a.unit.replace(/s$/, '') : a.unit}
-                  </div>
-                  <div className="text-[12px] text-ink-faint mt-1 truncate">{MODE_NOTE[modeOf(a.id)]}</div>
-                </div>
-              </Panel>
-            </button>
-          ))}
-        </div>
+    <>
+      <div className="stack-in p-4 space-y-4">
+        <WeekHeader weeks={state.weeks} streak={state.player.streak} />
+
+        <StartBlock onStart={() => setStarting(true)} onImport={() => setImporting(true)} />
+
+        <BestEfforts
+          bests={state.bests ?? {}}
+          picks={state.player.efforts ?? []}
+          onEdit={() => setEditingEfforts(true)}
+        />
+
+        <LiftBoard records={state.records} log={state.log} />
+
+        <SessionsRow log={state.log} onOpen={() => setSessions(true)} />
       </div>
 
-      <History log={state.log} />
-    </div>
+      {/* Outside the stack on purpose. Every direct child of `.stack-in` keeps
+          a transform from its entrance animation, and a transform makes that
+          element the containing block for anything absolutely positioned inside
+          it — a full-screen sheet nested in one is a sheet the size of a card. */}
+      {starting && (
+        <StartSheet
+          log={state.log}
+          routines={state.routines ?? []}
+          onClose={() => setStarting(false)}
+          onStart={(id, plan) => {
+            setStarting(false)
+            startSession(id, plan)
+          }}
+          onDeleteRoutine={deleteRoutine}
+        />
+      )}
+      {importing && <ImportSheet onClose={() => setImporting(false)} onImport={importWorkout} />}
+      {sessions && <SessionsSheet log={state.log} onClose={() => setSessions(false)} />}
+      {efforts && (
+        <EffortSheet
+          bests={state.bests ?? {}}
+          picks={state.player.efforts ?? []}
+          onClose={() => setEditingEfforts(false)}
+          onSave={setEfforts}
+        />
+      )}
+    </>
   )
 }
 

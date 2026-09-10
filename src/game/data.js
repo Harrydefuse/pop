@@ -285,6 +285,9 @@ export const FRESH_START = {
     streak: 0,
     shields: 0,
     cores: 0,
+    // Which best efforts are pinned to the profile. Empty means nothing shows,
+    // which is the point — they are chosen, not collected.
+    efforts: [],
     stats: { STR: 0, END: 0, AGI: 0, VIT: 0, FOCUS: 0 },
     // The clothes you stand up in. Nothing equipped, nothing in the bag but
     // the boots — a first drop should feel like a drop.
@@ -414,6 +417,56 @@ function seededGymLog() {
   })
 }
 
+/**
+ * Distance sessions with their splits intact, so the best-efforts board has
+ * something in it. A run has to be long enough to contain a 5k for there to be
+ * a 5k best inside it — that is the whole mechanic, and a seed that skipped it
+ * would leave the feature looking broken rather than empty.
+ */
+function seededRuns() {
+  const D = 24 * 3600 * 1000
+  // Kilometre splits in milliseconds. The middle of the 10k is the quick part,
+  // which is what makes its best 5k faster than the standalone 5k below it.
+  const tenK = [298, 292, 286, 281, 279, 277, 280, 288, 296, 305].map((s) => s * 1000)
+  const fiveK = [274, 271, 269, 272, 266].map((s) => s * 1000)
+  const swim = [1580, 1622].map((s) => s * 1000)
+  const leg = (lat, lon, n, dLat, dLon) =>
+    Array.from({ length: n }, (_, i) => [+(lat + dLat * i).toFixed(5), +(lon + dLon * i).toFixed(5)])
+  const total = (splits) => splits.reduce((a, b) => a + b, 0)
+  return [
+    {
+      id: 'seed-run-10k',
+      activityId: 'run',
+      amount: 10,
+      verified: true,
+      at: Date.now() - 5 * D,
+      xp: 550,
+      source: 'tracked',
+      detail: { mode: 'distance', metres: 10040, splits: tenK, route: leg(-33.8915, 151.2745, 30, 0.0006, -0.0004) },
+    },
+    {
+      id: 'seed-run-5k',
+      activityId: 'run',
+      amount: 5,
+      verified: true,
+      at: Date.now() - 12 * D,
+      xp: 275,
+      source: 'tracked',
+      detail: { mode: 'distance', metres: 5060, splits: fiveK, route: leg(-33.8688, 151.2093, 24, -0.0005, 0.0007) },
+    },
+    {
+      id: 'seed-swim',
+      activityId: 'swim',
+      amount: 28,
+      verified: true,
+      at: Date.now() - 9 * D,
+      xp: 182,
+      source: 'tracked',
+      detail: { mode: 'distance', metres: 2000, splits: swim },
+    },
+  ].map((l) => ({ ...l, detail: { ...l.detail, ms: total(l.detail.splits) } }))
+}
+
 // ------------------------------------------------------------- test account
 
 /**
@@ -489,7 +542,7 @@ export const TEST_ACCOUNT = {
     { id: 'r_lower', name: 'Lower body', lifts: ['Squat', 'Deadlift'], at: Date.now() - 7 * 24 * 3600 * 1000 },
   ],
   weeks: seededWeeks(),
-  log: seededGymLog(),
+  log: [...seededGymLog(), ...seededRuns()].sort((a, b) => b.at - a.at),
 }
 
 // ----------------------------------------------------------------- initial save

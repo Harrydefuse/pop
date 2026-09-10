@@ -7,6 +7,7 @@ import { coverPoints } from './ground'
 import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { challengeProgress } from './challenge'
+import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
 
 const SAVE_KEY = 'lvl100.save.v12' // v12: explored ground is real map tiles now, not cells of a drawn Sydney
 
@@ -35,6 +36,9 @@ function baseState() {
     // Which week's challenge has been paid out. Keyed by the week so a new one
     // reopens it and finishing twice inside one week cannot pay twice.
     challenge: { week: null, claimed: false },
+    // Best efforts, one per thing worth having a best at. Kept for the same
+    // reason as the records: a 5k from last winter is still your 5k.
+    bests: {},
   }
 }
 
@@ -44,7 +48,11 @@ function load() {
     if (!raw) return baseState()
     const parsed = JSON.parse(raw)
     // Shallow-merge onto a fresh base so new fields appear for old saves.
-    return { ...baseState(), ...parsed, player: { ...baseState().player, ...parsed.player } }
+    const merged = { ...baseState(), ...parsed, player: { ...baseState().player, ...parsed.player } }
+    // Someone who was training before best efforts existed still has the
+    // evidence in their log and on their record board. Read it back once.
+    if (!parsed.bests) merged.bests = effortsFromLog(merged.log, merged.records)
+    return merged
   } catch {
     return baseState()
   }
@@ -251,6 +259,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     world: { ...state.world, bossKm: state.world.bossKm + result.bossDamage },
     records: foldRecords(state.records, sets),
     lastSets: foldLastSets(state.lastSets, sets),
+    bests: foldEfforts(state.bests, { activityId, detail, sets }),
     weeks: foldWeek(state.weeks, { act, amount, xp: result.xp + prXp, detail }),
     log: [
       {
@@ -460,6 +469,45 @@ function reducer(state, action) {
 
     case 'deleteRoutine':
       return { ...state, routines: state.routines.filter((r) => r.id !== action.id) }
+
+    // Which bests are pinned to the profile. Nothing is shown until this is
+    // set: a board that fills itself would put your slowest ever kilometre in
+    // front of the people you least want to show it to.
+    /**
+     * A session that happened somewhere else.
+     *
+     * It goes through exactly the same door as a tracked one — same XP, same
+     * records, same ground claimed — because it is the same evidence: a device
+     * recorded it, and the file is what the device wrote. The only difference
+     * is where it says it came from.
+     */
+    case 'importWorkout': {
+      const { activityId, workout } = action
+      const act = ACTIVITIES.find((a) => a.id === activityId)
+      if (!act || !(workout?.ms > 0)) return state
+      const detail = {
+        mode: 'distance',
+        splits: workout.splits ?? [],
+        metres: Math.round(workout.metres ?? 0),
+        route: simplifyRoute(workout.points ?? []),
+      }
+      const next = applyLog(state, {
+        activityId,
+        amount: sessionAmount(act, workout.ms, workout.metres),
+        verified: true,
+        source: 'Imported',
+        detail,
+        sets: [],
+      })
+      if (!workout.points?.length) return next
+      return { ...next, explored: [...coverPoints(new Set(next.explored), workout.points)] }
+    }
+
+    case 'setEfforts':
+      return {
+        ...state,
+        player: { ...state.player, efforts: (action.ids ?? []).filter((id) => state.bests[id]).slice(0, EFFORT_SLOTS) },
+      }
 
     case 'sessionUndoSet': {
       if (!state.session?.sets?.length) return state
@@ -755,6 +803,9 @@ function reducer(state, action) {
             handle: state.onboarded ? state.player.handle : TEST_ACCOUNT.player.handle,
           },
           explored: state.explored?.length ? state.explored : INITIAL_STATE.explored,
+          // Read out of the seeded log rather than written down beside it, so
+          // the test account's bests are the same bests the app would compute.
+          bests: effortsFromLog(TEST_ACCOUNT.log, TEST_ACCOUNT.records),
           dailies: freshDailies(),
         },
         { kind: 'level', title: 'Test account', body: 'Level 100 and every drop. Ten bosses still standing.' },
@@ -799,6 +850,8 @@ export function GameProvider({ children }) {
       startSession: (activityId, plan) => dispatch({ type: 'startSession', activityId, plan }),
       saveRoutine: (name, lifts) => dispatch({ type: 'saveRoutine', name, lifts }),
       deleteRoutine: (id) => dispatch({ type: 'deleteRoutine', id }),
+      setEfforts: (ids) => dispatch({ type: 'setEfforts', ids }),
+      importWorkout: (activityId, workout) => dispatch({ type: 'importWorkout', activityId, workout }),
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),

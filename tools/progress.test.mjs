@@ -22,6 +22,8 @@ const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekK
 // own minPerUnit, so a hand-made stub without one quietly folds zero minutes
 // into every week and the test passes on nothing.
 const { ACTIVITIES } = await server.ssrLoadModule('/src/game/config.js')
+const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEfforts } =
+  await server.ssrLoadModule('/src/game/efforts.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
 let fails = 0
@@ -131,6 +133,51 @@ is('the series fills in the weeks you missed', weekSeries(weeks, 4).length, 4)
 const wow = weekOverWeek(weeks, 'minutes')
 is('this week is compared with last', [wow.now, wow.prev], [75 * gym.minPerUnit, 60 * gym.minPerUnit])
 is('with nothing to compare to, no percentage', weekOverWeek([weeks[0]], 'minutes').pct, null)
+
+console.log('\nbest efforts')
+const KM = (s) => s * 1000
+is('the quickest 5k inside a 10k is the one that counts',
+  bestWindow([300, 300, 250, 250, 250, 250, 250, 300, 300, 300].map(KM), 5), KM(1250))
+is('a window longer than the run has no answer', bestWindow([KM(300)], 5), null)
+is('one kilometre is the fastest single split', bestWindow([320, 290, 310].map(KM), 1), KM(290))
+
+const ran = { activityId: 'run', detail: { mode: 'distance', metres: 10200, splits: Array(10).fill(KM(300)) } }
+const ranIds = effortsIn(ran).map((e) => e.id)
+is('a 10k is evidence of a 1k, a 5k, a 10k and a longest',
+  ranIds, ['run:d1', 'run:d5', 'run:d10', 'run:far'])
+is('a swim is only measured at the distances swimmers use',
+  effortsIn({ activityId: 'swim', detail: { mode: 'distance', metres: 2000, splits: [KM(1500), KM(1600)] } })
+    .map((e) => e.id),
+  ['swim:d1', 'swim:d2', 'swim:far'])
+is('a set at an odd number of reps is not a mark anyone quotes',
+  effortsIn({ activityId: 'gym', sets: [{ lift: 'Squat', reps: 7, weight: 100 }] }).length, 0)
+is('a set at eight is', effortsIn({ activityId: 'gym', sets: [{ lift: 'Squat', reps: 8, weight: 100 }] })[0].id,
+  'lift:Squat:8')
+
+let bests = foldEfforts({}, ran, 1000)
+is('the first of anything goes straight on the board', bests['run:d5'].value, KM(1500))
+bests = foldEfforts(bests, { activityId: 'run', detail: { mode: 'distance', metres: 5100, splits: Array(5).fill(KM(280)) } }, 2000)
+is('a quicker 5k replaces it', bests['run:d5'].value, KM(1400))
+is('but the longer run is still the longest', bests['run:far'].value, 10200)
+bests = foldEfforts(bests, { activityId: 'run', detail: { mode: 'distance', metres: 5100, splits: Array(5).fill(KM(320)) } }, 3000)
+is('and a slower one changes nothing', [bests['run:d5'].value, bests['run:d5'].at], [KM(1400), 2000])
+
+const seeded = effortsFromLog(
+  [{ at: 500, activityId: 'run', detail: { mode: 'distance', metres: 5000, splits: Array(5).fill(KM(300)) } }],
+  { Squat: { e1rm: 141, reps: 5, weight: 120, at: 700 } },
+)
+is('a board can be rebuilt out of a log', seeded['run:d5'].value, KM(1500))
+is('and the record board fills in the lifts the log does not keep', seeded['lift:Squat:5'].value, 120)
+
+is('a time reads as a time', readEffort('run:d5', { value: KM(1490) }).value, '24:50')
+is('a long one grows an hour', readEffort('run:d10', { value: KM(3725) }).value, '1:02:05')
+is('a distance reads in kilometres', readEffort('ride:far', { value: 42195 }).value, '42.2')
+is('a lift reads in kilos', readEffort('lift:Bench press:8', { value: 80 }).name, 'Bench press × 8')
+
+is('only what was pinned shows, and only if it exists',
+  pinnedEfforts(bests, ['run:d5', 'run:nope', 'run:far']).map((e) => e.id), ['run:d5', 'run:far'])
+is('and never more than three',
+  pinnedEfforts(bests, ['run:d1', 'run:d5', 'run:d10', 'run:far']).length, 3)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()
