@@ -9,7 +9,7 @@ import Onboarding from './components/Onboarding'
 import Icon from './components/Icon'
 import Home from './screens/Home'
 import Friends from './screens/Friends'
-import Hero from './screens/Hero'
+import Profile from './screens/Profile'
 import MapSheet from './screens/Map'
 import UpdateBar from './components/UpdateBar'
 import Train, { SessionBar } from './screens/Train'
@@ -92,8 +92,8 @@ function Device() {
           {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
           {tab === 'train' && <Train />}
           {tab === 'bosses' && <Bosses />}
-          {tab === 'friends' && <Friends />}
-          {tab === 'hero' && <Hero />}
+          {tab === 'friends' && <Friends onGo={setTab} />}
+          {tab === 'hero' && <Profile />}
           <div className="h-4" />
         </div>
       </main>

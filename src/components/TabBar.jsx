@@ -7,7 +7,7 @@ const TABS = [
   { key: 'train', label: 'Train', icon: 'bolt' },
   { key: 'bosses', label: 'Battle', icon: 'skull' },
   { key: 'friends', label: 'Guild', icon: 'trophy' },
-  { key: 'hero', label: 'Hero', icon: 'person' },
+  { key: 'hero', label: 'You', icon: 'person' },
 ]
 
 export default function TabBar({ tab, setTab, badges = {} }) {

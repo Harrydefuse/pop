@@ -171,15 +171,46 @@ export function foldWeek(weeks = [], { act, amount, xp, detail }, at = Date.now(
   const key = weekKey(at)
   const rest = weeks.filter((w) => w.key !== key)
   const cur = weeks.find((w) => w.key === key) ?? { key, at: weekStart(at), ...EMPTY_WEEK }
+  const minutes = minutesOf(act, amount)
+  const km = act.unit === 'km' ? amount : 0
+  // Also kept per activity, so a chart can be filtered to "just my runs" the
+  // way every training app's is. Weeks folded before this existed simply have
+  // no breakdown, and a filtered chart says so by showing nothing for them.
+  const byAct = { ...(cur.byAct ?? {}) }
+  const slot = byAct[act.id] ?? { sessions: 0, minutes: 0, km: 0 }
+  byAct[act.id] = {
+    sessions: slot.sessions + 1,
+    minutes: Math.round((slot.minutes + minutes) * 10) / 10,
+    km: Math.round((slot.km + km) * 10) / 10,
+  }
   const merged = {
     ...cur,
     sessions: cur.sessions + 1,
-    minutes: cur.minutes + minutesOf(act, amount),
+    minutes: cur.minutes + minutes,
     volume: cur.volume + (detail?.mode === 'strength' ? Math.round(detail.volume ?? 0) : 0),
-    km: Math.round((cur.km + (act.unit === 'km' ? amount : 0)) * 10) / 10,
+    km: Math.round((cur.km + km) * 10) / 10,
     xp: cur.xp + xp,
+    byAct,
   }
   return [merged, ...rest].sort((a, b) => b.at - a.at).slice(0, WEEKS_KEPT)
+}
+
+/** One week's numbers, for everything or for a single activity. */
+export function weekOf(week, activityId = null) {
+  if (!activityId) return week
+  const slot = week.byAct?.[activityId]
+  return { ...week, ...(slot ?? { sessions: 0, minutes: 0, km: 0 }), volume: 0, xp: 0 }
+}
+
+/** Which activities this quarter actually contains, most-used first. */
+export function weekActivities(weeks = []) {
+  const count = new Map()
+  for (const w of weeks) {
+    for (const [id, slot] of Object.entries(w.byAct ?? {})) {
+      count.set(id, (count.get(id) ?? 0) + (slot.sessions ?? 0))
+    }
+  }
+  return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
 }
 
 /**

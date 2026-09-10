@@ -480,7 +480,7 @@ function CodexSheet({ piece, onClose }) {
   )
 }
 
-export default function Hero() {
+export default function Hero({ embedded = false }) {
   const [saving, setSaving] = useState(false)
   const { state, equipBest, upgrade } = useGame()
   const p = state.player
@@ -514,7 +514,7 @@ export default function Hero() {
   const showPets = filter === 'all' || filter === 'pets'
 
   return (
-    <div className="stack-in p-3 space-y-3">
+    <div className={embedded ? 'space-y-3' : 'stack-in p-3 space-y-3'}>
       {/* -------------------------------------------------- the character */}
       <Panel accent={cls.color} className="p-3.5">
         <div className="flex items-center justify-between gap-2">

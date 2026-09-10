@@ -1,204 +1,104 @@
-import { useMemo, useState } from 'react'
 import { Bar, Btn, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import Avatar from '../components/Avatar'
 import { useGame } from '../game/useGame'
-import { FRIENDS } from '../game/data'
 import { classById, xpToNext } from '../game/engine'
+import { leaderboard } from '../game/profile'
 import WorldRaid from '../components/WorldRaid'
 
 /**
- * The world raid lives here rather than in a tab of its own: it is a thing you
- * do with other people, so it belongs next to the people.
+ * The raid, and the people you are doing it alongside.
+ *
+ * This screen used to open on a leaderboard of six invented characters with an
+ * "add by handle" box that manufactured a seventh out of a random number. It
+ * looked like a social network and was a screensaver. The friends here are the
+ * real ones now — cards people actually sent — and everything that adds or
+ * removes them lives on your profile, where the rest of you already is.
  */
-function ModeSwitch({ mode, setMode }) {
-  return (
-    <div className="grid grid-cols-2 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
-      {[
-        ['squad', 'Your squad'],
-        ['raid', 'World raid'],
-      ].map(([id, label]) => {
-        const on = mode === id
-        return (
-          <button
-            key={id}
-            onClick={() => setMode(id)}
-            aria-pressed={on}
-            className="font-display text-[14px] min-h-[44px] rounded-[calc(var(--radius-sm)-2px)] transition-colors"
-            style={{
-              background: on ? 'var(--color-panel)' : 'transparent',
-              color: on ? 'var(--color-ink)' : 'var(--color-ink-faint)',
-              boxShadow: on ? 'var(--elev)' : undefined,
-            }}
-          >
-            {label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-/**
- * Ranked by level, not by power. Level only moves when you show up, so the
- * board rewards consistency rather than who owns the best gear — which is the
- * kind of competition that stays friendly.
- */
-export default function Friends() {
+export default function Friends({ onGo }) {
   const { state } = useGame()
-  const [mode, setMode] = useState('squad')
   const p = state.player
-  const [added, setAdded] = useState([])
-  const [query, setQuery] = useState('')
-  const [cheered, setCheered] = useState([])
-
-  const me = useMemo(
-    () => ({
-      id: 'me',
-      name: p.name,
-      handle: p.handle,
-      level: p.level,
-      xp: p.xp,
-      streak: p.streak,
-      classId: p.classId,
-      avatar: p.avatar,
-      me: true,
-    }),
-    [p],
-  )
-
-  const board = useMemo(
-    () => [...FRIENDS, ...added, me].sort((a, b) => b.level - a.level || b.streak - a.streak),
-    [added, me],
-  )
-
-  const myPlace = board.findIndex((f) => f.id === 'me') + 1
+  const friends = state.friends ?? []
+  const board = leaderboard(state, friends)
+  const myPlace = board.findIndex((c) => c.me) + 1
   const above = board[myPlace - 2]
-
-  const add = (e) => {
-    e.preventDefault()
-    const handle = query.trim().replace(/^@/, '')
-    if (!handle) return
-    setAdded((list) => [
-      ...list,
-      {
-        id: `added-${handle}`,
-        name: handle.slice(0, 10).toUpperCase(),
-        handle,
-        level: 4 + Math.floor(Math.random() * 30),
-        streak: Math.floor(Math.random() * 20),
-        classId: 'vanguard',
-        avatar: { seed: list.length + 3, skin: '#e8b48a', hair: '#0e7490', shirt: '#6d28d9' },
-        fresh: true,
-      },
-    ])
-    setQuery('')
-  }
-
-  if (mode === 'raid') {
-    return (
-      <div className="p-3 space-y-3">
-        <ModeSwitch mode={mode} setMode={setMode} />
-        <WorldRaid />
-      </div>
-    )
-  }
 
   return (
     <div className="stack-in p-3 space-y-3.5">
-      <ModeSwitch mode={mode} setMode={setMode} />
-      <Panel className="p-3.5" accent="var(--color-neon)">
-        <div className="font-display text-[16px] text-neon">Your circle</div>
-        <div className="text-[14px] text-ink-dim mt-2 leading-snug">
-          Ranked by level, so it comes down to who keeps showing up. You are{' '}
-          <span className="text-ink">#{myPlace} of {board.length}</span>
-          {above && (
-            <>
-              {' '}— <span className="text-neon">{above.name}</span> is {above.level - p.level}{' '}
-              level{above.level - p.level === 1 ? '' : 's'} ahead.
-            </>
-          )}
-        </div>
-        <form className="flex gap-2 mt-3" onSubmit={add}>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="add by handle"
-            aria-label="Friend handle"
-            className="flex-1 min-w-0 bg-panel-2 border border-line px-2.5 min-h-[44px] text-[15px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
-          />
-          <Btn size="sm" type="submit" disabled={!query.trim()}>
-            <Icon name="plus" size={10} color="currentColor" /> ADD
-          </Btn>
-        </form>
-      </Panel>
+      <WorldRaid />
 
       <div>
         <SectionTitle right={<span className="text-[14px] text-ink-faint">by level</span>}>
-          Leaderboard
+          {friends.length ? 'Your circle' : 'Nobody here yet'}
         </SectionTitle>
-        <Panel className="p-1">
-          {board.map((f, i) => {
-            const cls = classById(f.classId)
-            const isMe = f.id === 'me'
-            const medal = ['var(--color-gold)', 'var(--tone-slate)', 'var(--tone-bronze)'][i]
-            return (
-              <div
-                key={f.id}
-                className="flex items-center gap-2.5 px-2.5 py-2.5 border-b border-line last:border-0"
-                style={isMe ? { background: 'rgba(168, 85, 247, 0.10)' } : undefined}
-              >
-                <span
-                  className="font-display text-[15px] w-6 text-center shrink-0"
-                  style={{ color: medal ?? (isMe ? 'var(--color-neon-bright)' : 'var(--color-ink-faint)') }}
+        {friends.length ? (
+          <Panel>
+            {board.map((c) => {
+              const cls = classById(c.classId)
+              const medal = ['var(--color-gold)', 'var(--tone-slate)', 'var(--tone-bronze)'][c.place - 1]
+              return (
+                <div
+                  key={c.handle ?? c.name}
+                  className="flex items-center gap-2.5 px-3 py-3 border-b border-line last:border-0"
+                  style={c.me ? { background: 'color-mix(in srgb, var(--color-neon) 8%, transparent)' } : undefined}
                 >
-                  {i + 1}
-                </span>
-                <Avatar av={f.avatar} size={32} ring={isMe ? 'var(--color-neon)' : cls.color} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-display text-[13px] truncate">{f.name}</span>
-                    {isMe && <span className="font-display text-[11px] text-neon-bright">YOU</span>}
-                    {f.fresh && <span className="font-display text-[11px] text-lime">NEW</span>}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Icon name="flame" size={8} color="var(--tone-orange)" />
-                    <span className="text-[14px] text-ink-faint">{f.streak} day streak</span>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <div className="font-display text-[18px]" style={{ color: isMe ? 'var(--color-neon-bright)' : 'var(--color-ink)' }}>
-                    {f.level}
-                  </div>
-                  <div className="font-display text-[11px] text-ink-faint mt-0.5">LEVEL</div>
-                </div>
-
-                {!isMe && (
-                  <button
-                    onClick={() => setCheered((c) => (c.includes(f.id) ? c : [...c, f.id]))}
-                    aria-label={`Cheer ${f.name}`}
-                    className="grid place-items-center w-11 h-11 shrink-0 border active:brightness-125"
-                    style={{
-                      borderColor: cheered.includes(f.id) ? 'var(--color-lime)' : 'var(--color-line)',
-                    }}
+                  <span
+                    className="figure text-[15px] w-6 text-center shrink-0"
+                    style={{ color: medal ?? (c.me ? 'var(--color-neon)' : 'var(--color-ink-faint)') }}
                   >
-                    <Icon
-                      name={cheered.includes(f.id) ? 'check' : 'heart'}
-                      size={12}
-                      color={cheered.includes(f.id) ? 'var(--color-lime)' : 'var(--color-ink-faint)'}
-                    />
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </Panel>
+                    {c.place}
+                  </span>
+                  <Avatar av={c.avatar} size={34} ring={c.me ? 'var(--color-neon)' : cls.color} className="rounded-full" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-display text-[14px] text-ink truncate">{c.name}</span>
+                      {c.me && <span className="label text-neon">you</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Icon name="flame" size={9} color="var(--tone-orange)" />
+                      <span className="label text-ink-faint">{c.streak ?? 0} day streak</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="figure text-[17px]" style={{ color: c.me ? 'var(--color-neon)' : 'var(--color-ink)' }}>
+                      {c.level}
+                    </div>
+                    <div className="label text-ink-faint mt-0.5">level</div>
+                  </div>
+                </div>
+              )
+            })}
+          </Panel>
+        ) : (
+          <Panel className="p-4">
+            <div className="text-[14px] text-ink-dim leading-relaxed">
+              Friends are cards people send you — there is no server to follow anyone on, so nobody appears here until
+              somebody hands you theirs. Yours is on your profile.
+            </div>
+            <Btn full size="sm" variant="go" className="mt-3" onClick={() => onGo?.('hero')}>
+              Go to your profile
+            </Btn>
+          </Panel>
+        )}
+        {friends.length > 0 && (
+          <div className="text-[14px] text-ink-dim mt-2.5 leading-snug">
+            Ranked by level, so it comes down to who keeps showing up. You are{' '}
+            <span className="text-ink">
+              #{myPlace} of {board.length}
+            </span>
+            {above && (
+              <>
+                {' '}— <span className="text-neon">{above.name}</span> is {above.level - p.level}{' '}
+                level{above.level - p.level === 1 ? '' : 's'} ahead.
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <Panel className="p-3.5">
         <div className="flex items-baseline justify-between mb-1.5">
-          <span className="font-display text-[13px] text-ink-faint">Your next level</span>
+          <span className="label text-ink-faint">Your next level</span>
           <span className="text-[14px] text-ink-dim">
             {Number.isFinite(xpToNext(p.level)) ? `${Math.round(p.xp)} / ${xpToNext(p.level)} XP` : 'MAX LEVEL'}
           </span>

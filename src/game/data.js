@@ -332,14 +332,27 @@ function seededWeeks() {
   return shape
     .map((minutes, i) => {
       const at = start.getTime() - (shape.length - 1 - i) * WEEK_MS
+      const sessions = minutes ? Math.max(1, Math.round(minutes / 42)) : 0
+      const km = Math.round(minutes * 0.09 * 10) / 10
+      // Split across the three things this character does, so the profile's
+      // per-activity filter has thirteen weeks to draw rather than one.
+      const gym = Math.round(minutes * 0.55)
+      const runKm = Math.round(km * 0.8 * 10) / 10
       return {
         key: new Date(at).toISOString().slice(0, 10),
         at,
         minutes,
-        sessions: minutes ? Math.max(1, Math.round(minutes / 42)) : 0,
+        sessions,
         volume: Math.round(minutes * 88),
-        km: Math.round(minutes * 0.09 * 10) / 10,
+        km,
         xp: Math.round(minutes * 11),
+        byAct: minutes
+          ? {
+              gym: { sessions: Math.max(1, Math.round(sessions * 0.5)), minutes: gym, km: 0 },
+              run: { sessions: Math.max(1, Math.round(sessions * 0.35)), minutes: minutes - gym - 20, km: runKm },
+              swim: { sessions: Math.max(0, sessions - Math.round(sessions * 0.85)), minutes: 20, km: Math.round((km - runKm) * 10) / 10 },
+            }
+          : {},
       }
     })
     .reverse()

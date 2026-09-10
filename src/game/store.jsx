@@ -9,6 +9,7 @@ import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, 
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
 import { exerciseByName } from './exercises'
+import { decodeCard } from './profile'
 
 const SAVE_KEY = 'lvl100.save.v12' // v12: explored ground is real map tiles now, not cells of a drawn Sydney
 
@@ -43,6 +44,9 @@ function baseState() {
     // Exercises this person added themselves. No catalogue is ever finished,
     // and the alternative is logging half a session as "Other".
     exercises: [],
+    // Cards other people sent. Not a follow — there is no server to follow
+    // anyone on — but the thing a follow would be carrying.
+    friends: [],
   }
 }
 
@@ -507,6 +511,40 @@ function reducer(state, action) {
       return { ...next, explored: [...coverPoints(new Set(next.explored), workout.points)] }
     }
 
+    /**
+     * A friend, from the card they sent you.
+     *
+     * Keyed on the handle: a newer card from the same person replaces the one
+     * you have rather than stacking a second of them up, which is also how
+     * "refresh" works — they send again, you paste again.
+     */
+    case 'addFriend': {
+      const card = decodeCard(action.code)
+      if (!card) return state
+      if (card.handle && card.handle === state.player.handle) return state
+      const rest = state.friends.filter((f) => (f.handle ?? f.name) !== (card.handle ?? card.name))
+      const had = rest.length !== state.friends.length
+      return toast(
+        { ...state, friends: [{ ...card, addedAt: Date.now() }, ...rest].slice(0, 50) },
+        {
+          kind: 'gear',
+          title: had ? `${card.name} updated` : `${card.name} added`,
+          body: had ? 'Their card is now the one they just sent.' : `Level ${card.level} · ${card.rank ?? ''}`.trim(),
+        },
+      )
+    }
+
+    case 'removeFriend':
+      return { ...state, friends: state.friends.filter((f) => (f.handle ?? f.name) !== action.handle) }
+
+    /** The two things on a profile that are yours to write. */
+    case 'editProfile': {
+      const name = (action.name ?? '').trim().slice(0, 18)
+      const handle = (action.handle ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 18)
+      if (!name || !handle) return state
+      return { ...state, player: { ...state.player, name, handle } }
+    }
+
     /** An exercise the catalogue does not have. Named once, theirs forever. */
     case 'addExercise': {
       const name = (action.name ?? '').trim().replace(/\s+/g, ' ')
@@ -865,6 +903,9 @@ export function GameProvider({ children }) {
       deleteRoutine: (id) => dispatch({ type: 'deleteRoutine', id }),
       setEfforts: (ids) => dispatch({ type: 'setEfforts', ids }),
       addExercise: (name, muscle, gear) => dispatch({ type: 'addExercise', name, muscle, gear }),
+      addFriend: (code) => dispatch({ type: 'addFriend', code }),
+      removeFriend: (handle) => dispatch({ type: 'removeFriend', handle }),
+      editProfile: (name, handle) => dispatch({ type: 'editProfile', name, handle }),
       importWorkout: (activityId, workout) => dispatch({ type: 'importWorkout', activityId, workout }),
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),

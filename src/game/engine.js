@@ -64,7 +64,9 @@ export function gearBonuses(player) {
   const out = Object.fromEntries(STAT_KEYS.map((k) => [k, 0]))
   for (const id of Object.values(player.equipped)) {
     const item = player.inventory.find((i) => i.id === id)
-    if (!item) continue
+    // A piece with no stats on it can only come from a restored save written by
+    // another version. It contributes nothing rather than taking the app down.
+    if (!item?.stats || !RARITY[item.rarity]) continue
     const mult = RARITY[item.rarity].mult
     for (const [stat, base] of Object.entries(item.stats)) {
       out[stat] += Math.round(base * mult * (1 + (item.level - 1) * 0.35))

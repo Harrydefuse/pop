@@ -26,6 +26,7 @@ const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEf
   await server.ssrLoadModule('/src/game/efforts.js')
 const { EXERCISES, searchExercises, muscleOf, muscleSplit, neglected, exerciseByName } =
   await server.ssrLoadModule('/src/game/exercises.js')
+const { buildCard, encodeCard, decodeCard, leaderboard } = await server.ssrLoadModule('/src/game/profile.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
 let fails = 0
@@ -214,6 +215,32 @@ is('sets land under the muscle they train',
 is('and a session from three months ago is not this month', split.total, 11)
 is('the group that is behind gets named', neglected(split).id !== undefined, true)
 is('with nothing logged there is nothing to say', neglected(muscleSplit([], {})), null)
+
+console.log('\nthe profile card')
+const stateOf = (over = {}) => ({
+  player: {
+    name: 'ROOKIE', handle: 'rookie', classId: 'ironstride', level: 12, xp: 0, streak: 9,
+    stats: { STR: 400, END: 300, AGI: 200, VIT: 250, FOCUS: 100 },
+    inventory: [{ id: 'i1', slot: 'chest', kind: 'chest', rarity: 'epic', level: 4, stats: { STR: 6, VIT: 4 } }],
+    equipped: { chest: 'i1' }, pets: [], activePetId: null, stones: [], efforts: ['run:d5'], ...over.player,
+  },
+  weeks: [], bests: { 'run:d5': { kind: 'time', value: 1400000, at: 1 } }, ...over,
+})
+const card = buildCard(stateOf())
+is('the card carries what is worth showing',
+  [card.name, card.level, card.streak, card.efforts.length, card.worn.length], ['ROOKIE', 12, 9, 1, 1])
+is('and nothing that is not', ['log', 'explored', 'routes', 'bests'].filter((k) => k in card), [])
+is('a card survives the round trip', decodeCard(encodeCard(card)).handle, 'rookie')
+is('a name with an accent survives it too', decodeCard(encodeCard({ ...card, name: 'RÉMY 🏃' })).name, 'RÉMY 🏃')
+is('junk decodes to nothing', decodeCard('hello'), null)
+is('so does an empty string', decodeCard(''), null)
+is('and so does a truncated code', decodeCard(encodeCard(card).slice(0, 40)), null)
+is('a save code is not a profile card', decodeCard('LVL100.1|eyJhIjoxfQ=='), null)
+
+const them = { ...card, name: 'THEM', handle: 'them', level: 30, power: 9000 }
+const ladder = leaderboard(stateOf(), [them])
+is('the ladder is by level, highest first', ladder.map((c) => c.name), ['THEM', 'ROOKIE'])
+is('and it knows which one is you', ladder.find((c) => c.me).name, 'ROOKIE')
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()
