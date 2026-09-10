@@ -55,7 +55,7 @@ export default function Friends({ onGo }) {
                       {c.me && <span className="label text-neon">you</span>}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <Icon name="flame" size={9} color="var(--tone-orange)" />
+                      <Icon name="bolt" size={11} color="var(--tone-orange)" />
                       <span className="label text-ink-faint">{c.streak ?? 0} day streak</span>
                     </div>
                   </div>

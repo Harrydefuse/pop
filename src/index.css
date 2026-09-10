@@ -707,15 +707,15 @@ button:disabled {
   isolation: isolate;
   /* Bounded and centred so the sparks land around the chest rather than out at
      the edges of a card that is much wider than the art. */
-  width: 190px;
+  width: 150px;
   margin: 0 auto;
 }
 .chest-stage > * {
   grid-area: 1 / 1;
 }
 .chest-glow {
-  width: 140px;
-  height: 140px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
   background: radial-gradient(circle, color-mix(in srgb, var(--color-gold) 32%, transparent) 0%, transparent 68%);
   animation: chest-breathe 3.6s ease-in-out infinite;

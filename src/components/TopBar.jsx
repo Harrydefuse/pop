@@ -93,7 +93,7 @@ export default function TopBar({ onOpenProfile, onOpenMap }) {
         </span>
         <span className="w-px h-3 bg-line shrink-0" />
         <span className="flex items-center gap-1 shrink-0" title={`${p.streak} day streak · ${streak.label}`}>
-          <Icon name="flame" size={13} color={p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)'} />
+          <Icon name="bolt" size={15} color={p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)'} />
           <span className="figure text-[14px]" style={{ color: p.streak > 0 ? 'var(--tone-orange)' : 'var(--color-ink-faint)' }}>
             {p.streak}
           </span>

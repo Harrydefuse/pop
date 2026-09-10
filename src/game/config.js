@@ -104,7 +104,7 @@ export const ACTIVITIES = [
     stats: { VIT: 3, END: 2 },
     step: 5,
     default: 20,
-    icon: 'boot',
+    icon: 'walk',
     boss: 0.08,
   },
   {
@@ -118,7 +118,7 @@ export const ACTIVITIES = [
     stats: { END: 5, AGI: 1 },
     step: 0.5,
     default: 5,
-    icon: 'boot',
+    icon: 'run',
     boss: 1, // 1 km = 1 damage against the world boss
   },
   {
@@ -132,7 +132,7 @@ export const ACTIVITIES = [
     stats: { END: 4, AGI: 1 },
     step: 1,
     default: 15,
-    icon: 'wheel',
+    icon: 'bike',
     boss: 0.34,
   },
   {
@@ -146,7 +146,7 @@ export const ACTIVITIES = [
     stats: { AGI: 5, END: 2, STR: 1 },
     step: 5,
     default: 20,
-    icon: 'bolt',
+    icon: 'timer',
     boss: 0.4,
   },
   {
@@ -160,7 +160,7 @@ export const ACTIVITIES = [
     stats: { AGI: 4, STR: 2, END: 2 },
     step: 15,
     default: 60,
-    icon: 'hold',
+    icon: 'ball',
     boss: 0.3,
   },
   {
@@ -187,7 +187,7 @@ export const ACTIVITIES = [
     stats: { END: 4, VIT: 3 },
     step: 5,
     default: 20,
-    icon: 'wave',
+    icon: 'swim',
     boss: 0.12,
   },
   {

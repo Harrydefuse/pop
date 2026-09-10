@@ -299,11 +299,11 @@ function DailyChest({ state, onOpen }) {
   const spent = state.openedToday
 
   return (
-    <Panel className="p-6 text-center" accent={ready ? 'var(--color-gold)' : undefined}>
-      <div className="chest-stage h-[132px]">
+    <Panel className="p-4 text-center" accent={ready ? 'var(--color-gold)' : undefined}>
+      <div className="chest-stage h-[92px]">
         {ready && <span className="chest-glow" aria-hidden="true" />}
         <ChestArt
-          size={104}
+          size={80}
           className={ready ? 'float-soft' : ''}
           style={ready ? undefined : { filter: 'grayscale(1) brightness(0.6)', opacity: 0.55 }}
         />
@@ -324,16 +324,16 @@ function DailyChest({ state, onOpen }) {
       </div>
 
       <div
-        className="font-display text-[26px] leading-none mt-4"
+        className="font-display text-[24px] leading-none mt-2"
         style={{ color: ready ? 'var(--color-gold)' : 'var(--color-ink-faint)' }}
       >
         Daily chest
       </div>
-      <div className="text-[14px] text-ink-dim mt-2 leading-snug">
+      <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
         {spent ? 'A fresh one tomorrow.' : ready ? DAILY_CHEST.note : 'Finish ACTIVE to unlock it.'}
       </div>
 
-      <Btn full size="lg" variant={ready ? 'gold' : 'dim'} disabled={!ready} className="mt-5" onClick={onOpen}>
+      <Btn full variant={ready ? 'gold' : 'dim'} disabled={!ready} className="mt-3" onClick={onOpen}>
         {spent ? 'Come back tomorrow' : ready ? 'OPEN IT' : 'Locked'}
       </Btn>
     </Panel>
@@ -369,7 +369,7 @@ export default function Home({ onGo }) {
             className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
             style={{ background: 'color-mix(in srgb, var(--tone-orange) 14%, transparent)' }}
           >
-            <Icon name="flame" size={19} color="var(--tone-orange)" />
+            <Icon name="bolt" size={21} color="var(--tone-orange)" />
           </span>
           <div className="min-w-0">
             <div className="figure text-[24px] text-ink">{p.streak}</div>

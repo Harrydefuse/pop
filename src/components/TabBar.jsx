@@ -4,7 +4,7 @@ import Icon from './Icon'
 // was the loudest thing in the app and the least important.
 const TABS = [
   { key: 'home', label: 'Today', icon: 'home' },
-  { key: 'train', label: 'Train', icon: 'bolt' },
+  { key: 'train', label: 'Train', icon: 'dumbbell' },
   { key: 'bosses', label: 'Battle', icon: 'skull' },
   { key: 'friends', label: 'Guild', icon: 'trophy' },
   { key: 'hero', label: 'You', icon: 'person' },
