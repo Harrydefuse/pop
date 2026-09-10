@@ -20,15 +20,79 @@ function canRegister() {
 export function registerServiceWorker() {
   if (!import.meta.env.PROD || !canRegister()) return
   // After load, so the first paint never competes with the precache download.
-  window.addEventListener('load', () => {
+  window.addEventListener('load', async () => {
     // Relative to the base, so it works at a domain root and under a project
     // page's subdirectory alike.
     const base = import.meta.env.BASE_URL
-    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {
+    let reg
+    try {
+      reg = await navigator.serviceWorker.register(`${base}sw.js`, { scope: base })
+    } catch {
       // An unregistrable worker (private mode, a host without HTTPS) costs the
       // user nothing — the app still runs, it just won't run offline.
+      return
+    }
+
+    // A new build downloads itself and then waits, because taking over mid
+    // workout would throw away a running timer. So say it is there and let the
+    // person pick the moment.
+    const watch = (worker) => {
+      if (!worker) return
+      const check = () => worker.state === 'installed' && navigator.serviceWorker.controller && offerUpdate(reg)
+      check()
+      worker.addEventListener('statechange', check)
+    }
+    watch(reg.waiting)
+    reg.addEventListener('updatefound', () => watch(reg.installing))
+
+    // Ask again whenever the app comes back to the front. A phone on the home
+    // screen can sit for days between opens; without this it would only look
+    // for a new build on a cold start.
+    let last = Date.now()
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || Date.now() - last < 60000) return
+      last = Date.now()
+      reg.update().catch(() => {})
+    })
+
+    // The reload happens once the new worker is actually in charge, not when
+    // it is asked to take over — otherwise the old bundle loads again. Only
+    // when this tab asked for it, though: the first worker of all claims the
+    // page as soon as it activates, and reloading on that would mean every
+    // first visit bounced for no reason.
+    let reloading = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!asked || reloading) return
+      reloading = true
+      window.location.reload()
     })
   })
+}
+
+/* ------------------------------------------------------------ new versions */
+
+let waiting = null
+let asked = false
+const updateListeners = new Set()
+
+function offerUpdate(reg) {
+  if (waiting) return
+  waiting = reg.waiting ?? reg.installing
+  updateListeners.forEach((fn) => fn())
+}
+
+export const updateReady = () => waiting !== null
+
+export function subscribeUpdate(fn) {
+  updateListeners.add(fn)
+  return () => updateListeners.delete(fn)
+}
+
+/** Hand over to the build that is waiting. The page reloads by itself after. */
+export function applyUpdate() {
+  if (!waiting) return
+  asked = true
+  waiting.postMessage({ type: 'SKIP_WAITING' })
 }
 
 /* ----------------------------------------------------------------- install */

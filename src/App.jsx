@@ -11,6 +11,7 @@ import Home from './screens/Home'
 import Friends from './screens/Friends'
 import Hero from './screens/Hero'
 import MapSheet from './screens/Map'
+import UpdateBar from './components/UpdateBar'
 import Train, { SessionBar } from './screens/Train'
 import Bosses from './screens/Bosses'
 
@@ -101,6 +102,7 @@ function Device() {
       <TabBar tab={tab} setTab={setTab} badges={{ home: questsOpen ? 1 : 0 }} />
 
       <Toasts />
+      <UpdateBar />
       <RewardModal />
       {map && <MapSheet onClose={() => setMap(false)} />}
     </div>

@@ -1,14 +1,25 @@
 # Puts the app on the open web, where the map can actually reach its tiles and
 # the phone can actually install it.
 #
-# Manual on purpose: publishing should be something you press, not something a
-# push does behind you. Run it from the Actions tab. It needs Pages turned on
-# first — Settings → Pages → Source: GitHub Actions — and it serves the app at
-# https://<you>.github.io/<repo>/, which is why the build is told its base.
+# Nothing is published until Pages is switched on by hand — Settings → Pages →
+# Source: GitHub Actions — and Pages only accepts deploys from the repository's
+# default branch, so this branch has to be it. After that, every push to this
+# branch redeploys, and the phone picks the new build up the next time it is
+# opened. The Actions tab can also run it on demand.
+#
+# It serves the app at https://<you>.github.io/<repo>/, which is why the build
+# is told its base.
 name: Deploy to GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - claude/lvl100-fitness-gaming-app-u3sjz1
+    # Nothing here changes the built app, so nothing here should redeploy it.
+    paths-ignore:
+      - 'tools/**'
+      - '**/*.md'
 
 permissions:
   contents: read

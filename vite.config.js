@@ -69,8 +69,13 @@ self.addEventListener('install', (event) => {
   )
 })
 
-// Deliberately no skipWaiting: a new build waits until every tab is closed.
-// Swapping the bundle under a running rest timer would lose the session.
+// Deliberately no skipWaiting on install: a new build waits rather than
+// swapping the bundle out from under a running rest timer. The app notices it
+// waiting, says so, and sends this when the person says go.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()
+})
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
