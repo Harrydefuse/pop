@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
+import ExercisePicker from '../components/ExercisePicker'
 import { useGame } from '../game/useGame'
 import {
   INTERVAL,
-  LIFTS,
   MIN_SESSION_S,
   SPLIT_M,
   TRACKED,
@@ -24,8 +24,13 @@ import { ACTIVITIES } from '../game/config'
 import { minutesOf, resolveActivity, streakTier } from '../game/engine'
 import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
+import { MUSCLES, muscleOf, muscleSplit, neglected } from '../game/exercises'
 import { guessActivity, readWorkoutFile } from '../game/importFile'
 import { alpha } from '../game/color'
+
+/** One empty array, shared: `?? []` builds a new one every render, and every
+ *  memo downstream of it then runs every render too. */
+const NONE = []
 
 /** What the tracker will actually do, said on the card you press. A run and a
  *  gym session are not measured the same way and the choice should say so. */
@@ -388,18 +393,18 @@ function LastTime({ record, best }) {
  */
 function StrengthReadout({ session, ms }) {
   const { state, sessionSet, sessionUndoSet, saveRoutine } = useGame()
-  const [lift, setLift] = useState(session.lift ?? LIFTS[0])
+  const [lift, setLift] = useState(session.lift ?? 'Bench press')
   const [reps, setReps] = useState(8)
   const [weight, setWeight] = useState(40)
   const [pickingLift, setPickingLift] = useState(false)
   const [rest, setRest] = useState(90)
   const [naming, setNaming] = useState(null)
-  const sets = session.sets ?? []
+  const sets = session.sets ?? NONE
   const lastTime = state.lastSets?.[lift]
   const plan = session.plan ?? []
   // What this session actually turned out to be, in the order it happened —
   // which is the thing worth saving, not the plan you walked in with.
-  const done = [...new Set(sets.map((s) => s.lift))]
+  const done = useMemo(() => [...new Set(sets.map((s) => s.lift))], [sets])
 
   // Pick a lift and the steppers land on the heaviest set you did of it last
   // time, so the common case — repeat, or add a little — is already dialled in.
@@ -415,6 +420,18 @@ function StrengthReadout({ session, ms }) {
   const totals = setTotals(sets)
   const perLift = byLift(sets)
 
+  // What to put at the top of the picker: this session first, then whatever
+  // the last few sessions were built out of. Most people rotate through the
+  // same fifteen exercises and should never have to search for them.
+  const recentLifts = useMemo(() => {
+    const seen = [...done]
+    for (const entry of state.log ?? []) {
+      for (const g of entry.detail?.lifts ?? []) if (!seen.includes(g.lift)) seen.push(g.lift)
+      if (seen.length >= 8) break
+    }
+    return seen
+  }, [done, state.log])
+
   return (
     <>
       <div className="grid grid-cols-3 gap-2 mt-4">
@@ -423,43 +440,36 @@ function StrengthReadout({ session, ms }) {
         <Stat label="VOLUME" value={totals.volume ? `${Math.round(totals.volume)}kg` : '—'} tone="var(--color-gold)" />
       </div>
 
-      {/* The lift comes off a short list rather than a text field: free text
+      {/* The exercise comes off a catalogue rather than a text field: free text
           turns the log into a pile of spellings of "bench press" that nothing
-          can add up. */}
+          can add up. The list is long enough now to need searching, so it
+          opens rather than unfolding in place. */}
       <button
-        onClick={() => setPickingLift((v) => !v)}
-        aria-expanded={pickingLift}
-        className="w-full min-h-[44px] border border-line mt-3 px-3 flex items-center justify-between active:brightness-125"
+        onClick={() => setPickingLift(true)}
+        className="w-full min-h-[52px] border border-line rounded-[var(--radius-sm)] mt-3 px-3 flex items-center gap-2 active:bg-panel-2"
       >
-        <span className="font-display text-[11px] text-ink-faint">Exercise</span>
-        <span className="text-[15px] text-ink truncate ml-2">{lift}</span>
+        <span
+          className="w-1.5 h-7 shrink-0 rounded-full"
+          style={{ background: MUSCLES.find((m) => m.id === muscleOf(lift, state.exercises))?.tone }}
+          aria-hidden="true"
+        />
+        <span className="min-w-0 flex-1 text-left">
+          <span className="block label text-ink-faint">Exercise</span>
+          <span className="block text-[15px] text-ink truncate mt-0.5">{lift}</span>
+        </span>
+        <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
       </button>
 
-      {!pickingLift && <LastTime record={lastTime} best={state.records?.[lift]} />}
-      {!pickingLift && <PlanStrip plan={plan} sets={sets} lift={lift} onPick={setLift} />}
+      <LastTime record={lastTime} best={state.records?.[lift]} />
+      <PlanStrip plan={plan} sets={sets} lift={lift} onPick={setLift} />
 
-      {pickingLift && (
-        <div className="grid grid-cols-2 gap-1.5 mt-2 max-h-[188px] overflow-y-auto scroll-thin">
-          {LIFTS.map((name) => (
-            <button
-              key={name}
-              onClick={() => {
-                setLift(name)
-                setPickingLift(false)
-              }}
-              aria-pressed={lift === name}
-              className="text-[14px] min-h-[44px] px-2 border text-left truncate active:brightness-125"
-              style={{
-                color: lift === name ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
-                background: lift === name ? 'var(--color-gold)' : 'transparent',
-                borderColor: lift === name ? 'var(--color-gold)' : 'var(--color-line)',
-              }}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
-      )}
+      <ExercisePicker
+        open={pickingLift}
+        current={lift}
+        recent={recentLifts}
+        onPick={setLift}
+        onClose={() => setPickingLift(false)}
+      />
 
       <div className="grid grid-cols-2 gap-2 mt-2">
         <Stepper label="REPS" value={reps} onChange={setReps} min={1} max={500} />
@@ -1520,6 +1530,61 @@ function EffortSheet({ bests, picks, onClose, onSave }) {
   )
 }
 
+/**
+ * Where the work has actually been going.
+ *
+ * Everybody trains what they enjoy and skips what they do not, and almost
+ * nobody notices which is which — the log has known for months that you have
+ * not pulled anything since April, and until now it had no way to say so.
+ *
+ * Counted in sets, not volume: a set of curls and a set of squats are one
+ * decision each, and by volume the squats would look like twenty times the
+ * training and drown everything else out.
+ */
+function Coverage({ log, custom }) {
+  const split = useMemo(() => muscleSplit(log, { days: 30, custom }), [log, custom])
+  const behind = neglected(split)
+  if (!split.total) return null
+  const top = Math.max(...split.groups.map((g) => g.sets))
+
+  return (
+    <div>
+      <SectionTitle right={<span className="label text-ink-faint">last 30 days</span>}>What you have trained</SectionTitle>
+      <Panel className="p-3.5">
+        <div className="space-y-2">
+          {split.groups
+            .filter((g) => g.sets > 0 || (g.id !== 'cardio' && g.id !== 'full'))
+            .map((g) => (
+              <div key={g.id} className="flex items-center gap-2.5">
+                <span className="label text-ink-faint w-[74px] shrink-0 truncate">{g.name}</span>
+                <span className="flex-1 h-2 rounded-full bg-panel-2 overflow-hidden">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{ width: `${top ? Math.round((g.sets / top) * 100) : 0}%`, background: g.tone }}
+                  />
+                </span>
+                <span className="figure text-[13px] text-ink-dim w-[34px] text-right shrink-0">{g.sets}</span>
+              </div>
+            ))}
+        </div>
+        <div className="text-[13px] mt-3 pt-3 border-t border-line leading-snug">
+          {behind ? (
+            <span className="text-ink-dim">
+              <strong className="text-ink">{behind.name.toLowerCase()}</strong> is behind the rest of you —{' '}
+              {behind.sets === 0 ? 'nothing at all' : `${behind.sets} ${behind.sets === 1 ? 'set' : 'sets'}`} in a month.
+            </span>
+          ) : (
+            <span className="text-ink-faint">
+              {split.total} sets across {split.groups.filter((g) => g.sets > 0).length} groups. Nothing obviously
+              skipped.
+            </span>
+          )}
+        </div>
+      </Panel>
+    </div>
+  )
+}
+
 /** Pick something to do. */
 function Pick() {
   const { state, startSession, deleteRoutine, setEfforts, importWorkout } = useGame()
@@ -1540,6 +1605,8 @@ function Pick() {
           picks={state.player.efforts ?? []}
           onEdit={() => setEditingEfforts(true)}
         />
+
+        <Coverage log={state.log} custom={state.exercises ?? NONE} />
 
         <LiftBoard records={state.records} log={state.log} />
 

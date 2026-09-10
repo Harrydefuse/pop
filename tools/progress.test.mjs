@@ -24,6 +24,8 @@ const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekK
 const { ACTIVITIES } = await server.ssrLoadModule('/src/game/config.js')
 const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEfforts } =
   await server.ssrLoadModule('/src/game/efforts.js')
+const { EXERCISES, searchExercises, muscleOf, muscleSplit, neglected, exerciseByName } =
+  await server.ssrLoadModule('/src/game/exercises.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
 let fails = 0
@@ -178,6 +180,40 @@ is('only what was pinned shows, and only if it exists',
   pinnedEfforts(bests, ['run:d5', 'run:nope', 'run:far']).map((e) => e.id), ['run:d5', 'run:far'])
 is('and never more than three',
   pinnedEfforts(bests, ['run:d1', 'run:d5', 'run:d10', 'run:far']).length, 3)
+
+console.log('\nthe exercise catalogue')
+is('every name is unique', new Set(EXERCISES.map((e) => e.name)).size, EXERCISES.length)
+is('every one of the old eighteen still resolves',
+  ['Bench press', 'Squat', 'Deadlift', 'Overhead press', 'Barbell row', 'Pull-up', 'Dip', 'Lat pulldown',
+   'Leg press', 'Romanian deadlift', 'Lunge', 'Hip thrust', 'Bicep curl', 'Tricep extension', 'Lateral raise',
+   'Calf raise', 'Plank', 'Other'].filter((n) => !exerciseByName(n)), [])
+is('a name match at the start beats one in the middle',
+  searchExercises('press')[0].name.toLowerCase().startsWith('press') ||
+    searchExercises('press').findIndex((e) => e.name === 'Leg press') >
+      searchExercises('press').findIndex((e) => e.name === 'Bench press'),
+  true)
+is('searching the muscle finds the muscle', searchExercises('glute').every((e) => e.muscle === 'glutes' || /glute/i.test(e.name)), true)
+is('searching the equipment finds the shelf', searchExercises('kettlebell').every((e) => e.gear === 'kettlebell' || /kettlebell/i.test(e.name)), true)
+is('a custom exercise joins the list', searchExercises('zercher', { custom: [{ name: 'Zercher squat', muscle: 'legs', gear: 'barbell' }] })[0].name, 'Zercher squat')
+is('and it will not shadow one already there', searchExercises('', { custom: [{ name: 'squat', muscle: 'core', gear: 'other' }] }).filter((e) => e.name.toLowerCase() === 'squat').length, 1)
+is('an unknown lift still has a home', muscleOf('Something nobody has heard of'), 'full')
+
+const day = 24 * 3600 * 1000
+const strength = (at, lifts) => ({ at, detail: { mode: 'strength', lifts } })
+const split = muscleSplit(
+  [
+    strength(Date.now() - day, [{ lift: 'Bench press', sets: 4 }, { lift: 'Squat', sets: 4 }]),
+    strength(Date.now() - 3 * day, [{ lift: 'Deadlift', sets: 3 }]),
+    strength(Date.now() - 90 * day, [{ lift: 'Bicep curl', sets: 9 }]),
+  ],
+  { days: 30 },
+)
+is('sets land under the muscle they train',
+  Object.fromEntries(split.groups.filter((g) => g.sets).map((g) => [g.id, g.sets])),
+  { chest: 4, back: 3, legs: 4 })
+is('and a session from three months ago is not this month', split.total, 11)
+is('the group that is behind gets named', neglected(split).id !== undefined, true)
+is('with nothing logged there is nothing to say', neglected(muscleSplit([], {})), null)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

@@ -8,6 +8,7 @@ import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, re
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
+import { exerciseByName } from './exercises'
 
 const SAVE_KEY = 'lvl100.save.v12' // v12: explored ground is real map tiles now, not cells of a drawn Sydney
 
@@ -39,6 +40,9 @@ function baseState() {
     // Best efforts, one per thing worth having a best at. Kept for the same
     // reason as the records: a 5k from last winter is still your 5k.
     bests: {},
+    // Exercises this person added themselves. No catalogue is ever finished,
+    // and the alternative is logging half a session as "Other".
+    exercises: [],
   }
 }
 
@@ -503,6 +507,15 @@ function reducer(state, action) {
       return { ...next, explored: [...coverPoints(new Set(next.explored), workout.points)] }
     }
 
+    /** An exercise the catalogue does not have. Named once, theirs forever. */
+    case 'addExercise': {
+      const name = (action.name ?? '').trim().replace(/\s+/g, ' ')
+      if (!name || name.length > 40) return state
+      if (exerciseByName(name, state.exercises)) return state
+      const made = { name, muscle: action.muscle ?? 'full', gear: action.gear ?? 'other', custom: true }
+      return { ...state, exercises: [made, ...state.exercises].slice(0, 200) }
+    }
+
     case 'setEfforts':
       return {
         ...state,
@@ -851,6 +864,7 @@ export function GameProvider({ children }) {
       saveRoutine: (name, lifts) => dispatch({ type: 'saveRoutine', name, lifts }),
       deleteRoutine: (id) => dispatch({ type: 'deleteRoutine', id }),
       setEfforts: (ids) => dispatch({ type: 'setEfforts', ids }),
+      addExercise: (name, muscle, gear) => dispatch({ type: 'addExercise', name, muscle, gear }),
       importWorkout: (activityId, workout) => dispatch({ type: 'importWorkout', activityId, workout }),
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
