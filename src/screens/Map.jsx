@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Btn, Modal, SectionTitle } from '../components/ui'
+import { useEffect, useMemo, useState } from 'react'
+import { Btn, SectionTitle } from '../components/ui'
 import CampaignSheet from '../components/CampaignSheet'
 import WorldMap from '../components/WorldMap'
 import Icon from '../components/Icon'
@@ -109,104 +109,156 @@ export default function MapSheet({ onClose }) {
   )
 
   const [only, setOnly] = useState('all')
+  // Peek by default. The map is what the button was pressed for.
+  const [open, setOpen] = useState(false)
+
+  // The sheet it replaced closed on Escape, and a full-screen layer that traps
+  // you until you find the right corner is worse than the one it replaced.
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose?.()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
   const shownRoutes = only === 'all' ? routes : routes.filter((r) => r.id === only)
   const totalKm = routes.reduce((n, r) => n + r.km, 0)
   const covered = areaKm2(ground)
 
   return (
     <>
-      <Modal open onClose={onClose} title="WHERE YOU'VE BEEN" accent="var(--color-gold)" wide>
-        <WorldMap
-          routes={shownRoutes}
-          ground={ground}
-          pins={markers}
-          onPickPin={setPicked}
-          height={330}
-          className="border border-line rounded-[var(--radius-sm)] overflow-hidden"
-        />
-
-        <div className="grid grid-cols-3 gap-3 mt-3">
-          <Stat value={routes.length} label={routes.length === 1 ? 'Route' : 'Routes'} colour="var(--color-ink)" />
-          <Stat value={`${totalKm.toFixed(1)} km`} label="Covered" colour="var(--color-cyan)" />
-          <Stat value={`${covered.toFixed(1)} km²`} label="Ground claimed" colour="var(--color-lime)" />
+      {/* A map screen, not a map in a box: the map is the page, and everything
+          about it lives on a sheet over the bottom of it that you pull up when
+          you want it. Every map app on the phone works this way. */}
+      <div
+        className="absolute inset-0 z-50 flex flex-col bg-void"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Where you have been"
+      >
+        <div className="flex items-center gap-2 px-2 py-2 pt-[max(8px,env(safe-area-inset-top))] shrink-0">
+          <button
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="grid place-items-center w-11 h-11 rounded-[var(--radius-sm)] text-[20px] text-ink-faint hover:text-ink active:bg-panel-2"
+          >
+            ‹
+          </button>
+          <span className="font-display text-[16px] text-ink">WHERE YOU&rsquo;VE BEEN</span>
         </div>
 
-        <div className="text-[13px] text-ink-dim mt-2.5 leading-snug">
-          {ground.size
-            ? 'The green is ground you have actually stood on. It only grows, and it never goes back.'
-            : 'Track a walk, a run or a ride from TRAIN with location on. The line lands here, and the blocks you pass through turn green for good.'}
+        <div className="relative flex-1 min-h-0">
+          <WorldMap
+            routes={shownRoutes}
+            ground={ground}
+            pins={markers}
+            onPickPin={(id) => {
+              setPicked(id)
+              setOpen(true)
+            }}
+            height="100%"
+            className="absolute inset-0"
+          />
         </div>
 
-        {/* ------------------------------------------------------- the walks */}
-        {routes.length > 0 && (
-          <div className="mt-3 border-t border-line pt-2 space-y-1">
-            <button
-              onClick={() => setOnly('all')}
-              className="w-full flex items-center gap-2.5 min-h-[44px] px-1 text-left active:brightness-125"
-              aria-pressed={only === 'all'}
-            >
-              <span
-                className="w-2.5 h-2.5 shrink-0 rounded-full border"
-                style={{
-                  borderColor: 'var(--color-line-hot)',
-                  background: only === 'all' ? 'var(--color-ink)' : 'transparent',
-                }}
-              />
-              <span className="font-display text-[14px] text-ink-dim">Everything</span>
-            </button>
-            {routes.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setOnly(r.id)}
-                className="w-full flex items-center gap-2.5 min-h-[44px] px-1 text-left active:brightness-125"
-                aria-pressed={only === r.id}
-              >
-                <span
-                  className="w-2.5 h-2.5 shrink-0 rounded-full border"
-                  style={{ borderColor: r.colour, background: only === r.id ? r.colour : 'transparent' }}
-                />
-                <span className="label text-ink-faint w-[62px] shrink-0">{r.label}</span>
-                <span className="text-[14px] text-ink">{r.km.toFixed(2)} km</span>
-                <span className="text-[14px] text-ink-faint ml-auto">{r.when}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="map-sheet" data-open={open ? '' : undefined}>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={open ? 'Collapse the details' : 'Expand the details'}
+            className="shrink-0 w-full pt-2.5 pb-1.5 min-h-[44px]"
+          >
+            <span className="map-grip" aria-hidden="true" />
+          </button>
 
-        {/* -------------------------------------------------- what the pin is */}
-        {shown && (
-          <div className="mt-3 pt-3 border-t border-line">
-            <SectionTitle color={actById(shown.boss.act).color}>
-              {shown.state === 'cleared' ? 'CLEARED' : shown.state === 'current' ? 'STANDING HERE NOW' : 'FURTHER ON'}
-            </SectionTitle>
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="font-display text-[16px]" style={{ color: actById(shown.boss.act).color }}>
-                {shown.boss.name}
-              </span>
-              <span className="text-[14px] text-ink-faint">at {shown.place.name}</span>
+          <div className="px-4 pb-4 min-h-0 overflow-y-auto scroll-thin">
+            <div className="grid grid-cols-3 gap-3">
+              <Stat value={routes.length} label={routes.length === 1 ? 'Route' : 'Routes'} colour="var(--color-ink)" />
+              <Stat value={`${totalKm.toFixed(1)} km`} label="Covered" colour="var(--color-cyan)" />
+              <Stat value={`${covered.toFixed(1)} km²`} label="Ground claimed" colour="var(--color-lime)" />
             </div>
-            <div className="text-[14px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
-            {shown.state !== 'cleared' && (
-              <Btn
-                full
-                size="sm"
-                variant={shown.state === 'current' ? 'danger' : 'ghost'}
-                className="mt-3"
-                onClick={() => setCampaign(true)}
-              >
-                {shown.state === 'current' ? 'FIGHT IT' : 'SEE THE ROAD'}
-              </Btn>
-            )}
-          </div>
-        )}
 
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
-          <Icon name="pin" size={14} color="var(--color-ink-faint)" />
-          <span className="text-[13px] text-ink-faint leading-snug">
-            Tap a pin to read the boss standing there.
-          </span>
+            <div className="text-[13px] text-ink-dim mt-2.5 leading-snug">
+              {ground.size
+                ? 'The green is ground you have actually stood on. It only grows, and it never goes back.'
+                : 'Track a walk, a run or a ride from TRAIN with location on. The line lands here, and the blocks you pass through turn green for good.'}
+            </div>
+
+            {/* ----------------------------------------------------- the walks */}
+            {routes.length > 0 && (
+              <div className="mt-3 border-t border-line pt-2 space-y-1">
+                <button
+                  onClick={() => setOnly('all')}
+                  className="w-full flex items-center gap-2.5 min-h-[44px] px-1 text-left active:brightness-125"
+                  aria-pressed={only === 'all'}
+                >
+                  <span
+                    className="w-2.5 h-2.5 shrink-0 rounded-full border"
+                    style={{
+                      borderColor: 'var(--color-line-hot)',
+                      background: only === 'all' ? 'var(--color-ink)' : 'transparent',
+                    }}
+                  />
+                  <span className="font-display text-[14px] text-ink-dim">Everything</span>
+                </button>
+                {routes.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => setOnly(r.id)}
+                    className="w-full flex items-center gap-2.5 min-h-[44px] px-1 text-left active:brightness-125"
+                    aria-pressed={only === r.id}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 shrink-0 rounded-full border"
+                      style={{ borderColor: r.colour, background: only === r.id ? r.colour : 'transparent' }}
+                    />
+                    <span className="label text-ink-faint w-[62px] shrink-0">{r.label}</span>
+                    <span className="text-[14px] text-ink">{r.km.toFixed(2)} km</span>
+                    <span className="text-[14px] text-ink-faint ml-auto">{r.when}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* ------------------------------------------------ what the pin is */}
+            {shown && (
+              <div className="mt-3 pt-3 border-t border-line">
+                <SectionTitle color={actById(shown.boss.act).color}>
+                  {shown.state === 'cleared'
+                    ? 'CLEARED'
+                    : shown.state === 'current'
+                      ? 'STANDING HERE NOW'
+                      : 'FURTHER ON'}
+                </SectionTitle>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="font-display text-[16px]" style={{ color: actById(shown.boss.act).color }}>
+                    {shown.boss.name}
+                  </span>
+                  <span className="text-[14px] text-ink-faint">at {shown.place.name}</span>
+                </div>
+                <div className="text-[14px] text-ink-dim mt-2 leading-snug">{shown.boss.lore}</div>
+                {shown.state !== 'cleared' && (
+                  <Btn
+                    full
+                    size="sm"
+                    variant={shown.state === 'current' ? 'danger' : 'ghost'}
+                    className="mt-3"
+                    onClick={() => setCampaign(true)}
+                  >
+                    {shown.state === 'current' ? 'FIGHT IT' : 'SEE THE ROAD'}
+                  </Btn>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
+              <Icon name="pin" size={14} color="var(--color-ink-faint)" />
+              <span className="text-[13px] text-ink-faint leading-snug">
+                Pinch or scroll to zoom, drag to move — it is the whole world. Tap a pin to read the boss standing
+                there.
+              </span>
+            </div>
+          </div>
         </div>
-      </Modal>
+      </div>
       {campaign && <CampaignSheet onClose={() => setCampaign(false)} />}
     </>
   )

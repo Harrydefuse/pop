@@ -27,9 +27,15 @@ function walk(dir, root = dir, out = []) {
  * lines and we want to be able to read it.
  */
 function serviceWorker() {
+  let base = '/'
   return {
     name: 'lvl100-service-worker',
     apply: 'build',
+    configResolved(config) {
+      // A project page is served from a subdirectory, so every path the worker
+      // caches — and the scope it claims — hangs off the base rather than root.
+      base = config.base
+    },
     closeBundle() {
       const dist = join(process.cwd(), 'dist')
       let files
@@ -38,19 +44,21 @@ function serviceWorker() {
       } catch {
         return // nothing was emitted (e.g. a library build) — nothing to cache
       }
-      const precache = files.filter((f) => !SKIP.test(f)).sort()
+      const kept = files.filter((f) => !SKIP.test(f)).sort()
       const version = createHash('sha256')
-        .update(precache.map((f) => f + ':' + statSync(join(dist, f)).size).join('\n'))
+        .update(kept.map((f) => f + ':' + statSync(join(dist, f)).size).join('\n'))
         .digest('hex')
         .slice(0, 12)
+      const precache = kept.map((f) => base.replace(/\/$/, '') + f)
 
-      writeFileSync(join(dist, 'sw.js'), worker(version, precache))
+      writeFileSync(join(dist, 'sw.js'), worker(version, precache, base))
     },
   }
 }
 
-const worker = (version, precache) => `// Generated at build time. Do not edit by hand.
+const worker = (version, precache, base) => `// Generated at build time. Do not edit by hand.
 const CACHE = 'lvl100-${version}'
+const SHELL = '${base}index.html'
 const PRECACHE = ${JSON.stringify(precache, null, 2)}
 
 // Take a copy of everything on install so the first offline launch works even
@@ -91,11 +99,11 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           if (cacheable(res)) {
             const copy = res.clone()
-            caches.open(CACHE).then((cache) => cache.put('/index.html', copy))
+            caches.open(CACHE).then((cache) => cache.put(SHELL, copy))
           }
           return res
         })
-        .catch(() => caches.match('/index.html').then((hit) => hit ?? Response.error())),
+        .catch(() => caches.match(SHELL).then((hit) => hit ?? Response.error())),
     )
     return
   }
@@ -119,5 +127,8 @@ self.addEventListener('fetch', (event) => {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Root by default; a project page lives under /<repo>/, so the deploy sets
+  // VITE_BASE and every asset, the manifest and the worker follow it.
+  base: process.env.VITE_BASE ?? '/',
   plugins: [react(), tailwindcss(), serviceWorker()],
 })

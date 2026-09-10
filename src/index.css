@@ -401,6 +401,90 @@ button:disabled {
   border-radius: 0;
 }
 
+/* Where am I. Under the zoom pair, which sits top-right because the bottom of
+   a map screen belongs to the sheet. */
+.map-locate {
+  position: absolute;
+  right: 10px;
+  top: 108px;
+  z-index: 500;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-hot);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elev);
+  cursor: pointer;
+}
+.map-locate:active {
+  background: var(--color-panel-2);
+}
+.map-locate-ring {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  position: relative;
+}
+.map-locate-ring::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: var(--color-ink);
+  border-radius: 50%;
+}
+.map-locate[data-busy] .map-locate-ring {
+  animation: locate-pulse 1s ease-in-out infinite;
+}
+@keyframes locate-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-locate[data-busy] .map-locate-ring {
+    animation: none;
+  }
+}
+
+/* The panel over the bottom of a map screen: a peek by default — enough for
+   the three numbers — and a pull-up for the walks and the boss. Google, Strava
+   and Apple all landed on the same shape because it is the only one that lets
+   the map stay the page. */
+.map-sheet {
+  position: relative;
+  z-index: 600;
+  max-height: 156px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-panel);
+  border-top: 1px solid var(--color-line);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--elev-lift);
+  transition: max-height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* max-height rather than height, so an open sheet is only as tall as what is
+   in it — a short one should not leave half a screen of empty panel. */
+.map-sheet[data-open] {
+  max-height: 62%;
+}
+.map-grip {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: var(--color-line-hot);
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-sheet {
+    transition: none;
+  }
+}
+
 /* A boss on the map: a dot on a stalk, the way every map app draws a pin. It
    is built as a div rather than an image so it takes the act's colour and the
    app's radii, and so the one you are on can breathe. */

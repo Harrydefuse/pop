@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { groundRuns } from '../game/ground'
@@ -16,18 +16,67 @@ import { groundRuns } from '../game/ground'
  *
  * Leaflet is bundled rather than pulled from a CDN, so the app's code still
  * loads with no network at all. The tiles are the one thing that cannot be:
- * they come from OpenStreetMap over the wire, and where that is blocked — a
- * sandboxed preview, a plane, a locked-down network — the map falls back to
- * drawing your lines on plain ground.
+ * they come off the wire, and where that is blocked — a sandboxed preview, a
+ * plane, a locked-down network — the map falls back to drawing your lines on
+ * plain ground.
  */
 
-const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-const ATTRIB = '© OpenStreetMap'
+/**
+ * The basemap, in the app's own theme.
+ *
+ * Plain OpenStreetMap is a beautiful reference map and the wrong ground for
+ * this: it is loud, and every colour in it competes with a route line drawn on
+ * top. Every running app uses a quiet grey base for exactly that reason, so
+ * these are CARTO's, which are that same base rendered from OSM data — one for
+ * each theme, so the map is not a white rectangle in a dark app.
+ *
+ * If those cannot be reached the plain OSM tiles are tried next, and if the
+ * network is gone entirely the ground underneath carries the route on its own.
+ */
+const BASEMAPS = {
+  light: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '© OpenStreetMap · © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20,
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '© OpenStreetMap · © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20,
+  },
+}
+
+/**
+ * A tile source of your own, if you have one. Set VITE_TILE_URL (and
+ * VITE_TILE_ATTRIBUTION) at build time and it is used instead of everything
+ * below — which is what a shipped app would do, since neither the OSM public
+ * server nor CARTO's free basemaps are meant to carry one.
+ */
+const OVERRIDE = import.meta.env.VITE_TILE_URL
+  ? {
+      url: import.meta.env.VITE_TILE_URL,
+      attribution: import.meta.env.VITE_TILE_ATTRIBUTION ?? '© OpenStreetMap',
+      subdomains: 'abcd',
+      maxZoom: 20,
+    }
+  : null
+
+/** The fallback: everyone can serve these, and they are always in date. */
+const PLAIN_OSM = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: '© OpenStreetMap',
+  subdomains: 'abc',
+  maxZoom: 19,
+}
 
 /** Long enough for a slow connection, short enough not to feel broken. */
 const TILE_GRACE_MS = 2500
 
 const SYDNEY = [-33.8688, 151.2093]
+
+const themeNow = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
 
 /** A pin is a dot on a stalk, the way every map app draws one. */
 function pinIcon({ colour, state }) {
@@ -55,6 +104,8 @@ export default function WorldMap({
   const groundLayer = useRef(null)
   const routeLayer = useRef(null)
   const pinLayer = useRef(null)
+  const base = useRef(null)
+  const me = useRef(null)
   const framed = useRef(false)
   // What we want in view, and whether the person has taken over from us.
   const fit = useRef(null)
@@ -73,8 +124,16 @@ export default function WorldMap({
     // small — the tiles are merged into runs before they are drawn — and the
     // canvas renderer queues its redraws on animation frames, which throws when
     // the sheet is closed in the same frame it opened.
-    const m = L.map(el, { zoomControl: false, attributionControl: true }).setView(SYDNEY, 13)
-    L.control.zoom({ position: 'bottomright' }).addTo(m)
+    const m = L.map(el, {
+      zoomControl: false,
+      attributionControl: true,
+      // It is the whole world: pinch, wheel, double-tap and drag all move it,
+      // and panning past the date line wraps round rather than running out.
+      worldCopyJump: true,
+      minZoom: 2,
+    }).setView(SYDNEY, 13)
+    // Top right, because the bottom of a map screen belongs to the sheet.
+    L.control.zoom({ position: 'topright' }).addTo(m)
     // The moment the map is moved on purpose it stops being ours to re-frame.
     m.on('dragstart', () => (touched.current = true))
     m.on('zoomstart', () => {
@@ -86,29 +145,69 @@ export default function WorldMap({
     routeLayer.current = L.layerGroup().addTo(m)
     pinLayer.current = L.layerGroup().addTo(m)
 
-    const tileLayer = L.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIB, crossOrigin: true })
-    let loaded = 0
-    tileLayer.on('tileload', () => {
-      loaded += 1
-      setTiles('ok')
-    })
-    tileLayer.addTo(m)
+    // Try the themed basemap, fall back to plain OSM, and only then give up.
     // Judge by whether anything arrived rather than by counting failures: a
     // blocked host errors on every tile, a slow one simply takes its time.
-    const grace = setTimeout(() => {
-      if (loaded === 0) {
-        setTiles('blocked')
-        m.removeLayer(tileLayer)
-      }
-    }, TILE_GRACE_MS)
+    let grace
+    const light = (src, next) => {
+      const layer = L.tileLayer(src.url, {
+        attribution: src.attribution,
+        subdomains: src.subdomains,
+        maxZoom: src.maxZoom,
+        detectRetina: true,
+        crossOrigin: true,
+      })
+      let loaded = 0
+      layer.on('tileload', () => {
+        if (loaded++ === 0) setTiles('ok')
+      })
+      layer.addTo(m)
+      base.current = layer
+      grace = setTimeout(() => {
+        if (loaded) return
+        m.removeLayer(layer)
+        if (next) light(next, null)
+        else setTiles('blocked')
+      }, TILE_GRACE_MS)
+    }
+    light(OVERRIDE ?? BASEMAPS[themeNow()], OVERRIDE ? null : PLAIN_OSM)
 
     return () => {
       clearTimeout(grace)
       m.remove()
       map.current = null
+      base.current = null
       groundLayer.current = routeLayer.current = pinLayer.current = null
     }
   }, [])
+
+  // The base swaps with the app's theme. It is one attribute on <html>, so the
+  // map watches for it rather than being told.
+  useEffect(() => {
+    const swap = () => {
+      const m = map.current
+      if (!m || tiles !== 'ok') return
+      if (OVERRIDE) return
+      const src = BASEMAPS[themeNow()]
+      if (base.current?._url === src.url) return
+      const layer = L.tileLayer(src.url, {
+        attribution: src.attribution,
+        subdomains: src.subdomains,
+        maxZoom: src.maxZoom,
+        detectRetina: true,
+        crossOrigin: true,
+      }).addTo(m)
+      // Only drop the old one once the new one has something to show, or the
+      // map blinks white halfway through a theme change.
+      layer.once('load', () => base.current && m.removeLayer(base.current))
+      const old = base.current
+      base.current = layer
+      setTimeout(() => old && m.hasLayer(old) && m.removeLayer(old), 1200)
+    }
+    const mo = new MutationObserver(swap)
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => mo.disconnect()
+  }, [tiles])
 
   // The ground you have covered. Drawn as filled squares with no stroke, so a
   // run of neighbouring tiles reads as one patch rather than as graph paper.
@@ -228,6 +327,33 @@ export default function WorldMap({
     return () => ro.disconnect()
   }, [])
 
+  // "Where am I" — the button every map app has in the same corner. It is the
+  // only thing here that asks for your location without a session running.
+  const [locating, setLocating] = useState(false)
+  const locate = useCallback(() => {
+    const m = map.current
+    if (!m || !navigator.geolocation) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false)
+        const at = [pos.coords.latitude, pos.coords.longitude]
+        touched.current = true
+        m.setView(at, Math.max(m.getZoom(), 15))
+        if (me.current) m.removeLayer(me.current)
+        me.current = L.circleMarker(at, {
+          radius: 7,
+          color: '#ffffff',
+          weight: 3,
+          fillColor: '#2563eb',
+          fillOpacity: 1,
+        }).addTo(m)
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 },
+    )
+  }, [])
+
   return (
     <div className={`relative ${className}`} style={{ height }}>
       {/* The ground, on its own element. Leaflet sets a background on its
@@ -235,13 +361,24 @@ export default function WorldMap({
           of which stylesheet the bundler happens to emit last. */}
       <div className="absolute inset-0 route-ground" aria-hidden="true" />
       <div ref={host} className="absolute inset-0 route-map" />
+
+      <button
+        type="button"
+        onClick={locate}
+        aria-label="Centre the map on me"
+        className="map-locate"
+        data-busy={locating ? '' : undefined}
+      >
+        <span className="map-locate-ring" aria-hidden="true" />
+      </button>
+
       {/* One line, out of the way. The map still works without streets — your
           line and your ground are drawn either way — so this is a note, not an
           error screen sat on top of the thing it is describing. */}
       {tiles === 'blocked' && (
         <div className="absolute left-2 bottom-2 max-w-[250px] pointer-events-none z-[500]">
           <span className="block bg-panel/95 border border-line rounded-[var(--radius-sm)] px-2 py-1.5 text-[13px] text-ink-dim leading-snug">
-            No street tiles here — this page can&rsquo;t reach OpenStreetMap.
+            No street tiles here — this page can&rsquo;t reach the map servers.
           </span>
         </div>
       )}

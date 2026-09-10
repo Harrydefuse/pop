@@ -23,6 +23,14 @@ const DEMO_PLAYER = {
 
 const DEMO_PICKS = ['run', 'lift', 'hiit', 'sleep', 'aim']
 
+/**
+ * Screenshots live in `public/` and are referenced by hand rather than
+ * imported, so nothing rewrites them for a build served from a subdirectory —
+ * a project page is not at the root. Anything already absolute in another sense
+ * (the single-file build swaps these literals for data URIs) is left alone.
+ */
+const asset = (p) => (p.startsWith('/') ? import.meta.env.BASE_URL + p.slice(1) : p)
+
 function useReveal() {
   useEffect(() => {
     const root = document.documentElement
@@ -501,7 +509,7 @@ export default function Site({ onEnterApp }) {
               <div className="reveal" style={{ display: 'flex', justifyContent: 'center' }}>
                 <div className="device">
                   <img
-                    src="/shots/sheet.webp"
+                    src={asset('/shots/sheet.webp')}
                     width="760"
                     height="1634"
                     alt="The character sheet: a level-100 character in full legendary armour, their power score, and the six equipped pieces underneath."
@@ -513,7 +521,7 @@ export default function Site({ onEnterApp }) {
             <div className="shots stagger" role="group" aria-label="Screens from the prototype">
               <div className="device">
                 <img
-                  src="/shots/home.webp"
+                  src={asset('/shots/home.webp')}
                   width="760"
                   height="1634"
                   alt="The home screen: this week&apos;s challenge, a 214-day streak with rest days banked, the three daily slots and the daily chest."
@@ -522,7 +530,7 @@ export default function Site({ onEnterApp }) {
               </div>
               <div className="device">
                 <img
-                  src="/shots/pets.webp"
+                  src={asset('/shots/pets.webp')}
                   width="760"
                   height="1634"
                   alt="The companion collection: seven pets, each with the level it has grown to alongside its owner."
@@ -531,7 +539,7 @@ export default function Site({ onEnterApp }) {
               </div>
               <div className="device">
                 <img
-                  src="/shots/guild.webp"
+                  src={asset('/shots/guild.webp')}
                   width="760"
                   height="1634"
                   alt="The guild screen: your squad, and a leaderboard ranked by level with each player&apos;s streak beside them."

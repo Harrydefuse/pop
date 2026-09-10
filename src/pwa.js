@@ -21,7 +21,10 @@ export function registerServiceWorker() {
   if (!import.meta.env.PROD || !canRegister()) return
   // After load, so the first paint never competes with the precache download.
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+    // Relative to the base, so it works at a domain root and under a project
+    // page's subdirectory alike.
+    const base = import.meta.env.BASE_URL
+    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {
       // An unregistrable worker (private mode, a host without HTTPS) costs the
       // user nothing — the app still runs, it just won't run offline.
     })
