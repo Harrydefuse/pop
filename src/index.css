@@ -696,6 +696,87 @@ button:disabled {
   animation: float-soft 3.6s ease-in-out infinite;
 }
 
+/* The daily chest, waiting to be opened.
+   A glow behind it and four sparks around it, on their own offsets so they do
+   not blink in unison — the one thing on TODAY that is pure reward should look
+   like it. Nothing here fires while it is locked or already opened. */
+.chest-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  /* Bounded and centred so the sparks land around the chest rather than out at
+     the edges of a card that is much wider than the art. */
+  width: 190px;
+  margin: 0 auto;
+}
+.chest-stage > * {
+  grid-area: 1 / 1;
+}
+.chest-glow {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-gold) 32%, transparent) 0%, transparent 68%);
+  animation: chest-breathe 3.6s ease-in-out infinite;
+  z-index: 0;
+}
+.chest-spark {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  z-index: 2;
+  /* The glow amber rather than the text gold: this is a spark, not a label,
+     and the light theme's gold is a brown dark enough to carry small type. */
+  color: var(--color-gold-glow);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-gold) 70%, transparent));
+  opacity: 0;
+  animation: chest-spark 2.4s ease-in-out infinite;
+}
+/* A four-point star, drawn rather than set in type so it scales cleanly. */
+.chest-spark::before,
+.chest-spark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+}
+.chest-spark::before {
+  clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
+}
+.chest-spark::after {
+  filter: blur(3px);
+  opacity: 0.7;
+  clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
+}
+@keyframes chest-breathe {
+  50% {
+    transform: scale(1.08);
+    opacity: 0.75;
+  }
+}
+@keyframes chest-spark {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chest-glow,
+  .chest-spark {
+    animation: none;
+  }
+  .chest-spark {
+    opacity: 0.8;
+  }
+}
+
 @keyframes pulse-ring {
   0% {
     box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5);

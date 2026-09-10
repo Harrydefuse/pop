@@ -6,7 +6,7 @@ import { ChestArt } from '../components/Sprites'
 import GiftReveal from '../components/GiftReveal'
 import InstallCard from '../components/InstallCard'
 import { useGame } from '../game/useGame'
-import { DAILY_CHEST, DAILY_SLOTS, RARITY, RARITY_ORDER } from '../game/config'
+import { DAILY_CHEST, DAILY_SLOTS } from '../game/config'
 import { streakTier } from '../game/engine'
 import { challengeLabel, challengeProgress } from '../game/challenge'
 
@@ -282,6 +282,64 @@ function FirstSteps({ state, onGo }) {
   )
 }
 
+/**
+ * The daily chest.
+ *
+ * This was a card with five rarity chips on it, a name, a note, and a lot of
+ * space between them all — a spreadsheet of odds around the one thing on TODAY
+ * that is supposed to feel like a present. Nobody reads "4%" and feels
+ * anything. So the odds are gone and the chest is the card: a big one, lit,
+ * floating, throwing sparks, with its name under it and one button to open it.
+ *
+ * Locked and already-opened are the same shape with the light switched off,
+ * because a reward you can see waiting is worth more than one you cannot.
+ */
+function DailyChest({ state, onOpen }) {
+  const ready = state.unlocked && !state.openedToday
+  const spent = state.openedToday
+
+  return (
+    <Panel className="p-6 text-center" accent={ready ? 'var(--color-gold)' : undefined}>
+      <div className="chest-stage h-[132px]">
+        {ready && <span className="chest-glow" aria-hidden="true" />}
+        <ChestArt
+          size={104}
+          className={ready ? 'float-soft' : ''}
+          style={ready ? undefined : { filter: 'grayscale(1) brightness(0.6)', opacity: 0.55 }}
+        />
+        {ready &&
+          [
+            { top: '6%', left: '18%', delay: '0s' },
+            { top: '18%', right: '15%', delay: '0.6s' },
+            { bottom: '22%', left: '11%', delay: '1.2s' },
+            { bottom: '10%', right: '21%', delay: '1.8s' },
+          ].map((at, i) => (
+            <span
+              key={i}
+              className="chest-spark"
+              aria-hidden="true"
+              style={{ ...at, animationDelay: at.delay }}
+            />
+          ))}
+      </div>
+
+      <div
+        className="font-display text-[26px] leading-none mt-4"
+        style={{ color: ready ? 'var(--color-gold)' : 'var(--color-ink-faint)' }}
+      >
+        Daily chest
+      </div>
+      <div className="text-[14px] text-ink-dim mt-2 leading-snug">
+        {spent ? 'A fresh one tomorrow.' : ready ? DAILY_CHEST.note : 'Finish ACTIVE to unlock it.'}
+      </div>
+
+      <Btn full size="lg" variant={ready ? 'gold' : 'dim'} disabled={!ready} className="mt-5" onClick={onOpen}>
+        {spent ? 'Come back tomorrow' : ready ? 'OPEN IT' : 'Locked'}
+      </Btn>
+    </Panel>
+  )
+}
+
 export default function Home({ onGo }) {
   const { state, openChest } = useGame()
   const [openSlot, setOpenSlot] = useState(null)
@@ -290,7 +348,6 @@ export default function Home({ onGo }) {
   const p = state.player
   const streak = streakTier(p.streak)
   const doneCount = state.dailies.filter((d) => d.done).length
-  const chestReady = state.chest.unlocked && !state.chest.openedToday
 
   const slotState = (id) => state.dailies.find((d) => d.id === id) ?? { minutes: 0, done: false }
 
@@ -359,40 +416,7 @@ export default function Home({ onGo }) {
       </Panel>
 
       {/* ------------------------------------------------------------ chest */}
-      <Panel className="p-3.5 text-center" accent={chestReady ? 'var(--color-gold)' : undefined}>
-        <ChestArt
-          size={52}
-          className={`mx-auto ${chestReady ? 'float-soft' : ''}`}
-          style={chestReady ? undefined : { filter: 'grayscale(1) brightness(0.55)', opacity: 0.7 }}
-        />
-        <div className="font-display text-[19px] mt-3 text-ink">
-          {state.chest.openedToday ? 'Opened today' : chestReady ? DAILY_CHEST.name : 'Locked'}
-        </div>
-        <div className="text-[14px] text-ink-dim mt-1.5">
-          {state.chest.openedToday ? 'A fresh one tomorrow.' : chestReady ? DAILY_CHEST.note : 'Finish ACTIVE to unlock it.'}
-        </div>
-
-        {/* The odds are on the card, because a pull you can't read isn't exciting. */}
-        <div className="flex justify-center gap-1.5 mt-3">
-          {RARITY_ORDER.map((k) => (
-            <span
-              key={k}
-              // On the raised surface rather than on a wash of its own colour:
-              // a tint pulls the ground towards the text, and the common slate
-              // at 14% took its own chip down to 4:1.
-              className="label px-2 py-1 rounded-full bg-panel-2"
-              style={{ color: RARITY[k].color, opacity: chestReady ? 1 : 0.45 }}
-              title={RARITY[k].label}
-            >
-              {RARITY[k].weight}%
-            </span>
-          ))}
-        </div>
-
-        <Btn full variant={chestReady ? 'gold' : 'dim'} disabled={!chestReady} className="mt-3" onClick={openChest}>
-          {state.chest.openedToday ? 'Come back tomorrow' : 'Open chest'}
-        </Btn>
-      </Panel>
+      <DailyChest state={state.chest} onOpen={openChest} />
 
       {openSlot && (
         <SlotSheet
