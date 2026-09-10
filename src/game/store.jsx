@@ -462,6 +462,22 @@ function reducer(state, action) {
       }
     }
 
+    /**
+     * An exercise added to the session you are in.
+     *
+     * The plan is the session's running order now, not just what a routine
+     * walked in with — adding one mid-session appends to it, which is what
+     * makes the screen a list you build rather than a form you retype.
+     */
+    case 'sessionAddLift': {
+      if (!state.session) return state
+      const lift = String(action.lift ?? '').trim()
+      if (!lift) return state
+      const plan = state.session.plan ?? []
+      const next = plan.includes(lift) ? plan : [...plan, lift]
+      return { ...state, session: { ...state.session, plan: next, lift } }
+    }
+
     case 'saveRoutine': {
       const lifts = action.lifts.filter(Boolean)
       if (!lifts.length) return state
@@ -911,6 +927,7 @@ export function GameProvider({ children }) {
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),
       sessionSet: (lift, reps, weight) => dispatch({ type: 'sessionSet', lift, reps, weight }),
+      sessionAddLift: (lift) => dispatch({ type: 'sessionAddLift', lift }),
       sessionUndoSet: () => dispatch({ type: 'sessionUndoSet' }),
       sessionInterval: (work, rest) => dispatch({ type: 'sessionInterval', work, rest }),
       finishSession: () => dispatch({ type: 'finishSession' }),

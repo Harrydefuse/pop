@@ -10,7 +10,6 @@ import {
   SPLIT_M,
   TRACKED,
   WEIGHT_STEP,
-  byLift,
   clock,
   elapsedMs,
   intervalPhase,
@@ -258,47 +257,6 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
   )
 }
 
-/**
- * The plan you are working down, and where you are in it.
- *
- * A routine is only worth saving if the session then knows about it. Each lift
- * is a chip you can tap to switch to, and it ticks once you have logged a set
- * of it — so the question "what's next" is answered by looking rather than by
- * remembering.
- */
-function PlanStrip({ plan, sets, lift, onPick }) {
-  if (!plan?.length) return null
-  const done = new Set(sets.map((s) => s.lift))
-  return (
-    <div className="mt-3 text-left">
-      <div className="label text-ink-faint">
-        Today&apos;s plan · {plan.filter((l) => done.has(l)).length} of {plan.length}
-      </div>
-      <div className="flex flex-wrap gap-1.5 mt-2">
-        {plan.map((name) => {
-          const isDone = done.has(name)
-          const active = name === lift
-          return (
-            <button
-              key={name}
-              onClick={() => onPick(name)}
-              aria-pressed={active}
-              className="label px-2.5 min-h-[34px] rounded-full inline-flex items-center gap-1.5 transition-colors"
-              style={{
-                background: active ? 'var(--color-neon)' : 'var(--color-panel-2)',
-                color: active ? 'var(--color-on-accent)' : isDone ? 'var(--color-ink-faint)' : 'var(--color-ink)',
-              }}
-            >
-              {isDone && <Icon name="check" size={11} color={active ? 'var(--color-on-accent)' : 'var(--color-lime)'} />}
-              {name}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 /** How long to sit down for, and the choices offered. */
 const REST_S = [60, 90, 120, 180]
 
@@ -355,195 +313,199 @@ function RestClock({ sets, ms, length, onLength }) {
 }
 
 /**
- * What you did the last time you touched this lift.
+ * One exercise, as a card you fill in.
  *
- * The single most useful thing a gym tracker does. Without it the steppers
- * opened on eight reps at forty kilos every session regardless of what you had
- * done on Tuesday, which meant the app knew your history and made you remember
- * it anyway.
+ * The old screen asked you to hold three things in your head at once: which
+ * exercise the picker was pointing at, what the steppers currently said, and
+ * where the set you just logged had gone. This is the shape every gym app
+ * converged on instead, because it removes all three questions — the exercise
+ * is the heading, the sets are under it, and the next one goes on the end.
+ *
+ * Only the card you are working on opens its steppers. Five exercises with five
+ * sets of controls is the same wall of numbers in a different arrangement.
  */
-function LastTime({ record, best }) {
-  if (!record) {
-    return <div className="text-[13px] text-ink-faint mt-2">First time on this one — the app will remember it.</div>
-  }
+function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onUndo }) {
+  const muscle = MUSCLES.find((m) => m.id === muscleOf(name, custom))
+  const [reps, setReps] = useState(8)
+  const [weight, setWeight] = useState(40)
+
+  // Opens on the heaviest set you did of it last time, so the common case —
+  // repeat, or add a little — is already dialled in before you touch anything.
+  useEffect(() => {
+    const top = topSet(sets.length ? sets : (last?.sets ?? []))
+    if (!top) return
+    setReps(top.reps)
+    setWeight(top.weight ?? 0)
+    // Only when the card opens, or typing over it mid-set would fight you.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, name])
+
+  const volume = sets.reduce((n, s) => n + s.reps * (s.weight ?? 0), 0)
+
   return (
-    <div className="mt-2.5">
-      <div className="flex items-baseline gap-2">
-        <span className="label text-ink-faint">Last time · {since(record.at)}</span>
-        {best ? <span className="label text-ink-faint ml-auto">best {Math.round(best.e1rm)}kg est.</span> : null}
-      </div>
-      <div className="flex flex-wrap gap-1.5 mt-1.5">
-        {record.sets.map((set, i) => (
-          <span key={i} className="label px-2 py-1 rounded-full bg-panel-2 text-ink-dim">
-            {set.reps}
-            {set.weight ? ` × ${set.weight}kg` : ''}
+    <Panel className="overflow-hidden">
+      <button
+        onClick={onOpen}
+        aria-expanded={open}
+        className="w-full flex items-center gap-3 px-3.5 py-3 min-h-[56px] text-left active:bg-panel-2"
+      >
+        <span
+          className="w-1.5 h-8 shrink-0 rounded-full"
+          style={{ background: muscle?.tone ?? 'var(--color-line-hot)' }}
+          aria-hidden="true"
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-[16px] text-ink truncate">{name}</span>
+          <span className="block label text-ink-faint mt-1">
+            {sets.length
+              ? `${sets.length} ${sets.length === 1 ? 'set' : 'sets'}${volume ? ` · ${Math.round(volume).toLocaleString()}kg` : ''}`
+              : last
+                ? `last time ${since(last.at)}`
+                : 'nothing logged yet'}
           </span>
-        ))}
-      </div>
-    </div>
+        </span>
+        {best ? <span className="label text-ink-faint shrink-0">{Math.round(best.e1rm)}kg est.</span> : null}
+      </button>
+
+      {/* The sets themselves, numbered the way a notebook would number them. */}
+      {sets.length > 0 && (
+        <div className="px-3.5 pb-2">
+          {sets.map((s, i) => (
+            <div key={`${s.at}-${i}`} className="flex items-center gap-3 py-1.5 border-t border-line">
+              <span className="figure text-[13px] text-ink-faint w-4 shrink-0">{i + 1}</span>
+              <span className="text-[15px] text-ink">
+                {s.weight ? `${s.weight} kg × ${s.reps}` : `${s.reps} reps`}
+              </span>
+              {i === sets.length - 1 && (
+                <button
+                  onClick={onUndo}
+                  className="label text-ink-faint ml-auto min-h-[44px] px-2 active:text-danger"
+                  aria-label={`Undo the last set of ${name}`}
+                >
+                  Undo
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {open && (
+        <div className="px-3.5 pb-3.5 pt-1 border-t border-line">
+          {last?.sets?.length > 0 && (
+            <div className="flex flex-wrap items-baseline gap-1.5 mb-2.5">
+              <span className="label text-ink-faint">Last time</span>
+              {last.sets.map((s, i) => (
+                <span key={i} className="label px-2 py-1 rounded-full bg-panel-2 text-ink-dim">
+                  {s.weight ? `${s.weight} × ${s.reps}` : `${s.reps} reps`}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <Stepper label="REPS" value={reps} onChange={setReps} min={1} max={500} />
+            <Stepper
+              label="WEIGHT"
+              value={weight}
+              onChange={setWeight}
+              step={WEIGHT_STEP}
+              max={1000}
+              suffix={weight === 0 ? '' : 'kg'}
+            />
+          </div>
+          {weight === 0 && <div className="text-[13px] text-ink-faint mt-1.5">Bodyweight — reps only.</div>}
+          <Btn full variant="go" className="mt-2" onClick={() => onAdd(reps, weight)}>
+            {weight === 0 ? `Add ${reps} reps` : `Add ${weight}kg × ${reps}`}
+          </Btn>
+        </div>
+      )}
+    </Panel>
   )
 }
 
 /**
- * What you lifted, how many times, how heavy.
+ * A gym session, as a list you build.
  *
- * A clock does not describe a gym session, and neither does a rep count on its
- * own — five by five at a hundred kilos and five by five at forty are the same
- * row otherwise. None of it earns XP: that still comes off the clock, so a
- * typed weight cannot be turned into a level. It is a training record.
+ * Everything that is not the list moved out: the clock and the controls are in
+ * the bar above, the rest timer sits under it, and what the session is worth
+ * waits until the end where it belongs. What is left is the exercises, in the
+ * order you did them.
  */
 function StrengthReadout({ session, ms }) {
-  const { state, sessionSet, sessionUndoSet, saveRoutine } = useGame()
-  const [lift, setLift] = useState(session.lift ?? 'Bench press')
-  const [reps, setReps] = useState(8)
-  const [weight, setWeight] = useState(40)
-  const [pickingLift, setPickingLift] = useState(false)
+  const { state, sessionSet, sessionAddLift, sessionUndoSet, saveRoutine } = useGame()
+  const [picking, setPicking] = useState(false)
   const [rest, setRest] = useState(90)
   const [naming, setNaming] = useState(null)
   const sets = session.sets ?? NONE
-  const lastTime = state.lastSets?.[lift]
-  const plan = session.plan ?? []
-  // What this session actually turned out to be, in the order it happened —
-  // which is the thing worth saving, not the plan you walked in with.
-  const done = useMemo(() => [...new Set(sets.map((s) => s.lift))], [sets])
+  const plan = session.plan ?? NONE
+  // A session started from a routine opens on its first exercise: the answer to
+  // "what am I doing" is already known and should not need a tap.
+  const [open, setOpen] = useState(session.lift ?? plan[0] ?? null)
 
-  // Pick a lift and the steppers land on the heaviest set you did of it last
-  // time, so the common case — repeat, or add a little — is already dialled in.
-  // Only when the lift changes: typing over it mid-session would fight you.
-  useEffect(() => {
-    const top = topSet(lastTime?.sets ?? [])
-    if (!top) return
-    setReps(top.reps)
-    setWeight(top.weight ?? 0)
-    // The lift is the trigger; the record is looked up from it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lift])
-  const totals = setTotals(sets)
-  const perLift = byLift(sets)
-
-  // What to put at the top of the picker: this session first, then whatever
-  // the last few sessions were built out of. Most people rotate through the
-  // same fifteen exercises and should never have to search for them.
-  const recentLifts = useMemo(() => {
-    const seen = [...done]
-    for (const entry of state.log ?? []) {
-      for (const g of entry.detail?.lifts ?? []) if (!seen.includes(g.lift)) seen.push(g.lift)
-      if (seen.length >= 8) break
-    }
+  // The session's running order: what it was planned with, plus anything that
+  // got logged without being planned.
+  const order = useMemo(() => {
+    const seen = [...plan]
+    for (const s of sets) if (s.lift && !seen.includes(s.lift)) seen.push(s.lift)
     return seen
+  }, [plan, sets])
+
+  const done = useMemo(() => [...new Set(sets.map((s) => s.lift))], [sets])
+  const recent = useMemo(() => {
+    const out = [...done]
+    for (const entry of state.log ?? NONE) {
+      for (const g of entry.detail?.lifts ?? NONE) if (!out.includes(g.lift)) out.push(g.lift)
+      if (out.length >= 8) break
+    }
+    return out
   }, [done, state.log])
+
+  const add = (lift, reps, weight) => {
+    sessionSet(lift, reps, weight)
+    setOpen(lift)
+  }
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-2 mt-4">
-        <Stat label="SETS" value={totals.sets} />
-        <Stat label="REPS" value={totals.reps} />
-        <Stat label="VOLUME" value={totals.volume ? `${Math.round(totals.volume)}kg` : '—'} tone="var(--color-gold)" />
-      </div>
-
-      {/* The exercise comes off a catalogue rather than a text field: free text
-          turns the log into a pile of spellings of "bench press" that nothing
-          can add up. The list is long enough now to need searching, so it
-          opens rather than unfolding in place. */}
-      <button
-        onClick={() => setPickingLift(true)}
-        className="w-full min-h-[52px] border border-line rounded-[var(--radius-sm)] mt-3 px-3 flex items-center gap-2 active:bg-panel-2"
-      >
-        <span
-          className="w-1.5 h-7 shrink-0 rounded-full"
-          style={{ background: MUSCLES.find((m) => m.id === muscleOf(lift, state.exercises))?.tone }}
-          aria-hidden="true"
-        />
-        <span className="min-w-0 flex-1 text-left">
-          <span className="block label text-ink-faint">Exercise</span>
-          <span className="block text-[15px] text-ink truncate mt-0.5">{lift}</span>
-        </span>
-        <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
-      </button>
-
-      <LastTime record={lastTime} best={state.records?.[lift]} />
-      <PlanStrip plan={plan} sets={sets} lift={lift} onPick={setLift} />
-
-      <ExercisePicker
-        open={pickingLift}
-        current={lift}
-        recent={recentLifts}
-        onPick={setLift}
-        onClose={() => setPickingLift(false)}
-      />
-
-      <div className="grid grid-cols-2 gap-2 mt-2">
-        <Stepper label="REPS" value={reps} onChange={setReps} min={1} max={500} />
-        <Stepper
-          label="WEIGHT"
-          value={weight}
-          onChange={setWeight}
-          step={WEIGHT_STEP}
-          max={1000}
-          suffix={weight === 0 ? '' : 'kg'}
-        />
-      </div>
-      {weight === 0 && <div className="text-[14px] text-ink-faint mt-1">Bodyweight — reps only.</div>}
-
-      <Btn
-        full
-        className="mt-2"
-        onClick={() => sessionSet(lift, reps, weight)}
-        style={{ background: 'var(--color-gold)', borderColor: 'var(--color-gold)', color: 'var(--color-on-accent)' }}
-      >
-        Log {reps} × {weight === 0 ? 'bodyweight' : `${weight}kg`}
-      </Btn>
-
       <RestClock sets={sets} ms={ms} length={rest} onLength={setRest} />
 
-      {sets.length > 0 && (
-        <div className="mt-3 border-t border-line pt-3 text-left">
-          <div className="flex items-center justify-between mb-2">
-            <span className="label text-ink-faint">This session</span>
-            <button onClick={sessionUndoSet} className="label text-ink-faint min-h-[44px] px-2 active:text-danger">
-              Undo last
-            </button>
+      {order.length === 0 && (
+        <Panel className="p-5 text-center">
+          <div className="font-display text-[17px] text-ink">Nothing in this one yet</div>
+          <div className="text-[14px] text-ink-dim mt-2 leading-snug">
+            Add the first exercise and the sets go under it. The clock is already running.
           </div>
-
-          {/* Grouped by lift, because that is how a session is actually
-              remembered: four exercises, not nineteen numbered sets. */}
-          <div className="space-y-2.5">
-            {perLift.map((g) => (
-              <div key={g.lift}>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[15px] text-ink truncate">{g.lift}</span>
-                  <span className="text-[14px] text-ink-faint ml-auto shrink-0">
-                    {g.volume ? `${Math.round(g.volume)}kg` : `${g.reps} reps`}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {sets
-                    .filter((set) => (set.lift ?? 'Other') === g.lift)
-                    .map((set, i) => (
-                      <span
-                        key={`${g.lift}-${set.at}-${i}`}
-                        className="text-[14px] px-1.5 py-0.5 border border-line text-ink-dim"
-                      >
-                        {set.reps}
-                        {set.weight ? ` × ${set.weight}kg` : ''}
-                      </span>
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </Panel>
       )}
+
+      {order.map((name) => (
+        <ExerciseCard
+          key={name}
+          name={name}
+          sets={sets.filter((s) => (s.lift ?? 'Other') === name)}
+          last={state.lastSets?.[name]}
+          best={state.records?.[name]}
+          custom={state.exercises ?? NONE}
+          open={open === name}
+          onOpen={() => setOpen(open === name ? null : name)}
+          onAdd={(reps, weight) => add(name, reps, weight)}
+          onUndo={sessionUndoSet}
+        />
+      ))}
+
+      <Btn full variant="ghost" onClick={() => setPicking(true)}>
+        <Icon name="plus" size={12} color="currentColor" /> Add an exercise
+      </Btn>
 
       {/* Saveable once there is a shape to save. One lift is not a routine. */}
       {done.length > 1 &&
         (naming === null ? (
-          <Btn variant="ghost" full size="sm" className="mt-3" onClick={() => setNaming(done[0])}>
+          <Btn variant="ghost" full size="sm" onClick={() => setNaming(done[0])}>
             Save these {done.length} as a routine
           </Btn>
         ) : (
           <form
-            className="flex gap-2 mt-3"
+            className="flex gap-2"
             onSubmit={(e) => {
               e.preventDefault()
               saveRoutine(naming, done)
@@ -564,7 +526,16 @@ function StrengthReadout({ session, ms }) {
           </form>
         ))}
 
-      <div className="text-[14px] text-ink-faint mt-3">{clock(ms)} under the bar</div>
+      <ExercisePicker
+        open={picking}
+        current={open}
+        recent={recent}
+        onPick={(name) => {
+          sessionAddLift(name)
+          setOpen(name)
+        }}
+        onClose={() => setPicking(false)}
+      />
     </>
   )
 }
@@ -654,11 +625,56 @@ function Stat({ label, value, tone = 'var(--color-ink)' }) {
   )
 }
 
+/**
+ * The bar at the top of a running session.
+ *
+ * The clock used to be a 44px number in the middle of the screen with the
+ * controls under it, which put the least interactive thing in the app where
+ * your thumb is and pushed the work below the fold. It is a bar now: it sticks
+ * to the top, it holds the only two buttons a session needs, and everything
+ * else on the screen is the session itself.
+ */
+function SessionBarTop({ act, ms, session, ready, secs, summary, tint, onPause, onResume, onFinish, auto }) {
+  return (
+    <div className="sticky top-0 z-30 -mx-3 px-3 pt-1 pb-2 bg-void">
+      <Panel className="p-3" accent={tint}>
+        <div className="flex items-center gap-3">
+          <span
+            className={`w-2.5 h-2.5 shrink-0 rounded-full ${session.paused ? '' : 'pulse-ring'}`}
+            style={{ background: session.paused ? 'var(--color-ink-faint)' : tint }}
+            aria-hidden="true"
+          />
+          <div className="min-w-0">
+            <div className="label text-ink-faint">
+              {session.paused ? (auto ? 'Auto-paused' : 'Paused') : act.name}
+            </div>
+            <div className="figure text-[26px] text-ink leading-none mt-1 tabular-nums">{clock(ms)}</div>
+          </div>
+          <div className="flex gap-1.5 ml-auto shrink-0">
+            <Btn size="sm" variant="ghost" onClick={session.paused ? onResume : onPause}>
+              {session.paused ? 'Resume' : 'Pause'}
+            </Btn>
+            <Btn size="sm" variant={ready ? 'go' : 'dim'} disabled={!ready} onClick={onFinish}>
+              Finish
+            </Btn>
+          </div>
+        </div>
+        {(summary || !ready) && (
+          <div className="label text-ink-faint mt-2.5 pt-2.5 border-t border-line">
+            {ready ? summary : `Counts from one minute · ${MIN_SESSION_S - secs}s to go`}
+          </div>
+        )}
+      </Panel>
+    </div>
+  )
+}
+
 /** The instrument for whatever you are doing. Everything the log needs is
  *  read off it. */
 function Running({ session, act }) {
   const { pauseSession, resumeSession, finishSession, discardSession, sessionFix, state } = useGame()
   const [, tick] = useState(0)
+  const [worth, setWorth] = useState(false)
   const moved = useRef(Date.now())
   const auto = useRef(false)
   const gps = useTrace(session, (point, metres, keep) => {
@@ -695,101 +711,98 @@ function Running({ session, act }) {
   const preview = resolveActivity(state.player, { activityId: act.id, amount, verified: true })
   const tint = TINT[act.id] ?? 'var(--color-lime)'
 
+  // One line under the clock, in whatever the session actually measures.
+  const totals = setTotals(session.sets ?? NONE)
+  const summary =
+    mode === 'strength'
+      ? totals.sets
+        ? `${totals.sets} ${totals.sets === 1 ? 'set' : 'sets'} · ${totals.reps} reps${totals.volume ? ` · ${Math.round(totals.volume).toLocaleString()}kg` : ''}`
+        : 'No sets yet'
+      : mode === 'distance'
+        ? `${(session.metres / 1000).toFixed(2)} km${session.metres > 200 ? ` · ${pace(ms, session.metres)} /km` : ''}`
+        : null
+
   return (
-    <div className="stack-in p-4 space-y-4">
-      <Panel className="p-4 text-center" accent={tint}>
-        <SectionTitle color={tint}>
-          {session.paused ? (auto.current ? 'AUTO-PAUSED' : 'PAUSED') : act.name.toUpperCase()}
-        </SectionTitle>
-        <div className="text-[44px] leading-none text-ink tabular-nums" aria-live="off">
-          {clock(ms)}
-        </div>
+    <div className="p-3 space-y-3">
+      <SessionBarTop
+        act={act}
+        ms={ms}
+        session={session}
+        ready={ready}
+        secs={secs}
+        summary={summary}
+        tint={tint}
+        auto={auto.current}
+        onPause={pauseSession}
+        onResume={() => {
+          auto.current = false
+          moved.current = Date.now()
+          resumeSession()
+        }}
+        onFinish={finishSession}
+      />
 
-        {mode === 'distance' && <DistanceReadout session={session} ms={ms} />}
-        {mode === 'strength' && <StrengthReadout session={session} ms={ms} />}
-        {mode === 'interval' && <IntervalReadout session={session} ms={ms} />}
-        {mode === 'steady' && <SteadyReadout act={act} ms={ms} preview={preview} />}
+      {mode === 'strength' && <StrengthReadout session={session} ms={ms} />}
 
-        {GPS_NOTE[gps] && (
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            <Icon name="pin" size={10} color={gps === 'on' ? 'var(--color-lime)' : 'var(--color-ink-faint)'} />
-            <span className="text-[14px] text-ink-faint">{GPS_NOTE[gps]}</span>
-          </div>
-        )}
+      {mode !== 'strength' && (
+        <Panel className="p-4 text-center" accent={tint}>
+          {mode === 'distance' && <DistanceReadout session={session} ms={ms} />}
+          {mode === 'interval' && <IntervalReadout session={session} ms={ms} />}
+          {mode === 'steady' && <SteadyReadout act={act} ms={ms} preview={preview} />}
 
-        {!ready && (
-          <div className="text-[14px] text-ink-faint mt-3">
-            Sessions count from one minute. {MIN_SESSION_S - secs}s to go.
-          </div>
-        )}
-
-        <div className="flex gap-2 mt-4">
-          {session.paused ? (
-            <Btn
-              full
-              onClick={() => {
-                auto.current = false
-                moved.current = Date.now()
-                resumeSession()
-              }}
-            >
-              Resume
-            </Btn>
-          ) : (
-            <Btn full variant="ghost" onClick={pauseSession}>
-              Pause
-            </Btn>
-          )}
-          <Btn
-            full
-            disabled={!ready}
-            onClick={finishSession}
-            style={ready ? { background: 'var(--color-lime)', borderColor: 'var(--color-lime)', color: 'var(--color-on-accent)' } : undefined}
-          >
-            Finish
-          </Btn>
-        </div>
-        <button
-          onClick={discardSession}
-          className="font-display text-[12px] text-ink-faint mt-3 min-h-[44px] w-full active:text-danger"
-        >
-          Throw it away
-        </button>
-      </Panel>
-
-      {mode === 'distance' && (
-        <Panel className="p-3">
-          <div className="font-display text-[12px] text-ink-faint">Your route</div>
-          {session.points.length > 1 ? (
-            <RouteTrace points={session.points} />
-          ) : (
-            <div className="h-[132px] grid place-items-center text-[14px] text-ink-faint text-center px-4">
-              {gps === 'on' || gps === 'waiting'
-                ? 'The line appears once you have covered some ground.'
-                : 'No location, so there is no line to draw. The clock still counts.'}
+          {GPS_NOTE[gps] && (
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <Icon name="pin" size={10} color={gps === 'on' ? 'var(--color-lime)' : 'var(--color-ink-faint)'} />
+              <span className="text-[14px] text-ink-faint">{GPS_NOTE[gps]}</span>
             </div>
           )}
         </Panel>
       )}
 
-      <Panel className="p-3">
-        <div className="font-display text-[12px] text-ink-faint">What this is worth</div>
-        <div className="flex items-baseline gap-2 mt-2">
-          <span className="text-[18px] text-lime">+{preview.xp}</span>
-          <span className="text-[14px] text-ink-dim">XP</span>
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-          {Object.entries(preview.statGains).map(([k, v]) => (
-            <span key={k} className="text-[14px] text-ink-dim">
-              {k} +{v}
-            </span>
-          ))}
-        </div>
-        <div className="text-[14px] text-ink-faint mt-3 leading-relaxed">
-          It keeps running if you close the app — the clock is a start time, not a timer, so locking your phone mid-run
-          costs you nothing.
-        </div>
+      {/* Only once there is a line. An empty 132px box that says there is
+          nothing to draw is a bigger way of saying nothing. */}
+      {mode === 'distance' && session.points.length > 1 && (
+        <Panel className="p-3">
+          <div className="label text-ink-faint">Your route</div>
+          <RouteTrace points={session.points} />
+        </Panel>
+      )}
+
+      {/* Both of these are answers to questions nobody asks mid-set, so they
+          sit at the bottom behind a tap rather than between you and the bar. */}
+      <Panel>
+        <button
+          onClick={() => setWorth((v) => !v)}
+          aria-expanded={worth}
+          className="w-full flex items-center gap-2 px-3.5 py-3 min-h-[48px] text-left active:bg-panel-2"
+        >
+          <span className="label text-ink-faint flex-1">What this is worth</span>
+          <span className="text-[15px] text-lime">+{preview.xp} XP</span>
+          <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
+        </button>
+        {worth && (
+          <div className="px-3.5 pb-3.5 border-t border-line pt-3">
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {Object.entries(preview.statGains).map(([k, v]) => (
+                <span key={k} className="text-[14px] text-ink-dim">
+                  {k} +{v}
+                </span>
+              ))}
+            </div>
+            <div className="text-[14px] text-ink-faint mt-3 leading-relaxed">
+              It keeps running if you close the app — the clock is a start time, not a timer, so locking your phone
+              mid-run costs you nothing.
+            </div>
+          </div>
+        )}
       </Panel>
+
+      <button
+        onClick={discardSession}
+        className="label text-ink-faint min-h-[44px] w-full active:text-danger"
+      >
+        Throw it away
+      </button>
     </div>
   )
 }
