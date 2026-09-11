@@ -33,3 +33,4 @@ tools/sydney/terrain.txt
 tools/sydney/palette.json
 tools/sydney/*.png
 tools/sydney/__pycache__/
+tools/pets.png
