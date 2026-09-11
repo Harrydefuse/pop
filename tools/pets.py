@@ -53,49 +53,83 @@ BODY = {18:(28,39),19:(26,42),20:(24,44),21:(23,45),22:(22,45),23:(21,45),
 HEAD = {8:(14,20),9:(12,22),10:(11,23),11:(10,24),12:(9,25),13:(9,25),
         14:(9,26),15:(5,26),16:(4,26),17:(4,26),18:(4,25),19:(5,24),
         20:(7,23),21:(10,22),22:(13,22)}
-EAR = {1:(15,15),2:(14,16),3:(14,17),4:(13,17),5:(13,18),6:(12,18),
-       7:(12,19),8:(11,19),9:(11,20),10:(12,21)}
-INNER = {4:(15,16),5:(15,17),6:(14,17),7:(14,18),8:(13,18),9:(13,19)}
+EAR = {1:(14,14),2:(13,15),3:(13,16),4:(12,16),5:(12,17),6:(11,17),
+       7:(11,18),8:(11,18),9:(12,19),10:(13,20)}
+INNER = {5:(13,15),6:(13,15),7:(12,16),8:(12,16)}
 
 
 def canine(a, tail_fat=0, ear_lift=0, tail=True, ears=True):
-    """Paint the whole animal in 'b', with 'd' far legs and 'c' paws."""
+    """Paint the whole animal in 'b', with 'd' far legs and 'c' paws.
+
+    Each part is tracked and given its own border, so the head reads as a head
+    sitting on a neck rather than as the left end of one continuous tan mass.
+    """
     if tail:
+        a.part()
         a.rows({y: [(x0 - tail_fat, x1, 'b')] for y, (x0, x1) in TAIL.items()})
-    if ears:
-        ear = {y - ear_lift: v for y, v in EAR.items()}
-        a.rows({y: [(x0, x1, 'd'), (x0 + 7, x1 + 6, 'd')] for y, (x0, x1) in ear.items()})
-        a.rows({y - ear_lift: [(x0, x1, 'l'), (x0 + 7, x1 + 6, 'l')]
-                for y, (x0, x1) in INNER.items()})
+        a.edge()
+    a.part()
+    a.rows({y: [(22, 26, 'd'), (33, 37, 'd')] for y in range(31, 41)})
+    a.rows({39: [(21, 26, 'd'), (32, 37, 'd')], 40: [(21, 26, 'd'), (32, 37, 'd')]})
+    a.rows({40: [(26, 30, 'd'), (37, 41, 'd')], 41: [(26, 30, 'd'), (37, 41, 'd')]})
+    a.edge()
+
+    a.part()
     for spec in (NECK, BODY):
         a.rows({y: [(x0, x1, 'b')] for y, (x0, x1) in spec.items()})
-    a.rows({y: [(22, 26, 'd'), (33, 37, 'd')] for y in range(31, 41)})
-    a.rows({y: [(27, 32, 'b'), (38, 43, 'b')] for y in range(32, 42)})
-    a.rows({39: [(21, 26, 'd'), (32, 37, 'd')], 40: [(21, 26, 'd'), (32, 37, 'd')]})
-    a.rows({40: [(26, 33, 'c'), (37, 44, 'c')], 41: [(26, 33, 'c'), (37, 44, 'c')]})
-    a.rows({y: [(x0, x1, 'b')] for y, (x0, x1) in HEAD.items()})
-    # light down the back, over the skull and along the bridge of the snout
-    a.rows({8: [(14, 20, 'l')], 9: [(13, 21, 'l')], 10: [(12, 20, 'l')],
-            15: [(6, 13, 'l')], 16: [(5, 12, 'l')],
-            18: [(28, 39, 'l')], 19: [(27, 41, 'l')], 20: [(28, 40, 'l')]})
-    # dark under the belly and behind the shoulder
+    # light down the back, dark under the belly and behind the shoulder
+    a.rows({18: [(28, 39, 'l')], 19: [(27, 41, 'l')], 20: [(28, 40, 'l')]})
     a.rows({31: [(27, 42, 'd')], 32: [(27, 41, 'd')], 33: [(27, 40, 'd')],
             26: [(21, 23, 'd')], 27: [(21, 24, 'd')], 28: [(21, 25, 'd')]})
-    # pale muzzle, throat and chest
-    a.rows({17: [(5, 13, 'c')], 18: [(5, 14, 'c')], 19: [(6, 16, 'c')],
-            20: [(8, 19, 'c')], 21: [(11, 21, 'c')], 22: [(14, 22, 'c')],
-            24: [(21, 25, 'c')], 25: [(21, 25, 'c')], 26: [(21, 26, 'c')],
+    a.rows({24: [(21, 25, 'c')], 25: [(21, 25, 'c')], 26: [(21, 26, 'c')],
             27: [(22, 26, 'c')], 28: [(22, 26, 'c')], 29: [(23, 27, 'c')]})
+    # the haunch, so the back leg is a leg and not a hole in the barrel
+    a.line(40, 20, 37, 27, 'd')
+    a.line(37, 27, 35, 33, 'd')
+    a.line(41, 21, 38, 27, 'l')
+    a.edge()
+
+    a.part()
+    a.rows({y: [(27, 32, 'b'), (38, 43, 'b')] for y in range(32, 42)})
+    a.rows({40: [(26, 33, 'c'), (37, 44, 'c')], 41: [(26, 33, 'c'), (37, 44, 'c')]})
+    a.rows({y: [(27, 28, 'd'), (38, 39, 'd')] for y in range(32, 40)})
+    a.edge()
+
+    if ears:
+        a.part()
+        ear = {y - ear_lift: v for y, v in EAR.items()}
+        a.rows({y: [(x0, x1, 'd'), (x0 + 8, x1 + 8, 'd')] for y, (x0, x1) in ear.items()})
+        a.rows({y - ear_lift: [(x0, x1, 'l'), (x0 + 8, x1 + 8, 'l')]
+                for y, (x0, x1) in INNER.items()})
+        a.edge()
+
+    a.part()
+    a.rows({y: [(x0, x1, 'b')] for y, (x0, x1) in HEAD.items()})
+    a.rows({8: [(14, 20, 'l')], 9: [(13, 21, 'l')], 10: [(12, 20, 'l')],
+            15: [(6, 13, 'l')], 16: [(5, 12, 'l')]})
+    a.rows({17: [(5, 12, 'c')], 18: [(5, 13, 'c')], 19: [(6, 15, 'c')],
+            20: [(8, 18, 'c')], 21: [(11, 20, 'c')], 22: [(14, 21, 'c')]})
+    # a shadow under the ear, where the skull turns away
+    a.rows({12: [(21, 25, 'd')], 13: [(22, 25, 'd')], 14: [(23, 26, 'd')]})
+    a.edge()
     return a
 
 
-def face(a, nose='n', eye='e', pupil='k', glint='c'):
+def face(a, nose='n', eye='e', pupil='k', glint='c', brow=None):
+    """A face with an expression: a set brow, a lid, a catchlight, a jaw."""
+    brow = brow or nose
     a.rows({15: [(4, 6, nose)], 16: [(4, 7, nose)]})
-    a.rows({18: [(6, 10, nose)]})
-    a.rows({12: [(12, 16, eye)], 13: [(12, 16, eye)], 14: [(13, 15, eye)]})
-    a.rows({12: [(13, 15, pupil)], 13: [(13, 15, pupil)]})
-    a.px(13, 12, glint)
+    a.px(4, 15, glint)                                   # wet nose
+    a.rows({12: [(11, 17, eye)], 13: [(11, 17, eye)], 14: [(12, 16, eye)]})
+    a.rows({12: [(12, 13, pupil)], 13: [(12, 13, pupil)]})
+    a.px(15, 12, glint)
+    # the brow is the expression: a ridge over the eye, heavy at the front
+    a.rows({11: [(10, 16, brow)]})
+    # mouth: back along the jaw, with a turn up at the end
+    a.rows({18: [(6, 11, nose)]})
+    a.px(12, 17, nose)
     return a
+
 
 # -------------------------------------- PUP (common) — a hound that shows up
 PUP_PAL = {'o': '#2a1a0c', 'd': '#7c4a1f', 'b': '#c07f3c', 'l': '#e6b070',
@@ -106,10 +140,9 @@ def pup():
     a = Art()
     canine(a)
     a.rows({7:[(42,45,'c')], 8:[(42,46,'c')], 9:[(43,46,'c')]})   # tail tip
-    a.rows({4:[(15,16,'p'),(22,22,'p')], 5:[(15,17,'p'),(22,23,'p')],
-            6:[(14,17,'p'),(21,23,'p')], 7:[(14,18,'p'),(21,24,'p')],
-            8:[(13,18,'p'),(20,24,'p')], 9:[(13,19,'p'),(20,25,'p')]})
-    face(a)
+    a.rows({5:[(13,15,'p'),(21,23,'p')], 6:[(13,16,'p'),(21,24,'p')],
+            7:[(13,16,'p'),(21,24,'p')], 8:[(13,17,'p'),(21,25,'p')]})
+    face(a, brow='d')
     a.rows({21:[(22,25,'r')], 22:[(23,27,'r')], 23:[(24,28,'r')]})
     a.rows({24:[(26,27,'y')], 25:[(26,27,'y')]})
     a.outline()
@@ -122,18 +155,36 @@ TURBO_PAL = {'o': '#16260f', 'd': '#2a5f2e', 'g': '#4f9e46', 'G': '#7dc85f',
 
 def turbo():
     a = Art()
-    head = {19:(6,14),20:(4,14),21:(3,15),22:(2,15),23:(2,16),24:(2,17),
-            25:(3,18),26:(4,19),27:(6,20),28:(9,21)}
-    a.rows({y: [(x0, x1, 'g')] for y, (x0, x1) in head.items()})
-
+    # legs and tail sit behind the shell, so they are drawn and bordered first
+    a.part()
     a.rows({y: [(12,20,'g'), (33,41,'g')] for y in range(24, 34)})
     a.rows({y: [(11,21,'g'), (32,42,'g')] for y in range(34, 38)})
+    a.rows({y: [(12,13,'d'), (33,34,'d')] for y in range(24, 36)})
     a.rows({36:[(11,21,'d'), (32,42,'d')], 37:[(11,21,'d'), (32,42,'d')]})
     a.rows({38:[(12,13,'y'),(15,16,'y'),(18,19,'y'),(33,34,'y'),(36,37,'y'),(39,40,'y')]})
+    a.edge()
+    a.part()
     a.rows({26:[(42,45,'g')], 27:[(42,46,'g')], 28:[(43,46,'d')]})
-    a.rows({27:[(13,41,'c')], 28:[(14,40,'c')], 29:[(16,38,'c')], 30:[(19,35,'c')]})
+    a.edge()
 
-    # --- shell: three crisp crest spikes over a domed carapace
+    a.part()
+    head = {17:(5,13),18:(3,14),19:(2,15),20:(1,15),21:(1,16),22:(1,16),
+            23:(2,16),24:(3,16),25:(4,16)}
+    neck = {25:(6,17),26:(6,18),27:(7,19),28:(9,21),29:(11,23),30:(14,25)}
+    for spec in (head, neck):
+        a.rows({y: [(x0, x1, 'g')] for y, (x0, x1) in spec.items()})
+    a.rows({17:[(6,12,'G')], 18:[(4,11,'G')]})
+    a.rows({18:[(3,10,'d')]})                       # brow ridge
+    a.rows({19:[(3,8,'y')], 20:[(3,8,'y')], 21:[(4,7,'y')]})
+    a.rows({19:[(4,6,'k')], 20:[(4,6,'k')]})
+    a.px(7, 19, 'e')                                # catchlight
+    a.px(1, 21, 'k')                                # nostril
+    a.rows({23:[(1,11,'o')]})                       # a set mouth
+    a.px(12, 22, 'd')
+    a.rows({27:[(8,14,'d')], 29:[(12,18,'d')]})     # folds where the neck bends
+    a.edge()
+
+    a.part()
     for cx in (23, 28, 33):
         a.rows({6:[(cx,cx,'s')], 7:[(cx-1,cx+1,'s')], 8:[(cx-2,cx+2,'s')],
                 9:[(cx-2,cx+2,'s')], 10:[(cx-2,cx+2,'s')]})
@@ -146,7 +197,6 @@ def turbo():
     a.rows({9:[(21,32,'H')], 10:[(19,34,'H')], 11:[(17,35,'H')], 12:[(16,34,'H')],
             13:[(15,31,'H')], 14:[(14,26,'H')]})
     a.rows({24:[(11,44,'S')], 25:[(12,43,'S')], 26:[(14,41,'S')]})
-    # plate seams: one belt, staggered plates above and below it
     a.rows({17:[(11,43,'S')]})
     for x in (20, 27, 34):
         for y in range(12, 17):
@@ -154,20 +204,20 @@ def turbo():
     for x in (16, 23, 31, 38):
         for y in range(18, 24):
             a.px(x, y, 'S')
+    a.edge()
 
-    a.rows({21:[(4,7,'e')], 22:[(4,8,'e')]})
-    a.rows({21:[(5,6,'k')], 22:[(5,7,'k')]})
-    a.rows({25:[(3,10,'d')]})
-    a.px(3, 23, 'd')
-    a.px(2, 24, 'd')
-    a.rows({19:[(7,13,'G')], 20:[(5,12,'G')]})
+    # the pale plastron, painted last so it reads under the shell rim
+    a.part()
+    a.rows({27:[(17,39,'c')], 28:[(18,38,'c')], 29:[(20,36,'c')], 30:[(23,33,'c')]})
+    a.edge()
 
     a.shift(3)
     a.outline()
     return {'id': 'turbo', 'palette': TURBO_PAL, 'grid': a.grid()}
 
+
 # -------------------------------------------- FROST (rare) — an ice sentinel
-FROST_PAL = {'o': '#0e1626', 'd': '#3c5a86', 'b': '#7099c7', 'l': '#a8c8ea',
+FROST_PAL = {'o': '#0e1626', 'd': '#33507a', 'b': '#5d87ba', 'l': '#9cc0e6',
        'c': '#eaf4ff', 'i': '#3fc9f5', 'I': '#a8f2ff', 'e': '#7ff0ff',
        'k': '#08121f'}
 
@@ -185,7 +235,7 @@ def frost():
     _frost_shard(a, 36, 8, 20, 3)
     canine(a, tail_fat=2, ear_lift=1)
     a.rows({6:[(42,45,'c')], 7:[(41,45,'c')], 8:[(41,46,'c')], 9:[(42,46,'c')]})
-    face(a, nose='k', eye='e', pupil='k', glint='I')
+    face(a, nose='k', eye='e', pupil='k', glint='I', brow='d')
     a.outline()
     return {'id': 'frost', 'palette': FROST_PAL, 'grid': a.grid()}
 
@@ -212,38 +262,24 @@ def ember():
     a.rows({12:[(43,45,'r')], 13:[(44,46,'r')], 18:[(41,43,'r')], 23:[(35,37,'r')]})
     a.outline()      # the wing gets its own edge before the body covers its root
 
-    # --- tail along the ground
+    a.part()
     a.rows({33:[(35,41,'b')], 34:[(36,44,'b')], 35:[(38,46,'b')],
             36:[(40,48,'b')], 37:[(43,48,'b')]})
     a.rows({36:[(45,48,'R')], 37:[(45,48,'y')]})
-
-    # --- horns, swept back off the skull
-    a.line(19, 12, 27, 6, 'l', 2)
-    a.line(16, 11, 24, 4, 'w', 2)
-    for bx, by in ((20, 17), (23, 20), (26, 22)):   # neck spines
-        a.rows({by - 2: [(bx, bx + 1, 'l')], by - 1: [(bx - 1, bx + 2, 'l')]})
+    a.edge()
 
     # --- neck and body
-    neck = {17:(19,23),18:(19,24),19:(19,25),20:(20,27),21:(20,29),22:(21,31),
-            23:(21,33)}
+    a.part()
+    neck = {15:(18,23),16:(18,24),17:(18,25),18:(18,26),19:(19,28),20:(19,30),
+            21:(20,32),22:(20,34),23:(21,35)}
     body = {22:(24,34),23:(22,36),24:(21,38),25:(21,39),26:(21,40),27:(21,40),
             28:(21,40),29:(21,40),30:(22,40),31:(22,39),32:(23,39),33:(24,38),
             34:(25,37),35:(26,36)}
     for spec in (neck, body):
         a.rows({y: [(x0, x1, 'b')] for y, (x0, x1) in spec.items()})
-
-    # --- legs
-    a.rows({y: [(32,38,'b')] for y in range(33, 40)})
-    a.rows({y: [(22,28,'d')] for y in range(30, 40)})
-    a.rows({39:[(19,28,'d'),(31,41,'b')], 40:[(19,28,'d'),(31,41,'b')]})
-    a.rows({41:[(19,20,'w'),(22,23,'w'),(25,26,'w'),(31,32,'w'),(34,35,'w'),(37,38,'w')]})
-
-    # --- head
-    head = {10:(8,18),11:(7,20),12:(6,21),13:(5,21),14:(4,21),15:(4,21),
-            16:(4,21),17:(5,21),18:(6,20),19:(8,20)}
-    a.rows({y: [(x0, x1, 'b')] for y, (x0, x1) in head.items()})
-
-    # --- molten: belly, throat, cracks along the flank
+    a.rows({23:[(24,34,'l')]})                       # light along the spine
+    for bx, by in ((20, 17), (23, 20), (26, 22)):    # spines down the neck
+        a.rows({by - 2: [(bx, bx + 1, 'l')], by - 1: [(bx - 1, bx + 2, 'l')]})
     a.rows({26:[(21,24,'r')], 27:[(21,24,'r')], 28:[(21,25,'r')],
             29:[(22,25,'r')], 30:[(23,26,'r')]})
     a.rows({27:[(22,23,'R')], 28:[(22,24,'R')], 29:[(23,24,'R')]})
@@ -251,18 +287,40 @@ def ember():
     a.line(29, 25, 32, 31, 'r')                      # cracks, not stripes
     a.line(35, 27, 37, 33, 'r')
     a.px(30, 27, 'R'); a.px(31, 28, 'R'); a.px(36, 29, 'R')
+    a.line(35, 24, 32, 31, 'd')                      # the haunch
+    a.edge()
 
-    # --- light along the top of the skull and the back
+    # --- legs, each with its own edge so they are not holes in the barrel
+    a.part()
+    a.rows({y: [(32,38,'b')] for y in range(33, 40)})
+    a.rows({39:[(31,41,'b')], 40:[(31,41,'b')]})
+    a.rows({y: [(32,33,'d')] for y in range(33, 40)})
+    a.edge()
+    a.part()
+    a.rows({y: [(22,28,'b')] for y in range(30, 40)})
+    a.rows({39:[(19,28,'b')], 40:[(19,28,'b')]})
+    a.rows({y: [(22,23,'d')] for y in range(30, 40)})
+    a.edge()
+    a.rows({41:[(19,20,'w'),(22,23,'w'),(25,26,'w'),(31,32,'w'),(34,35,'w'),(37,38,'w')]})
+
+    # --- head, with the horns growing out of the same silhouette
+    a.part()
+    head = {10:(8,18),11:(7,20),12:(6,21),13:(5,21),14:(4,21),15:(4,21),
+            16:(4,21),17:(5,21),18:(6,20),19:(8,20)}
+    a.rows({y: [(x0, x1, 'b')] for y, (x0, x1) in head.items()})
+    a.line(19, 12, 27, 6, 'l', 2)
+    a.line(16, 11, 24, 4, 'w', 2)
     a.rows({10:[(9,17,'l')], 11:[(8,18,'l')]})
-    a.rows({12:[(7,16,'d')], 15:[(4,17,'d')], 16:[(4,18,'d')]})   # brow and jaw
-
-    # --- face
+    a.rows({12:[(7,16,'d')]})                       # brow
+    a.rows({15:[(4,17,'d')], 16:[(4,18,'d')]})      # the lower jaw, set apart
     a.rows({12:[(9,13,'R')], 13:[(9,13,'R')], 14:[(10,12,'R')]})
-    a.rows({12:[(10,12,'k')], 13:[(10,12,'k')]})
-    a.px(10, 13, 'y')
+    a.rows({12:[(10,11,'k')], 13:[(10,11,'k')]})
+    a.px(13, 12, 'y')                               # catchlight
     a.rows({16:[(4,12,'k')]})                       # mouth
     a.rows({17:[(5,6,'w'),(8,9,'w'),(11,12,'w')]})  # teeth
     a.px(5, 13, 'k'); a.px(5, 14, 'k')              # nostril
+    a.line(19, 11, 17, 17, 'd')                     # cheek, back of the skull
+    a.edge()
 
     a.outline()
     return {'id': 'ember', 'palette': EMBER_PAL, 'grid': a.grid()}
@@ -300,9 +358,11 @@ def _zeus_bolt(a, x, y, dx, dy, n=4):
 
 def zeus():
     a = Art()
-    a.line(44, 27, 47, 13, 'b', 2)
-    a.rows({7:[(46,47,'N')], 8:[(45,48,'N')], 9:[(45,48,'N')], 10:[(45,48,'N')],
-            11:[(46,48,'N')], 12:[(46,47,'N')]})
+    a.part()
+    a.line(44, 27, 47, 12, 'b', 2)
+    a.rows({6:[(46,47,'N')], 7:[(45,48,'N')], 8:[(45,48,'N')], 9:[(45,48,'N')],
+            10:[(45,48,'N')], 11:[(45,48,'N')], 12:[(46,48,'N')]})
+    a.edge()
 
     canine(a, tail=False, ears=False)
     _zeus_mane(a)
@@ -319,15 +379,16 @@ def zeus():
             5:[(13,17,'b'),(22,26,'b')], 6:[(14,17,'b'),(22,25,'b')]})
     a.rows({4:[(15,16,'n'),(24,25,'n')], 5:[(15,16,'n'),(24,25,'n')]})
 
-    face(a, glint='c')
-    a.rows({11:[(11,17,'n')]})
-    a.rows({12:[(12,17,'e')], 13:[(12,17,'e')], 14:[(13,16,'e')]})
-    a.rows({12:[(13,16,'k')], 13:[(13,16,'k')]})
-    a.px(13, 13, 'c')
-    a.rows({18:[(6,11,'k')]})
+    face(a, glint='c', brow='n')
+    a.rows({11:[(10,15,'n')]})                      # the heavy lion brow
+    a.rows({12:[(11,17,'e')], 13:[(11,17,'e')], 14:[(12,16,'e')]})
+    a.rows({12:[(12,14,'k')], 13:[(12,14,'k')]})
+    a.px(16, 12, 'c')
+    a.rows({18:[(6,11,'k')]})                       # a wide cat mouth
+    a.px(12, 17, 'k'); a.px(13, 16, 'k')
 
-    _zeus_bolt(a, 29, 11, 4, -3)
-    _zeus_bolt(a, 12, 27, -3, 3)
+    _zeus_bolt(a, 31, 9, 4, -3, 3)
+    _zeus_bolt(a, 9, 29, -3, 4, 3)
     a.outline()
     return {'id': 'zeus', 'palette': ZEUS_PAL, 'grid': a.grid()}
 
@@ -358,7 +419,7 @@ def tuskling():
     torso = {20:(15,25),21:(13,27),22:(10,30),23:(8,32),24:(8,33),25:(8,33),
              26:(9,33),27:(9,32),28:(10,32),29:(10,31),30:(11,31)}
     a.rows({y: [(x0, x1, 'g')] for y, (x0, x1) in torso.items()})
-    a.rows({20:[(15,25,'d')], 21:[(15,25,'d')]})            # neck in shadow
+    a.rows({19:[(15,25,'d')], 20:[(14,26,'d')], 21:[(14,26,'d')]})  # neck in shadow
     a.rows({23:[(9,14,'G')], 24:[(9,13,'G')], 25:[(9,13,'G')]})
     a.edge()
 
