@@ -127,13 +127,14 @@ function weightedRarity(rng, floorKey = 'common') {
 }
 
 /**
- * Rolls the daily chest. The floor is always common and the ceiling always
- * legendary, so every single day carries a real chance of something great.
+ * Rolls a chest: `rolls` pulls with `floor` as the worst rarity that can come
+ * out. The ceiling is always legendary, so every chest in the game carries a
+ * real chance of something great — what you pay for is the floor.
  */
-export function rollDailyChest(catalog, rng = Math.random) {
+export function rollChest(catalog, { rolls, floor = 'common' }, rng = Math.random) {
   const drops = []
-  for (let i = 0; i < DAILY_CHEST.rolls; i++) {
-    const rarity = weightedRarity(rng, 'common')
+  for (let i = 0; i < rolls; i++) {
+    const rarity = weightedRarity(rng, floor)
     // Seasonal pets are the world-raid reward. If the chest could roll one the
     // reward would stop meaning anything, so they never enter the pool.
     const petEligible = catalog.pets.filter((p) => p.rarity === rarity && !p.seasonal)
@@ -150,7 +151,12 @@ export function rollDailyChest(catalog, rng = Math.random) {
     const label = side ? side.name : EQUIP_SLOTS.find((s) => s.key === slot).name
     drops.push({ kind: 'gear', rarity, slot, set: set.id, side: side?.id, name: `${set.short} ${label}` })
   }
-  return { cores: DAILY_CHEST.cores, drops }
+  return drops
+}
+
+/** The free one. It pays cores as well as dropping, which no bought chest does. */
+export function rollDailyChest(catalog, rng = Math.random) {
+  return { cores: DAILY_CHEST.cores, drops: rollChest(catalog, DAILY_CHEST, rng) }
 }
 
 // ------------------------------------------------------------------- campaign

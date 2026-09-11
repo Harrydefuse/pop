@@ -86,17 +86,27 @@ export default function RewardModal() {
     'common',
   )
   const accent = RARITY[best].color
+  // A bought chest costs cores where the daily one pays them, so the same
+  // modal cannot say "+220" over both. Sign the number by where it came from.
+  const bought = reward.kind === 'shop'
 
   return (
-    <Modal open onClose={dismissReward} title={DAILY_CHEST.name}>
+    <Modal open onClose={dismissReward} title={bought ? reward.name : DAILY_CHEST.name}>
       <div className="text-center">
         <div className="loot-pop inline-grid place-items-center">
           <ChestArt size={60} />
         </div>
-        <div className="font-display text-[13px] text-ink-faint mt-3">TODAY&apos;S PULL</div>
+        <div className="font-display text-[13px] text-ink-faint mt-3">
+          {bought ? 'OPENED' : "TODAY'S PULL"}
+        </div>
         <div className="flex items-center justify-center gap-1.5 mt-2.5">
-          <Icon name="core" size={13} color="var(--color-gold)" />
-          <span className="font-display text-[22px] text-gold">+{fmtFull(reward.cores)}</span>
+          <Icon name="core" size={13} color={bought ? 'var(--color-ink-faint)' : 'var(--color-gold)'} />
+          <span
+            className="font-display text-[22px]"
+            style={{ color: bought ? 'var(--color-ink-faint)' : 'var(--color-gold)' }}
+          >
+            {bought ? `−${fmtFull(reward.spent)}` : `+${fmtFull(reward.cores)}`}
+          </span>
         </div>
       </div>
 

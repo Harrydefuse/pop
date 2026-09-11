@@ -14,6 +14,7 @@ import MapSheet from './screens/Map'
 import UpdateBar from './components/UpdateBar'
 import Train, { SessionBar } from './screens/Train'
 import Bosses from './screens/Bosses'
+import Shop from './screens/Shop'
 
 const PITCH = [
   ['IT IS A GAME', 'Ten bosses, three acts, an ending. Fitness is the controller, not the point.'],
@@ -92,6 +93,7 @@ function Device() {
           {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
           {tab === 'train' && <Train />}
           {tab === 'bosses' && <Bosses />}
+          {tab === 'shop' && <Shop />}
           {tab === 'friends' && <Friends onGo={setTab} />}
           {tab === 'hero' && <Profile />}
           <div className="h-4" />

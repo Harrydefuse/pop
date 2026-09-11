@@ -4,7 +4,7 @@ import Icon from '../components/Icon'
 import { GearIcon, HeroView, PetView } from '../components/Sprites'
 import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
-import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, upgradeCost } from '../game/config'
+import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, WEAPON_GLOW, WEAPON_INK, WEAPON_KINDS, isWeapon, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
 import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor, wornGear } from '../game/engine'
 import { pinnedEfforts } from '../game/efforts'
@@ -160,7 +160,7 @@ function Loadout({ player, onPick }) {
 
 /* ----------------------------------------------------------------- detail --- */
 
-function ItemSheet({ item, onClose }) {
+export function ItemSheet({ item, onClose }) {
   const { state, equip, unequip, upgrade } = useGame()
   const p = state.player
   const equipped = p.equipped[item.slot] === item.id
@@ -285,7 +285,6 @@ function PetSheet({ pet, onClose }) {
 
 const FILTERS = [
   { id: 'all', label: 'Yours' },
-  { id: 'upgrade', label: 'Upgrade' },
   { id: 'pets', label: 'Pets' },
   { id: 'armoury', label: 'Armoury' },
   { id: 'weapons', label: 'Weapons' },
@@ -302,13 +301,6 @@ const FILTERS = [
  * gets" instead of "another twelve icons".
  */
 const ARMOUR_KINDS = ['helm', 'chest', 'legs', 'gloves', 'boots', 'shield']
-const WEAPON_KINDS = ['sword', 'axe', 'dagger', 'spear', 'bow', 'staff']
-
-/** Weapons carry a light of their own, in a hue no rarity uses. The glow is
- *  for the ring around a tile; the deeper twin is the one that carries words. */
-const WEAPON_GLOW = 'var(--color-cyan-glow)'
-const WEAPON_INK = 'var(--color-cyan)'
-const isWeapon = (item) => WEAPON_KINDS.includes(item.kind)
 
 function kindName(kind) {
   return (
@@ -380,80 +372,6 @@ function Collection({ kinds, owned, onPick, weapons }) {
  * way to find out what your cores were for was to open nine things one at a
  * time. Cheapest first, because that is the order anyone actually spends in.
  */
-function Bench({ items, cores, worn, onUpgrade, onOpen }) {
-  const rows = useMemo(
-    () => [...items].map((i) => ({ item: i, cost: upgradeCost(i) })).sort((a, b) => a.cost - b.cost),
-    [items],
-  )
-  const affordable = rows.filter((r) => r.cost <= cores).length
-
-  if (!rows.length) {
-    return <div className="text-[14px] text-ink-faint text-center py-6">Nothing to upgrade yet. Open a chest.</div>
-  }
-
-  return (
-    <>
-      <div className="flex items-center justify-between mb-3">
-        <span className="font-display text-[12px] text-ink-faint">The bench</span>
-        <span className="flex items-center gap-1.5">
-          <Icon name="core" size={11} color="var(--color-gold)" />
-          <span className="text-[15px] text-gold tabular-nums">{fmt(cores)}</span>
-        </span>
-      </div>
-
-      <div className="text-[14px] text-ink-dim leading-snug mb-3">
-        Cores come out of chests and sessions. Every level on a piece is about a third more of what it already gives
-        you. {affordable > 0 ? `You can afford ${affordable} of these right now.` : 'Nothing here is in reach yet.'}
-      </div>
-
-      <div className="space-y-1.5">
-        {rows.map(({ item, cost }) => {
-          const can = cores >= cost
-          const color = RARITY[item.rarity].color
-          const equipped = worn[item.slot]?.id === item.id
-          return (
-            <div key={item.id} className="flex items-center gap-2.5 border border-line p-2">
-              <button
-                onClick={() => onOpen(item)}
-                aria-label={`Open ${item.name}`}
-                className="grid place-items-center w-11 h-11 shrink-0 border"
-                style={{
-                  borderColor: color,
-                  background: alpha(color, 18),
-                  boxShadow: isWeapon(item) ? `0 0 0 2px ${WEAPON_GLOW}` : undefined,
-                }}
-              >
-                <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={26} />
-              </button>
-
-              <div className="min-w-0 flex-1">
-                <div className="text-[15px] text-ink truncate">{item.name}</div>
-                <div className="text-[14px] text-ink-faint mt-0.5">
-                  LV {item.level} → {item.level + 1}
-                  {equipped ? ' · worn' : ''}
-                </div>
-              </div>
-
-              <button
-                onClick={() => onUpgrade(item.id, cost)}
-                disabled={!can}
-                className="font-display text-[12px] min-h-[44px] px-2.5 border shrink-0 disabled:opacity-40 active:brightness-125"
-                style={{
-                  color: can ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
-                  background: can ? 'var(--color-gold)' : 'transparent',
-                  borderColor: can ? 'var(--color-gold)' : 'var(--color-line)',
-                }}
-              >
-                {fmt(cost)}
-              </button>
-            </div>
-          )
-        })}
-      </div>
-    </>
-  )
-}
-
 /** A piece you have not found yet: what it is, and what it would do. */
 function CodexSheet({ piece, onClose }) {
   return (
@@ -482,7 +400,7 @@ function CodexSheet({ piece, onClose }) {
 
 export default function Hero({ embedded = false }) {
   const [saving, setSaving] = useState(false)
-  const { state, equipBest, upgrade } = useGame()
+  const { state, equipBest } = useGame()
   const p = state.player
   const cls = classById(p.classId)
   const power = powerScore(p)
@@ -605,7 +523,7 @@ export default function Hero({ embedded = false }) {
       {saving && <SaveSheet onClose={() => setSaving(false)} />}
 
       {/* ---------------------------------------------------------- filter */}
-      <div className="grid grid-cols-5 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
         {FILTERS.map((f) => (
           <button
             key={f.id}
@@ -624,9 +542,6 @@ export default function Hero({ embedded = false }) {
 
       {/* ----------------------------------------------------------- tiles */}
       <Panel className="p-3">
-        {filter === 'upgrade' && (
-          <Bench items={p.inventory} cores={p.cores} worn={worn} onUpgrade={upgrade} onOpen={setOpenItem} />
-        )}
         {filter === 'armoury' && <Collection kinds={ARMOUR_KINDS} owned={p.inventory} onPick={setOpenCodex} />}
         {filter === 'weapons' && <Collection kinds={WEAPON_KINDS} owned={p.inventory} onPick={setOpenCodex} weapons />}
 

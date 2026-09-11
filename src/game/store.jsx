@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, gearPiece } from './data'
-import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, setForRarity } from './config'
+import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollDailyChest, stoneProgress, todayKey } from './engine'
+import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollChest, rollDailyChest, stoneProgress, todayKey } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
@@ -95,6 +95,34 @@ function bumpDailies(dailies, act, amount) {
  * rarity is written into the boss, not rolled — because a story beat you earned
  * by turning up for a week should never come back a common.
  */
+/**
+ * Puts a chest's pulls into the player.
+ *
+ * Every chest in the game lands here — the free daily one and the ones bought
+ * with cores — so a companion you already own converts to cores the same way
+ * whichever chest it came out of, and there is one place to change that.
+ */
+function grantDrops(state, drops) {
+  let next = state
+  const inventory = [...next.player.inventory]
+  const pets = [...next.player.pets]
+  for (const d of drops) {
+    if (d.kind === 'gear') {
+      inventory.push({ id: nextId('i'), ...gearPiece(d.slot, d.set, d.side), level: 1 })
+      continue
+    }
+    const base = CATALOG.pets.find((p) => p.id === d.ref)
+    if (pets.some((p) => p.ref === base.id)) {
+      // A duplicate companion converts to cores rather than clutter the roster.
+      next = { ...next, player: { ...next.player, cores: next.player.cores + 300 } }
+      d.duplicate = true
+    } else {
+      pets.push({ id: nextId('p_'), ref: base.id, name: base.name, rarity: base.rarity, stat: base.stat, level: 1, xp: 0 })
+    }
+  }
+  return { ...next, player: { ...next.player, inventory, pets } }
+}
+
 function grantBossReward(state, boss) {
   const r = boss.reward
   const drops = []
@@ -666,39 +694,24 @@ function reducer(state, action) {
     case 'openChest': {
       if (!state.chest.unlocked || state.chest.openedToday) return state
       const result = rollDailyChest(CATALOG)
-      let next = { ...state, player: { ...state.player, cores: state.player.cores + result.cores } }
+      const next = grantDrops(
+        { ...state, player: { ...state.player, cores: state.player.cores + result.cores } },
+        result.drops,
+      )
+      return { ...next, chest: { unlocked: false, openedToday: true }, lastReward: result }
+    }
 
-      const inventory = [...next.player.inventory]
-      const pets = [...next.player.pets]
-      for (const d of result.drops) {
-        if (d.kind === 'gear') {
-          inventory.push({ id: nextId('i'), ...gearPiece(d.slot, d.set, d.side), level: 1 })
-        } else {
-          const base = CATALOG.pets.find((p) => p.id === d.ref)
-          if (pets.some((p) => p.ref === base.id)) {
-            // A duplicate companion converts to cores rather than clutter the roster.
-            next = { ...next, player: { ...next.player, cores: next.player.cores + 300 } }
-            d.duplicate = true
-          } else {
-            pets.push({
-              id: nextId('p_'),
-              ref: base.id,
-              name: base.name,
-              rarity: base.rarity,
-              stat: base.stat,
-              level: 1,
-              xp: 0,
-            })
-          }
-        }
-      }
-
-      return {
-        ...next,
-        player: { ...next.player, inventory, pets },
-        chest: { unlocked: false, openedToday: true },
-        lastReward: result,
-      }
+    case 'buyChest': {
+      const spec = SHOP_CHESTS.find((c) => c.id === action.id)
+      // Guarded here and not only in the button: an action that trusts the UI
+      // for whether you can afford it is an action that can be replayed.
+      if (!spec || state.player.cores < spec.cost) return state
+      const drops = rollChest(CATALOG, spec)
+      const next = grantDrops(
+        { ...state, player: { ...state.player, cores: state.player.cores - spec.cost } },
+        drops,
+      )
+      return { ...next, lastReward: { kind: 'shop', name: spec.name, spent: spec.cost, drops } }
     }
 
     case 'dismissReward':
@@ -933,6 +946,7 @@ export function GameProvider({ children }) {
       finishSession: () => dispatch({ type: 'finishSession' }),
       discardSession: () => dispatch({ type: 'discardSession' }),
       openChest: () => dispatch({ type: 'openChest' }),
+      buyChest: (id) => dispatch({ type: 'buyChest', id }),
       openGift: () => dispatch({ type: 'openGift' }),
       dismissReward: () => dispatch({ type: 'dismissReward' }),
       equip: (itemId) => dispatch({ type: 'equip', itemId }),

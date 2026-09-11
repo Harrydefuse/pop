@@ -138,6 +138,25 @@ export const GLYPHS = {
   // The energy the game spends. A cut token rather than a plain disc.
   core: solid('M12 2.6 20.1 7.3v9.4L12 21.4 3.9 16.7V7.3z', 'M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6z'),
   chest: stroke('M4 10.6h16v8.2a1.2 1.2 0 0 1-1.2 1.2H5.2A1.2 1.2 0 0 1 4 18.8z', 'M4 10.6 5.6 5.2a1.2 1.2 0 0 1 1.2-.8h10.4a1.2 1.2 0 0 1 1.2.8L20 10.6', 'M10.4 10.6h3.2v3.4h-3.2z'),
+  // Two blades crossed, hilts down. Solid rather than outlined: at 20px in the
+  // tab bar a stroked blade is two lines close enough to merge into a smudge,
+  // and the one thing this icon has to do is read as swords at 20px.
+  swords: solid(
+    'M9.7 16.9 7.1 14.3 20.4 3.6z',
+    'M6.1 13.4 10.6 17.9 9.5 19 5 14.5z',
+    'M8.1 16.9 5.7 19.3 4.7 18.3 7.1 15.9z',
+    'M4.5 18.2 5.9 19.5 4.5 20.9 3.1 19.5z',
+    'M14.3 16.9 16.9 14.3 3.6 3.6z',
+    'M17.9 13.4 13.4 17.9 14.5 19 19 14.5z',
+    'M15.9 16.9 18.3 19.3 19.3 18.3 16.9 15.9z',
+    'M19.5 18.2 18.1 19.5 19.5 20.9 20.9 19.5z',
+  ),
+  // Where the cores go. A bag, because everything else that means "shop" at
+  // this size means something else first.
+  bag: stroke(
+    'M5.4 8.6h13.2l.9 10.6a1.4 1.4 0 0 1-1.4 1.5H5.9a1.4 1.4 0 0 1-1.4-1.5z',
+    'M8.9 11V6.9a3.1 3.1 0 0 1 6.2 0V11',
+  ),
 }
 
 /** Anything the app asks for that has no drawing yet falls back to a dot. */

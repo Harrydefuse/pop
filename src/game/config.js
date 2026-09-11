@@ -343,6 +343,44 @@ export const DAILY_CHEST = {
   note: 'Any rarity, every single day.',
 }
 
+/**
+ * What cores are for.
+ *
+ * Cores were a one-way street: earned from sessions, chests and bosses, spent
+ * only on gear levels, and a player who had upgraded what they wore sat on a
+ * pile of them with nothing to want. These are the other end. Every one is
+ * bought with a currency you can only earn by training — there is no way to
+ * buy cores, and there never will be — and each tier trades cost for a floor
+ * on what can drop rather than for a better chance at the same pool, so the
+ * expensive one is a promise and not a nudge.
+ */
+export const SHOP_CHESTS = [
+  {
+    id: 'crate',
+    name: 'Supply crate',
+    cost: 600,
+    rolls: 2,
+    floor: 'common',
+    note: 'Two pulls, anything from common up.',
+  },
+  {
+    id: 'warchest',
+    name: 'War chest',
+    cost: 2200,
+    rolls: 3,
+    floor: 'uncommon',
+    note: 'Three pulls, nothing below uncommon.',
+  },
+  {
+    id: 'vault',
+    name: 'Vault chest',
+    cost: 6500,
+    rolls: 3,
+    floor: 'rare',
+    note: 'Three pulls, rare at worst. Weeks of training.',
+  },
+]
+
 // Six armour slots — a full set, the way an RPG does it. The old five were gym
 // accessories (headset, grips, runners) which never looked like loot.
 export const EQUIP_SLOTS = [
@@ -372,6 +410,15 @@ export const SLOT_STATS = {
 // What goes in your other hand. Seven of them now the weapon art is in — a
 // shield and six ways of hitting something. The stat spread is the choice: no
 // weapon is strictly better, they lean different ways.
+// Steel gets its own light wherever gear is listed: rarity owns the border and
+// the ground, this owns the ring around a weapon. A blade and a breastplate
+// were the same tile in the same colours, and the blade is the one that
+// disappeared, because the art is thin where armour is a solid block.
+export const WEAPON_KINDS = ['sword', 'axe', 'dagger', 'spear', 'bow', 'staff']
+export const WEAPON_GLOW = 'var(--color-cyan-glow)'
+export const WEAPON_INK = 'var(--color-cyan)'
+export const isWeapon = (item) => WEAPON_KINDS.includes(item.kind)
+
 export const OFFHAND_KINDS = [
   { id: 'shield', name: 'Shield', stats: { VIT: 4, FOCUS: 2 }, blurb: 'Take the hit. Steadier, and harder to knock off a streak.' },
   { id: 'sword', name: 'Sword', stats: { STR: 3, AGI: 2 }, blurb: 'The honest one. Good at everything, best at nothing.' },
