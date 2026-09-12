@@ -436,7 +436,7 @@ function syntheticSync(links) {
 function reducer(state, action) {
   switch (action.type) {
     case 'onboard': {
-      const { name, handle, classId, avatar, health, games } = action
+      const { name, handle, classId, avatar, health, games, goalDays, picks } = action
       // Making a character clears the showroom save out from under it. You
       // start at one, with nothing, on a map you have not walked.
       return toast(
@@ -452,6 +452,12 @@ function reducer(state, action) {
             classId,
             avatar: { ...state.player.avatar, ...avatar },
             games,
+            // What they said they were here for. The class already carries the
+            // XP passive; these two are the answers the rest of the app reads —
+            // how many days a week counts as a good week, and what to put under
+            // their thumb when they press start.
+            goalDays: goalDays ?? 4,
+            picks: picks ?? [],
           },
           dailies: freshDailies(),
           links: { ...state.links, health },

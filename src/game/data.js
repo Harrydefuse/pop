@@ -288,6 +288,10 @@ export const FRESH_START = {
     // Which best efforts are pinned to the profile. Empty means nothing shows,
     // which is the point — they are chosen, not collected.
     efforts: [],
+    // Answered at character creation: how many days a week they are aiming for,
+    // and which activities they said they would actually do.
+    goalDays: 4,
+    picks: [],
     stats: { STR: 0, END: 0, AGI: 0, VIT: 0, FOCUS: 0 },
     // The clothes you stand up in. Nothing equipped, nothing in the bag but
     // the boots — a first drop should feel like a drop.

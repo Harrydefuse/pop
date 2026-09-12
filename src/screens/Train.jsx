@@ -1433,6 +1433,8 @@ function EarnPreview({ player, log }) {
  * these four numbers is discipline-specific.
  */
 function WeekInGame({ player, log }) {
+  // Their own answer, not a number the app picked for them.
+  const target = player.goalDays ?? 4
   const t = useMemo(() => {
     const week = Date.now() - 7 * 24 * 3600 * 1000
     const days = new Set()
@@ -1461,7 +1463,11 @@ function WeekInGame({ player, log }) {
   // The fitness number and the game number are the same object: every row is a
   // real tracker metric with what it minted written underneath it.
   const rows = [
-    { label: 'Days moved', value: `${t.days} of 7`, tone: t.days >= 4 ? 'var(--color-lime)' : 'var(--color-ink)' },
+    {
+      label: 'Days moved',
+      value: `${t.days} of ${target}`,
+      tone: t.days >= target ? 'var(--color-lime)' : 'var(--color-ink)',
+    },
     { label: 'Distance', value: `${t.km >= 10 ? Math.round(t.km) : t.km.toFixed(1)} km`, tone: 'var(--color-ink)' },
     { label: 'Time moving', value: `${fmtFull(t.minutes)} min`, tone: 'var(--color-ink)' },
     ...(t.volume > 0
@@ -1503,10 +1509,14 @@ function WeekInGame({ player, log }) {
 }
 
 /** How often each activity has been done lately, newest weighted heavier. */
-function byUse(log) {
+function byUse(log, picks = NONE) {
   const count = new Map()
   for (const l of log.slice(0, 40)) count.set(l.activityId, (count.get(l.activityId) ?? 0) + 1)
-  return [...TRACKED].sort((a, b) => (count.get(b.id) ?? 0) - (count.get(a.id) ?? 0))
+  // Before there is any history, the answer they gave at character creation is
+  // the history: somebody who said they would walk and swim should not have to
+  // scroll past six things to find either.
+  const rank = (a) => (count.get(a.id) ?? 0) + (picks.includes(a.id) ? 0.5 : 0)
+  return [...TRACKED].sort((a, b) => rank(b) - rank(a))
 }
 
 /**
@@ -1517,11 +1527,11 @@ function byUse(log) {
  * RUN under their thumb, not eight rows down past three things they have never
  * once opened.
  */
-function StartSheet({ log, routines, onClose, onStart, onDeleteRoutine }) {
+function StartSheet({ log, routines, picks, onClose, onStart, onDeleteRoutine }) {
   const last = lastPlan(log)
   const saved = new Set(routines.map((r) => r.lifts.join('|')))
   const showLast = last && !saved.has(last.lifts.join('|'))
-  const order = byUse(log)
+  const order = byUse(log, picks)
   const usual = order.slice(0, 4)
   const rest = order.slice(4)
 
@@ -2043,6 +2053,7 @@ function Pick({ onGo }) {
         <StartSheet
           log={state.log}
           routines={state.routines ?? []}
+          picks={p.picks ?? NONE}
           onClose={() => setStarting(false)}
           onStart={(id, plan) => {
             setStarting(false)

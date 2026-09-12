@@ -1095,6 +1095,9 @@ button:disabled {
 }
 
 .screen-in { animation: screen-in var(--dur-base) var(--ease-out) both; }
+/* A question opening in character creation. Slower and further than the card
+   stagger: this one arrives on its own and should read as being asked. */
+.ask-in { animation: rise-in 320ms var(--ease-out) both; }
 .toast-in { animation: toast-in var(--dur-base) var(--ease-pop) both; }
 .sheet-in { animation: sheet-in var(--dur-base) var(--ease-out) both; }
 .scrim-in { animation: scrim-in var(--dur-fast) linear both; }
@@ -1137,6 +1140,7 @@ button:disabled {
 
 @media (prefers-reduced-motion: reduce) {
   .screen-in,
+  .ask-in,
   .toast-in,
   .sheet-in,
   .scrim-in,
