@@ -354,11 +354,13 @@ export default function Onboarding({ onContinue }) {
           <div className="flex-1" />
 
           <div className="flex items-end gap-1">
-            <PetView refId="pup" level={1} size={34} />
-            <PetView refId="turbo" level={30} size={38} />
-            <PetView refId="frost" level={55} size={44} float />
-            <PetView refId="ember" level={80} size={38} />
-            <PetView refId="zeus" level={100} size={34} />
+            {/* All five bob, on five different clocks. Only FROST floated
+                before, which made the other four look switched off. */}
+            <PetView refId="pup" level={1} size={34} float delay="0s" />
+            <PetView refId="turbo" level={30} size={38} float delay="-1.2s" />
+            <PetView refId="frost" level={55} size={44} float delay="-0.45s" />
+            <PetView refId="ember" level={80} size={38} float delay="-2.1s" />
+            <PetView refId="zeus" level={100} size={34} float delay="-0.8s" />
           </div>
 
           <p className="font-display text-[12px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>

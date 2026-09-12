@@ -66,7 +66,7 @@ export function GearIcon({ slot, kind, set = 'leather', size = 34 }) {
  * physically fills more of its frame than a hatchling — the growth is visible
  * before you read a single number.
  */
-export function PetView({ refId, level = 1, size = 72, float, className = '' }) {
+export function PetView({ refId, level = 1, size = 72, float, delay, className = '' }) {
   const sprite = PET_SPRITES[refId] ?? PET_SPRITES.pup
   const stage = petStage(level)
   // An ascended pet scales past the size it was given, so the box has to grow
@@ -84,10 +84,14 @@ export function PetView({ refId, level = 1, size = 72, float, className = '' }) 
           }}
         />
       )}
+      {/* `delay` offsets the bob. A row of pets all floating on the same clock
+          rises and falls as one object, which reads as a sprite sheet sliding
+          rather than as five animals. */}
       <PixelSprite
         sprite={sprite}
         size={px}
         className={float ? 'float-soft relative' : 'relative'}
+        style={float && delay ? { animationDelay: delay } : undefined}
       />
     </div>
   )
