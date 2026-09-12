@@ -85,7 +85,10 @@ export const RANKS = [
   { key: 'diamond', name: 'DIAMOND', min: 2600, color: 'var(--tone-blue)' },
   { key: 'ascendant', name: 'ASCENDANT', min: 4000, color: 'var(--tone-green)' },
   { key: 'immortal', name: 'IMMORTAL', min: 6000, color: 'var(--color-danger)' },
-  { key: 'lvl100', name: 'LVL100', min: 9000, color: 'var(--color-neon)' },
+  // Named APEX and not LVL100: the top rank sat directly above the level bar
+  // in the header, so "LVL100 · 21k PWR" over "LV 100 / MAX 100" read as two
+  // contradictory statements of the same thing.
+  { key: 'apex', name: 'APEX', min: 9000, color: 'var(--color-neon)' },
 ]
 
 // Activity catalogue. `unit` drives the logging UI, `per` is how much of that

@@ -218,7 +218,7 @@ export default function Onboarding({ onContinue }) {
           </div>
 
           <p className="font-display text-[12px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>
-            {has ? `CARRY ON AS ${(state.player.name || 'ROOKIE').toUpperCase()}` : 'TEN BOSSES · THREE ACTS · ONE ENDING'}
+            {has ? `CARRY ON AS ${(state.player.name || 'NEWBLOOD').toUpperCase()}` : 'TEN BOSSES · THREE ACTS · ONE ENDING'}
           </p>
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function Onboarding({ onContinue }) {
               id="ob-name"
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, 14))}
-              placeholder="ROOKIE"
+              placeholder="NEWBLOOD"
               className="w-full min-h-[44px] bg-panel border border-line p-3 mt-1.5 font-display text-[16px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
             />
 
@@ -293,7 +293,7 @@ export default function Onboarding({ onContinue }) {
                 className="flex-1"
                 onClick={() => {
                   onboard({
-                    name: (name.trim() || 'ROOKIE').toUpperCase(),
+                    name: (name.trim() || 'NEWBLOOD').toUpperCase(),
                     handle: handle.trim() || 'newchallenger',
                     classId: DEFAULT_CLASS,
                     avatar: { seed: 0, body, skin, hair, shirt: TUNIC },
