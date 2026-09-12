@@ -30,10 +30,20 @@ export const STAT_KEYS = STATS.map((s) => s.key)
 // Class is how you actually train, not which game you play — the games you
 // enjoy are captured separately, because the two rarely line up. Passives are
 // deliberately small (a nudge, not a meta) so no class is a wrong pick.
+/**
+ * What you train, said plainly.
+ *
+ * These were STRIDER, JUGGERNAUT, IRONSTRIDE and ADEPT — invented fantasy
+ * words for four ordinary training styles. Nobody arrives at a fitness app
+ * knowing whether they want to be an IRONSTRIDE, and a name you have to be
+ * taught is a name that gets in the way of the choice underneath it. The ids,
+ * the colours and the XP passives are all unchanged; only the label a player
+ * reads has stopped being jargon.
+ */
 export const CLASSES = [
   {
     id: 'strider',
-    name: 'STRIDER',
+    name: 'DISTANCE',
     tagline: 'Runners, riders, rowers',
     blurb: 'You measure a good week in kilometres.',
     affinity: 'END',
@@ -43,7 +53,7 @@ export const CLASSES = [
   },
   {
     id: 'juggernaut',
-    name: 'JUGGERNAUT',
+    name: 'STRENGTH',
     tagline: 'Barbells, dumbbells, the squat rack',
     blurb: 'If it is heavy, you want to pick it up.',
     affinity: 'STR',
@@ -53,7 +63,7 @@ export const CLASSES = [
   },
   {
     id: 'ironstride',
-    name: 'IRONSTRIDE',
+    name: 'MIXED',
     tagline: 'Lifts heavy and still runs',
     blurb: 'Leg day and a 10k in the same week.',
     affinity: 'AGI',
@@ -65,7 +75,7 @@ export const CLASSES = [
   },
   {
     id: 'adept',
-    name: 'ADEPT',
+    name: 'BODYWEIGHT',
     tagline: 'Calisthenics, yoga, pilates, walking',
     blurb: 'Your body is the only equipment you need.',
     affinity: 'VIT',

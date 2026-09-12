@@ -375,8 +375,13 @@ export default function Onboarding({ onContinue }) {
   const who = name.trim().toUpperCase()
 
   // Five turns. Each carries the question, the phrase in it worth lighting, and
-  // what the guide says back once you have answered — which is the whole
-  // difference between this and a form.
+  // what the guide says back once you have answered.
+  //
+  // The replies say what the answer will be used for and stop. An earlier pass
+  // had them making small talk — "good to meet you", "that will do nicely" —
+  // which is a stranger being familiar with you, and it wears out by the second
+  // question. Every line here either confirms something or explains what
+  // happens next.
   const TURNS = [
     {
       ask: 'First — what should I call you?',
@@ -384,28 +389,26 @@ export default function Onboarding({ onContinue }) {
       said: () => who,
     },
     {
-      ack: `Good to meet you, ${who}.`,
+      ack: 'Got it.',
       ask: 'What do you look like in there?',
       mark: 'look like',
       said: () => AVATAR_BODIES.find((b) => b.id === body)?.label ?? body,
     },
     {
-      ack: 'That will do nicely.',
-      ask: 'So what do you actually want out of this?',
+      ack: 'Saved. You can change any of that later.',
+      ask: 'What do you want out of this?',
       mark: 'want out of this',
       said: () => goal?.title ?? '',
       tone: () => goalClass?.color,
     },
     {
-      ack: goalClass
-        ? `Then you are a ${goalClass.name}. ${goalClass.passive.label}, on top of everything else.`
-        : '',
+      ack: goalClass ? `Got it — ${goalClass.passive.label}, on top of the usual.` : '',
       ask: 'What will you actually do?',
       mark: 'actually do',
       said: () => TRACKED.filter((a) => doing.includes(a.id)).map((a) => a.name).join(' · '),
     },
     {
-      ack: 'Noted — those go under your thumb when you press start.',
+      ack: 'Saved. Those go to the top of the list when you start a session.',
       ask: 'Last one. How many days a week?',
       mark: 'How many days a week',
       said: () => `${days} days a week`,
@@ -413,7 +416,7 @@ export default function Onboarding({ onContinue }) {
   ]
 
   const done = at >= TURNS.length
-  const endAck = `Right. We will measure your week against ${days} days, and everything you log pays out either way.`
+  const endAck = `All set. Your week is measured against ${days} days, and everything you log counts either way.`
 
   const answer = (advance = true) => {
     setThinking(true)
@@ -481,7 +484,7 @@ export default function Onboarding({ onContinue }) {
               <Choice
                 key={g.id}
                 tone={cls.color}
-                sub={`${cls.name} · ${cls.passive.label}`}
+                sub={cls.passive.label}
                 onClick={() => {
                   setGoalId(g.id)
                   answer()
