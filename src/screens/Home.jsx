@@ -4,7 +4,6 @@ import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { ChestArt } from '../components/Sprites'
 import GiftReveal from '../components/GiftReveal'
-import InstallCard from '../components/InstallCard'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS } from '../game/config'
 import { streakTier } from '../game/engine'
@@ -322,8 +321,6 @@ export default function Home({ onGo }) {
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <FirstSteps state={state} onGo={onGo} />
-
-      <InstallCard />
 
       {/* -------------------------------------------- the day, in one panel
           Three cards became one. The streak, how much of today is left and the
