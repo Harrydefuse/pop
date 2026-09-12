@@ -41,7 +41,6 @@ import {
   xpToNext,
 } from '../game/engine'
 import { actById } from '../game/campaign'
-import { RARITY } from '../game/config'
 import { challengeLabel, challengeProgress } from '../game/challenge'
 import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
@@ -1232,103 +1231,83 @@ function HeroStage({ player, log, streak }) {
 }
 
 /**
- * What today is for.
+ * Which arena you are in, the size of a badge.
  *
- * The piece that was missing entirely: a reason to move now, with the reward
- * in view. Sessions wear the boss down whether or not you open the Battle tab,
- * which is the mechanic that ties the tracker to the game — so it belongs on
- * the screen where you start one.
+ * This was a full card, and a full card is the wrong weight for it. The boss
+ * is not a thing you do on this screen — it is a thing your sessions do to it,
+ * on their own, whether or not you look. So it reads the way a Clash Royale
+ * arena reads: one strip that says where you are, how far through, and nothing
+ * else. Everything it used to shout about — the weakness, the drop, the HP in
+ * full — is a tap away, on the screen that exists for it.
+ *
+ * It sits under START ACTIVITY for the same reason. The button is what you
+ * came here to press; the badge is what pressing it moves.
  */
-function Objective({ player, campaign, onOpen }) {
+function ArenaBadge({ player, campaign, onOpen }) {
   const c = campaignState(player, campaign)
 
   if (c.finished) {
     return (
-      <Panel accent="var(--color-gold)" className="p-3.5">
-        <div className="font-display text-[16px] text-gold">The road is clear</div>
-        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
-          Every boss down. Sessions still pay XP, loot and streak — there is just nothing left standing in the way.
-        </div>
+      <Panel className="px-3 py-2.5 flex items-center gap-2.5">
+        <Icon name="check" size={13} color="var(--color-gold)" />
+        <span className="font-display text-[14px] text-gold">Every boss down</span>
+        <span className="text-[14px] text-ink-faint ml-auto">Level {player.level}</span>
       </Panel>
     )
   }
 
+  // Nothing reachable: the badge still shows the next one, greyed, so the
+  // ladder never goes blank on you.
   if (!c.current) {
     const levels = c.gatedBy
-    const opens = levels === 1 ? 'One more level' : `${levels} more levels`
     return (
-      <Panel accent="var(--color-gold)" className="p-3.5">
-        <div className="label text-ink-faint">Your objective</div>
-        <div className="font-display text-[16px] text-gold mt-1">{c.locked.name} is waiting</div>
-        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
-          {c.cleared === 0
-            ? `The first boss opens at level ${c.locked.level}. ${opens} — and anything you log is XP towards it.`
-            : `You have beaten everything on this stretch. ${opens} opens it, and every session is XP towards that.`}
+      <Panel className="px-3 py-2.5 flex items-center gap-3">
+        <div className="w-11 h-11 shrink-0 grid place-items-center border border-line bg-panel-2">
+          <BossArt sprite={c.locked.sprite} size={28} style={{ filter: 'grayscale(1) brightness(0.55)', opacity: 0.7 }} />
         </div>
+        <div className="min-w-0 flex-1">
+          <div className="label text-ink-faint">LEVEL {player.level}</div>
+          <div className="font-display text-[14px] text-ink-dim mt-1 truncate">{c.locked.name} is waiting</div>
+        </div>
+        <span className="text-[14px] text-ink-faint shrink-0">
+          {levels === 1 ? '1 level' : `${levels} levels`}
+        </span>
       </Panel>
     )
   }
 
   const boss = c.current
   const act = actById(boss.act)
-  const left = Math.max(0, c.hp - c.damage)
 
   return (
     <button
       onClick={onOpen}
       className="w-full text-left transition-transform active:scale-[0.99]"
-      aria-label={`Your objective: ${boss.name}. Open the story.`}
+      aria-label={`${c.band}, fighting ${boss.name}, ${Math.round(c.pct * 100)} per cent down. Open the story.`}
     >
-      <Panel accent={act.color} className="p-3.5">
+      <Panel className="px-3 py-2.5">
         <div className="flex items-center gap-3">
-          <BossArt sprite={boss.sprite} size={54} className="shrink-0 float-soft" />
-          <div className="min-w-0 flex-1">
-            <div className="label text-ink-faint">Your objective</div>
-            <div className="font-display text-[17px] mt-1 truncate" style={{ color: act.color }}>
-              {boss.name}
-            </div>
-            <div className="text-[14px] text-ink-faint mt-0.5 truncate">
-              ACT {act.numeral} · {c.band}
-            </div>
+          {/* The arena tile: framed and tinted in the act's colour, so the
+              badge changes character as the story does. */}
+          <div
+            className="w-11 h-11 shrink-0 grid place-items-center border"
+            style={{ borderColor: alpha(act.color, 55), background: alpha(act.color, 10) }}
+          >
+            <BossArt sprite={boss.sprite} size={30} />
           </div>
-          <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
+
+          <div className="min-w-0 flex-1">
+            <div className="label" style={{ color: act.color }}>
+              {c.band}
+            </div>
+            <div className="font-display text-[14px] text-ink mt-1 truncate">{boss.name}</div>
+          </div>
+
+          <span className="text-[14px] text-ink-faint shrink-0 tabular-nums">{Math.round(c.pct * 100)}%</span>
+          <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
         </div>
 
-        <Bar pct={c.pct} color="var(--color-danger)" height={10} shine className="mt-3" />
-        <div className="flex justify-between mt-1.5">
-          <span className="text-[14px] text-danger tabular-nums">{fmtFull(Math.round(c.damage))} dealt</span>
-          <span className="text-[14px] text-ink-faint tabular-nums">{fmtFull(left)} HP left</span>
-        </div>
-
-        <div className="text-[14px] text-ink-dim mt-2.5 leading-snug">
-          Its health is the XP it takes to clear {c.band.toLowerCase()}
-          {player.level >= c.to - 1 ? ', and every session you log comes off it. ' : ', so every session is damage and a level at once. '}
-          {boss.weak ? (
-            <>
-              <span style={{ color: act.color }}>{boss.weakLabel}</span> hits double.
-            </>
-          ) : (
-            'Anything at all counts.'
-          )}
-        </div>
-
-        {/* What it pays, on the card that asks for the work. A boss you cannot
-            see the reward for is a chore. */}
-        <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-line">
-          <Icon name="chest" size={14} color="var(--color-gold)" />
-          <span className="text-[14px] text-ink-dim">
-            Beat it for{' '}
-            <span className="text-gold">{fmtFull(boss.reward.cores)} coins</span>
-            {boss.reward.gear && (
-              <>
-                {' '}and{' '}
-                <span style={{ color: RARITY[boss.reward.gear].color }}>
-                  {RARITY[boss.reward.gear].label.toLowerCase()} gear
-                </span>
-              </>
-            )}
-          </span>
-        </div>
+        <Bar pct={c.pct} color="var(--color-danger)" height={5} className="mt-2.5" />
       </Panel>
     </button>
   )
@@ -2011,14 +1990,14 @@ function Pick() {
           <>
             <HeroStage player={p} log={state.log} streak={p.streak} />
 
-            <Objective player={p} campaign={state.campaign} onOpen={() => setStory(true)} />
-
             <StartBlock
               onStart={() => setStarting(true)}
               onImport={() => setImporting(true)}
               note={note}
               preview={<EarnPreview player={p} log={state.log} />}
             />
+
+            <ArenaBadge player={p} campaign={state.campaign} onOpen={() => setStory(true)} />
 
             <div>
               <SectionTitle right={<span className="text-[14px] text-ink-faint">everyone, this week</span>}>
