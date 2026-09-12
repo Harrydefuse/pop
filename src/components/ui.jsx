@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { RARITY } from '../game/config'
 import { alpha } from '../game/color'
 
@@ -219,7 +220,18 @@ export function Modal({ open, onClose, title, children, wide }) {
   }, [open, onClose])
 
   if (!open) return null
-  return (
+
+  // Portalled to the shell rather than rendered where it is written.
+  //
+  // `absolute inset-0` resolves against the nearest ancestor that establishes a
+  // containing block, and every screen in this app is wrapped in `.screen-in`,
+  // whose entrance animation leaves a transform behind under `animation-fill:
+  // both`. A transform makes that element the containing block — so a dialog
+  // opened from a long screen was being centred in the screen's full scroll
+  // height and landing a thousand pixels below the fold. `position: fixed`
+  // does not escape a transformed ancestor either; a portal does.
+  const host = typeof document !== 'undefined' ? document.querySelector('[data-shell]') ?? document.body : null
+  const dialog = (
     <div className="absolute inset-0 z-50 flex items-end sm:items-center justify-center">
       <button
         aria-label="Close"
@@ -247,5 +259,6 @@ export function Modal({ open, onClose, title, children, wide }) {
       </div>
     </div>
   )
+  return host ? createPortal(dialog, host) : dialog
 }
 

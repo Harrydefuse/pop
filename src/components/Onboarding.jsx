@@ -178,7 +178,17 @@ function Swatch({ color, selected, onClick, label }) {
  * reopen. A wizard that swallows your answers makes people anxious about
  * pressing next; a transcript you can scroll back through does not.
  */
-function Ask({ n, of, question, answer, open, onOpen, children }) {
+// One hue per question, so the transcript builds into something with colour in
+// it rather than five identical grey cards.
+const HUES = [
+  'var(--color-neon)',
+  'var(--color-cyan)',
+  'var(--tone-green)',
+  'var(--color-gold)',
+  'var(--tone-orange)',
+]
+
+function Ask({ n, of, hue, question, answer, open, onOpen, children }) {
   const ref = useRef(null)
   useEffect(() => {
     if (!open || !ref.current) return
@@ -191,24 +201,45 @@ function Ask({ n, of, question, answer, open, onOpen, children }) {
       <button
         ref={ref}
         onClick={onOpen}
-        className="w-full flex items-center gap-3 text-left min-h-[44px] px-3 py-2.5 border border-line bg-panel active:brightness-125"
+        className="ask-done w-full flex items-center gap-3 text-left min-h-[44px] pl-3 pr-3 py-2.5 rounded-[var(--radius-sm)] active:brightness-125"
+        style={{
+          background: `color-mix(in srgb, ${hue} 10%, var(--color-panel))`,
+          boxShadow: `inset 3px 0 0 ${hue}`,
+        }}
       >
-        <Icon name="check" size={13} color="var(--color-lime)" />
+        <Icon name="check" size={14} color={hue} />
         <span className="min-w-0 flex-1">
           <span className="block label text-ink-faint">{question}</span>
           <span className="block text-[15px] text-ink truncate mt-0.5">{answer}</span>
         </span>
-        <span className="label text-neon shrink-0">CHANGE</span>
+        <span className="label shrink-0" style={{ color: hue }}>
+          CHANGE
+        </span>
       </button>
     )
   }
 
   return (
-    <div ref={ref} className="ask-in">
-      <div className="label text-ink-faint">
-        {n} of {of}
+    <div
+      ref={ref}
+      className="ask-in rounded-[var(--radius-sm)] p-3.5"
+      style={{
+        background: `color-mix(in srgb, ${hue} 7%, var(--color-panel))`,
+        boxShadow: `inset 3px 0 0 ${hue}, var(--elev)`,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className="grid place-items-center w-6 h-6 rounded-full figure text-[13px] shrink-0"
+          style={{ background: hue, color: 'var(--color-on-accent)' }}
+        >
+          {n}
+        </span>
+        <span className="label text-ink-faint">
+          question {n} of {of}
+        </span>
       </div>
-      <h2 className="font-display text-[19px] text-ink mt-1.5 leading-snug">{question}</h2>
+      <h2 className="font-display text-[19px] text-ink mt-2 leading-snug">{question}</h2>
       <div className="mt-3.5">{children}</div>
     </div>
   )
@@ -387,7 +418,7 @@ export default function Onboarding({ onContinue }) {
       ),
     },
     {
-      q: `Who are they, ${name.trim().toUpperCase() || 'then'}?`,
+      q: 'What do you look like in there?',
       answer: `${AVATAR_BODIES.find((b) => b.id === body)?.label ?? body}`,
       body: (
         <>
@@ -511,8 +542,8 @@ export default function Onboarding({ onContinue }) {
             {QS.map((_, i) => (
               <span
                 key={i}
-                className="flex-1 h-[3px] rounded-full transition-colors"
-                style={{ background: i <= at ? 'var(--color-neon)' : 'var(--color-line)' }}
+                className="flex-1 h-[4px] rounded-full transition-colors"
+                style={{ background: i <= at ? HUES[i] : 'var(--color-line)' }}
               />
             ))}
           </div>
@@ -530,6 +561,7 @@ export default function Onboarding({ onContinue }) {
               key={item.q}
               n={i + 1}
               of={QS.length}
+              hue={HUES[i]}
               question={item.q}
               answer={item.answer}
               open={i === at}

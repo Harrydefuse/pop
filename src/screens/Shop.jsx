@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import { Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import { ChestArt, GearIcon } from '../components/Sprites'
+import PlansSheet from '../components/PlansSheet'
 import { ItemSheet } from './Hero'
 import { useGame } from '../game/useGame'
 import { RARITY, SHOP_CHESTS, WEAPON_GLOW, isWeapon, upgradeCost } from '../game/config'
+import { PLUS_PROMISE } from '../game/plans'
 import { fmt, fmtFull, wornGear } from '../game/engine'
 import { alpha } from '../game/color'
 
@@ -130,6 +132,7 @@ export default function Shop() {
   const p = state.player
   const worn = useMemo(() => wornGear(p), [p])
   const [openItem, setOpenItem] = useState(null)
+  const [plans, setPlans] = useState(false)
   const cheapest = Math.min(...SHOP_CHESTS.map((c) => c.cost))
 
   return (
@@ -159,6 +162,22 @@ export default function Shop() {
           </div>
         </div>
 
+        {/* Kept at the bottom and kept quiet. It sells looks and the bill, not
+            power, so it has no business interrupting the part of the screen
+            where training is turned into gear. */}
+        <button onClick={() => setPlans(true)} className="w-full text-left transition-transform active:scale-[0.99]">
+          <Panel accent="var(--color-gold)" className="p-3.5">
+            <div className="flex items-center gap-2.5">
+              <Icon name="shield" size={18} color="var(--color-gold)" />
+              <span className="font-display text-[15px] text-ink">LVL100 PLUS</span>
+              <Icon name="chevron" size={12} color="var(--color-ink-faint)" className="ml-auto" />
+            </div>
+            <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
+              Palettes, dyes and your whole history. {PLUS_PROMISE}
+            </div>
+          </Panel>
+        </button>
+
         <div>
           <SectionTitle>The bench</SectionTitle>
           <Panel className="p-3">
@@ -168,6 +187,7 @@ export default function Shop() {
       </div>
 
       {openItem && <ItemSheet item={openItem} onClose={() => setOpenItem(null)} />}
+      {plans && <PlansSheet onClose={() => setPlans(false)} />}
     </>
   )
 }
