@@ -92,7 +92,7 @@ function Device() {
             animate from. */}
         <div key={tab} className="screen-in mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
-          {tab === 'train' && <Train />}
+          {tab === 'train' && <Train onGo={setTab} />}
           {tab === 'bosses' && <Bosses />}
           {tab === 'shop' && <Shop />}
           {tab === 'friends' && <Friends onGo={setTab} />}

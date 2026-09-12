@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
+import { Bar, Btn, Chip, Modal, Num, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import ExercisePicker from '../components/ExercisePicker'
 import StreakFlame from '../components/StreakFlame'
+import { BossArt, HeroView, PetView } from '../components/Sprites'
 import { useGame } from '../game/useGame'
 import {
   INTERVAL,
@@ -21,7 +22,26 @@ import {
   fixStep,
 } from '../game/session'
 import { ACTIVITIES } from '../game/config'
-import { minutesOf, resolveActivity } from '../game/engine'
+import {
+  MILESTONES,
+  baselineMinutes,
+  campaignState,
+  classById,
+  coinsFor,
+  fmt,
+  fmtFull,
+  formOf,
+  minutesOf,
+  rankFor,
+  resolveActivity,
+  powerScore,
+  streakTier,
+  wornGear,
+  xpToNext,
+} from '../game/engine'
+import { actById } from '../game/campaign'
+import { RARITY } from '../game/config'
+import { challengeLabel, challengeProgress } from '../game/challenge'
 import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
 import { MUSCLES, muscleOf, muscleSplit, neglected } from '../game/exercises'
@@ -1099,26 +1119,385 @@ function LiftBoard({ records, log }) {
 }
 
 /**
+ * The character, at the size a character deserves.
+ *
+ * This screen used to open on volume, a percentage against last week, and a
+ * thirteen-week bar chart — the Strava playbook, competent and backward
+ * looking. A game pulls you forward; a dashboard reports what you already did.
+ * And the RPG was a forty-pixel avatar in the corner, which is the opposite of
+ * what the app is for.
+ *
+ * So the hero leads and the data supports. The condition band is not
+ * decoration either: `formOf` is the same number the arena uses to work out how
+ * hard you hit, so a character who looks cold really is weaker in a fight.
+ */
+function HeroStage({ player, log, streak }) {
+  const worn = useMemo(() => wornGear(player), [player])
+  const form = useMemo(() => formOf(log), [log])
+  const pet = player.pets.find((x) => x.id === player.activePetId)
+  const cls = classById(player.classId)
+  const power = powerScore(player)
+  const { rank } = rankFor(power)
+  const tier = streakTier(streak)
+  const cap = xpToNext(player.level)
+  const maxed = !Number.isFinite(cap)
+  const days = useMemo(() => {
+    if (!log.length) return null
+    return Math.floor((Date.now() - log[0].at) / 86400000)
+  }, [log])
+
+  const mood = days === null
+    ? 'Nothing logged yet. Your character is waiting on you.'
+    : days <= 0
+      ? 'Trained today. Rested, fed and ready for the next one.'
+      : days === 1
+        ? 'Trained yesterday. Still sharp.'
+        : days < 4
+          ? `${days} days since the last session. Getting restless.`
+          : `${days} days idle. Going cold — it shows in a fight.`
+
+  return (
+    <Panel className="overflow-hidden">
+      <div className="flex items-center justify-between px-3.5 pt-3">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Chip color={cls.color}>{cls.name.toUpperCase()}</Chip>
+          <Chip color={rank.color}>{rank.name}</Chip>
+        </div>
+        {/* What the gear is for, said out loud. Equip a better weapon and this
+            ticks up — which is the only thing that makes a drop mean anything. */}
+        <span className="flex items-baseline gap-1 shrink-0">
+          <span className="figure text-[17px]" style={{ color: rank.color }}>
+            <Num value={power} format={fmt} />
+          </span>
+          <span className="label text-ink-faint">PWR</span>
+        </span>
+      </div>
+
+      {/* The stage: a floor and a wash of the condition colour, so a cold
+          character stands in a colder room. */}
+      <div
+        className="relative flex items-end justify-center gap-1 px-3 pt-2 pb-1"
+        style={{
+          background: `radial-gradient(120% 80% at 50% 100%, ${alpha(form.color, 16)}, transparent 70%)`,
+        }}
+      >
+        <HeroView
+          av={player.avatar}
+          equipped={worn}
+          height={168}
+          className={days !== null && days >= 4 ? 'opacity-70 saturate-[0.55]' : undefined}
+        />
+        {pet && <PetView refId={pet.ref} level={pet.level} size={64} float className="mb-1" />}
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 left-6 right-6 h-[2px] rounded-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${alpha(form.color, 55)}, transparent)` }}
+        />
+      </div>
+
+      <div className="px-3.5 pb-3.5 pt-3">
+        <div className="flex items-start gap-2">
+          <span className="label shrink-0 mt-0.5" style={{ color: form.color }}>{form.label}</span>
+          <span className="text-[14px] text-ink-dim leading-snug">{mood}</span>
+        </div>
+
+        {/* One bar and one number. Everything else on this screen is secondary
+            to the question "how close am I to the next level". */}
+        <div className="flex items-baseline justify-between mt-3.5">
+          <span className="font-display text-[15px] text-ink">
+            Level <span className="text-neon text-[19px]">{player.level}</span>
+          </span>
+          <span className="text-[14px] text-ink-faint tabular-nums">
+            {maxed ? 'MAX LEVEL' : `${fmtFull(Math.round(player.xp))} / ${fmtFull(cap)} XP`}
+          </span>
+        </div>
+        <Bar pct={maxed ? 1 : player.xp / cap} height={10} shine className="mt-1.5" />
+
+        <div className="flex items-center gap-3.5 mt-3.5 pt-3.5 border-t border-line">
+          <StreakFlame days={streak} />
+          <div className="min-w-0 flex-1 text-[14px] text-ink-dim leading-snug">
+            {streak > 0
+              ? 'Unbroken. Everything you earn is multiplied while it holds.'
+              : 'No streak running. One session today starts it.'}
+          </div>
+          <div className="text-right shrink-0">
+            <div className="figure text-[21px] text-gold leading-none">×{tier.mult.toFixed(2)}</div>
+            <div className="label text-ink-faint mt-1.5">on every XP</div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  )
+}
+
+/**
+ * What today is for.
+ *
+ * The piece that was missing entirely: a reason to move now, with the reward
+ * in view. Sessions wear the boss down whether or not you open the Battle tab,
+ * which is the mechanic that ties the tracker to the game — so it belongs on
+ * the screen where you start one.
+ */
+function Objective({ player, campaign, onGo }) {
+  const c = campaignState(player, campaign)
+
+  if (c.finished) {
+    return (
+      <Panel accent="var(--color-gold)" className="p-3.5">
+        <div className="font-display text-[16px] text-gold">The road is clear</div>
+        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
+          Ten bosses down. Sessions still pay XP, loot and streak — there is just nothing left standing in the way.
+        </div>
+      </Panel>
+    )
+  }
+
+  if (!c.current) {
+    const levels = c.gatedBy
+    const opens = levels === 1 ? 'One more level' : `${levels} more levels`
+    return (
+      <Panel accent="var(--color-gold)" className="p-3.5">
+        <div className="label text-ink-faint">Your objective</div>
+        <div className="font-display text-[16px] text-gold mt-1">{c.locked.name} is waiting</div>
+        <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
+          {c.cleared === 0
+            ? `The first boss opens at level ${c.locked.level}. ${opens} — and anything you log is XP towards it.`
+            : `You have beaten everything on this stretch. ${opens} opens it, and every session is XP towards that.`}
+        </div>
+      </Panel>
+    )
+  }
+
+  const boss = c.current
+  const act = actById(boss.act)
+  const left = Math.max(0, boss.hp - c.damage)
+
+  return (
+    <button
+      onClick={onGo}
+      className="w-full text-left transition-transform active:scale-[0.99]"
+      aria-label={`Your objective: ${boss.name}. Open the battle tab.`}
+    >
+      <Panel accent={act.color} className="p-3.5">
+        <div className="flex items-center gap-3">
+          <BossArt sprite={boss.sprite} size={54} className="shrink-0 float-soft" />
+          <div className="min-w-0 flex-1">
+            <div className="label text-ink-faint">Your objective</div>
+            <div className="font-display text-[17px] mt-1 truncate" style={{ color: act.color }}>
+              {boss.name}
+            </div>
+            <div className="text-[14px] text-ink-faint mt-0.5 truncate">
+              ACT {act.numeral} · {act.name}
+            </div>
+          </div>
+          <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
+        </div>
+
+        <Bar pct={c.damage / boss.hp} color="var(--color-danger)" height={10} shine className="mt-3" />
+        <div className="flex justify-between mt-1.5">
+          <span className="text-[14px] text-danger tabular-nums">{fmtFull(Math.round(c.damage))} dealt</span>
+          <span className="text-[14px] text-ink-faint tabular-nums">{fmtFull(left)} HP left</span>
+        </div>
+
+        <div className="text-[14px] text-ink-dim mt-2.5 leading-snug">
+          Every session you log is damage.{' '}
+          {boss.weak ? (
+            <>
+              <span style={{ color: act.color }}>{boss.weakLabel}</span> hits double.
+            </>
+          ) : (
+            'Anything at all counts.'
+          )}
+        </div>
+
+        {/* What it pays, on the card that asks for the work. A boss you cannot
+            see the reward for is a chore. */}
+        <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-line">
+          <Icon name="chest" size={14} color="var(--color-gold)" />
+          <span className="text-[14px] text-ink-dim">
+            Beat it for{' '}
+            <span className="text-gold">{fmtFull(boss.reward.cores)} coins</span>
+            {boss.reward.gear && (
+              <>
+                {' '}and{' '}
+                <span style={{ color: RARITY[boss.reward.gear].color }}>
+                  {RARITY[boss.reward.gear].label.toLowerCase()} gear
+                </span>
+              </>
+            )}
+          </span>
+        </div>
+      </Panel>
+    </button>
+  )
+}
+
+/**
+ * The week's goal, and what meeting it drops.
+ *
+ * A goal ring is a fitness-app staple and it is also the cleanest payout
+ * trigger in the game: it is scored off totals the tracker already keeps, it is
+ * the same for everyone that week, and it is the one milestone a person who
+ * never touches a barbell can hit.
+ */
+function WeekGoal({ state }) {
+  const c = challengeProgress(state)
+  const done = c.done
+  const tone = done ? 'var(--color-lime)' : 'var(--color-neon)'
+  return (
+    <Panel className="p-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="font-display text-[15px] text-ink truncate">{c.challenge.name}</span>
+        <span className="text-[14px] shrink-0 tabular-nums" style={{ color: tone }}>
+          {challengeLabel(c)}
+        </span>
+      </div>
+      <Bar pct={c.pct} color={tone} height={9} shine className="mt-2" />
+      <div className="flex items-center gap-2 mt-2.5">
+        <Icon name={done ? 'check' : 'chest'} size={13} color={done ? 'var(--color-lime)' : 'var(--color-gold)'} />
+        <span className="text-[14px] text-ink-dim leading-snug">
+          {done
+            ? c.claimed
+              ? `Done. ${fmtFull(c.challenge.cores)} coins and a ${MILESTONES.goal.floor}-or-better drop, paid.`
+              : 'Done — the payout lands on your next session.'
+            : `${fmtFull(c.challenge.cores)} coins and a ${MILESTONES.goal.floor}-or-better drop.`}
+        </span>
+      </div>
+    </Panel>
+  )
+}
+
+/**
  * One green button.
  *
  * TRAIN used to open on a wall of twelve activity cards and a list of plans
  * above them — a menu you read before you had decided anything. You look at a
  * menu when you have already decided to do something, so the menu moved behind
  * the decision: press go, then say what.
+ *
+ * It says ACTIVITY and not WORKOUT on purpose. The people this app is for are
+ * not lifters yet — they are gamers who do not currently exercise — and "log a
+ * workout" is a door a walker does not think is for them.
  */
-function StartBlock({ onStart, onImport }) {
+function StartBlock({ onStart, onImport, note, preview }) {
   return (
     <div className="space-y-2">
       <Btn full size="lg" variant="go" onClick={onStart}>
-        START WORKOUT
+        START ACTIVITY
       </Btn>
+      {preview}
+      {note && <div className="text-[14px] text-ink-dim text-center leading-snug px-2">{note}</div>}
       <button
         onClick={onImport}
         className="w-full min-h-[44px] flex items-center justify-center gap-2 text-[14px] text-ink-dim hover:text-ink active:brightness-125"
       >
         <Icon name="swap" size={13} color="currentColor" />
-        Import a workout
+        Import one you already did
       </button>
+    </div>
+  )
+}
+
+/**
+ * What a session like yours is worth, before you do it.
+ *
+ * The payout is scaled to your own median session, which is a good rule and an
+ * invisible one — so the button says the number out loud. It is an estimate of
+ * a typical session for this person, not a promise about whatever they end up
+ * doing, and it says so.
+ */
+function EarnPreview({ player, log }) {
+  const est = useMemo(() => {
+    const mins = baselineMinutes(log)
+    // Walk is the fairest yardstick: it is the activity anybody can do, and the
+    // payout does not depend on which one you pick anyway.
+    const walk = ACTIVITIES.find((a) => a.id === 'walk')
+    return coinsFor(player, log, walk, mins, true)
+  }, [player, log])
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 text-[14px] text-ink-dim">
+      <Icon name="core" size={13} color="var(--color-gold)" />
+      <span>
+        A usual session for you ≈ <span className="text-gold">+{fmtFull(est)} coins</span>
+      </span>
+    </div>
+  )
+}
+
+/**
+ * The week, counted the way the game counts.
+ *
+ * The old lead was 18,832 kg. A walker or a runner — the convert this app is
+ * trying to win — opens that and concludes it is a lifting app. Not one of
+ * these four numbers is discipline-specific.
+ */
+function WeekInGame({ player, log }) {
+  const t = useMemo(() => {
+    const week = Date.now() - 7 * 24 * 3600 * 1000
+    const days = new Set()
+    let xp = 0
+    let minutes = 0
+    let km = 0
+    let coins = 0
+    let volume = 0
+    for (const l of log) {
+      if (l.at < week) continue
+      const act = ACTIVITIES.find((a) => a.id === l.activityId)
+      if (!act) continue
+      days.add(new Date(l.at).toDateString())
+      xp += l.xp
+      minutes += minutesOf(act, l.amount)
+      if (act.unit === 'km') km += l.amount
+      if (l.detail?.volume) volume += l.detail.volume
+      // What each one paid, recomputed rather than stored: the log predates the
+      // coin model, so an older entry would otherwise read as having earned
+      // nothing at all.
+      coins += coinsFor(player, log, act, l.amount, l.verified)
+    }
+    return { xp, days: days.size, minutes: Math.round(minutes), km, coins, volume: Math.round(volume) }
+  }, [player, log])
+
+  // The fitness number and the game number are the same object: every row is a
+  // real tracker metric with what it minted written underneath it.
+  const rows = [
+    { label: 'Days moved', value: `${t.days} of 7`, tone: t.days >= 4 ? 'var(--color-lime)' : 'var(--color-ink)' },
+    { label: 'Distance', value: `${t.km >= 10 ? Math.round(t.km) : t.km.toFixed(1)} km`, tone: 'var(--color-ink)' },
+    { label: 'Time moving', value: `${fmtFull(t.minutes)} min`, tone: 'var(--color-ink)' },
+    ...(t.volume > 0
+      ? [{ label: 'Lifted', value: `${fmtFull(t.volume)} kg`, tone: 'var(--color-ink)' }]
+      : []),
+  ]
+
+  return (
+    <div>
+      <SectionTitle right={<span className="text-[14px] text-ink-faint">last 7 days</span>}>This week</SectionTitle>
+      <Panel>
+        <div className="flex items-center justify-between gap-3 px-3.5 py-3 border-b border-line">
+          <span className="label text-ink-faint">Earned</span>
+          <span className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5">
+              <Icon name="spark" size={13} color="var(--color-neon)" />
+              <span className="figure text-[17px] text-neon">{fmtFull(Math.round(t.xp))}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Icon name="core" size={13} color="var(--color-gold)" />
+              <span className="figure text-[17px] text-gold">{fmtFull(t.coins)}</span>
+            </span>
+          </span>
+        </div>
+        {rows.map((r, i) => (
+          <div
+            key={r.label}
+            className={`flex items-center justify-between gap-3 px-3.5 py-2.5 ${i === rows.length - 1 ? '' : 'border-b border-line'}`}
+          >
+            <span className="text-[15px] text-ink-dim">{r.label}</span>
+            <span className="figure text-[16px]" style={{ color: r.tone }}>
+              {r.value}
+            </span>
+          </div>
+        ))}
+      </Panel>
     </div>
   )
 }
@@ -1380,7 +1759,7 @@ function BestEfforts({ bests, picks, onEdit }) {
         <Panel className="p-4">
           <div className="text-[14px] text-ink-dim text-center leading-snug">
             Track a run, a swim or a gym session and your bests land here — fastest 5k, longest ride, heaviest set of
-            eight. Pick three for your profile.
+            eight. Every one you set drops {MILESTONES.pr.floor}-or-better gear.
           </div>
         </Panel>
       </div>
@@ -1414,8 +1793,14 @@ function BestEfforts({ bests, picks, onEdit }) {
               </div>
             ))}
           </div>
-          <div className="text-[13px] text-ink-faint mt-3 pt-3 border-t border-line leading-snug">
-            These three show on your profile. {all.length} bests on record.
+          {/* A best is not a number, it is a drop. Saying so here is what ties
+              the record board to the loot the player is actually collecting. */}
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
+            <Icon name="chest" size={13} color="var(--color-gold)" />
+            <span className="text-[13px] text-ink-faint leading-snug">
+              {all.length} on record, each one a {MILESTONES.pr.floor}-or-better drop when you set it. These three show
+              on your profile.
+            </span>
           </div>
         </Panel>
       ) : (
@@ -1560,31 +1945,94 @@ function Coverage({ log, custom }) {
 }
 
 /** Pick something to do. */
-function Pick() {
+/**
+ * The tab, in two halves.
+ *
+ * QUEST is the game: your character, your level, the boss in front of you, and
+ * the button that moves both. STATS is the tracker: volume, muscle coverage,
+ * lifts, best efforts, history. The analytics did not get worse and nothing was
+ * deleted — it is just no longer the front door, because the front door was
+ * showing ninety percent tracker for an app that sells itself as an RPG.
+ */
+const VIEWS = [
+  { id: 'quest', label: 'Quest' },
+  { id: 'stats', label: 'Stats' },
+]
+
+function Pick({ onGo }) {
   const { state, startSession, deleteRoutine, setEfforts, importWorkout } = useGame()
+  const [view, setView] = useState('quest')
   const [starting, setStarting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [sessions, setSessions] = useState(false)
   const [efforts, setEditingEfforts] = useState(false)
+  const p = state.player
+  const c = campaignState(p, state.campaign)
+
+  const note = c.current
+    ? `Whatever you do counts: XP, a hit on ${c.current.name}, and a roll at loot.`
+    : 'Walk, run, ride, lift, swim — it all pays XP and keeps the streak alive.'
 
   return (
     <>
       <div className="stack-in p-4 space-y-4">
-        <WeekHeader weeks={state.weeks} streak={state.player.streak} />
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setView(v.id)}
+              className="font-display text-[14px] py-2 min-h-[44px] rounded-[calc(var(--radius-sm)-2px)] transition-colors"
+              style={{
+                color: view === v.id ? 'var(--color-ink)' : 'var(--color-ink-faint)',
+                background: view === v.id ? 'var(--color-panel)' : 'transparent',
+                boxShadow: view === v.id ? 'var(--elev)' : undefined,
+              }}
+              aria-pressed={view === v.id}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
 
-        <StartBlock onStart={() => setStarting(true)} onImport={() => setImporting(true)} />
+        {view === 'quest' ? (
+          <>
+            <HeroStage player={p} log={state.log} streak={p.streak} />
 
-        <BestEfforts
-          bests={state.bests ?? {}}
-          picks={state.player.efforts ?? []}
-          onEdit={() => setEditingEfforts(true)}
-        />
+            <Objective player={p} campaign={state.campaign} onGo={() => onGo?.('bosses')} />
 
-        <Coverage log={state.log} custom={state.exercises ?? NONE} />
+            <StartBlock
+              onStart={() => setStarting(true)}
+              onImport={() => setImporting(true)}
+              note={note}
+              preview={<EarnPreview player={p} log={state.log} />}
+            />
 
-        <LiftBoard records={state.records} log={state.log} />
+            <div>
+              <SectionTitle right={<span className="text-[14px] text-ink-faint">everyone, this week</span>}>
+                The week&apos;s goal
+              </SectionTitle>
+              <WeekGoal state={state} />
+            </div>
 
-        <SessionsRow log={state.log} onOpen={() => setSessions(true)} />
+            <WeekInGame player={p} log={state.log} />
+          </>
+        ) : (
+          <>
+            <WeekHeader weeks={state.weeks} streak={p.streak} />
+
+            <BestEfforts
+              bests={state.bests ?? {}}
+              picks={p.efforts ?? []}
+              onEdit={() => setEditingEfforts(true)}
+            />
+
+            <Coverage log={state.log} custom={state.exercises ?? NONE} />
+
+            <LiftBoard records={state.records} log={state.log} />
+
+            <SessionsRow log={state.log} onOpen={() => setSessions(true)} />
+          </>
+        )}
       </div>
 
       {/* Outside the stack on purpose. Every direct child of `.stack-in` keeps
@@ -1608,7 +2056,7 @@ function Pick() {
       {efforts && (
         <EffortSheet
           bests={state.bests ?? {}}
-          picks={state.player.efforts ?? []}
+          picks={p.efforts ?? []}
           onClose={() => setEditingEfforts(false)}
           onSave={setEfforts}
         />
@@ -1617,11 +2065,11 @@ function Pick() {
   )
 }
 
-export default function Train() {
+export default function Train({ onGo }) {
   const { state } = useGame()
   const session = state.session
   const act = session && TRACKED.find((a) => a.id === session.activityId)
-  return session && act ? <Running session={session} act={act} /> : <Pick />
+  return session && act ? <Running session={session} act={act} /> : <Pick onGo={onGo} />
 }
 
 /** A running session follows you around the app, so you never have to come
