@@ -178,94 +178,79 @@ function Swatch({ color, selected, onClick, label }) {
  * reopen. A wizard that swallows your answers makes people anxious about
  * pressing next; a transcript you can scroll back through does not.
  */
-// One hue per question, so the transcript builds into something with colour in
-// it rather than five identical grey cards.
-const HUES = [
-  'var(--color-neon)',
-  'var(--color-cyan)',
-  'var(--tone-green)',
-  'var(--color-gold)',
-  'var(--tone-orange)',
-]
+/**
+ * The chat, and why it is one.
+ *
+ * The first version of this was five questions on a screen that folded shut as
+ * you answered them. It looked tidy and it still read as a form, because the
+ * app never said anything back — you filled a field, the field closed, another
+ * opened. What makes a setup feel like a conversation is not the shape of the
+ * boxes; it is that the thing asking acknowledges what you just said before it
+ * asks the next thing.
+ *
+ * So every answer gets a reply. Pick six days and it says it will build the
+ * week around six. Pick a goal and it tells you what that makes you, by name,
+ * before moving on. The acknowledgement and the next question share one bubble,
+ * which is what keeps it reading as one voice rather than a log of events.
+ */
 
-function Ask({ n, of, hue, question, answer, open, onOpen, children }) {
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!open || !ref.current) return
-    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    ref.current.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' })
-  }, [open])
-
-  if (!open) {
-    return (
-      <button
-        ref={ref}
-        onClick={onOpen}
-        className="ask-done w-full flex items-center gap-3 text-left min-h-[44px] pl-3 pr-3 py-2.5 rounded-[var(--radius-sm)] active:brightness-125"
-        style={{
-          background: `color-mix(in srgb, ${hue} 10%, var(--color-panel))`,
-          boxShadow: `inset 3px 0 0 ${hue}`,
-        }}
-      >
-        <Icon name="check" size={14} color={hue} />
-        <span className="min-w-0 flex-1">
-          <span className="block label text-ink-faint">{question}</span>
-          <span className="block text-[15px] text-ink truncate mt-0.5">{answer}</span>
-        </span>
-        <span className="label shrink-0" style={{ color: hue }}>
-          CHANGE
-        </span>
-      </button>
-    )
-  }
-
+/** A glowing point that breathes while it waits and pulses while it thinks. */
+function Orb({ size = 26, thinking }) {
   return (
-    <div
-      ref={ref}
-      className="ask-in rounded-[var(--radius-sm)] p-3.5"
-      style={{
-        background: `color-mix(in srgb, ${hue} 7%, var(--color-panel))`,
-        boxShadow: `inset 3px 0 0 ${hue}, var(--elev)`,
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="grid place-items-center w-6 h-6 rounded-full figure text-[13px] shrink-0"
-          style={{ background: hue, color: 'var(--color-on-accent)' }}
-        >
-          {n}
-        </span>
-        <span className="label text-ink-faint">
-          question {n} of {of}
-        </span>
+    <span
+      aria-hidden="true"
+      className="orb shrink-0"
+      data-thinking={thinking ? '' : undefined}
+      style={{ width: size, height: size }}
+    />
+  )
+}
+
+/** The guide's line. One phrase in it is lit, because that is the question. */
+function Said({ ack, ask, mark }) {
+  const [before, after] = mark && ask.includes(mark) ? ask.split(mark) : [ask, null]
+  return (
+    <div className="ask-in flex items-start gap-2.5">
+      <Orb />
+      <div className="min-w-0 flex-1 pt-0.5">
+        {ack && <p className="text-[16px] text-ink-dim leading-relaxed">{ack}</p>}
+        <p className={`text-[19px] text-ink leading-snug font-display ${ack ? 'mt-3.5' : ''}`}>
+          {before}
+          {after !== null && <span className="text-neon">{mark}</span>}
+          {after}
+        </p>
       </div>
-      <h2 className="font-display text-[19px] text-ink mt-2 leading-snug">{question}</h2>
-      <div className="mt-3.5">{children}</div>
     </div>
   )
 }
 
-/** A card that says what you want and what the game turns that into. */
-function GoalCard({ goal, selected, onClick }) {
-  const cls = CLASSES.find((c) => c.id === goal.classId)
+/** What you said, landing from your side of the screen. */
+function Replied({ children, tone }) {
+  return (
+    <div className="ask-done flex justify-end">
+      <span
+        className="max-w-[85%] px-3.5 py-2.5 rounded-full text-[15px] text-ink text-right"
+        style={{ background: tone ? `color-mix(in srgb, ${tone} 20%, var(--color-panel-2))` : 'var(--color-panel-2)' }}
+      >
+        {children}
+      </span>
+    </div>
+  )
+}
+
+/** A thing you can say, stacked on your side under the question. */
+function Choice({ children, onClick, tone, sub }) {
   return (
     <button
       onClick={onClick}
-      aria-pressed={selected}
-      className="w-full text-left p-3 border transition-colors active:brightness-125"
+      className="ask-in block ml-auto max-w-[88%] text-right px-4 min-h-[48px] py-2.5 rounded-full transition-colors active:brightness-125"
       style={{
-        borderColor: selected ? cls.color : 'var(--color-line)',
-        background: selected ? `color-mix(in srgb, ${cls.color} 12%, transparent)` : 'transparent',
+        background: tone ? `color-mix(in srgb, ${tone} 16%, var(--color-panel-2))` : 'var(--color-panel-2)',
+        boxShadow: tone ? `inset 0 0 0 1px color-mix(in srgb, ${tone} 45%, transparent)` : undefined,
       }}
     >
-      <div className="flex items-center gap-2.5">
-        <Icon name={cls.icon} size={18} color={selected ? cls.color : 'var(--color-ink-faint)'} />
-        <span className="font-display text-[15px] text-ink">{goal.title}</span>
-      </div>
-      <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">{goal.note}</div>
-      <div className="text-[13px] mt-2 leading-snug" style={{ color: selected ? cls.color : 'var(--color-ink-faint)' }}>
-        {cls.name} · {cls.passive.label}
-      </div>
+      <span className="block font-display text-[15px] text-ink">{children}</span>
+      {sub && <span className="block text-[13px] text-ink-dim mt-0.5">{sub}</span>}
     </button>
   )
 }
@@ -273,7 +258,7 @@ function GoalCard({ goal, selected, onClick }) {
 /** Multi-select: what this person is actually going to do, in their words. */
 function Chips({ value, onToggle }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
       {TRACKED.filter((a) => !['aim', 'vod', 'sleep'].includes(a.id)).map((a) => {
         const on = value.includes(a.id)
         return (
@@ -281,11 +266,10 @@ function Chips({ value, onToggle }) {
             key={a.id}
             onClick={() => onToggle(a.id)}
             aria-pressed={on}
-            className="flex items-center gap-2 min-h-[44px] px-3 border transition-colors active:brightness-125"
+            className="ask-in flex items-center gap-2 min-h-[44px] px-3.5 rounded-full transition-colors active:brightness-125"
             style={{
               color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
-              background: on ? 'var(--color-neon)' : 'transparent',
-              borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
+              background: on ? 'var(--color-neon)' : 'var(--color-panel-2)',
             }}
           >
             <Icon name={a.icon} size={15} color="currentColor" />
@@ -303,6 +287,14 @@ export default function Onboarding({ onContinue }) {
   const has = state.onboarded
   const [step, setStep] = useState(0)
   const [at, setAt] = useState(0)
+  const [thinking, setThinking] = useState(false)
+  // The transcript grows downward, so every new line scrolls itself into view.
+  const endRef = useRef(null)
+  useEffect(() => {
+    if (step === 0 || !endRef.current) return
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    endRef.current.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'end' })
+  }, [at, thinking, step])
   const [goalId, setGoalId] = useState(null)
   const [doing, setDoing] = useState([])
   const [days, setDays] = useState(4)
@@ -378,175 +370,174 @@ export default function Onboarding({ onContinue }) {
   }
 
   // ------------------------------------------------------- the conversation
-  // Five questions, one at a time, each opening the next. The old screen put
-  // all of it up at once and asked nothing that mattered; this asks the two
-  // things that change the game — what you want, and what you will actually do
-  // — and it asks them one at a time so neither gets skimmed.
   const goal = GOALS.find((g) => g.id === goalId)
-  const answered = [
-    name.trim().length > 0,
-    true,
-    Boolean(goalId),
-    doing.length > 0,
-    true,
-  ]
-  const canFinish = answered[0] && answered[2] && answered[3]
-  const next = () => setAt((i) => Math.min(4, i + 1))
+  const goalClass = goal && CLASSES.find((c) => c.id === goal.classId)
+  const who = name.trim().toUpperCase()
 
-  const QS = [
+  // Five turns. Each carries the question, the phrase in it worth lighting, and
+  // what the guide says back once you have answered — which is the whole
+  // difference between this and a form.
+  const TURNS = [
     {
-      q: 'What should we call you?',
-      answer: name.trim().toUpperCase() || '—',
-      body: (
-        <>
+      ask: 'First — what should I call you?',
+      mark: 'what should I call you',
+      said: () => who,
+    },
+    {
+      ack: `Good to meet you, ${who}.`,
+      ask: 'What do you look like in there?',
+      mark: 'look like',
+      said: () => AVATAR_BODIES.find((b) => b.id === body)?.label ?? body,
+    },
+    {
+      ack: 'That will do nicely.',
+      ask: 'So what do you actually want out of this?',
+      mark: 'want out of this',
+      said: () => goal?.title ?? '',
+      tone: () => goalClass?.color,
+    },
+    {
+      ack: goalClass
+        ? `Then you are a ${goalClass.name}. ${goalClass.passive.label}, on top of everything else.`
+        : '',
+      ask: 'What will you actually do?',
+      mark: 'actually do',
+      said: () => TRACKED.filter((a) => doing.includes(a.id)).map((a) => a.name).join(' · '),
+    },
+    {
+      ack: 'Noted — those go under your thumb when you press start.',
+      ask: 'Last one. How many days a week?',
+      mark: 'How many days a week',
+      said: () => `${days} days a week`,
+    },
+  ]
+
+  const done = at >= TURNS.length
+  const endAck = `Right. We will measure your week against ${days} days, and everything you log pays out either way.`
+
+  const answer = (advance = true) => {
+    setThinking(true)
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    window.setTimeout(() => {
+      setThinking(false)
+      if (advance) setAt((i) => i + 1)
+    }, still ? 0 : 620)
+  }
+
+  // What you say, under the question, on your side of the screen.
+  const options = () => {
+    if (thinking || done) return null
+    if (at === 0) {
+      return (
+        <div className="ask-in flex flex-col items-end gap-2">
           <input
             id="ob-name"
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 14))}
-            onKeyDown={(e) => e.key === 'Enter' && answered[0] && next()}
-            placeholder="Your name"
-            className="w-full min-h-[52px] bg-panel border border-line p-3 font-display text-[18px] text-ink placeholder:text-ink-faint focus:border-neon outline-none"
+            onKeyDown={(e) => e.key === 'Enter' && name.trim() && answer()}
+            placeholder="Type your name"
+            className="w-full min-h-[52px] bg-panel-2 rounded-full px-4 font-display text-[17px] text-ink text-right placeholder:text-ink-faint focus:outline-2 focus:outline-neon outline-none"
           />
-          <div className="text-[14px] text-ink-faint mt-2 leading-snug">
-            This is the name on your character, your profile card and the ladder.
-          </div>
-          <Btn full className="mt-3.5" disabled={!answered[0]} onClick={next}>
-            Continue
-          </Btn>
-        </>
-      ),
-    },
-    {
-      q: 'What do you look like in there?',
-      answer: `${AVATAR_BODIES.find((b) => b.id === body)?.label ?? body}`,
-      body: (
-        <>
+          <Choice onClick={() => name.trim() && answer()} tone={name.trim() ? 'var(--color-neon)' : undefined}>
+            {name.trim() ? `That's me` : 'Type it above'}
+          </Choice>
+        </div>
+      )
+    }
+    if (at === 1) {
+      return (
+        <div className="ask-in ml-auto max-w-[92%] p-3 rounded-[var(--radius-lg)] bg-panel-2">
           <div className="flex justify-center">
-            <div
-              className="grid place-items-center px-4 py-2 border"
-              style={{ borderColor: 'var(--color-neon)', background: 'rgba(0,0,0,0.25)' }}
-            >
-              <HeroView av={preview} height={150} />
-            </div>
+            <HeroView av={preview} height={140} />
           </div>
-          <div className="mt-4">
-            <Pick label="BODY" value={body} onChange={setBody} options={AVATAR_BODIES} />
+          <div className="mt-3">
+            <Pick value={body} onChange={setBody} options={AVATAR_BODIES} />
           </div>
-          <div className="font-display text-[12px] text-ink-faint mt-4 mb-2">SKIN</div>
+          <div className="label text-ink-faint mt-3.5 mb-2">SKIN</div>
           <div className="flex gap-2 flex-wrap">
             {AVATAR_SKINS.map((c) => (
               <Swatch key={c} color={c} selected={skin === c} onClick={() => setSkin(c)} label={`Skin ${c}`} />
             ))}
           </div>
-          <div className="font-display text-[12px] text-ink-faint mt-4 mb-2">HAIR</div>
+          <div className="label text-ink-faint mt-3.5 mb-2">HAIR</div>
           <div className="flex gap-2 flex-wrap">
             {AVATAR_HAIR.map((c) => (
               <Swatch key={c} color={c} selected={hair === c} onClick={() => setHair(c)} label={`Hair ${c}`} />
             ))}
           </div>
-          <Btn full className="mt-4" onClick={next}>
-            Continue
+          <Btn full className="mt-3.5" onClick={() => answer()}>
+            That&apos;s them
           </Btn>
-        </>
-      ),
-    },
-    {
-      q: 'What do you want out of this?',
-      answer: goal ? goal.title : '—',
-      body: (
-        <>
-          <div className="space-y-2">
-            {GOALS.map((g) => (
-              <GoalCard
+        </div>
+      )
+    }
+    if (at === 2) {
+      return (
+        <div className="flex flex-col items-end gap-2">
+          {GOALS.map((g) => {
+            const cls = CLASSES.find((c) => c.id === g.classId)
+            return (
+              <Choice
                 key={g.id}
-                goal={g}
-                selected={goalId === g.id}
+                tone={cls.color}
+                sub={`${cls.name} · ${cls.passive.label}`}
                 onClick={() => {
                   setGoalId(g.id)
-                  setAt(3)
+                  answer()
                 }}
-              />
-            ))}
-          </div>
-          <div className="text-[14px] text-ink-faint mt-3 leading-snug">
-            This picks your class and the XP bonus that comes with it. You are not locked in — everything counts for
-            everyone, this just counts a little extra.
-          </div>
-        </>
-      ),
-    },
-    {
-      q: 'What will you actually do?',
-      answer: doing.length
-        ? TRACKED.filter((a) => doing.includes(a.id)).map((a) => a.name).join(' · ')
-        : '—',
-      body: (
-        <>
+              >
+                {g.title}
+              </Choice>
+            )
+          })}
+        </div>
+      )
+    }
+    if (at === 3) {
+      return (
+        <div className="ask-in flex flex-col items-end gap-2.5">
           <Chips
             value={doing}
             onToggle={(id) => setDoing((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]))}
           />
-          <div className="text-[14px] text-ink-faint mt-3 leading-snug">
-            Pick as many as you like. These go to the top of the list when you press start, so the thing you do most is
-            under your thumb.
-          </div>
-          <Btn full className="mt-3.5" disabled={!answered[3]} onClick={next}>
-            Continue
-          </Btn>
-        </>
-      ),
-    },
-    {
-      q: 'How many days a week?',
-      answer: `${days} days`,
-      body: (
-        <>
-          <div className="grid grid-cols-5 gap-2">
-            {DAY_OPTIONS.map((d) => {
-              const on = days === d
-              return (
-                <button
-                  key={d}
-                  onClick={() => setDays(d)}
-                  aria-pressed={on}
-                  className="figure text-[19px] min-h-[52px] border transition-colors active:brightness-125"
-                  style={{
-                    color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
-                    background: on ? 'var(--color-neon)' : 'transparent',
-                    borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
-                  }}
-                >
-                  {d}
-                </button>
-              )
-            })}
-          </div>
-          <div className="text-[14px] text-ink-faint mt-3 leading-snug">
-            Your target, not a rule. It is what the week is measured against — and be honest, because a target you miss
-            every week is worse than a smaller one you hit.
-          </div>
-        </>
-      ),
-    },
-  ]
+          <Choice onClick={() => doing.length && answer()} tone={doing.length ? 'var(--color-neon)' : undefined}>
+            {doing.length ? 'That is the lot' : 'Pick at least one'}
+          </Choice>
+        </div>
+      )
+    }
+    return (
+      <div className="flex flex-col items-end gap-2">
+        {DAY_OPTIONS.map((d) => (
+          <Choice
+            key={d}
+            tone="var(--color-neon)"
+            onClick={() => {
+              setDays(d)
+              answer()
+            }}
+          >
+            {d === 6 ? '6 or more days a week' : `${d} days a week`}
+          </Choice>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="absolute inset-0 z-50 bg-void overflow-y-auto scroll-thin">
       <div className="min-h-full flex flex-col p-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => (at === 0 ? setStep(0) : setAt(at - 1))} className="label text-ink-faint min-h-[44px] px-1">
-            ← BACK
+          <button
+            onClick={() => (at === 0 ? setStep(0) : setAt(at - 1))}
+            aria-label="Back"
+            className="grid place-items-center w-11 h-11 rounded-full bg-panel-2 active:brightness-125"
+          >
+            <Icon name="chevron" size={14} color="var(--color-ink-dim)" className="rotate-180" />
           </button>
-          <div className="flex-1 flex gap-1">
-            {QS.map((_, i) => (
-              <span
-                key={i}
-                className="flex-1 h-[4px] rounded-full transition-colors"
-                style={{ background: i <= at ? HUES[i] : 'var(--color-line)' }}
-              />
-            ))}
-          </div>
+          <span className="font-display text-[13px] text-ink-faint tracking-widest">NEW CHARACTER</span>
+          <span className="ml-auto label text-ink-faint">{Math.min(at + 1, TURNS.length)} / {TURNS.length}</span>
         </div>
 
         {testing && (
@@ -555,34 +546,52 @@ export default function Onboarding({ onContinue }) {
           </div>
         )}
 
-        <div className="space-y-2.5 mt-4">
-          {QS.slice(0, at + 1).map((item, i) => (
-            <Ask
-              key={item.q}
-              n={i + 1}
-              of={QS.length}
-              hue={HUES[i]}
-              question={item.q}
-              answer={item.answer}
-              open={i === at}
-              onOpen={() => setAt(i)}
-            >
-              {item.body}
-            </Ask>
+        {/* The transcript. Everything said so far stays put and scrolls, the way
+            a conversation does — nothing folds shut behind a CHANGE link. */}
+        <div className="space-y-4 mt-5">
+          {TURNS.slice(0, at + 1).map((turn, i) => (
+            <div key={turn.ask} className="space-y-3">
+              <Said ack={i === 0 ? undefined : turn.ack} ask={turn.ask} mark={turn.mark} />
+              {i < at && <Replied tone={turn.tone?.()}>{turn.said()}</Replied>}
+            </div>
           ))}
+
+          {done && (
+            <div className="space-y-3">
+              <Said ask={endAck} />
+              <div className="ask-in flex items-center gap-2.5 pt-2">
+                <Orb size={20} thinking />
+                <span className="text-[15px] text-ink-dim">Building your character…</span>
+              </div>
+            </div>
+          )}
+
+          {thinking && (
+            <div className="flex items-center gap-2.5">
+              <Orb thinking />
+              <span className="dots" aria-label="Thinking">
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
+          )}
+
+          {options()}
         </div>
 
-        {at === QS.length - 1 && (
+        <div ref={endRef} />
+
+        {done && (
           <div className="mt-auto pt-6">
             <Btn
               full
               size="lg"
               variant="go"
-              disabled={!canFinish}
               onClick={() => {
                 onboard({
-                  name: name.trim().toUpperCase(),
-                  handle: handle.trim() || name.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'newchallenger',
+                  name: who,
+                  handle: handle.trim() || who.toLowerCase().replace(/[^a-z0-9]/g, '') || 'newchallenger',
                   classId: goal?.classId ?? 'ironstride',
                   avatar: { seed: 0, body, skin, hair, shirt: TUNIC },
                   games: [],
@@ -594,13 +603,8 @@ export default function Onboarding({ onContinue }) {
                 onContinue?.()
               }}
             >
-              {testing ? 'START MAXED' : 'START PLAYING'}
+              {testing ? 'START MAXED' : `ENTER AS ${who}`}
             </Btn>
-            {!canFinish && (
-              <div className="text-[14px] text-ink-faint text-center mt-2">
-                Still needs a name, a goal and at least one activity.
-              </div>
-            )}
           </div>
         )}
       </div>
