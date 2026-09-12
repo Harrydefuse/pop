@@ -116,11 +116,26 @@ function MenuItem({ children, onClick }) {
  * with it, is the consequence — shown on the card, so the choice is honest
  * rather than a personality quiz with a hidden result.
  */
+/**
+ * Nine answers, four training styles. Several goals land on the same style on
+ * purpose: "get stronger" and "build muscle" are different things to want and
+ * the same week of training, and the question is here to find out what you
+ * want, not to make you translate it first.
+ *
+ * The notes describe the training, never the outcome. This app measures
+ * sessions — it has no scale, no tape measure and no calorie count — so a card
+ * that promised a number it cannot see would be lying on the way in.
+ */
 const GOALS = [
-  { id: 'move', classId: 'adept', title: 'Just get moving again', note: 'Walks, stretching, anything that counts as starting.' },
+  { id: 'move', classId: 'adept', title: 'Just get moving again', note: 'Walks and stretching. Anything that counts as starting.' },
+  { id: 'feel', classId: 'adept', title: 'Feel better day to day', note: 'Sleep, energy, less stiffness. Short and regular beats hard.' },
+  { id: 'leaner', classId: 'ironstride', title: 'Get leaner', note: 'A bit of both, often enough that the week adds up.' },
   { id: 'further', classId: 'strider', title: 'Go further', note: 'Run, ride, walk — you want the distance to grow.' },
-  { id: 'stronger', classId: 'juggernaut', title: 'Get stronger', note: 'Barbells, dumbbells, the squat rack.' },
-  { id: 'both', classId: 'ironstride', title: 'Both — lift and run', note: 'Leg day and a 10k in the same week.' },
+  { id: 'race', classId: 'strider', title: 'Train for a race', note: 'There is a date in the calendar and you intend to finish.' },
+  { id: 'stronger', classId: 'juggernaut', title: 'Get stronger', note: 'Heavier on the bar than last month.' },
+  { id: 'muscle', classId: 'juggernaut', title: 'Build muscle', note: 'Volume, and enough of it to show up.' },
+  { id: 'sport', classId: 'ironstride', title: 'Keep up with my sport', note: 'Conditioning for the thing you already play.' },
+  { id: 'game', classId: 'ironstride', title: 'I am here for the game', note: 'Fair enough. The training is how you play it.' },
 ]
 
 const DAY_OPTIONS = [2, 3, 4, 5, 6]
@@ -491,10 +506,15 @@ export default function Onboarding({ onContinue }) {
           {GOALS.map((g) => {
             const cls = CLASSES.find((c) => c.id === g.classId)
             return (
+              // The note, not the bonus. Three pairs of these share a bonus —
+              // "get stronger" and "build muscle" are the same week of training
+              // — so printing it on the card made the two look identical and hid
+              // the thing that actually differs. The reply names the bonus a
+              // second later, which is the right place for it.
               <Choice
                 key={g.id}
                 tone={cls.color}
-                sub={cls.passive.label}
+                sub={g.note}
                 onClick={() => {
                   setGoalId(g.id)
                   answer()
