@@ -1,7 +1,7 @@
 // Seed content + the starting save. The app ships "lived in" on purpose: an
 // empty RPG demo tells you nothing about whether the systems feel good.
 
-import { AVATAR_HAIR, AVATAR_SKINS, HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
+import { HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
 import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, SLOT_STATS, armourSet, offhandKind } from './config'
 
 // ------------------------------------------------------------------- catalogues
@@ -95,69 +95,6 @@ export const GEAR_CATALOG = ARMOUR_SETS.flatMap((set) =>
 
 export const CATALOG = { pets: PET_CATALOG, gear: GEAR_CATALOG }
 
-// ---------------------------------------------------------------------- roster
-
-const NAMES = [
-  ['Kestrel', 'kestrel_ow'],
-  ['Vex', 'vexbench'],
-  ['Nyx', 'nyx.aim'],
-  ['Boulder', 'boulderdash'],
-  ['Sable', 'sable5k'],
-  ['Riko', 'rikorides'],
-  ['Juno', 'junolifts'],
-  ['Ash', 'ashtilt'],
-  ['Marrow', 'marrow_gg'],
-  ['Pip', 'pipsqueak'],
-  ['Halcyon', 'halcyon.hp'],
-  ['Drift', 'driftk'],
-  ['Onyx', 'onyxpb'],
-  ['Wren', 'wren.runs'],
-]
-
-const CLASS_IDS = ['strider', 'juggernaut', 'ironstride', 'adept']
-const PET_IDS = ['pup', 'pup', 'turbo', 'turbo', 'frost', 'ember', 'zeus']
-
-function makeFriend(i, power, extra = {}) {
-  const [name, handle] = NAMES[i % NAMES.length]
-  return {
-    id: `f${i}`,
-    name,
-    handle,
-    level: Math.max(4, Math.round(power / 92)),
-    power,
-    classId: CLASS_IDS[i % CLASS_IDS.length],
-    petId: PET_IDS[i % PET_IDS.length],
-    streak: [3, 12, 41, 7, 88, 19, 2, 130, 26, 5, 61, 14, 33, 9][i % 14],
-    weeklyKm: [12, 41, 8, 26, 63, 19, 4, 88, 31, 15, 52, 22, 37, 11][i % 14],
-    bossKm: [22.4, 61.8, 9.2, 38.5, 84.1, 27.3, 4.6, 112.7, 44.9, 16.2, 70.5, 30.1, 51.8, 12.9][i % 14],
-    // The profile picture is the character now, so the roster has to be built
-    // from both bodies or every face in the leaderboard is the same man.
-    avatar: {
-      seed: i,
-      body: i % 3 === 1 ? 'female' : 'male',
-      skin: AVATAR_SKINS[i % AVATAR_SKINS.length],
-      hair: AVATAR_HAIR[i % AVATAR_HAIR.length],
-    },
-    status: ['training', 'in-game', 'offline', 'in-game', 'training'][i % 5],
-    game: ['Valorant', 'CS2', 'Fortnite', 'League', 'Overwatch 2'][i % 5],
-    ...extra,
-  }
-}
-
-export const FRIENDS = [
-  makeFriend(0, 4820),
-  makeFriend(1, 4210),
-  makeFriend(2, 3640),
-  makeFriend(3, 3180),
-  makeFriend(4, 2960),
-  makeFriend(5, 2410),
-  makeFriend(6, 1980),
-  makeFriend(7, 1620),
-  makeFriend(8, 1240),
-  makeFriend(9, 880),
-]
-
-
 // ------------------------------------------------------------------- world boss
 
 const SEASONS = [
@@ -203,62 +140,9 @@ const SEASONS = [
 
 /** The raid everything points at. Past seasons stay for the archive. */
 export const BOSS = SEASONS.find((b) => b.active)
-const H = 1000 * 60 * 60
 
-export const FEED = [
-  {
-    id: 'p1',
-    channel: 'aim-lab',
-    author: FRIENDS[2],
-    at: Date.now() - 0.4 * H,
-    body: '15-min pre-queue routine that actually transfers:\n\n1. Gridshot Ultra ×2\n2. 1w6ts reload ×3\n3. Tile Frenzy small ×2\n4. 5 min DM, no scoreboard\n\nDo it AFTER you warm up your wrists, not instead of.',
-    tags: ['valorant', 'routine'],
-    likes: 412,
-    replies: 38,
-    pinned: true,
-  },
-  {
-    id: 'p2',
-    channel: 'pb-flex',
-    author: FRIENDS[4],
-    at: Date.now() - 2.1 * H,
-    body: '5k in 22:41. Six months ago I could not finish 2k without walking. Verified on Garmin, no funny business.',
-    tags: ['running', 'pb'],
-    likes: 1284,
-    replies: 96,
-    attachment: { kind: 'pb', label: '5K · 22:41', delta: '-1:12 PB' },
-  },
-  {
-    id: 'p3',
-    channel: 'gym-help',
-    author: FRIENDS[6],
-    at: Date.now() - 5 * H,
-    body: 'Beginner push/pull/legs that fits around ranked. 45 min sessions, 3 days a week, no cardio machines required. Full sheet in the replies — steal it.',
-    tags: ['programme', 'beginner'],
-    likes: 903,
-    replies: 141,
-  },
-  {
-    id: 'p4',
-    channel: 'lfg',
-    author: FRIENDS[1],
-    at: Date.now() - 7.5 * H,
-    body: 'Anyone in Manchester want a gym duo? I lift Tue/Thu evenings and I am Ascendant 2 if you want to queue after.',
-    tags: ['uk', 'duo'],
-    likes: 77,
-    replies: 22,
-  },
-  {
-    id: 'p5',
-    channel: 'general',
-    author: FRIENDS[7],
-    at: Date.now() - 11 * H,
-    body: '130 days. I have not missed since February. The streak is doing more for me than any programme ever did.',
-    tags: ['streak'],
-    likes: 2210,
-    replies: 187,
-  },
-]
+/** One hour, for the timestamps the demo save is built out of. */
+const H = 1000 * 60 * 60
 
 // -------------------------------------------------------------------- dailies
 
@@ -626,7 +510,6 @@ export const INITIAL_STATE = {
   chest: { unlocked: true, openedToday: false },
   dailies: freshDailies(),
   links: { health: [], games: [] },
-  feed: FEED,
   log: [
     { id: 'l1', activityId: 'run', amount: 6.2, verified: true, at: Date.now() - 20 * H, xp: 341, source: 'Garmin' },
     { id: 'l2', activityId: 'lift', amount: 5400, verified: true, at: Date.now() - 30 * H, xp: 486, source: 'Apple' },

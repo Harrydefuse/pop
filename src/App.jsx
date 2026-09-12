@@ -9,7 +9,6 @@ import SessionReward from './components/SessionReward'
 import Onboarding from './components/Onboarding'
 import Icon from './components/Icon'
 import Home from './screens/Home'
-import Friends from './screens/Friends'
 import Profile from './screens/Profile'
 import MapSheet from './screens/Map'
 import UpdateBar from './components/UpdateBar'
@@ -95,7 +94,6 @@ function Device() {
           {tab === 'train' && <Train onGo={setTab} />}
           {tab === 'bosses' && <Bosses />}
           {tab === 'shop' && <Shop />}
-          {tab === 'friends' && <Friends onGo={setTab} />}
           {tab === 'hero' && <Profile />}
           <div className="h-4" />
         </div>

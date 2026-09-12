@@ -20,7 +20,6 @@ function baseState() {
   return {
     ...structuredClone(INITIAL_STATE),
     world: { bossKm: BOSS.startKm },
-    liked: [],
     purchased: [],
     lastReward: null,
     // What the last logged session paid, held until the player dismisses it.
@@ -819,37 +818,6 @@ function reducer(state, action) {
       return { ...state, links: { ...state.links, games } }
     }
 
-    case 'post': {
-      const post = {
-        id: nextId('p'),
-        channel: action.channel,
-        author: {
-          id: 'me',
-          name: state.player.name,
-          handle: state.player.handle,
-          level: state.player.level,
-          avatar: state.player.avatar,
-          classId: state.player.classId,
-        },
-        at: Date.now(),
-        body: action.body,
-        tags: action.tags,
-        likes: 0,
-        replies: 0,
-        mine: true,
-      }
-      return { ...state, feed: [post, ...state.feed] }
-    }
-
-    case 'like': {
-      const liked = state.liked.includes(action.postId)
-      return {
-        ...state,
-        liked: liked ? state.liked.filter((p) => p !== action.postId) : [...state.liked, action.postId],
-        feed: state.feed.map((p) => (p.id === action.postId ? { ...p, likes: p.likes + (liked ? -1 : 1) } : p)),
-      }
-    }
-
     case 'buyCoaching':
       if (state.purchased.includes(action.id)) return state
       return toast(
@@ -1006,7 +974,6 @@ export function GameProvider({ children }) {
       setPet: (petId) => dispatch({ type: 'setPet', petId }),
       toggleHealth: (id) => dispatch({ type: 'toggleHealth', id }),
       toggleGame: (id) => dispatch({ type: 'toggleGame', id }),
-      post: (payload) => dispatch({ type: 'post', ...payload }),
       like: (postId) => dispatch({ type: 'like', postId }),
       buyCoaching: (id, name) => dispatch({ type: 'buyCoaching', id, name }),
       onboard: (payload) => dispatch({ type: 'onboard', ...payload }),

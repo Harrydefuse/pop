@@ -4,6 +4,7 @@ import Icon from './Icon'
 import LogSheet from './LogSheet'
 import { BossArt, PetView } from './Sprites'
 import Arena from './Arena'
+import WorldRaid from './WorldRaid'
 import { useGame } from '../game/useGame'
 import { ACTIVITIES, RARITY } from '../game/config'
 import { ACTS, CAMPAIGN, actById } from '../game/campaign'
@@ -368,6 +369,14 @@ export default function CampaignSheet({ onClose, embedded }) {
                 </div>
               </Panel>
             )}
+
+            {/* The world raid, under the story rather than beside it. Both are
+                bosses; one is yours and one is everybody's, and that is a
+                section on this screen, not a tab of its own. */}
+            <SectionTitle right={<span className="text-[14px] text-ink-faint">everybody at once</span>}>
+              Global
+            </SectionTitle>
+            <WorldRaid />
           </div>
         )}
       </Shell>

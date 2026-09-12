@@ -8,7 +8,6 @@ import InstallCard from '../components/InstallCard'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS } from '../game/config'
 import { streakTier } from '../game/engine'
-import { challengeLabel, challengeProgress } from '../game/challenge'
 
 /**
  * The beta gift, sat at the very top until it is claimed. It is the first thing
@@ -49,39 +48,6 @@ function GiftCard({ onOpen }) {
  * single day, which is precisely the trap the app this one resembles fell into
  * before it closed.
  */
-function WeeklyChallenge({ state }) {
-  const w = challengeProgress(state)
-  const paid = w.claimed
-  return (
-    <Panel className="p-4" accent={paid ? 'var(--color-lime)' : undefined}>
-      <div className="flex items-start gap-3">
-        <span
-          className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
-          style={{ background: `color-mix(in srgb, ${paid ? 'var(--color-lime)' : 'var(--color-neon)'} 14%, transparent)` }}
-        >
-          <Icon name={paid ? 'check' : 'trophy'} size={19} color={paid ? 'var(--color-lime)' : 'var(--color-neon)'} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="label text-ink-faint">This week</div>
-          <div className="font-display text-[17px] text-ink mt-1 leading-tight">{w.challenge.name}</div>
-          <div className="text-[13px] text-ink-dim mt-1.5 leading-snug">
-            {paid ? `Done — +${w.challenge.cores} cores. A new one lands on Monday.` : w.challenge.note}
-          </div>
-        </div>
-      </div>
-      <div className="mt-3.5">
-        <Bar pct={w.pct} color={paid ? 'var(--color-lime)' : 'var(--color-neon)'} height={6} />
-        <div className="flex items-baseline justify-between mt-2">
-          <span className="label text-ink-faint">{challengeLabel(w)}</span>
-          <span className="label" style={{ color: paid ? 'var(--color-lime)' : 'var(--color-gold)' }}>
-            {paid ? 'Claimed' : `+${w.challenge.cores} cores`}
-          </span>
-        </div>
-      </div>
-    </Panel>
-  )
-}
-
 /**
  * A slot is a single small row: colour, name, state. Everything else — what
  * counts, the minimum, how to log it — lives behind a tap, so the screen stays
@@ -359,12 +325,15 @@ export default function Home({ onGo }) {
 
       <InstallCard />
 
-      <WeeklyChallenge state={state} />
-
-
-      {/* ------------------------------------------------------ streak strip */}
-      <Panel className="px-3.5 py-3">
-        <div className="flex items-center gap-3">
+      {/* -------------------------------------------- the day, in one panel
+          Three cards became one. The streak, how much of today is left and the
+          three things that make up "today" were a header card, a shields card
+          and a list — all describing the same day, stacked as if they were
+          different subjects. The week's challenge has gone entirely: it is on
+          TRAIN now, where the rest of the week already lives, and a goal shown
+          twice is a goal you stop reading. */}
+      <Panel>
+        <div className="flex items-center gap-3 px-3.5 py-3 border-b border-line">
           <span
             className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
             style={{ background: 'color-mix(in srgb, var(--tone-orange) 14%, transparent)' }}
@@ -372,38 +341,20 @@ export default function Home({ onGo }) {
             <Icon name="bolt" size={21} color="var(--tone-orange)" />
           </span>
           <div className="min-w-0">
-            <div className="figure text-[24px] text-ink">{p.streak}</div>
-            <div className="label text-ink-faint mt-1">Day streak</div>
+            <div className="figure text-[24px] text-ink leading-none">{p.streak}</div>
+            <div className="label text-ink-faint mt-1.5">day streak · ×{streak.mult.toFixed(2)} XP</div>
           </div>
           <div className="ml-auto text-right">
-            <div className="figure text-[18px]" style={{ color: doneCount === 3 ? 'var(--color-lime)' : 'var(--color-ink)' }}>
+            <div
+              className="figure text-[20px] leading-none"
+              style={{ color: doneCount === 3 ? 'var(--color-lime)' : 'var(--color-ink)' }}
+            >
               {doneCount}/3
             </div>
-            <div className="label text-ink-faint mt-1">×{streak.mult.toFixed(2)} XP</div>
+            <div className="label text-ink-faint mt-1.5">done today</div>
           </div>
         </div>
 
-        {/* The shields were real and invisible: they auto-spend on a missed day
-            and the only place that ever said so was a coach panel most people
-            never opened. A safety net nobody knows about protects nothing —
-            the fear of losing the streak is what makes people skip a rest day
-            they needed. */}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
-          <Icon
-            name="shield"
-            size={15}
-            color={p.shields > 0 ? 'var(--color-cyan)' : 'var(--color-ink-faint)'}
-          />
-          <span className="text-[13px] text-ink-dim leading-snug">
-            {p.shields > 0
-              ? `${p.shields} rest ${p.shields === 1 ? 'day' : 'days'} banked. Miss one and a shield covers it — the streak holds.`
-              : 'No shields left. A missed day resets the streak from here.'}
-          </span>
-        </div>
-      </Panel>
-
-      {/* ------------------------------------------------------------ slots */}
-      <Panel>
         {DAILY_SLOTS.map((slot, i) => (
           <SlotRow
             key={slot.id}
@@ -413,6 +364,18 @@ export default function Home({ onGo }) {
             last={i === DAILY_SLOTS.length - 1}
           />
         ))}
+
+        {/* The shields were real and invisible: they auto-spend on a missed day
+            and the only place that ever said so was a coach panel most people
+            never opened. A safety net nobody knows about protects nothing. */}
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-t border-line">
+          <Icon name="shield" size={14} color={p.shields > 0 ? 'var(--color-cyan)' : 'var(--color-ink-faint)'} />
+          <span className="text-[13px] text-ink-faint leading-snug">
+            {p.shields > 0
+              ? `${p.shields} rest ${p.shields === 1 ? 'day' : 'days'} banked — miss one and the streak holds.`
+              : 'No shields left. A missed day resets the streak.'}
+          </span>
+        </div>
       </Panel>
 
       {/* ------------------------------------------------------------ chest */}

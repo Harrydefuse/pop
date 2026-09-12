@@ -1,13 +1,16 @@
 import Icon from './Icon'
 
-// Sentence case, not caps. Six shouted words along the bottom of every screen
+// Sentence case, not caps. Five shouted words along the bottom of every screen
 // would be the loudest thing in the app and the least important.
+//
+// GUILD is gone. It held a world raid and a ladder of people you know, and
+// neither needed a tab: the raid is a boss, so it sits under the bosses, and
+// your friends are part of your profile, which is where they already were.
 const TABS = [
   { key: 'home', label: 'Today', icon: 'home' },
   { key: 'train', label: 'Train', icon: 'dumbbell' },
   { key: 'bosses', label: 'Battle', icon: 'swords' },
   { key: 'shop', label: 'Shop', icon: 'bag' },
-  { key: 'friends', label: 'Guild', icon: 'trophy' },
   { key: 'hero', label: 'You', icon: 'person' },
 ]
 
@@ -18,7 +21,7 @@ export default function TabBar({ tab, setTab, badges = {} }) {
   // way you moved.
   const index = Math.max(0, TABS.findIndex((t) => t.key === tab))
   return (
-    <nav className="relative z-20 border-t border-line bg-panel/95 backdrop-blur grid grid-cols-6 pad-safe-bottom">
+    <nav className="relative z-20 border-t border-line bg-panel/95 backdrop-blur grid grid-cols-5 pad-safe-bottom">
       <span
         aria-hidden="true"
         className="tab-marker absolute top-0 h-[3px] w-8 -translate-x-1/2 rounded-b-full"
