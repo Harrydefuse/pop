@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, gearPiece } from './data'
-import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, setForRarity } from './config'
+import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollChest, rollDailyChest, stoneProgress, todayKey } from './engine'
+import { MILESTONES, bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
@@ -23,6 +23,14 @@ function baseState() {
     liked: [],
     purchased: [],
     lastReward: null,
+    // What the last logged session paid, held until the player dismisses it.
+    // The moment right after the effort is where "I earned this" happens, so
+    // it gets a screen rather than six toasts that scroll past each other.
+    sessionReward: null,
+    // A milestone that happened while nobody was looking — a streak tier ticks
+    // over at midnight, not at the end of a set. It waits here and pays out on
+    // the next session, when there is somebody there to see it.
+    pendingMilestone: null,
     // Kept apart from `log`, which is trimmed to forty entries: a best from
     // three months ago has to survive the sessions that pushed it off the list,
     // and so does the shape of the last quarter.
@@ -228,7 +236,7 @@ function sessionDetail(s, ms) {
 
 function applyLog(state, { activityId, amount, verified, source, detail, sets = [] }) {
   const player = state.player
-  const result = resolveActivity(player, { activityId, amount, verified })
+  const result = resolveActivity(player, { activityId, amount, verified, log: state.log })
   const act = result.activity
 
   // What this session beat. Read before the board is updated, and only ever for
@@ -313,24 +321,26 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     ].slice(0, 40),
   }
 
-  next = toast(next, {
-    kind: 'xp',
-    title: `+${result.xp + prXp} XP`,
-    body: `${act.name} · ${amount}${act.unit === 'kg volume' ? ' kg' : ` ${act.unit}`}${verified ? '' : ' · unverified, half rate'}`,
+  // Everything this session earned, gathered in one place instead of fired off
+  // as six toasts that scroll past. The screen that shows it is the whole point
+  // of the loop: you did the thing, here is what it paid.
+  const reward = {
+    activity: act.name,
+    icon: act.icon,
+    amount,
+    unit: act.unit === 'kg volume' ? 'kg' : act.unit,
+    verified,
+    xp: result.xp + prXp,
+    coins: result.cores,
+    levels: levelsGained,
     stats: result.statGains,
-  })
-  for (const pr of prs) {
-    next = toast(next, {
-      kind: 'pr',
-      title: `${pr.lift} · personal best`,
-      body: `${pr.reps} × ${pr.weight}kg — an estimated ${Math.round(pr.e1rm)}kg max, up from ${Math.round(pr.prev)}kg.`,
-    })
-  }
-  for (const lv of levelsGained) {
-    next = toast(next, { kind: 'level', title: `Level ${lv}`, body: 'New level reached. Power recalculated.' })
-  }
-  if (petLeveled) {
-    next = toast(next, { kind: 'pet', title: `${petLeveled.name} → LV ${petLeveled.level}`, body: 'Your pet levelled up' })
+    prs: prs.map((r) => ({ lift: r.lift, reps: r.reps, weight: r.weight, e1rm: r.e1rm, prev: r.prev })),
+    drops: [],
+    milestones: [],
+    pet: petLeveled ? { name: petLeveled.name, level: petLeveled.level } : null,
+    damage: 0,
+    boss: null,
+    stones: [],
   }
 
   // Moving unlocks today's chest. There is no ladder to climb any more — one
@@ -343,11 +353,8 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
       challenge: { week: weekly.key, claimed: true },
       player: { ...next.player, cores: next.player.cores + weekly.challenge.cores },
     }
-    next = toast(next, {
-      kind: 'chest',
-      title: 'Weekly challenge done',
-      body: `${weekly.challenge.name} · +${weekly.challenge.cores} cores`,
-    })
+    reward.coins += weekly.challenge.cores
+    reward.milestones.push({ kind: 'goal', label: weekly.challenge.name })
   }
 
   const activeDone = next.dailies.find((d) => d.id === 'active')?.done
@@ -359,10 +366,19 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   const allDone = next.dailies.every((d) => d.done)
   if (allDone && !next.perfectToday) {
     next = { ...next, perfectToday: true, player: { ...next.player, cores: next.player.cores + 250 } }
-    next = toast(next, { kind: 'level', title: 'All three done', body: '+250 cores for a full day' })
+    reward.coins += 250
+    reward.milestones.push({ kind: 'day', label: 'All three dailies' })
   }
 
+  // What the session took off the boss in front of you. Read before the damage
+  // lands so the number on the screen is this session's, not the running total.
+  const before = campaignState(next.player, next.campaign)
   next = applyBossDamage(next, act, result.xp + prs.length * PR_DAMAGE)
+  const after = campaignState(next.player, next.campaign)
+  if (before.current) {
+    reward.boss = { name: before.current.name, hp: before.current.hp, damage: after.damage }
+    reward.damage = Math.max(0, Math.round(after.damage - before.damage))
+  }
 
   // Stones are checked last so a single session can complete one
   const earned = stoneProgress(next.player).filter((s) => s.pct >= 1 && !s.earned)
@@ -371,11 +387,29 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
       ...next,
       player: { ...next.player, stones: [...next.player.stones, ...earned.map((s) => s.key)] },
     }
-    for (const s of earned) {
-      next = toast(next, { kind: 'stone', title: `${s.name} stone`, body: s.reward, color: s.color })
-    }
+    reward.stones = earned.map((s) => ({ name: s.name, reward: s.reward, color: s.color }))
   }
-  return next
+
+  // ---- loot, and only from milestones. Volume does not drop gear; moments do.
+  const claims = []
+  for (const pr of prs) claims.push({ kind: 'pr', label: `${pr.lift} best` })
+  if (next.pendingMilestone) claims.push({ kind: next.pendingMilestone.kind, label: next.pendingMilestone.label })
+  if (reward.milestones.some((m) => m.kind === 'goal')) claims.push({ kind: 'goal', label: "Week's goal" })
+
+  for (const claim of claims) {
+    if (!MILESTONES[claim.kind]) continue
+    const drops = rollMilestone(CATALOG, claim.kind)
+    next = grantDrops(next, drops)
+    reward.drops.push(...drops.map((d) => ({ ...d, from: claim.label })))
+  }
+  if (next.pendingMilestone) {
+    reward.milestones.push({ kind: next.pendingMilestone.kind, label: next.pendingMilestone.label })
+    next = { ...next, pendingMilestone: null }
+  }
+  if (prs.length) reward.milestones.unshift({ kind: 'pr', label: prs.length === 1 ? 'Personal best' : `${prs.length} personal bests` })
+
+  reward.coins = next.player.cores - player.cores
+  return { ...next, sessionReward: reward }
 }
 
 /** Fabricates the kind of payload a real health provider would push over. */
@@ -717,6 +751,9 @@ function reducer(state, action) {
     case 'dismissReward':
       return { ...state, lastReward: null }
 
+    case 'dismissSessionReward':
+      return { ...state, sessionReward: null }
+
     case 'equip': {
       const item = state.player.inventory.find((i) => i.id === action.itemId)
       if (!item) return state
@@ -845,14 +882,20 @@ function reducer(state, action) {
     case 'dismissToast':
       return { ...state, toasts: state.toasts.filter((t) => t.id !== action.id) }
 
-    case 'newDay':
+    case 'newDay': {
+      const streak = state.player.streak + 1
+      const crossed = STREAK_TIERS.find((t) => t.days === streak)
       return {
         ...state,
         dailies: freshDailies(),
         perfectToday: false,
         chest: { unlocked: false, openedToday: false },
-        player: { ...state.player, streak: state.player.streak + 1 },
+        player: { ...state.player, streak },
+        pendingMilestone: crossed
+          ? { kind: 'streak', label: `${crossed.days}-day streak · ${crossed.label}` }
+          : state.pendingMilestone,
       }
+    }
 
     // Restoring is a whole-save swap. There is no server behind any of this,
     // so a character code is how a character moves between two phones.
@@ -908,7 +951,7 @@ export function GameProvider({ children }) {
     clearTimeout(saveRef.current)
     saveRef.current = setTimeout(() => {
       try {
-        const { toasts: _t, lastReward: _r, ...persist } = state
+        const { toasts: _t, lastReward: _r, sessionReward: _s, ...persist } = state
         localStorage.setItem(SAVE_KEY, JSON.stringify(persist))
       } catch {
         /* storage full or blocked — the session still works, it just won't persist */
@@ -949,6 +992,7 @@ export function GameProvider({ children }) {
       buyChest: (id) => dispatch({ type: 'buyChest', id }),
       openGift: () => dispatch({ type: 'openGift' }),
       dismissReward: () => dispatch({ type: 'dismissReward' }),
+      dismissSessionReward: () => dispatch({ type: 'dismissSessionReward' }),
       equip: (itemId) => dispatch({ type: 'equip', itemId }),
       equipBest: () => dispatch({ type: 'equipBest' }),
       unequip: (slot) => dispatch({ type: 'unequip', slot }),

@@ -27,6 +27,9 @@ const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEf
 const { EXERCISES, searchExercises, muscleOf, muscleSplit, neglected, exerciseByName } =
   await server.ssrLoadModule('/src/game/exercises.js')
 const { buildCard, encodeCard, decodeCard, leaderboard } = await server.ssrLoadModule('/src/game/profile.js')
+const { baselineMinutes, coinsFor, rollMilestone, MILESTONES } = await server.ssrLoadModule('/src/game/engine.js')
+const { CATALOG } = await server.ssrLoadModule('/src/game/data.js')
+const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
 let fails = 0
@@ -241,6 +244,44 @@ const them = { ...card, name: 'THEM', handle: 'them', level: 30, power: 9000 }
 const ladder = leaderboard(stateOf(), [them])
 is('the ladder is by level, highest first', ladder.map((c) => c.name), ['THEM', 'ROOKIE'])
 is('and it knows which one is you', ladder.find((c) => c.me).name, 'ROOKIE')
+
+// ---------------------------------------------------------------- the economy
+// The payout is measured against your own median session, which is the whole
+// reason a walker is not punished for walking. That only holds if the numbers
+// behave, so the shape of the curve is pinned here rather than eyeballed.
+console.log('\ncoins are scaled to your own normal')
+const walk = ACTIVITIES.find((a) => a.id === 'walk')
+const run = ACTIVITIES.find((a) => a.id === 'run')
+const cold = { streak: 0 }
+const logOf = (...mins) => mins.map((m) => ({ activityId: 'walk', amount: m }))
+
+is('an empty log floors the baseline at 15 minutes', baselineMinutes([]), 15)
+is('otherwise it is your median session', baselineMinutes(logOf(10, 20, 60)), 20)
+is('and never below the floor', baselineMinutes(logOf(2, 3, 4)), 15)
+
+const beginner = logOf(20, 20, 20)
+const athlete = logOf(60, 60, 60)
+is('a 20-minute walk pays a beginner more than the same walk pays an athlete',
+  coinsFor(cold, beginner, walk, 20, true) > coinsFor(cold, athlete, walk, 20, true), true)
+is('a walk and a run of the same length pay the same',
+  coinsFor(cold, beginner, walk, 30, true), coinsFor(cold, beginner, run, 5, true))
+is('a one-minute session cannot be farmed', coinsFor(cold, beginner, walk, 1, true) <= 10, true)
+is('going far past your own normal stops paying more',
+  coinsFor(cold, beginner, walk, 90, true), coinsFor(cold, beginner, walk, 200, true))
+is('a streak multiplies it', coinsFor({ streak: 100 }, beginner, walk, 30, true) >
+  coinsFor(cold, beginner, walk, 30, true), true)
+is('unverified pays half', coinsFor(cold, beginner, walk, 30, false),
+  Math.round(coinsFor(cold, beginner, walk, 30, true) / 2))
+
+console.log('\nloot comes from milestones, with a floor on each')
+for (const [kind, spec] of Object.entries(MILESTONES)) {
+  const floor = RARITY_ORDER.indexOf(spec.floor)
+  const rolls = Array.from({ length: 200 }, () => rollMilestone(CATALOG, kind))
+  is(`${kind} always drops exactly one thing`, rolls.every((d) => d.length === 1), true)
+  is(`${kind} never drops below ${spec.floor}`,
+    rolls.every((d) => RARITY_ORDER.indexOf(d[0].rarity) >= floor), true)
+}
+is('an unknown milestone drops nothing', rollMilestone(CATALOG, 'nonsense'), [])
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

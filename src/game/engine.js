@@ -154,6 +154,27 @@ export function rollChest(catalog, { rolls, floor = 'common' }, rng = Math.rando
   return drops
 }
 
+/**
+ * Loot from a milestone, not from volume.
+ *
+ * Coins come from showing up; the good drops come from moments. A personal
+ * best, a streak tier, a week's goal met, a boss down. This is what stops the
+ * app nudging anyone to grind more volume every day to feel rewarded — the rare
+ * stuff is gated behind occasional effort, which is the healthy shape, and it
+ * pays a runner and a lifter the same way.
+ */
+export const MILESTONES = {
+  pr: { floor: 'uncommon', label: 'Personal best' },
+  streak: { floor: 'rare', label: 'Streak tier' },
+  goal: { floor: 'rare', label: "Week's goal" },
+}
+
+export function rollMilestone(catalog, kind, rng = Math.random) {
+  const spec = MILESTONES[kind]
+  if (!spec) return []
+  return rollChest(catalog, { rolls: 1, floor: spec.floor }, rng)
+}
+
 /** The free one. It pays cores as well as dropping, which no bought chest does. */
 export function rollDailyChest(catalog, rng = Math.random) {
   return { cores: DAILY_CHEST.cores, drops: rollChest(catalog, DAILY_CHEST, rng) }
@@ -207,7 +228,49 @@ export function activityById(id) {
  * provider) pay full; manual entries are halved and flagged, which is what stops
  * the leaderboards from being a typing contest.
  */
-export function resolveActivity(player, { activityId, amount, verified }) {
+/**
+ * What a session is worth in coins, measured against your own normal.
+ *
+ * A flat rate per block punished exactly the person this app is trying to win.
+ * A five-kilometre run paid forty and a twenty-minute walk paid sixteen, so the
+ * sedentary convert taking their first walk earned a third of what a runner
+ * earned for an easy Tuesday — and the walk was the harder thing to do.
+ *
+ * So most of the payout is for showing up, and the rest is scaled to YOUR
+ * median session rather than to an absolute. Turning up pays. Going longer than
+ * you usually do pays more. Somebody else's longer is not part of the sum.
+ */
+const SESSION_COINS = 60
+const BASELINE_FLOOR_MIN = 15
+
+export function baselineMinutes(log = []) {
+  const mins = log
+    .slice(0, 20)
+    .map((l) => {
+      const act = activityById(l.activityId)
+      return act ? minutesOf(act, l.amount) : 0
+    })
+    .filter((m) => m > 0)
+    .sort((a, b) => a - b)
+  if (!mins.length) return BASELINE_FLOOR_MIN
+  return Math.max(BASELINE_FLOOR_MIN, mins[Math.floor(mins.length / 2)])
+}
+
+export function coinsFor(player, log, act, amount, verified) {
+  const mins = minutesOf(act, amount)
+  const mine = baselineMinutes(log)
+  const ratio = Math.min(1.75, Math.max(0.25, mins / mine))
+  // 0.8x for a short one, 2x for a long one. Showing up is most of it.
+  const effort = 0.6 + 0.8 * ratio
+  // ...but showing up has to mean a session. Without this taper the minimum
+  // loggable sixty seconds paid the same as a ten-minute walk, and the fastest
+  // way to earn was to start and stop the timer.
+  const real = Math.min(1, mins / 10)
+  const streak = streakTier(player.streak).mult
+  return Math.max(5, Math.round(SESSION_COINS * effort * real * streak * (verified ? 1 : 0.5)))
+}
+
+export function resolveActivity(player, { activityId, amount, verified, log = [] }) {
   const act = activityById(activityId)
   const blocks = amount / act.per
   const cls = classById(player.classId)
@@ -234,7 +297,7 @@ export function resolveActivity(player, { activityId, amount, verified }) {
   return {
     xp: Math.round(act.xp * blocks * xpMult),
     statGains,
-    cores: Math.round(8 * blocks * (verified ? 1 : 0.5)),
+    cores: coinsFor(player, log, act, amount, verified),
     bossDamage: act.boss ? Math.round(act.boss * amount * 10) / 10 : 0,
     verified,
     activity: act,

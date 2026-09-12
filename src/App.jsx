@@ -5,6 +5,7 @@ import TopBar from './components/TopBar'
 import TabBar from './components/TabBar'
 import Toasts from './components/Toasts'
 import RewardModal from './components/RewardModal'
+import SessionReward from './components/SessionReward'
 import Onboarding from './components/Onboarding'
 import Icon from './components/Icon'
 import Home from './screens/Home'
@@ -106,6 +107,7 @@ function Device() {
       <Toasts />
       <UpdateBar />
       <RewardModal />
+      <SessionReward />
       {map && <MapSheet onClose={() => setMap(false)} />}
     </div>
   )
