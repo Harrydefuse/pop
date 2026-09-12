@@ -27,8 +27,11 @@ const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEf
 const { EXERCISES, searchExercises, muscleOf, muscleSplit, neglected, exerciseByName } =
   await server.ssrLoadModule('/src/game/exercises.js')
 const { buildCard, encodeCard, decodeCard, leaderboard } = await server.ssrLoadModule('/src/game/profile.js')
-const { baselineMinutes, coinsFor, rollMilestone, MILESTONES } = await server.ssrLoadModule('/src/game/engine.js')
-const { CATALOG } = await server.ssrLoadModule('/src/game/data.js')
+const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaignState, xpToNext, resolveFight } =
+  await server.ssrLoadModule('/src/game/engine.js')
+const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
+const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
+const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
 const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
@@ -282,6 +285,62 @@ for (const [kind, spec] of Object.entries(MILESTONES)) {
     rolls.every((d) => RARITY_ORDER.indexOf(d[0].rarity) >= floor), true)
 }
 is('an unknown milestone drops nothing', rollMilestone(CATALOG, 'nonsense'), [])
+
+// The boss you are on is decided by your level, and its health is the XP of
+// the bracket it owns. If those two ever come apart, a boss either dies a
+// fifth of the way through its own level range or can never be finished at
+// all, so both halves are pinned here.
+console.log('\nthe boss is the level bracket')
+const bosses = (level, defeated = [], damage = {}) =>
+  campaignState({ level }, { defeated, damage })
+
+is('the first boss stands at level 1, so a new character is already fighting',
+  CAMPAIGN[0].level, 1)
+is('a level-1 character is in front of the first boss', bosses(1).current.id, CAMPAIGN[0].id)
+is('its health is the XP from its level to the next boss\'s',
+  bosses(1).hp, bracketXp(CAMPAIGN[0].level, CAMPAIGN[1].level))
+is('which is also the XP it takes to cross the bracket',
+  bosses(1).hp, [...Array(CAMPAIGN[1].level - CAMPAIGN[0].level)].reduce((n, _, i) => n + xpToNext(CAMPAIGN[0].level + i), 0))
+is('the bracket is named on the state', bosses(1).band, `LEVEL 1-${CAMPAIGN[1].level - 1}`)
+
+is('levelling past a boss you have not beaten does not skip it',
+  bosses(40).current.id, CAMPAIGN[0].id)
+is('beating it moves you to the next one',
+  bosses(40, [CAMPAIGN[0].id]).current.id, CAMPAIGN[1].id)
+is('clearing everything your level opens leaves nothing to hit',
+  bosses(1, [CAMPAIGN[0].id]).current, null)
+is('and names the one waiting, with how far off it is',
+  [bosses(1, [CAMPAIGN[0].id]).locked.id, bosses(1, [CAMPAIGN[0].id]).gatedBy],
+  [CAMPAIGN[1].id, CAMPAIGN[1].level - 1])
+
+const last = CAMPAIGN[CAMPAIGN.length - 1]
+const allButLast = CAMPAIGN.slice(0, -1).map((b) => b.id)
+is('the last boss has a finite pool rather than an infinite one',
+  Number.isFinite(bosses(MAX_LEVEL, allButLast).hp), true)
+is('and it runs to the level cap',
+  bosses(MAX_LEVEL, allButLast).hp, bracketXp(last.level, MAX_LEVEL))
+is('and its bracket is named up to the cap, not past it',
+  bosses(MAX_LEVEL, allButLast).band, `LEVEL ${last.level}-${MAX_LEVEL}`)
+is('with every boss down the road is clear',
+  bosses(MAX_LEVEL, CAMPAIGN.map((b) => b.id)).finished, true)
+
+is('damage is banked per boss, not pooled',
+  bosses(40, [], { [CAMPAIGN[1].id]: 999 }).damage, 0)
+is('and is capped at the pool', bosses(1, [], { [CAMPAIGN[0].id]: 1e9 }).pct, 1)
+
+// A trip to the arena is once a day and its damage sticks either way, so what
+// matters is that it cannot be the whole fight. Rolled on a fixed die, because
+// this is about the size of the swing rather than the luck.
+console.log('\nthe arena finishes a boss, it does not replace the training')
+const flat = () => 0.5
+const arena = (worn) => {
+  const c = campaignState(INITIAL_STATE.player, { defeated: INITIAL_STATE.campaign.defeated, damage: {} })
+  return resolveFight(INITIAL_STATE.player, INITIAL_STATE.log, c.current, c.hp, Math.round(c.hp * worn), flat)
+}
+is('a boss nobody has touched cannot be put down in one visit', arena(0).won, false)
+is('nor one worn a third of the way down', arena(0.33).won, false)
+is('one worn past halfway falls', arena(0.62).won, true)
+is('a losing visit still takes a bite out of it', arena(0).dealt > 0, true)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

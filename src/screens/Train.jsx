@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Bar, Btn, Chip, Modal, Num, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import ExercisePicker from '../components/ExercisePicker'
+import CampaignSheet from '../components/CampaignSheet'
 import StreakFlame from '../components/StreakFlame'
 import { BossArt, HeroView, PetView } from '../components/Sprites'
 import { useGame } from '../game/useGame'
@@ -1238,7 +1239,7 @@ function HeroStage({ player, log, streak }) {
  * which is the mechanic that ties the tracker to the game — so it belongs on
  * the screen where you start one.
  */
-function Objective({ player, campaign, onGo }) {
+function Objective({ player, campaign, onOpen }) {
   const c = campaignState(player, campaign)
 
   if (c.finished) {
@@ -1246,7 +1247,7 @@ function Objective({ player, campaign, onGo }) {
       <Panel accent="var(--color-gold)" className="p-3.5">
         <div className="font-display text-[16px] text-gold">The road is clear</div>
         <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
-          Ten bosses down. Sessions still pay XP, loot and streak — there is just nothing left standing in the way.
+          Every boss down. Sessions still pay XP, loot and streak — there is just nothing left standing in the way.
         </div>
       </Panel>
     )
@@ -1270,13 +1271,13 @@ function Objective({ player, campaign, onGo }) {
 
   const boss = c.current
   const act = actById(boss.act)
-  const left = Math.max(0, boss.hp - c.damage)
+  const left = Math.max(0, c.hp - c.damage)
 
   return (
     <button
-      onClick={onGo}
+      onClick={onOpen}
       className="w-full text-left transition-transform active:scale-[0.99]"
-      aria-label={`Your objective: ${boss.name}. Open the battle tab.`}
+      aria-label={`Your objective: ${boss.name}. Open the story.`}
     >
       <Panel accent={act.color} className="p-3.5">
         <div className="flex items-center gap-3">
@@ -1287,20 +1288,21 @@ function Objective({ player, campaign, onGo }) {
               {boss.name}
             </div>
             <div className="text-[14px] text-ink-faint mt-0.5 truncate">
-              ACT {act.numeral} · {act.name}
+              ACT {act.numeral} · {c.band}
             </div>
           </div>
           <Icon name="chevron" size={12} color="var(--color-ink-faint)" />
         </div>
 
-        <Bar pct={c.damage / boss.hp} color="var(--color-danger)" height={10} shine className="mt-3" />
+        <Bar pct={c.pct} color="var(--color-danger)" height={10} shine className="mt-3" />
         <div className="flex justify-between mt-1.5">
           <span className="text-[14px] text-danger tabular-nums">{fmtFull(Math.round(c.damage))} dealt</span>
           <span className="text-[14px] text-ink-faint tabular-nums">{fmtFull(left)} HP left</span>
         </div>
 
         <div className="text-[14px] text-ink-dim mt-2.5 leading-snug">
-          Every session you log is damage.{' '}
+          Its health is the XP it takes to clear {c.band.toLowerCase()}
+          {player.level >= c.to - 1 ? ', and every session you log comes off it. ' : ', so every session is damage and a level at once. '}
           {boss.weak ? (
             <>
               <span style={{ color: act.color }}>{boss.weakLabel}</span> hits double.
@@ -1969,9 +1971,10 @@ const VIEWS = [
   { id: 'stats', label: 'Stats' },
 ]
 
-function Pick({ onGo }) {
+function Pick() {
   const { state, startSession, deleteRoutine, setEfforts, importWorkout } = useGame()
   const [view, setView] = useState('quest')
+  const [story, setStory] = useState(false)
   const [starting, setStarting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [sessions, setSessions] = useState(false)
@@ -2008,7 +2011,7 @@ function Pick({ onGo }) {
           <>
             <HeroStage player={p} log={state.log} streak={p.streak} />
 
-            <Objective player={p} campaign={state.campaign} onGo={() => onGo?.('bosses')} />
+            <Objective player={p} campaign={state.campaign} onOpen={() => setStory(true)} />
 
             <StartBlock
               onStart={() => setStarting(true)}
@@ -2062,6 +2065,7 @@ function Pick({ onGo }) {
           onDeleteRoutine={deleteRoutine}
         />
       )}
+      {story && <CampaignSheet onClose={() => setStory(false)} />}
       {importing && <ImportSheet onClose={() => setImporting(false)} onImport={importWorkout} />}
       {sessions && <SessionsSheet log={state.log} onClose={() => setSessions(false)} />}
       {efforts && (
@@ -2076,11 +2080,11 @@ function Pick({ onGo }) {
   )
 }
 
-export default function Train({ onGo }) {
+export default function Train() {
   const { state } = useGame()
   const session = state.session
   const act = session && TRACKED.find((a) => a.id === session.activityId)
-  return session && act ? <Running session={session} act={act} /> : <Pick onGo={onGo} />
+  return session && act ? <Running session={session} act={act} /> : <Pick />
 }
 
 /** A running session follows you around the app, so you never have to come

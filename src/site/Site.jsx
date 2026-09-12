@@ -358,8 +358,8 @@ export default function Site({ onEnterApp }) {
                 <span className="line soft">to get fit.</span>
               </h1>
               <p className="lede">
-                LVL100 is an RPG you play by moving. Ten bosses, three acts and an ending — and the
-                only way through is real workouts, timed by the app, on a map of the city you live in.
+                LVL100 is an RPG you play by moving. A boss stands at every level bracket, and the
+                only way past one is real workouts, timed by the app, on a map of the city you live in.
               </p>
               <div className="hero-actions">
                 <a className="btn" href="#/app" onClick={go}>
@@ -446,11 +446,11 @@ export default function Site({ onEnterApp }) {
         <section id="campaign" className="deep">
           <div className="wrap stack wide">
             <div className="stack reveal">
-              <h2>It has an ending.</h2>
+              <h2>A boss at every bracket.</h2>
               <p className="lede">
-                Ten bosses across three acts, each one standing at a real place in the city, each one
-                gated behind a level you have to earn. The Warden waits at Circular Quay from level
-                five. LVL100 is at the Heads, and almost nobody will get there.
+                Your level decides which one you are standing in front of, and its health is exactly
+                the XP it takes to cross that bracket — so the boss goes down as you level up. The
+                Warden meets you at Circular Quay on day one. LVL100 is at the Heads.
               </p>
               <p>
                 Every boss is weak to something — a distance, a discipline, a habit — and hitting it

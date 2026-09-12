@@ -188,7 +188,7 @@ export const FRESH_START = {
     lifetime: { volume: 0, distance: 0, sessions: 0, coop: 0, streak: 0, balance: 0, bossKm: 0 },
     week: { activeMinutes: 0, gamingHours: 0, km: 0, sessions: 0 },
   },
-  campaign: { defeated: [], damage: 0 },
+  campaign: { defeated: [], damage: {} },
   // The map opens black. Every cell of it is somewhere you have not been yet.
   explored: [],
   session: null,
@@ -429,10 +429,13 @@ export const TEST_ACCOUNT = {
     lifetime: { volume: 1840000, distance: 6120, sessions: 2140, coop: 410, streak: 214, balance: 812, bossKm: 964 },
     week: { activeMinutes: 640, gamingHours: 18, km: 74.5, sessions: 11 },
   },
-  // Everything the grind pays out, and none of the story: the whole point of
-  // the test account is walking a maxed character up to a boss that is still
-  // standing, so the fight is the thing being tested rather than skipped.
-  campaign: { defeated: [], damage: 0 },
+  // A maxed character stands in front of the last boss, because the boss is
+  // the level bracket: everything below level 88 is already down, and LVL100
+  // is part-way through with a fight left in it to test.
+  campaign: {
+    defeated: ['golem', 'wraith', 'couch', 'doomscroll', 'ironjaw', 'wall', 'nox', 'mirror', 'backslide'],
+    damage: { lvl100: 215000 },
+  },
   gift: { pending: false, opened: true },
   chest: { unlocked: true, openedToday: false },
   session: null,
@@ -498,9 +501,12 @@ export const INITIAL_STATE = {
     },
     week: { activeMinutes: 214, gamingHours: 11.5, km: 13.4, sessions: 4 },
   },
-  // The demo opens where a new player does: in front of the first boss on the
-  // road, part-way in, with the rest of the path visible behind it.
-  campaign: { defeated: [], damage: 240 },
+  // The showroom is level 27, so it is four bosses in and part-way through the
+  // one its bracket puts it in front of.
+  campaign: {
+    defeated: ['golem', 'wraith', 'couch', 'doomscroll'],
+    damage: { ironjaw: 23800 },
+  },
   // Every beta player has one waiting the first time they open the app.
   // A stretch from Circular Quay down through the CBD already walked, so the
   // fog reads as a mechanic rather than a broken screen.

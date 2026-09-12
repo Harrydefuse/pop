@@ -5,7 +5,7 @@
  * post-mortemed on three causes, and the first was gamification that never
  * moved: XP, levels and quests that were brilliant on day one and identical two
  * years later. LVL100 had exactly that shape. Three daily slots, the same three
- * forever, and ten bosses that only ever arrive in one order.
+ * forever, and a campaign that only ever arrives in one order.
  *
  * So one goal a week, drawn from a rota, scored off numbers the app already
  * keeps. It is deliberately not personalised: everyone on the same week gets

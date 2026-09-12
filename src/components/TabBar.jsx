@@ -6,10 +6,14 @@ import Icon from './Icon'
 // GUILD is gone. It held a world raid and a ladder of people you know, and
 // neither needed a tab: the raid is a boss, so it sits under the bosses, and
 // your friends are part of your profile, which is where they already were.
+//
+// BATTLE is gone too, for the same reason and a better one. The boss you are
+// on is decided by your level and worn down by the sessions you log, so it was
+// a tab that reported on work done somewhere else. It is now the objective
+// card on TRAIN — one tap from the button that damages it.
 const TABS = [
   { key: 'home', label: 'Today', icon: 'home' },
   { key: 'train', label: 'Train', icon: 'dumbbell' },
-  { key: 'bosses', label: 'Battle', icon: 'swords' },
   { key: 'shop', label: 'Shop', icon: 'bag' },
   { key: 'hero', label: 'You', icon: 'person' },
 ]
@@ -21,7 +25,7 @@ export default function TabBar({ tab, setTab, badges = {} }) {
   // way you moved.
   const index = Math.max(0, TABS.findIndex((t) => t.key === tab))
   return (
-    <nav className="relative z-20 border-t border-line bg-panel/95 backdrop-blur grid grid-cols-5 pad-safe-bottom">
+    <nav className="relative z-20 border-t border-line bg-panel/95 backdrop-blur grid grid-cols-4 pad-safe-bottom">
       <span
         aria-hidden="true"
         className="tab-marker absolute top-0 h-[3px] w-8 -translate-x-1/2 rounded-b-full"

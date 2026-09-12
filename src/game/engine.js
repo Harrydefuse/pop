@@ -186,27 +186,77 @@ export function rollDailyChest(catalog, rng = Math.random) {
 // player never has to choose between levelling and progressing the story.
 
 /**
- * Where the player is standing. `current` is the boss in front of them — the
- * first one they have not beaten and do have the level for.
+ * Which boss you are on, and how much of it is left.
+ *
+ * This used to be an unlock ladder: beat one, unlock the next, and if your
+ * level was too low for whatever came after, stand in a "4 more levels" dead
+ * end with nothing to hit. Now the boss IS your level bracket. Whatever level
+ * you are decides who is in front of you, so there is never a gap and never a
+ * gate — the first session of the game already lands on something.
+ *
+ * The important part is that its HP is not authored, it is DERIVED: a boss has
+ * exactly as much health as the XP it takes to cross its bracket. That makes
+ * the health bar and the level bar the same bar wearing different clothes —
+ * you are not grinding a rank beside a boss, you are beating the boss, and
+ * levelling up is what beating it looks like from the other side.
+ *
+ * Authored HP could not do this. It ran at 8-19% of a bracket's XP, so every
+ * boss died a fifth of the way through its own level range and left the rest
+ * of it empty.
+ *
+ * Weakness damage is what remains of the old ceiling: hitting a boss with what
+ * it is weak to counts double, so training the right thing puts it down early
+ * and the rest of the bracket is a victory lap.
  */
+export function bracketXp(from, to) {
+  let xp = 0
+  // Stops at MAX_LEVEL: xpToNext(MAX_LEVEL) is Infinity, and one Infinity in
+  // the sum makes the last boss's health bar unreadable and unbeatable.
+  const end = Math.min(to, MAX_LEVEL)
+  for (let lv = from; lv < end; lv++) xp += xpToNext(lv)
+  return xp
+}
+
 export function campaignState(player, campaign) {
   const defeated = campaign?.defeated ?? []
-  const damage = campaign?.damage ?? 0
-  const remaining = CAMPAIGN.filter((b) => !defeated.includes(b.id))
-  const current = remaining.find((b) => player.level >= b.level) ?? null
-  const locked = remaining.find((b) => player.level < b.level) ?? null
+  // Older saves kept one running total for whichever boss was current. Damage
+  // is per-boss now, because the boss changes as you climb.
+  const dealt = typeof campaign?.damage === 'object' && campaign.damage ? campaign.damage : {}
+
+  // Always the first one still standing, so nothing can be skipped by
+  // out-levelling it. Your level decides whether you have reached it yet.
+  const at = CAMPAIGN.findIndex((b) => !defeated.includes(b.id))
+  const finished = at === -1
+  const idx = finished ? CAMPAIGN.length - 1 : at
+  const boss = finished ? null : CAMPAIGN[idx]
+  const reached = Boolean(boss) && player.level >= boss.level
+  const next = CAMPAIGN[idx + 1] ?? null
+
+  // The bracket this boss owns: from its own level up to the next one's.
+  const from = boss ? boss.level : MAX_LEVEL
+  const to = next ? next.level : MAX_LEVEL + 1
+  const hp = boss ? Math.max(1, bracketXp(from, to)) : 0
+  const damage = boss ? Math.min(hp, dealt[boss.id] ?? 0) : 0
+
   return {
     defeated,
+    // The boss you are actually swinging at, or null while a bracket is out
+    // of reach or the road is clear.
+    current: reached ? boss : null,
+    locked: reached ? null : boss,
+    gatedBy: reached || !boss ? 0 : boss.level - player.level,
+    next,
+    hp,
     damage,
-    current,
-    locked,
-    cleared: CAMPAIGN.length - remaining.length,
+    // Where this boss sits on the ladder, and what levels it covers.
+    index: idx,
+    from,
+    to,
+    band: `LEVEL ${from}-${Math.min(to - 1, MAX_LEVEL)}`,
+    cleared: defeated.length,
     total: CAMPAIGN.length,
-    pct: current ? Math.min(1, damage / current.hp) : 0,
-    finished: remaining.length === 0,
-    // A boss you have the level for but have not reached yet is "ahead", not
-    // "locked" — the difference is what makes the path feel walkable.
-    gatedBy: !current && locked ? locked.level - player.level : 0,
+    pct: hp ? Math.min(1, damage / hp) : 0,
+    finished,
   }
 }
 
@@ -421,27 +471,50 @@ export function fightPower(player, log, now) {
 }
 
 /**
+ * What a character who has kept up is expected to swing for at a given level.
+ *
+ * Shares the XP curve's exponent on purpose: a boss's health is the XP of its
+ * level bracket, so the yardstick for hitting it has to grow the same shape.
+ */
+function parAttack(level) {
+  return Math.round(60 + Math.pow(level, 1.22) * 6.5)
+}
+
+/** One swing, in the boss's own units. Six of these is a whole visit. */
+export function swingFor(player, log, boss, hp) {
+  const me = fightPower(player, log)
+  const ratio = Math.min(2.2, Math.max(0.3, me.attack / parAttack(boss.level)))
+  return Math.max(1, Math.round(hp * 0.075 * ratio))
+}
+
+/**
  * Six rounds, or until somebody drops. Damage sticks either way — a fight you
  * lost still took a bite out of the boss, so a bad week costs you the kill
  * rather than the progress.
+ *
+ * `hp` is passed in rather than read off the boss: health is derived from the
+ * level bracket now, not authored on the boss.
  */
-export function resolveFight(player, log, boss, damageSoFar = 0, rng = Math.random) {
+export function resolveFight(player, log, boss, hp, damageSoFar = 0, rng = Math.random) {
   const me = fightPower(player, log)
   // Scaled off the boss's level rather than its health pool. Health runs from
-  // 900 to 60,000 across the ladder while a player's does not, so sizing the
-  // punch off it meant the last boss took a fully geared character down in two
-  // rounds. Level is the number that tracks what the player brings.
+  // six thousand to four hundred thousand across the ladder while a player's
+  // does not, so sizing the punch off it meant the last boss took a fully
+  // geared character down in two rounds.
   const bossAttack = Math.round(34 + boss.level * 2.8)
-  const startHp = Math.max(1, boss.hp - damageSoFar)
+  const startHp = Math.max(1, hp - damageSoFar)
   let bossHp = startHp
   let myHp = me.hp
   const rounds = []
-  // No single blow takes more than a bite. Without a cap, a character carrying
-  // late-game kit ended the first three bosses in one swing — correct on the
-  // numbers, and a fight nobody gets to watch.
-  const bite = Math.max(1, Math.round(boss.hp * 0.28))
+  // A swing is a share of the whole pool rather than a flat number, because
+  // the pool is a level bracket's XP and a flat hit measured in hundreds would
+  // never scratch the late ones. The share is how your kit and your week
+  // compare with what the bracket expects: six average rounds take about 45%
+  // of a full pool at par, so the arena finishes a boss you have already worn
+  // past halfway and can never put down a fresh one.
+  const bite = swingFor(player, log, boss, hp)
   for (let i = 0; i < FIGHT_ROUNDS && bossHp > 0 && myHp > 0; i++) {
-    const mine = Math.min(bite, Math.round(me.attack * (0.6 + rng() * 0.8)))
+    const mine = Math.max(1, Math.round(bite * (0.6 + rng() * 0.8)))
     bossHp -= mine
     const theirs = bossHp > 0 ? Math.round(bossAttack * (0.6 + rng() * 0.8)) : 0
     myHp -= theirs
@@ -463,10 +536,9 @@ export function resolveFight(player, log, boss, damageSoFar = 0, rng = Math.rand
  * Roughly how it should go, for the card you read before walking in. Not the
  * roll — the roll is the whole reason to press the button.
  */
-export function fightOdds(player, log, boss, damageSoFar = 0) {
-  const me = fightPower(player, log)
-  const need = Math.max(1, boss.hp - damageSoFar)
-  const canDeal = Math.min(me.attack, Math.round(boss.hp * 0.28)) * FIGHT_ROUNDS
+export function fightOdds(player, log, boss, hp, damageSoFar = 0) {
+  const need = Math.max(1, hp - damageSoFar)
+  const canDeal = swingFor(player, log, boss, hp) * FIGHT_ROUNDS
   return Math.min(0.97, Math.max(0.03, (canDeal / need) * 0.62))
 }
 

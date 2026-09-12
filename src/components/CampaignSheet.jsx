@@ -31,13 +31,13 @@ function statusOf(boss, player, c) {
 const SILHOUETTE = { filter: 'grayscale(1) brightness(0.45)', opacity: 0.7 }
 
 /** The boss you are standing in front of. One target, one action. */
-function CurrentBoss({ boss, damage, onFight, onArena }) {
+function CurrentBoss({ boss, c, onFight, onArena }) {
   const act = actById(boss.act)
 
   return (
     <Panel accent={act.color} className="p-3.5 text-center">
       <Chip color={act.color} className="mb-3">
-        ACT {act.numeral} · {act.name}
+        ACT {act.numeral} · {c.band}
       </Chip>
       <BossArt sprite={boss.sprite} size={116} className="mx-auto float-soft" />
       <div className="font-display text-[20px] mt-2" style={{ color: act.color }}>
@@ -46,10 +46,14 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
       <div className="text-[14px] text-ink-dim mt-1">{boss.title}</div>
 
       <div className="mt-3.5">
-        <Bar pct={damage / boss.hp} color="var(--color-danger)" height={12} shine />
+        <Bar pct={c.pct} color="var(--color-danger)" height={12} shine />
         <div className="flex justify-between mt-1.5">
-          <span className="text-[14px] text-danger">{fmtFull(Math.round(damage))}</span>
-          <span className="text-[14px] text-ink-faint">{fmtFull(boss.hp)} HP</span>
+          <span className="text-[14px] text-danger">{fmtFull(Math.round(c.damage))}</span>
+          <span className="text-[14px] text-ink-faint">{fmtFull(c.hp)} HP</span>
+        </div>
+        {/* Said out loud, because it is the rule the whole ladder runs on. */}
+        <div className="text-[14px] text-ink-dim mt-2 leading-snug">
+          Its health is the XP from level {c.from} to {c.to - 1}. Train, and it comes down as you go up.
         </div>
       </div>
 
@@ -68,10 +72,8 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
         <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">{boss.beat}</div>
       </div>
 
-      {/* This is the tab's whole reason to exist, so it gets the whole width
-          and twice the height of an ordinary button. Sessions wear the boss
-          down between visits; the arena is where it actually falls, and where
-          you can fail. */}
+      {/* Sessions wear the boss down on their own; the arena is where you can
+          take a swing at finishing it early, and where you can fail. */}
       <button
         onClick={onArena}
         className="w-full mt-3.5 py-4 border-2 font-display text-[22px] transition-transform active:scale-[0.98]"
@@ -86,7 +88,7 @@ function CurrentBoss({ boss, damage, onFight, onArena }) {
         <span className="block font-display text-[12px] mt-1.5 opacity-80">{boss.name}</span>
       </button>
       <Btn full variant="ghost" size="sm" className="mt-1.5" onClick={onFight}>
-        What am i fighting?
+        What am I fighting?
       </Btn>
     </Panel>
   )
@@ -102,15 +104,15 @@ function Gated({ boss, levels }) {
       <BossArt sprite={boss.sprite} size={96} className="mx-auto" style={SILHOUETTE} />
       <div className="font-display text-[18px] text-gold mt-2.5">{boss.name} IS WAITING</div>
       <div className="text-[15px] text-ink-dim mt-2 leading-snug">
-        You have beaten everything on this stretch of road. {levels === 1 ? 'One more level' : `${levels} more levels`} and it
-        opens.
+        You have beaten everything your level opens. {levels === 1 ? 'One more level' : `${levels} more levels`} and it
+        steps out.
       </div>
     </Panel>
   )
 }
 
 /** One rung of the ladder. State reads off colour, art and a single tag. */
-function PathRow({ boss, status, damage, onOpen }) {
+function PathRow({ boss, status, c, onOpen }) {
   const act = actById(boss.act)
   const cleared = status === 'cleared'
   const fighting = status === 'fighting'
@@ -141,12 +143,12 @@ function PathRow({ boss, status, damage, onOpen }) {
             {boss.name}
           </div>
           {fighting ? (
-            <Bar pct={damage / boss.hp} color="var(--color-danger)" height={3} className="mt-1.5" />
+            <Bar pct={c.pct} color="var(--color-danger)" height={3} className="mt-1.5" />
           ) : (
             // A boss you already have the level for is queued, not locked, so it
             // shows its name rather than a requirement you have already met.
             <div className="text-[14px] text-ink-faint mt-1 truncate">
-              {locked ? `Opens at level ${boss.level}` : boss.title}
+              {locked ? `Steps out at level ${boss.level}` : boss.title}
             </div>
           )}
         </div>
@@ -154,7 +156,7 @@ function PathRow({ boss, status, damage, onOpen }) {
         {cleared && <Icon name="check" size={13} color="var(--color-lime)" />}
         {fighting && (
           <span className="text-[14px] shrink-0" style={{ color: act.color }}>
-            {Math.round((damage / boss.hp) * 100)}%
+            {Math.round(c.pct * 100)}%
           </span>
         )}
         {locked && <Icon name="lock" size={12} color="var(--color-ink-faint)" />}
@@ -165,7 +167,7 @@ function PathRow({ boss, status, damage, onOpen }) {
 }
 
 /** Everything about one boss, including the ones you have not met yet. */
-function Detail({ boss, status, damage, onBack, onFight }) {
+function Detail({ boss, status, c, onBack, onFight }) {
   const act = actById(boss.act)
   const r = boss.reward
 
@@ -182,7 +184,7 @@ function Detail({ boss, status, damage, onBack, onFight }) {
         </div>
         <div className="text-[15px] text-ink-dim mt-1.5">{boss.title}</div>
         <div className="font-display text-[12px] mt-2.5" style={{ color: act.color }}>
-          ACT {act.numeral} · OPENS AT LEVEL {boss.level}
+          ACT {act.numeral} · FROM LEVEL {boss.level}
         </div>
       </div>
 
@@ -190,10 +192,10 @@ function Detail({ boss, status, damage, onBack, onFight }) {
 
       {status === 'fighting' && (
         <div className="mt-3.5">
-          <Bar pct={damage / boss.hp} color="var(--color-danger)" height={8} />
+          <Bar pct={c.pct} color="var(--color-danger)" height={8} />
           <div className="flex justify-between mt-1.5">
-            <span className="text-[14px] text-danger">{fmtFull(Math.round(damage))}</span>
-            <span className="text-[14px] text-ink-faint">{fmtFull(boss.hp)} HP</span>
+            <span className="text-[14px] text-danger">{fmtFull(Math.round(c.damage))}</span>
+            <span className="text-[14px] text-ink-faint">{fmtFull(c.hp)} HP</span>
           </div>
         </div>
       )}
@@ -244,24 +246,14 @@ function Detail({ boss, status, damage, onBack, onFight }) {
 }
 
 /**
- * The whole story mode, behind one tap. It used to be a tab of its own, which
- * made the campaign feel like a side room; now it opens off the day you are
- * actually living, which is where the sessions come from.
+ * The whole story mode, behind one tap on the objective card.
+ *
+ * It had a tab of its own for a while, and a tab was the wrong shape for it:
+ * your level puts you in front of a boss and your sessions wear it down, so
+ * the screen was a report on work that happens on TRAIN. It opens from there
+ * now — a tap away from the button that does the damage.
  */
-/** On its own tab there is no dialog to be inside — the same content just sits
- *  on the page. `embedded` is which of the two it is. */
-function Shell({ embedded, onClose, title, children }) {
-  if (!embedded) {
-    return (
-      <Modal open onClose={onClose} wide title={title}>
-        {children}
-      </Modal>
-    )
-  }
-  return <div className="stack-in p-4">{children}</div>
-}
-
-export default function CampaignSheet({ onClose, embedded }) {
+export default function CampaignSheet({ onClose }) {
   const { state } = useGame()
   const [detail, setDetail] = useState(null)
   const [fighting, setFighting] = useState(null)
@@ -280,16 +272,12 @@ export default function CampaignSheet({ onClose, embedded }) {
 
   return (
     <>
-      <Shell
-        embedded={embedded}
-        onClose={onClose}
-        title={detail ? 'BOSS' : 'YOUR STORY'}
-      >
+      <Modal open onClose={onClose} wide title={detail ? 'BOSS' : 'YOUR STORY'}>
         {detail ? (
           <Detail
             boss={detail}
             status={statusOf(detail, state.player, c)}
-            damage={c.damage}
+            c={c}
             onBack={() => setDetail(null)}
             onFight={() => {
               setFighting(detail)
@@ -301,7 +289,7 @@ export default function CampaignSheet({ onClose, embedded }) {
             {c.current ? (
               <CurrentBoss
                 boss={c.current}
-                damage={c.damage}
+                c={c}
                 onFight={() => setFighting(c.current)}
                 onArena={() => setArena(c.current)}
               />
@@ -353,7 +341,7 @@ export default function CampaignSheet({ onClose, embedded }) {
                         key={b.id}
                         boss={b}
                         status={statusOf(b, state.player, c)}
-                        damage={c.damage}
+                        c={c}
                         onOpen={() => setDetail(b)}
                       />
                     ))}
@@ -379,7 +367,7 @@ export default function CampaignSheet({ onClose, embedded }) {
             <WorldRaid />
           </div>
         )}
-      </Shell>
+      </Modal>
 
       {fighting && (
         <LogSheet

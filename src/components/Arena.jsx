@@ -4,7 +4,7 @@ import { Btn } from './ui'
 import Avatar from './Avatar'
 import { BossArt, BossFace, HeroView } from './Sprites'
 import { useGame } from '../game/useGame'
-import { fightOdds, fightPower, fmtFull, resolveFight, todayKey, wornGear } from '../game/engine'
+import { campaignState, fightOdds, fightPower, fmtFull, resolveFight, swingFor, todayKey, wornGear } from '../game/engine'
 
 /**
  * Where the campaign is actually decided.
@@ -242,13 +242,15 @@ function Dust({ side }) {
 export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
   const { state, battle } = useGame()
   const p = state.player
-  const damage = state.campaign.damage
+  // Health and damage both come off the campaign state now: a boss owns a
+  // level bracket, and its pool is the XP that bracket costs.
+  const c = campaignState(p, state.campaign)
   const spent = state.campaign.lastFightDay === todayKey()
 
   const worn = useMemo(() => wornGear(p), [p])
   const me = fightPower(p, state.log)
-  const odds = fightOdds(p, state.log, boss, damage)
-  const startBossHp = Math.max(1, boss.hp - damage)
+  const odds = fightOdds(p, state.log, boss, c.hp, c.damage)
+  const startBossHp = Math.max(1, c.hp - c.damage)
 
   const [phase, setPhase] = useState('ready')
   const [fight, setFight] = useState(null)
@@ -329,7 +331,7 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
   }
 
   const start = () => {
-    setFight(resolveFight(p, state.log, boss, damage))
+    setFight(resolveFight(p, state.log, boss, c.hp, c.damage))
     setStep(0)
     setPhase('fighting')
   }
@@ -489,7 +491,10 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
             <div className="flex gap-1.5">
               <Stat label="FORM" value={me.form.label} tone={FORM_TONE[me.form.label] ?? DECK.chip} />
               <Stat label="GEAR" value={me.gear} tone="#8ff8ff" />
-              <Stat label="PER HIT" value={me.attack} tone={DECK.mine} />
+              {/* The swing in the boss's own units, not the raw attack stat:
+                  what you want to know standing here is how many of these it
+                  takes, and the bar behind it is measured in these. */}
+              <Stat label="PER HIT" value={fmtFull(swingFor(p, state.log, boss, c.hp))} tone={DECK.mine} />
               <Stat
                 label="ODDS"
                 value={odds > 0.75 ? 'FAVOURED' : odds > 0.45 ? 'EVEN' : odds > 0.2 ? 'AGAINST' : 'HOPELESS'}

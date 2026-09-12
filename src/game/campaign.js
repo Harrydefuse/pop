@@ -32,6 +32,11 @@ export const ACTS = [
  * `weak` is an activity tag that deals double damage. It is the only per-boss
  * mechanic, which keeps every fight readable — you never have to learn a new
  * system, you just look at what it is weak to and go and do that.
+ *
+ * No boss carries an HP number. `level` is the bottom of the bracket it owns
+ * and the next boss's `level` is the top, and its health is exactly the XP
+ * that bracket costs — so adding a boss here splits a bracket in two and the
+ * numbers rebalance themselves.
  */
 export const CAMPAIGN = [
   {
@@ -40,8 +45,9 @@ export const CAMPAIGN = [
     name: 'THE WARDEN',
     title: 'First Stone on the Road',
     sprite: 'golem',
-    level: 5,
-    hp: 900,
+    // Level one, not five. The boss is the level bracket now, so the first
+    // session of a brand new character has to land on something.
+    level: 1,
     weak: null,
     weakLabel: 'Anything at all',
     lore: 'It has stood at the trailhead so long that people just walk around it. It does not chase anyone. It waits, and most of the time waiting is enough.',
@@ -55,7 +61,6 @@ export const CAMPAIGN = [
     title: 'Keeper of the Second Alarm',
     sprite: 'wraith',
     level: 9,
-    hp: 1500,
     weak: 'recovery',
     weakLabel: 'Sleep',
     lore: 'It is not trying to stop you. It just wants you to start tomorrow instead.',
@@ -69,7 +74,6 @@ export const CAMPAIGN = [
     title: 'Lord of the Second Season',
     sprite: 'couch-titan',
     level: 14,
-    hp: 2600,
     weak: 'run',
     weakLabel: 'Walking and running',
     lore: 'Beaten once by the whole community. It reforms in every living room.',
@@ -83,7 +87,6 @@ export const CAMPAIGN = [
     title: 'The One Who Watches Instead',
     sprite: 'doomscroll',
     level: 19,
-    hp: 4200,
     weak: 'aim',
     weakLabel: 'Aim training and VOD review',
     lore: 'Four hours of feed and nothing to show for it. It feeds on the difference.',
@@ -97,7 +100,6 @@ export const CAMPAIGN = [
     title: 'The Rack That Bit Back',
     sprite: 'ironjaw',
     level: 24,
-    hp: 6000,
     weak: 'lift',
     weakLabel: 'Gym sessions',
     lore: 'It has been sitting in the corner of the gym since the day you joined.',
@@ -111,7 +113,6 @@ export const CAMPAIGN = [
     title: 'The Point Most People Stop',
     sprite: 'wall',
     level: 30,
-    hp: 9500,
     weak: 'run',
     weakLabel: 'Walking and running',
     lore: 'Not a monster. A wall. It does nothing at all, and that is enough.',
@@ -125,7 +126,6 @@ export const CAMPAIGN = [
     title: 'The Long Night',
     sprite: 'nox',
     level: 42,
-    hp: 14000,
     weak: 'recovery',
     weakLabel: 'Sleep',
     lore: 'Every hour you did not sleep is still on the books, and it is counting.',
@@ -139,7 +139,6 @@ export const CAMPAIGN = [
     title: 'Wearer of Your Build',
     sprite: 'mirror',
     level: 55,
-    hp: 22000,
     weak: 'mobility',
     weakLabel: 'Mobility, yoga and calisthenics',
     lore: 'It has your stats, your gear and your habits. It also has your gaps.',
@@ -153,7 +152,6 @@ export const CAMPAIGN = [
     title: 'The Coil',
     sprite: 'backslide',
     level: 70,
-    hp: 34000,
     weak: 'hiit',
     weakLabel: 'HIIT and sprints',
     lore: 'It does not fight you. It waits for the week you skip, and takes it back.',
@@ -167,7 +165,6 @@ export const CAMPAIGN = [
     title: 'You, Finished',
     sprite: 'lvl100',
     level: 88,
-    hp: 60000,
     weak: null,
     weakLabel: 'Everything you have',
     lore: 'The last thing in the game is the thing on the box. It has been ahead of you the whole way.',

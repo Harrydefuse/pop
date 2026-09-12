@@ -13,13 +13,12 @@ import Profile from './screens/Profile'
 import MapSheet from './screens/Map'
 import UpdateBar from './components/UpdateBar'
 import Train, { SessionBar } from './screens/Train'
-import Bosses from './screens/Bosses'
 import Shop from './screens/Shop'
 
 const PITCH = [
-  ['IT IS A GAME', 'Ten bosses, three acts, an ending. Fitness is the controller, not the point.'],
+  ['IT IS A GAME', 'A boss stands at every level bracket. Fitness is the controller, not the point.'],
   ['MOVE TO LEVEL UP', 'Every session you log is XP, loot and damage on whatever is in your way.'],
-  ['YOUR OWN RUN', 'Personal bosses gate your story. World raids are where everyone turns up at once.'],
+  ['YOUR OWN RUN', 'The boss you are on is the one your level put you in front of. Raids are everyone at once.'],
   ['KEEP THE GAMES', 'You do not have to quit gaming to get your life on track. Do both, on purpose.'],
 ]
 
@@ -91,8 +90,7 @@ function Device() {
             animate from. */}
         <div key={tab} className="screen-in mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
-          {tab === 'train' && <Train onGo={setTab} />}
-          {tab === 'bosses' && <Bosses />}
+          {tab === 'train' && <Train />}
           {tab === 'shop' && <Shop />}
           {tab === 'hero' && <Profile />}
           <div className="h-4" />

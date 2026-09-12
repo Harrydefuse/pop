@@ -26,7 +26,10 @@ const NONE = []
 export default function Profile() {
   const { state } = useGame()
   const p = state.player
-  const [tab, setTab] = useState('progress')
+  // Character first. It is the screen where gear goes on and the build
+  // changes, which is the only thing on this page you come here to *do* —
+  // progress and friends are both things you come here to read.
+  const [tab, setTab] = useState('character')
   const [sharing, setSharing] = useState(false)
   const [editing, setEditing] = useState(false)
   const power = powerScore(p)
@@ -78,8 +81,8 @@ export default function Profile() {
       {/* ---------------------------------------------------------- tabs */}
       <div className="grid grid-cols-3 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
         {[
-          ['progress', 'Progress'],
           ['character', 'Character'],
+          ['progress', 'Progress'],
           ['friends', 'Friends'],
         ].map(([id, label]) => (
           <button

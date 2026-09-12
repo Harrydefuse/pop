@@ -176,31 +176,35 @@ function grantBossReward(state, boss) {
  * thing between you and the next chapter.
  */
 function applyBossDamage(state, act, xp) {
-  const { current } = campaignState(state.player, state.campaign)
-  if (!current) return state
+  const c = campaignState(state.player, state.campaign)
+  // Damage is banked per boss, because your level decides which one is in
+  // front of you and that can change between one session and the next.
+  const bank = typeof state.campaign.damage === 'object' && state.campaign.damage ? state.campaign.damage : {}
+  // Nothing in front of you: the next bracket is still above your level, or
+  // the road is clear. The session still pays everything else.
+  if (!c.current) return state
 
-  const { damage, weak } = bossHit(current, act, xp)
+  const { damage, weak } = bossHit(c.current, act, xp)
   if (damage <= 0) return state
 
-  const total = state.campaign.damage + damage
-  if (total < current.hp) {
-    let next = { ...state, campaign: { ...state.campaign, damage: total } }
-    if (weak) {
-      next = toast(next, {
-        kind: 'boss',
-        title: `Weakness · ${damage} damage`,
-        body: `${current.name} takes double from ${act.name.toLowerCase()}`,
-      })
-    }
-    return next
+  const total = Math.min(c.hp, c.damage + damage)
+  const withDamage = { ...state, campaign: { ...state.campaign, damage: { ...bank, [c.current.id]: total } } }
+
+  if (total < c.hp) {
+    if (!weak) return withDamage
+    return toast(withDamage, {
+      kind: 'boss',
+      title: `Weakness · ${damage} damage`,
+      body: `${c.current.name} takes double from ${act.name.toLowerCase()}`,
+    })
   }
 
   let next = {
-    ...state,
-    campaign: { ...state.campaign, defeated: [...state.campaign.defeated, current.id], damage: 0 },
+    ...withDamage,
+    campaign: { ...withDamage.campaign, defeated: [...c.defeated, c.current.id] },
   }
-  next = toast(next, { kind: 'boss', title: `${current.name} is down`, body: current.title })
-  return grantBossReward(next, current)
+  next = toast(next, { kind: 'boss', title: `${c.current.name} is down`, body: c.current.title })
+  return grantBossReward(next, c.current)
 }
 
 /**
@@ -373,10 +377,13 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   // lands so the number on the screen is this session's, not the running total.
   const before = campaignState(next.player, next.campaign)
   next = applyBossDamage(next, act, result.xp + prs.length * PR_DAMAGE)
-  const after = campaignState(next.player, next.campaign)
   if (before.current) {
-    reward.boss = { name: before.current.name, hp: before.current.hp, damage: after.damage }
-    reward.damage = Math.max(0, Math.round(after.damage - before.damage))
+    // Read the bank rather than the new campaign state: if the session killed
+    // it, the current boss has already moved on and its bar would read zero.
+    const bank = next.campaign.damage ?? {}
+    const now = Math.min(before.hp, bank[before.current.id] ?? 0)
+    reward.boss = { name: before.current.name, hp: before.hp, damage: now }
+    reward.damage = Math.max(0, Math.round(now - before.damage))
   }
 
   // Stones are checked last so a single session can complete one
@@ -829,25 +836,30 @@ function reducer(state, action) {
     // so a bad week costs you the kill rather than the progress — but it does
     // cost you, because you cannot simply swing again until it works.
     case 'battle': {
-      const { current } = campaignState(state.player, state.campaign)
-      if (!current) return state
+      const c = campaignState(state.player, state.campaign)
+      if (!c.current) return state
       const day = todayKey()
       if (state.campaign.lastFightDay === day) return state
-      const dealt = Math.max(0, Math.min(current.hp, Math.round(action.dealt ?? 0)))
-      const total = state.campaign.damage + dealt
+      const bank = typeof state.campaign.damage === 'object' && state.campaign.damage ? state.campaign.damage : {}
+      const dealt = Math.max(0, Math.min(c.hp, Math.round(action.dealt ?? 0)))
+      const total = c.damage + dealt
       const base = { ...state, campaign: { ...state.campaign, lastFightDay: day } }
-      if (!action.won || total < current.hp) {
+      if (!action.won || total < c.hp) {
         return {
           ...base,
-          campaign: { ...base.campaign, damage: Math.min(current.hp - 1, total) },
+          campaign: { ...base.campaign, damage: { ...bank, [c.current.id]: Math.min(c.hp - 1, total) } },
         }
       }
       let next = {
         ...base,
-        campaign: { ...base.campaign, defeated: [...state.campaign.defeated, current.id], damage: 0 },
+        campaign: {
+          ...base.campaign,
+          damage: { ...bank, [c.current.id]: c.hp },
+          defeated: [...c.defeated, c.current.id],
+        },
       }
-      next = toast(next, { kind: 'boss', title: `${current.name} is down`, body: current.title })
-      return grantBossReward(next, current)
+      next = toast(next, { kind: 'boss', title: `${c.current.name} is down`, body: c.current.title })
+      return grantBossReward(next, c.current)
     }
 
     case 'bossTick':
@@ -905,7 +917,7 @@ function reducer(state, action) {
           bests: effortsFromLog(TEST_ACCOUNT.log, TEST_ACCOUNT.records),
           dailies: freshDailies(),
         },
-        { kind: 'level', title: 'Test account', body: 'Level 100 and every drop. Ten bosses still standing.' },
+        { kind: 'level', title: 'Test account', body: 'Level 100, every drop, and LVL100 itself still standing.' },
       )
 
     case 'reset':
