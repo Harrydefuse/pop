@@ -564,7 +564,7 @@ export const INITIAL_STATE = {
   version: 1,
   onboarded: false,
   player: {
-    name: 'NEWBLOOD',
+    name: 'ROOKIE',
     handle: 'newchallenger',
     classId: 'ironstride',
     level: 27,
