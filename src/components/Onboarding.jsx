@@ -363,9 +363,17 @@ export default function Onboarding({ onContinue }) {
             <PetView refId="zeus" level={100} size={34} float delay="-0.8s" />
           </div>
 
-          <p className="font-display text-[12px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>
-            {has ? `CARRY ON AS ${(state.player.name || 'ROOKIE').toUpperCase()}` : 'TEN BOSSES · THREE ACTS · ONE ENDING'}
-          </p>
+          {/* Only when there is somebody to carry on as. The plaque used to
+              fall back to TEN BOSSES · THREE ACTS · ONE ENDING, which is a
+              claim rather than information — nobody standing at a title screen
+              needs a boss count, and promising an ending to someone who has not
+              played a second of it is the app selling to itself. A title screen
+              with nothing to say says nothing. */}
+          {has && (
+            <p className="font-display text-[12px] text-center leading-[1.9] mt-4 px-3 py-2" style={{ ...BOARD, color: '#ffe6b0' }}>
+              CARRY ON AS {(state.player.name || 'ROOKIE').toUpperCase()}
+            </p>
+          )}
         </div>
       </div>
     )
