@@ -16,7 +16,7 @@ const server = await createServer({
   appType: 'custom',
   logLevel: 'error',
 })
-const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, topSet, foldLastSets, lastPlan } =
+const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, weekStart, topSet, foldLastSets, lastPlan } =
   await server.ssrLoadModule('/src/game/progress.js')
 // The real activity, not a stand-in: minutes are worked out from the activity's
 // own minPerUnit, so a hand-made stub without one quietly folds zero minutes
@@ -32,6 +32,7 @@ const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaig
 const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
+const { PILLARS, pillarOf, pillarWeek, pillarBest } = await server.ssrLoadModule('/src/game/pillars.js')
 const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
@@ -341,6 +342,67 @@ is('a boss nobody has touched cannot be put down in one visit', arena(0).won, fa
 is('nor one worn a third of the way down', arena(0.33).won, false)
 is('one worn past halfway falls', arena(0.62).won, true)
 is('a losing visit still takes a bite out of it', arena(0).dealt > 0, true)
+
+// Getting out, the gym, and the games you already play. These are what the
+// app is for, so each one has to report a number that moved rather than a
+// total that only ever grows.
+console.log('\nthe three things you are here to get better at')
+const bucket = (id) => pillarOf(id)?.id ?? null
+is('a walk is getting out', bucket('walk'), 'out')
+is('so is a swim', bucket('swim'), 'out')
+is('a gym session is the gym', bucket('gym'), 'gym')
+is('so is calisthenics', bucket('bodyweight'), 'gym')
+is('aim training is gaming', bucket('aim'), 'gaming')
+is('so is a VOD review', bucket('vod'), 'gaming')
+is('sleep belongs to none of them — it is recovery, not improvement', bucket('sleep'), null)
+is('every activity but sleep has a home',
+  ACTIVITIES.filter((a) => !pillarOf(a.id)).map((a) => a.id), ['sleep'])
+is('and no activity has two', ACTIVITIES.every((a) => PILLARS.filter((p) => p.activities.includes(a.id)).length <= 1), true)
+
+const WEEK = 7 * 24 * 3600 * 1000
+const wk = (at, byAct) => ({ key: weekKey(at), at: weekStart(at), sessions: 0, minutes: 0, volume: 0, km: 0, xp: 0, byAct })
+const NOW = Date.now()
+const twoWeeks = [
+  wk(NOW, { run: { sessions: 2, minutes: 60, km: 10 }, walk: { sessions: 1, minutes: 30, km: 2 } }),
+  wk(NOW - WEEK, { run: { sessions: 1, minutes: 30, km: 5 } }),
+]
+const out = pillarWeek(twoWeeks, PILLARS.find((p) => p.id === 'out'), NOW)
+is('getting out adds every activity in it', out.km, 12)
+is('and counts the sessions', out.sessions, 3)
+is('and says what it did against last week', out.delta, 7)
+is('measured in the unit people quote', out.unit, 'km')
+
+// A week of swimming covers no ground the app can see, and reporting zero for
+// it would be the app calling a good week nothing.
+const poolOnly = [wk(NOW, { swim: { sessions: 3, minutes: 90, km: 0 } }), wk(NOW - WEEK, {})]
+is('a week with no measurable distance falls back to minutes',
+  pillarWeek(poolOnly, PILLARS.find((p) => p.id === 'out'), NOW).unit, 'min')
+is('and reports the minutes', pillarWeek(poolOnly, PILLARS.find((p) => p.id === 'out'), NOW).value, 90)
+
+// The freshest proof, not the biggest: a 5k from March answers "am I getting
+// better" worse than a bench single from Tuesday.
+const pillarBoard = {
+  'run:d5': { kind: 'time', value: 1500000, at: NOW - 90 * 86400000 },
+  'lift:Bench press:5': { kind: 'weight', value: 100, at: NOW - 86400000 },
+  'aim:score': { kind: 'score', value: 84210, at: NOW },
+}
+is('the gym shows its most recent lift', pillarBest(PILLARS.find((p) => p.id === 'gym'), pillarBoard).value, '100')
+is('getting out shows its distance best', pillarBest(PILLARS.find((p) => p.id === 'out'), pillarBoard).name, '5k run')
+is('gaming shows the aim score', pillarBest(PILLARS.find((p) => p.id === 'gaming'), pillarBoard).name, 'Best aim score')
+is('a pillar with nothing behind it shows nothing', pillarBest(PILLARS.find((p) => p.id === 'gaming'), {}), null)
+
+// An aim session is minutes in a chair unless it carries the number the
+// trainer gave you, which is the only thing that says you improved.
+console.log('\naim training keeps a score')
+const aimOf = (detail) => effortsIn({ activityId: 'aim', detail })
+is('a scored session is evidence', aimOf({ mode: 'aim', score: 84210, accuracy: 91.4 }).length, 2)
+is('the score is one of them', aimOf({ mode: 'aim', score: 84210 })[0].id, 'aim:score')
+is('an unscored session is not', aimOf({ mode: 'aim', score: 0, accuracy: 0 }), [])
+is('a higher score takes the board',
+  foldEfforts({ 'aim:score': { kind: 'score', value: 1000, at: 1 } }, { activityId: 'aim', detail: { mode: 'aim', score: 2000 } })['aim:score'].value, 2000)
+is('a lower one does not',
+  foldEfforts({ 'aim:score': { kind: 'score', value: 3000, at: 1 } }, { activityId: 'aim', detail: { mode: 'aim', score: 2000 } })['aim:score'].value, 3000)
+is('and it reads out as a score', readEffort('aim:score', { value: 84210 }).name, 'Best aim score')
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

@@ -56,6 +56,10 @@ export function bestWindow(splits = [], km) {
 /** Everything one session is evidence of, as `{ id, kind, value }`. */
 export function effortsIn({ activityId, detail, sets = [] }) {
   const out = []
+  if (detail?.mode === 'aim') {
+    if (detail.score > 0) out.push({ id: 'aim:score', kind: 'score', value: detail.score })
+    if (detail.accuracy > 0) out.push({ id: 'aim:acc', kind: 'score', value: detail.accuracy })
+  }
   if (detail?.mode === 'distance') {
     for (const km of RACE[activityId] ?? []) {
       const ms = bestWindow(detail.splits, km)
@@ -116,6 +120,8 @@ const mmss = (ms) => {
 /** What an effort is called and what it says, from its id alone. */
 export function readEffort(id, best) {
   const parts = id.split(':')
+  if (id === 'aim:score') return { name: 'Best aim score', value: Math.round(best.value).toLocaleString(), unit: '', group: 'Gaming' }
+  if (id === 'aim:acc') return { name: 'Best accuracy', value: `${Math.round(best.value * 10) / 10}`, unit: '%', group: 'Gaming' }
   if (parts[0] === 'lift') {
     const lift = parts.slice(1, -1).join(':')
     return { name: `${lift} × ${parts[parts.length - 1]}`, value: `${best.value}`, unit: 'kg', group: 'Lifts' }

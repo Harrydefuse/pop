@@ -35,7 +35,10 @@ export const MODE = {
   hiit: 'interval',
   sport: 'interval',
   mobility: 'steady',
-  aim: 'steady',
+  // Aim training is the one gaming activity with a number attached. Minutes
+  // spent in an aim trainer say nothing about whether you are getting better
+  // at the game; the score it hands you at the end does.
+  aim: 'aim',
   vod: 'steady',
   sleep: 'steady',
 }

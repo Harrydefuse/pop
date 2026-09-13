@@ -225,6 +225,11 @@ function sessionDetail(s, ms) {
     const rounds = Math.floor(ms / 1000 / cycle)
     return rounds ? { mode, rounds, work: s.work ?? INTERVAL.work, rest: s.rest ?? INTERVAL.rest } : null
   }
+  if (mode === 'aim') {
+    const score = Number(s.score) || 0
+    const accuracy = Number(s.accuracy) || 0
+    return score > 0 || accuracy > 0 ? { mode, score, accuracy } : null
+  }
   if (mode === 'distance' && (s.splits?.length || s.points?.length > 1)) {
     return {
       mode,
@@ -663,6 +668,21 @@ function reducer(state, action) {
 
     // Fixes arrive a few seconds apart; the trace is kept so the map can be
     // opened up by ground actually covered.
+    // Typed rather than measured, because the app cannot see inside an aim
+    // trainer. It is still evidence: the number only counts for a session the
+    // app timed, so nobody can claim a score without spending the minutes.
+    case 'sessionScore': {
+      if (!state.session) return state
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          score: Math.max(0, Math.min(9999999, Number(action.score) || 0)),
+          accuracy: Math.max(0, Math.min(100, Number(action.accuracy) || 0)),
+        },
+      }
+    }
+
     case 'sessionFix': {
       if (!state.session || state.session.paused) return state
       const metres = state.session.metres + action.metres
@@ -968,6 +988,7 @@ export function GameProvider({ children }) {
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),
+      sessionScore: (score, accuracy) => dispatch({ type: 'sessionScore', score, accuracy }),
       sessionSet: (lift, reps, weight) => dispatch({ type: 'sessionSet', lift, reps, weight }),
       sessionAddLift: (lift) => dispatch({ type: 'sessionAddLift', lift }),
       sessionUndoSet: () => dispatch({ type: 'sessionUndoSet' }),
