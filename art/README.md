@@ -170,7 +170,93 @@ Replacing one is just the file: name it after the boss (`warden.png`,
 
 ---
 
-## 5. Chests and interface icons — **32 x 32**
+## 5. Pets — **50 x 44**
+
+Export at **8x = 400 x 352**. Templates: `templates/pet-50x44.png` has FROST on
+the canvas for scale, `templates/pet-blank.png` is empty.
+
+Wider than tall, because every pet in the game stands side-on: the animal faces
+left, on four legs or two, filling the frame. FROST occupies 47 x 43 of the
+50 x 44, which is about as full as one should get.
+
+- Transparent background, hard edges, same as everything else.
+- **Sit the animal near the bottom of the frame.** The seven shipped pets leave
+  between 0 and 3 blank rows under the feet. More than that and the pet floats
+  above the character it is standing next to, which reads as a bug.
+- Keep it under about 16 distinct colours. FROST uses nine.
+
+### One pet, five stages
+
+A pet has five growth stages, and it can carry a different drawing at each:
+
+| Stage | Level | Drawn at |
+| --- | --- | --- |
+| HATCHLING | 1–24 | 0.90x |
+| JUVENILE | 25–49 | 1.02x |
+| ADULT | 50–74 | 1.10x |
+| PRIME | 75–99 | 1.20x |
+| ASCENDED | 100 | 1.32x, with an aura behind it |
+
+The scale ramp applies on top of whatever art the stage has, so the drawings do
+not have to carry the size change themselves — draw the *difference*, not the
+growth. A pet with no stage art uses its one drawing at every level, which is
+what all seven do today.
+
+**Every stage is optional.** A missing one falls back to the nearest stage below
+it, ending at the base drawing, so sending a single ASCENDED frost is a complete
+change on its own. Name the files by stage:
+
+```
+frost-juvenile.png    400 x 352
+frost-adult.png       400 x 352
+frost-prime.png       400 x 352
+frost-ascended.png    400 x 352
+```
+
+**Draw every stage on the same 50 x 44 canvas.** The importer trims whitespace,
+so five drawings left to size themselves come back as five different grids and
+the animal jumps around the frame between stages. `--canvas` below pins them all
+to one canvas, and it places them one of two ways:
+
+- **Exported at exactly 400 x 352** — painted over a template, say — and your
+  placement is kept **as drawn**, pixel for pixel. This is the one to aim for:
+  you decide where the feet land and where the wings reach.
+- **Any other size** and the drawing is trimmed, centred across, and stood on
+  the floor of the frame. A safe fallback, not a substitute for drawing on the
+  canvas.
+
+The importer prints which of the two it did, so you can check.
+
+A later stage may legitimately need more room than 50 x 44 — a pair of wings, a
+bigger silhouette. That is allowed: each stage carries its own width and height,
+so pass the bigger canvas for that file and keep the feet on the bottom row.
+
+Transcribe each one with:
+
+```
+python3 tools/png2grid.py art/frost-ascended.png --canvas 50x44 --name FROST_ASCENDED
+```
+
+That writes `art/frost-ascended.grid.js`. Paste the object into
+`src/game/sprites.js` and list it on the pet:
+
+```js
+export const FROST = {
+  id: 'frost', w: 50, h: 44,
+  palette: { ... },
+  grid: [ ... ],
+  // 0 HATCHLING, 1 JUVENILE, 2 ADULT, 3 PRIME, 4 ASCENDED.
+  // null means "keep using the stage below".
+  stages: [null, FROST_JUVENILE, null, null, FROST_ASCENDED],
+}
+```
+
+Nothing else changes — every screen that draws a pet goes through the same
+lookup.
+
+---
+
+## 6. Chests and interface icons — **32 x 32**
 
 Same size and rules as equipment. Chests show at up to 92px, so 32 x 32 keeps
 them at the same pixel density as the rest of the game.
@@ -199,6 +285,7 @@ edges are always worth it.
 - **`templates/worn-body.png`** — the current bare body at 32 x 59.
 - **`templates/character-48x64.png`** — the roomier canvas, with the current
   character centred inside it for scale.
+- **`templates/pet-50x44.png`** — the pet canvas, with FROST on it for scale.
 
 Every template has a transparent background and contains nothing but the art,
 so it can be painted over directly.

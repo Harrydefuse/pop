@@ -76,12 +76,22 @@ def _chunk(t, d):
     return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
 
 
-def write(path, px, scale=1):
+def write(path, px, scale=1, alpha=False):
+    """Write pixels out as a PNG, `scale` device pixels per art pixel.
+
+    `alpha=True` writes RGBA (colour type 6) and takes the fourth component of
+    each pixel. Off by default because most callers here draw opaque contact
+    sheets — but any file meant to be drawn on, or read back by png2grid, needs
+    it: without alpha a transparent background is written as opaque black, and
+    black is a colour, so the whole frame transcribes as one solid rectangle.
+    """
     h, w = len(px), len(px[0])
+    n = 4 if alpha else 3
     buf = b''
     for row in px:
-        line = b''.join(bytes(c[:3]) * scale for c in row)
+        line = b''.join(bytes(tuple(c[:n]) + (255,) * (n - len(c[:n]))) * scale for c in row)
         buf += (b'\x00' + line) * scale
-    png = b'\x89PNG\r\n\x1a\n' + _chunk(b'IHDR', struct.pack('>IIBBBBB', w * scale, h * scale, 8, 2, 0, 0, 0))
+    kind = 6 if alpha else 2
+    png = b'\x89PNG\r\n\x1a\n' + _chunk(b'IHDR', struct.pack('>IIBBBBB', w * scale, h * scale, 8, kind, 0, 0, 0))
     png += _chunk(b'IDAT', zlib.compress(buf, 9)) + _chunk(b'IEND', b'')
     open(path, 'wb').write(png)

@@ -33,6 +33,8 @@ const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
 const { PILLARS, pillarOf, pillarWeek, pillarBest } = await server.ssrLoadModule('/src/game/pillars.js')
+const { petSprite, PET_SPRITES } = await server.ssrLoadModule('/src/game/sprites.js')
+const { petStage } = await server.ssrLoadModule('/src/game/engine.js')
 const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
@@ -403,6 +405,31 @@ is('a higher score takes the board',
 is('a lower one does not',
   foldEfforts({ 'aim:score': { kind: 'score', value: 3000, at: 1 } }, { activityId: 'aim', detail: { mode: 'aim', score: 2000 } })['aim:score'].value, 3000)
 is('and it reads out as a score', readEffort('aim:score', { value: 84210 }).name, 'Best aim score')
+
+// A pet can carry a drawing per growth stage. Every slot is optional and
+// falls back down the stages, so adding one grid has to be a complete change
+// rather than a thing you can only do five at a time.
+console.log('\na pet can change shape as it levels')
+const at = (lv) => petStage(lv).idx
+is('the stages are the five the pet screen names',
+  [1, 25, 50, 75, 100].map(at), [0, 1, 2, 3, 4])
+is('a pet with no stage art uses its one drawing at every level',
+  [0, 1, 2, 3, 4].every((i) => petSprite('frost', i) === PET_SPRITES.frost), true)
+is('an unknown pet falls back rather than crashing', petSprite('nonsense', 4), PET_SPRITES.pup)
+
+const juvenile = { id: 'x', w: 2, h: 2, palette: { a: '#111' }, grid: ['aa', 'aa'] }
+const ascended = { id: 'x', w: 4, h: 4, palette: { a: '#222' }, grid: ['aaaa', 'aaaa', 'aaaa', 'aaaa'] }
+const grown = { ...PET_SPRITES.frost, stages: [null, juvenile, null, null, ascended] }
+const saved = PET_SPRITES.frost
+PET_SPRITES.frost = grown
+is('a hatchling with no art of its own uses the base', petSprite('frost', 0), grown)
+is('a juvenile uses its own', petSprite('frost', 1), juvenile)
+is('an adult falls back to the juvenile rather than skipping ahead', petSprite('frost', 2), juvenile)
+is('prime does the same', petSprite('frost', 3), juvenile)
+is('ascended uses its own', petSprite('frost', 4), ascended)
+is('a later stage may be drawn on a bigger canvas', [petSprite('frost', 4).w, petSprite('frost', 4).h], [4, 4])
+PET_SPRITES.frost = saved
+is('and the fixture is put back', petSprite('frost', 4), saved)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

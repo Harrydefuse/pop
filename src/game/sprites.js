@@ -393,6 +393,39 @@ export const DRAKE = {
 
 export const PET_SPRITES = { pup: PUP, turbo: TURBO, frost: FROST, ember: EMBER, zeus: ZEUS, tuskling: TUSKLING, drake: DRAKE }
 
+/**
+ * A pet's art at a growth stage.
+ *
+ * Levelling a pet only ever scaled the one drawing up and put a glow behind
+ * it, which is a size change rather than a growth. A pet can now carry a
+ * `stages` array of whole sprites — same shape as the base, so each one brings
+ * its own width, height, palette and grid, and a later stage is free to be
+ * drawn on a bigger canvas than an earlier one.
+ *
+ * Index matches `petStage().idx`:
+ *
+ *   0 HATCHLING   level 1-24
+ *   1 JUVENILE    level 25-49
+ *   2 ADULT       level 50-74
+ *   3 PRIME       level 75-99
+ *   4 ASCENDED    level 100
+ *
+ * Every slot is optional and falls back to the nearest one below it, ending at
+ * the base drawing — so adding a single ASCENDED grid is a complete, valid
+ * change, and a pet with no `stages` at all behaves exactly as it did.
+ *
+ * `tools/png2grid.py --canvas WxH` transcribes a PNG into one of these.
+ */
+export function petSprite(refId, stageIdx = 0) {
+  const base = PET_SPRITES[refId] ?? PET_SPRITES.pup
+  const stages = base.stages
+  if (!stages?.length) return base
+  for (let i = Math.min(stageIdx, stages.length - 1); i >= 0; i--) {
+    if (stages[i]) return stages[i]
+  }
+  return base
+}
+
 // ------------------------------------------------------------------- ARMOUR
 // Armour is drawn once per slot in neutral palette slots and recoloured per
 // set, which is how thirty pieces of gear cost six drawings. Palette keys:

@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, PET_SPRITES, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
+import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -67,8 +67,9 @@ export function GearIcon({ slot, kind, set = 'leather', size = 34 }) {
  * before you read a single number.
  */
 export function PetView({ refId, level = 1, size = 72, float, delay, className = '' }) {
-  const sprite = PET_SPRITES[refId] ?? PET_SPRITES.pup
   const stage = petStage(level)
+  // Art per stage where a pet has it, the one drawing where it does not.
+  const sprite = petSprite(refId, stage.idx)
   // An ascended pet scales past the size it was given, so the box has to grow
   // with it — otherwise the sprite spills over its own name.
   const px = Math.round(size * stage.scale * 0.92)
