@@ -7,6 +7,12 @@ Output is byte-exact: no resampling, no colour approximation.
     python3 tools/png2grid.py frost-adult.png
     python3 tools/png2grid.py frost-adult.png --canvas 50x44 --name FROST_ADULT
 
+`--sharpen N` is for art that came out of a tool with anti-aliasing on: it
+snaps every colour to the N most common ones and drops the half-transparent
+rim, so each edge pixel lands on one side of the line instead of blurring
+across it. Hard edges in the source are always better, but this rescues art
+that already exists.
+
 `--canvas WxH` is what a growth series needs. Trimming alone sizes every grid
 to its own subject, so five drawings of the same pet come back as five
 different grids and the animal appears to jump around between stages. On a
@@ -88,6 +94,40 @@ def downsample(px, n):
     return out
 
 
+def sharpen(px, keep):
+    """Snap every colour to the `keep` most common ones, and cut the halo.
+
+    Art exported with anti-aliasing carries a rim of in-between colours around
+    every edge. At this size that rim is not a soft edge, it is mud: each of
+    those pixels becomes its own palette entry, the palette blows past its
+    slots, and what survives looks blurred rather than drawn. Snapping to the
+    real colours puts every edge pixel on one side of the line or the other.
+
+    Pixels that are mostly background — a rim that is more transparent than
+    not — are dropped rather than snapped, so the silhouette tightens by a
+    pixel instead of growing a fringe.
+    """
+    counts = {}
+    for row in px:
+        for c in row:
+            if not transparent(c):
+                counts[c[:3]] = counts.get(c[:3], 0) + 1
+    order = sorted(counts, key=lambda c: -counts[c])[:keep]
+    if not order:
+        raise SystemExit('nothing to sharpen: the image is entirely background')
+    near = lambda c: min(order, key=lambda k: sum((a - b) ** 2 for a, b in zip(c, k)))
+    out = []
+    for row in px:
+        line = []
+        for c in row:
+            if transparent(c) or c[3] < 160:
+                line.append((0, 0, 0, 0))
+            else:
+                line.append((*near(c[:3]), 255))
+        out.append(line)
+    return out
+
+
 def to_grid(px):
     counts = {}
     for row in px:
@@ -96,7 +136,10 @@ def to_grid(px):
                 counts[c[:3]] = counts.get(c[:3], 0) + 1
     order = sorted(counts, key=lambda c: -counts[c])
     if len(order) > len(CHARS):
-        raise SystemExit(f'{len(order)} distinct colours, only {len(CHARS)} palette slots')
+        raise SystemExit(
+            f'{len(order)} distinct colours, only {len(CHARS)} palette slots — '
+            f'the art is probably anti-aliased. Try --sharpen 12.'
+        )
     key = {c: CHARS[i] for i, c in enumerate(order)}
     grid = [''.join('.' if transparent(c) else key[c[:3]] for c in row) for row in px]
     palette = {key[c]: '#%02x%02x%02x' % c for c in order}
@@ -118,11 +161,16 @@ def fit(grid, w, h):
     return ['.' * w] * (h - gh) + rows
 
 
-def main(path, canvas=None, name='SPRITE'):
+def main(path, canvas=None, name='SPRITE', keep=None):
     w, h, px = png.read(path)
+    if keep:
+        px = sharpen(px, keep)
     cut = trim(px)
     n = block_size(cut)
-    note = f'source {w}x{h} -> trimmed {len(cut[0])}x{len(cut)} -> native pixel {n}px'
+    note = f'source {w}x{h}'
+    if keep:
+        note += f' -> sharpened to {keep} colours'
+    note += f' -> trimmed {len(cut[0])}x{len(cut)} -> native pixel {n}px'
 
     # Drawn on the canvas already — a file painted over one of the templates —
     # so the placement is the artist's and is kept exactly. Only a drawing that
@@ -151,8 +199,8 @@ def main(path, canvas=None, name='SPRITE'):
 
 def cli(argv):
     if not argv:
-        raise SystemExit('usage: png2grid.py FILE.png [--canvas WxH] [--name IDENT]')
-    path, canvas, name = argv[0], None, 'SPRITE'
+        raise SystemExit('usage: png2grid.py FILE.png [--canvas WxH] [--name IDENT] [--sharpen N]')
+    path, canvas, name, keep = argv[0], None, 'SPRITE', None
     rest = argv[1:]
     while rest:
         flag = rest.pop(0)
@@ -160,9 +208,11 @@ def cli(argv):
             canvas = tuple(int(v) for v in rest.pop(0).lower().split('x'))
         elif flag == '--name':
             name = rest.pop(0)
+        elif flag == '--sharpen':
+            keep = int(rest.pop(0))
         else:
             raise SystemExit(f'unknown option {flag}')
-    return main(path, canvas, name)
+    return main(path, canvas, name, keep)
 
 
 if __name__ == '__main__':

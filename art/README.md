@@ -237,6 +237,13 @@ Transcribe each one with:
 python3 tools/png2grid.py art/frost-ascended.png --canvas 50x44 --name FROST_ASCENDED
 ```
 
+If the art came out of a tool with anti-aliasing on, add `--sharpen 12`. It
+snaps every colour to the twelve most common and drops the half-transparent
+rim, so each edge pixel lands on one side of the line instead of blurring
+across it. The importer says so itself when the palette blows past its slots,
+which is what an anti-aliased export looks like from in here. Hard edges in
+the source are still better — this rescues art that already exists.
+
 That writes `art/frost-ascended.grid.js`. Paste the object into
 `src/game/sprites.js` and list it on the pet:
 
