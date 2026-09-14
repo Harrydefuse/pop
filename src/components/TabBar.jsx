@@ -11,6 +11,10 @@ import Icon from './Icon'
 // on is decided by your level and worn down by the sessions you log, so it was
 // a tab that reported on work done somewhere else. It is now the objective
 // card on TRAIN — one tap from the button that damages it.
+//
+// The bar is painted in the current arena's colour rather than the house
+// violet. A tab for the arena would have made it one tap closer; colouring the
+// bar you are already looking at makes it something you cannot miss.
 const TABS = [
   { key: 'home', label: 'Today', icon: 'home' },
   { key: 'train', label: 'Train', icon: 'dumbbell' },
@@ -29,7 +33,7 @@ export default function TabBar({ tab, setTab, badges = {} }) {
       <span
         aria-hidden="true"
         className="tab-marker absolute top-0 h-[3px] w-8 -translate-x-1/2 rounded-b-full"
-        style={{ left: `${((index + 0.5) * 100) / TABS.length}%`, background: 'var(--color-neon)' }}
+        style={{ left: `${((index + 0.5) * 100) / TABS.length}%`, background: 'var(--arena)' }}
       />
       {TABS.map((t) => {
         const active = tab === t.key
@@ -41,11 +45,11 @@ export default function TabBar({ tab, setTab, badges = {} }) {
             aria-current={active ? 'page' : undefined}
           >
             <span key={active ? 'on' : 'off'} className={active ? 'tick-pop' : undefined}>
-              <Icon name={t.icon} size={20} color={active ? 'var(--color-neon)' : 'var(--color-ink-faint)'} />
+              <Icon name={t.icon} size={20} color={active ? 'var(--arena)' : 'var(--color-ink-faint)'} />
             </span>
             <span
               className="font-display text-[11.5px] leading-none"
-              style={{ color: active ? 'var(--color-neon)' : 'var(--color-ink-faint)', fontWeight: active ? 700 : 500 }}
+              style={{ color: active ? 'var(--arena)' : 'var(--color-ink-faint)', fontWeight: active ? 700 : 500 }}
             >
               {t.label}
             </span>

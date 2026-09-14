@@ -51,6 +51,11 @@
 
      Every accent still goes deep enough to clear 4.5:1 on the page, and deep
      enough that white sits on it when it is used as a fill. */
+  /* The current arena's colour, republished by the app shell every time your
+     level moves you to a new one. Defined here so nothing breaks outside it. */
+  --arena: #6d28d9;
+  --arena-wash: transparent;
+
   --color-void: #f3f4f7; /* the page */
   --color-panel: #ffffff; /* card surface */
   --color-panel-2: #eceef3; /* raised surface / rows */
@@ -148,6 +153,8 @@
    Specificity beats the bare :root that @theme emits, so these win. */
 :root[data-theme='dark'] {
   color-scheme: dark;
+  --arena: #b168f8;
+
   --color-void: #0b0c11;
   --color-panel: #15171f;
   --color-panel-2: #1d2029;
@@ -335,8 +342,15 @@ button:disabled {
    page" rather than "game". It does — but so does a chequerboard behind every
    screen of an app you use for twenty minutes a day, and the game in this game
    is the character, the arena and the map, not the settings list. */
+/* The screen takes the colour of the arena you are standing in: a wash at the
+   top that fades out before the first card, so it reads as the room's light
+   rather than as a coloured panel. `--arena` is published on the shell by the
+   app; the fallbacks here keep the marketing site and anything rendered
+   outside the shell on the house violet. */
 .app-bg {
   background-color: var(--color-void);
+  background-image: linear-gradient(180deg, var(--arena-wash) 0, transparent 260px);
+  background-repeat: no-repeat;
 }
 
 /* One elevation, used by every raised surface. Two shadows: a tight one that

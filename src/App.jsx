@@ -14,6 +14,8 @@ import Profile from './screens/Profile'
 import MapSheet from './screens/Map'
 import UpdateBar from './components/UpdateBar'
 import Train, { SessionBar } from './screens/Train'
+import { campaignState } from './game/engine'
+import { alpha } from './game/color'
 import Shop from './screens/Shop'
 
 const PITCH = [
@@ -75,8 +77,25 @@ function Device() {
 
   const questsOpen = state.dailies.some((d) => !d.done)
 
+  // The app wears the room you are in.
+  //
+  // Ten arenas each had a theme and a colour, and the app used them in exactly
+  // one place: a 60px badge you had to scroll to. So the ladder was something
+  // you could go and look up rather than something you were standing in.
+  //
+  // The tint is published here, on the shell, as a custom property. Everything
+  // below it can reach `var(--arena)` without threading a prop through six
+  // screens, and modals get it too — they portal into this element, so they
+  // inherit it the same way. Crossing into Meteorite now turns the level bar,
+  // the tab bar and the top of every screen from teal to orange, which is what
+  // "the theme changes as you progress" has to mean if it is to mean anything.
+  const arena = campaignState(state.player, state.campaign).arena
+
   return (
-    <div data-shell className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 device:rounded-[22px]">
+    <div
+      data-shell
+      style={{ '--arena': arena.tint, '--arena-wash': alpha(arena.tint, 13) }}
+      className="relative w-full device:w-[400px] h-[100dvh] device:h-[calc(100vh-64px)] device:max-h-[860px] flex flex-col overflow-hidden bg-void border-line device:border-2 device:rounded-[22px]">
       {!entered && <Onboarding onContinue={() => setEntered(true)} />}
 
       <TopBar onOpenProfile={() => setTab('hero')} onOpenMap={() => setMap(true)} />

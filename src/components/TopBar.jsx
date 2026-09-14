@@ -4,8 +4,9 @@ import PixelSprite from './PixelSprite'
 import { MAP_ICON } from '../game/sprites'
 import Icon from './Icon'
 import { Bar, Num } from './ui'
+import ArenaEmblem from './ArenaEmblem'
 import { useGame } from '../game/useGame'
-import { classById, fmt, powerScore, rankFor, streakTier, xpToNext } from '../game/engine'
+import { campaignState, classById, fmt, streakTier, xpToNext } from '../game/engine'
 import { MAX_LEVEL } from '../game/config'
 import { applyTheme, readTheme } from '../game/theme'
 
@@ -32,14 +33,24 @@ export default function TopBar({ onOpenProfile, onOpenMap }) {
   const { state } = useGame()
   const p = state.player
   const cls = classById(p.classId)
-  const power = powerScore(p)
-  const { rank } = rankFor(power)
   const need = xpToNext(p.level)
   const maxed = !Number.isFinite(need)
   const streak = streakTier(p.streak)
+  // The room, up here with the level, because the two are the same fact said
+  // twice: your level is what puts you in this arena.
+  const arena = campaignState(p, state.campaign).arena
 
   return (
-    <header className="relative z-20 border-b border-line bg-panel/95 backdrop-blur px-3 pb-2.5 pad-safe-top">
+    // The header is the room's. Tinted ground and a rule along the bottom in
+    // the arena's colour, so the first thing on every screen says where you
+    // are standing before you have read a word.
+    <header
+      className="relative z-20 bg-panel/95 backdrop-blur px-3 pb-2.5 pad-safe-top"
+      style={{
+        backgroundImage: `linear-gradient(var(--arena-wash), var(--arena-wash))`,
+        boxShadow: 'inset 0 -2px 0 0 var(--arena)',
+      }}
+    >
       <div className="flex items-center gap-2.5">
         {/* 38px of avatar, 44px of hit area — padding expands the target without
             changing the visual size. */}
@@ -56,13 +67,17 @@ export default function TopBar({ onOpenProfile, onOpenMap }) {
               labelling the player with something they never chose — and the
               room it took is what the map needed. */}
           <div className="font-display text-[19px] truncate leading-tight">{p.name}</div>
+          {/* The arena, in the slot the power rank used to have.
+              Two ladders were competing for the same corner of the screen and
+              the wrong one was winning: BRONZE through IMMORTAL is scored off
+              your gear, changes when you equip a hat, and is already on both
+              screens where power belongs. The arena is scored off the training
+              and is the thing the whole game is climbing, so it gets the
+              header. */}
           <div className="flex items-center gap-1.5 mt-1 whitespace-nowrap overflow-hidden">
-            <span className="label shrink-0" style={{ color: rank.color }}>
-              {rank.name}
-            </span>
-            <span className="text-ink-faint text-[14px] shrink-0">·</span>
-            <span className="text-[14px] text-ink-dim truncate">
-              <Num value={power} format={fmt} /> PWR
+            <ArenaEmblem arena={arena} size={14} plate={false} />
+            <span className="label truncate" style={{ color: 'var(--arena)' }}>
+              {arena.name.toUpperCase()} · ARENA {arena.n}
             </span>
           </div>
         </div>
@@ -86,8 +101,10 @@ export default function TopBar({ onOpenProfile, onOpenMap }) {
       </div>
 
       <div className="flex items-center gap-2 mt-2.5">
-        <span className="figure text-[15px] text-neon shrink-0">LV {p.level}</span>
-        <Bar pct={maxed ? 1 : p.xp / need} height={7} shine className="flex-1" />
+        <span className="figure text-[15px] shrink-0" style={{ color: 'var(--arena)' }}>
+          LV {p.level}
+        </span>
+        <Bar pct={maxed ? 1 : p.xp / need} height={7} shine color="var(--arena)" className="flex-1" />
         <span className="text-[13px] text-ink-faint shrink-0 tabular-nums">
           {maxed ? `MAX ${MAX_LEVEL}` : `${fmt(p.xp)}/${fmt(need)}`}
         </span>

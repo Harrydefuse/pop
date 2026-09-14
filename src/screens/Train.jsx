@@ -1015,7 +1015,7 @@ function WeekHeader({ weeks, streak }) {
               className="flex-1 rounded-t-[3px]"
               style={{
                 height: h,
-                background: now ? 'var(--color-neon)' : w.minutes ? 'var(--color-line-hot)' : 'var(--color-line)',
+                background: now ? 'var(--arena)' : w.minutes ? 'var(--color-line-hot)' : 'var(--color-line)',
               }}
             />
           )
@@ -1046,7 +1046,7 @@ function Delta({ cmp }) {
 }
 
 /** A line, drawn small enough to sit inside a row. */
-function Spark({ points, color = 'var(--color-neon)', w = 72, h = 22 }) {
+function Spark({ points, color = 'var(--arena)', w = 72, h = 22 }) {
   if (points.length < 2) return <span className="inline-block" style={{ width: w, height: h }} />
   const lo = Math.min(...points)
   const hi = Math.max(...points)
@@ -1117,7 +1117,7 @@ function LiftBoard({ records, log }) {
                   {r.reps} × {r.weight}kg · {since(r.at)}
                 </div>
               </div>
-              <Spark points={series} color="var(--color-neon)" />
+              <Spark points={series} color="var(--arena)" />
               <div className="text-right shrink-0 w-[62px]">
                 <div className="figure text-[18px] text-ink">{Math.round(r.e1rm)}</div>
                 <div className="label text-ink-faint mt-0.5">kg</div>
@@ -1288,8 +1288,13 @@ function ArenaBadge({ player, campaign, onOpen }) {
               ARENA {arena.n} · {arena.name.toUpperCase()}
             </div>
             {/* Two lines, two different facts: the room you are standing in,
-                and the thing standing in it. */}
-            <div className="font-display text-[14px] text-ink mt-1 truncate">{boss.name}</div>
+                and the thing standing in it. The theme rides with the boss
+                because this is the one line in the app with room for it. */}
+            <div className="text-[14px] mt-1 truncate">
+              <span style={{ color: tint }}>{arena.theme}</span>
+              <span className="text-ink-faint"> · </span>
+              <span className="font-display text-ink">{boss.name}</span>
+            </div>
           </div>
 
           <span className="text-[14px] text-ink-faint shrink-0 tabular-nums">{Math.round(c.pct * 100)}%</span>
@@ -1313,7 +1318,7 @@ function ArenaBadge({ player, campaign, onOpen }) {
 function WeekGoal({ state }) {
   const c = challengeProgress(state)
   const done = c.done
-  const tone = done ? 'var(--color-lime)' : 'var(--color-neon)'
+  const tone = done ? 'var(--color-lime)' : 'var(--arena)'
   return (
     <Panel className="p-3.5">
       <div className="flex items-baseline justify-between gap-3">
@@ -1452,8 +1457,8 @@ function WeekInGame({ player, log }) {
           <span className="label text-ink-faint">Earned</span>
           <span className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
-              <Icon name="spark" size={13} color="var(--color-neon)" />
-              <span className="figure text-[17px] text-neon">{fmtFull(Math.round(t.xp))}</span>
+              <Icon name="spark" size={13} color="var(--arena)" />
+              <span className="figure text-[17px]" style={{ color: 'var(--arena)' }}>{fmtFull(Math.round(t.xp))}</span>
             </span>
             <span className="flex items-center gap-1.5">
               <Icon name="core" size={13} color="var(--color-gold)" />

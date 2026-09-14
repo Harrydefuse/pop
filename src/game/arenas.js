@@ -14,6 +14,19 @@
  * the whole ladder follows a theme swap rather than pinning ten hex codes to
  * the light mode.
  *
+ * Every tint is drawn from the palette's TEXT-SAFE entries rather than picked
+ * for looks, because the app wears the current room: the tint ends up on the
+ * level label, the tab bar and the week strip, and a colour that only works as
+ * a 40px emblem turns the bottom of the screen into 4:1 mud when it gets
+ * there.
+ *
+ * It is also why Stone is green rather than the grey its name asks for. Every
+ * player starts there, the app wears the room, and an app whose level bar and
+ * tab bar are grey on day one does not look themed — it looks switched off.
+ * So the first room is an overgrown quarry, and the greys wait for Obsidian,
+ * where black glass is the point and there is colour behind you to show it
+ * against.
+ *
  * `guard` is the dial that stops every arena being the same fight at a
  * different size: the share of a SWING the room turns aside, from nothing at
  * Stone to nearly half at Everforge. Health is only size; guard is what makes
@@ -26,7 +39,7 @@
  */
 
 export const ARENAS = [
-  { boss: 'golem', n: 1, name: 'Stone', theme: 'Quarry grey', tint: 'var(--tone-slate)', guard: 0, pace: 3,
+  { boss: 'golem', n: 1, name: 'Stone', theme: 'Mossy quarry', tint: 'var(--tone-green)', guard: 0, pace: 3,
     emblem: 'M9 33 L13 15 L35 13 L40 31 L33 41 L14 41 Z' },
   { boss: 'wraith', n: 2, name: 'Copper', theme: 'Green patina', tint: 'var(--tone-jade)', guard: 0.05, pace: 3,
     emblem: 'M14 13 h20 l3 7 h-26 Z M9 22 h30 l4 11 h-38 Z M6 35 h36 v4 h-36 Z' },
