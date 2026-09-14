@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroSprite, underHelm, wornOverlay } from '../game/sprites'
+import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -190,7 +190,26 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
           sprite={{ ...weapon, palette: WEAPON_PALETTES[held.set] ?? WEAPON_PALETTES.leather }}
           size={width}
           className="absolute inset-0"
-          style={{ filter: `drop-shadow(0 0 3px ${alpha('#000000', 85)}) drop-shadow(0 0 7px ${alpha(RARITY[held.rarity].color, 70)})` }}
+          // The glow is the upgrade, made visible: a +1 blade is barely lit and
+          // a +10 one burns. Rarity picks the colour, the level picks how much
+          // of it there is, so both halves of "this is a better weapon now" land
+          // on the character rather than only in the item sheet.
+          style={{
+            filter: `drop-shadow(0 0 3px ${alpha('#000000', 85)}) drop-shadow(0 0 ${
+              5 + Math.min(9, (held.level ?? 1) - 1)
+            }px ${alpha(RARITY[held.rarity].color, 55 + Math.min(9, (held.level ?? 1) - 1) * 5)})`,
+          }}
+        />
+      )}
+
+      {/* The fist, over the grip. A gauntlet does this job when one is worn;
+          without it the bare hand was behind the blade and nothing looked
+          held. */}
+      {weapon && !armoured.gloves && (
+        <PixelSprite
+          sprite={heroHands(av.skin, av.hair, av.shirt, build)}
+          size={width}
+          className="absolute inset-0"
         />
       )}
 

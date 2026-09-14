@@ -884,17 +884,36 @@ export const ARMOUR_PALETTES = {
  * What a weapon is made of, which is not what the armour is made of.
  *
  * A blade used to be painted in the set's own palette, so a gilded sword on
- * gilded plate was violet on violet and simply disappeared — the one thing the
- * player chose to carry was the one thing they could not see. A weapon has a
- * bright edge and dark furniture no matter what its owner is wearing, so the
- * blade keeps a steel ramp and the set only shows in the guard, the grip and
- * the stone in the pommel. It still reads as belonging to the set; it stops
- * dissolving into it.
+ * gilded plate was violet on violet and simply disappeared. The fix was to
+ * give every weapon the same steel and let the set show only in the guard and
+ * the pommel stone — which solved the disappearing and created a worse
+ * problem: a legendary blade and a starting one were the same drawing with a
+ * different speck of trim on it, so upgrading the one thing the player chose
+ * to carry changed nothing they could see.
+ *
+ * So each tier gets its own metal, on its own ramp. The silhouette survives
+ * because every ramp keeps a near-black outline and a near-white edge, and
+ * because the weapon is drawn with a dark drop shadow and a rarity-coloured
+ * glow behind it — which is what stops a jade blade dissolving into jade
+ * plate without having to make every blade grey.
  */
+const WEAPON_METAL = {
+  // Pitted, unpolished, barely a weapon. Where everyone starts.
+  leather: { o: '#0d0a07', s: '#2b2119', d: '#4f4335', m: '#7e6f5c', l: '#c2b199' },
+  // Honest steel, kept sharp.
+  iron: { o: '#0a0d13', s: '#2f3742', d: '#5d6877', m: '#93a0b1', l: '#f2f7ff' },
+  // Blued and cold, the temper still showing in it.
+  bone: { o: '#0b1018', s: '#24303f', d: '#4b6a88', m: '#88afcd', l: '#eaf6ff' },
+  // Not forged. Grown, and still growing.
+  verdant: { o: '#04120f', s: '#123a31', d: '#1f7a63', m: '#43c5a3', l: '#cbfff2' },
+  // Crystal shot through with violet, lit from inside. The end of the road.
+  gilded: { o: '#140724', s: '#3a1f66', d: '#6b3fb0', m: '#a97ce8', l: '#f5eaff' },
+}
+
 export const WEAPON_PALETTES = Object.fromEntries(
   Object.entries(ARMOUR_PALETTES).map(([set, p]) => [
     set,
-    { o: '#0a0d13', s: '#2f3742', d: '#5d6877', m: '#93a0b1', l: '#f2f7ff', A: p.A, E: p.E ?? p.A },
+    { ...(WEAPON_METAL[set] ?? WEAPON_METAL.iron), A: p.A, E: p.E ?? p.A },
   ]),
 )
 
@@ -2364,6 +2383,43 @@ export function heroClothes(body = 'male') {
   return body === 'female' ? { chest: HERO_F_SHIRT, legs: HERO_F_LEGS } : HERO_CLOTHES
 }
 
+/**
+ * Where each build's fists are.
+ *
+ * A weapon is drawn over the body, which means the hand it is supposed to be
+ * held in ends up behind it — you got a blade laid across a bare forearm with
+ * no fist anywhere near the grip, and every weapon read as floating beside the
+ * character rather than carried by them. A gauntlet fixed it, because gauntlets
+ * are drawn last; a bare hand had nothing to fix it with.
+ *
+ * So the hand is its own layer, cut straight out of the body art and painted
+ * back on top of whatever is being held. Rows only — the fist, not the forearm
+ * — because a blade should pass in front of the arm above the grip and behind
+ * it below, which is what a hand-height band gives you for free.
+ */
+const HAND_BANDS = {
+  male: { rows: [39, 46], left: [7, 14], right: [30, 37] },
+  female: { rows: [43, 49], left: [6, 13], right: [28, 35] },
+}
+
+/** The fists alone, ready to be drawn over the grip. */
+export function heroHands(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC, body = 'male') {
+  const src = gridFor(body, 'bare')
+  const band = HAND_BANDS[body] ?? HAND_BANDS.male
+  const grid = src.map((row, y) => {
+    if (y < band.rows[0] || y > band.rows[1]) return '.'.repeat(row.length)
+    return row
+      .split('')
+      .map((c, x) => {
+        const inLeft = x >= band.left[0] && x <= band.left[1]
+        const inRight = x >= band.right[0] && x <= band.right[1]
+        return inLeft || inRight ? c : '.'
+      })
+      .join('')
+  })
+  return { w: src[0].length, h: src.length, palette: heroPalette(skin, hair, shirt), grid }
+}
+
 /** The same trick on her frame, which is 30 x 65 rather than 32 x 59. */
 const wornF = (rows) => {
   const w = Object.values(rows)[0].length
@@ -2385,6 +2441,38 @@ const wornF = (rows) => {
  * blade held across gilded plate is gold on gold, which is exactly how a sword
  * could be equipped and simply not be there.
  */
+/**
+ * Moves a worn overlay by whole pixels inside its own frame.
+ *
+ * The rack was drawn once and then had to fit two builds with different
+ * proportions — hers is 42 x 65 where his is 44 x 59, and her head is bigger
+ * on her frame — so a haft that clears his cheek lands across her eye. Rather
+ * than keep two divergent copies of the same drawing, the art stays as it is
+ * and the difference is a nudge, listed in one table where it can be read and
+ * adjusted.
+ */
+function nudge(sprite, dx = 0, dy = 0) {
+  if (!dx && !dy) return sprite
+  const blank = '.'.repeat(sprite.w)
+  const moved = sprite.grid.map((row) =>
+    dx === 0 ? row : dx > 0 ? (blank.slice(0, dx) + row).slice(0, sprite.w) : (row.slice(-dx) + blank).slice(0, sprite.w),
+  )
+  const rows = dy > 0 ? [...Array(dy).fill(blank), ...moved].slice(0, sprite.h) : [...moved.slice(-dy), ...Array(-dy).fill(blank)]
+  return { ...sprite, grid: rows }
+}
+
+/**
+ * Per-build corrections, in pixels: [dx, dy].
+ *
+ * A shield belongs on the forearm and both builds had it floating on the
+ * chest with only its bottom tip reaching the hand. Her axe and her staff sat
+ * a head higher than his relative to her frame and covered her face.
+ */
+const WEAPON_FIX = {
+  male: { shield: [0, 7] },
+  female: { shield: [0, 3], axe: [2, 5], staff: [2, 5], spear: [1, 2] },
+}
+
 export const WEAPON_OVERLAYS = {
   male: {
   sword: worn({ 15: '................................oo..........', 16: '...............................ommo.........', 17: '..............................odlmdo........', 18: '..............................odlmdo........', 19: '..............................odlmdo........', 20: '..............................odlmdo........', 21: '..............................odlmdo........', 22: '..............................odlmdo........', 23: '..............................odlmdo........', 24: '..............................odlmdo........', 25: '..............................odlmdo........', 26: '..............................odlmdo........', 27: '..............................odlmdo........', 28: '..............................odlmdo........', 29: '..............................odlmdo........', 30: '..............................odlmdo........', 31: '..............................odlmdo........', 32: '..............................odlmdo........', 33: '..............................odlmdo........', 34: '..............................odlmdo........', 35: '..............................odlmdo........', 36: '..............................odlmdo........', 37: '.............................oAAAAAAo.......', 38: '.............................oAAAAAAo.......', 39: '..............................oossoo........', 40: '...............................osso.........', 41: '...............................osso.........', 42: '...............................osso.........', 43: '...............................osso.........', 44: '...............................osso.........', 45: '...............................osso.........', 46: '...............................osso.........', 47: '..............................oAAAAo........', 48: '...............................oooo.........' }),
@@ -2404,6 +2492,15 @@ export const WEAPON_OVERLAYS = {
   bow: wornF({ 24: '...........................ooo............', 25: '..........................oAAmo...........', 26: '..........................oldmo...........', 27: '..........................olodmo..........', 28: '..........................olodmo..........', 29: '..........................olodmo..........', 30: '..........................oloodmo.........', 31: '..........................oloodmo.........', 32: '..........................oloodmo.........', 33: '..........................oloodmo.........', 34: '..........................olo.odmo........', 35: '..........................olo.odmo........', 36: '..........................olo.odmo........', 37: '..........................olo.osso........', 38: '..........................olo.osso........', 39: '..........................olo.osso........', 40: '..........................olo.osso........', 41: '..........................olo.odmo........', 42: '..........................olo.odmo........', 43: '..........................olo.odmo........', 44: '..........................oloodmo.........', 45: '..........................oloodmo.........', 46: '..........................oloodmo.........', 47: '..........................oloodmo.........', 48: '..........................olodmo..........', 49: '..........................olodmo..........', 50: '..........................olodmo..........', 51: '..........................oldmo...........', 52: '..........................oAAmo...........', 53: '...........................ooo............' }),
   staff: wornF({ 14: '............................oo............', 15: '...........................ommo...........', 16: '..........................olllmo..........', 17: '.........................omlAAmmo.........', 18: '.........................ommAAmmo.........', 19: '..........................ommmmo..........', 20: '...........................ommo...........', 21: '..........................oddddo..........', 22: '...........................osso...........', 23: '...........................osso...........', 24: '...........................osso...........', 25: '...........................osso...........', 26: '...........................osso...........', 27: '...........................osso...........', 28: '...........................osso...........', 29: '...........................osso...........', 30: '...........................osso...........', 31: '...........................osso...........', 32: '...........................osso...........', 33: '...........................osso...........', 34: '...........................osso...........', 35: '...........................osso...........', 36: '...........................osso...........', 37: '...........................osso...........', 38: '...........................osso...........', 39: '...........................osso...........', 40: '...........................osso...........', 41: '...........................osso...........', 42: '...........................osso...........', 43: '...........................osso...........', 44: '...........................osso...........', 45: '...........................osso...........', 46: '...........................osso...........', 47: '...........................osso...........', 48: '...........................osso...........', 49: '...........................osso...........', 50: '...........................osso...........', 51: '...........................osso...........', 52: '...........................osso...........', 53: '...........................osso...........', 54: '...........................osso...........', 55: '...........................osso...........', 56: '...........................osso...........', 57: '...........................osso...........', 58: '...........................osso...........', 59: '...........................osso...........', 60: '...........................osso...........', 61: '..........................oddddo..........', 62: '...........................oooo...........' }),
   },
+}
+
+// Applied once, at module load, so every screen that draws a weapon gets the
+// corrected art and nothing has to remember to call a fixer.
+for (const [build, fixes] of Object.entries(WEAPON_FIX)) {
+  for (const [kind, [dx, dy]] of Object.entries(fixes)) {
+    const sprite = WEAPON_OVERLAYS[build]?.[kind]
+    if (sprite) WEAPON_OVERLAYS[build][kind] = nudge(sprite, dx, dy)
+  }
 }
 
 /**

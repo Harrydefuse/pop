@@ -271,61 +271,6 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
   )
 }
 
-/** How long to sit down for, and the choices offered. */
-const REST_S = [60, 90, 120, 180]
-
-/**
- * The clock between sets.
- *
- * Counted off the last set's own timestamp rather than a ticking counter of its
- * own, so it survives switching tabs, closing the app and coming back — the set
- * already records when it happened, and a rest timer that forgets the moment
- * you check a message is a rest timer nobody uses.
- */
-function RestClock({ sets, ms, length, onLength }) {
-  const last = sets[sets.length - 1]
-  const rest = last ? Math.max(0, length - Math.round((ms - last.at) / 1000)) : null
-  const done = rest === 0
-  if (!last) return null
-  return (
-    <div
-      className="mt-3 rounded-[var(--radius-sm)] px-3.5 py-3"
-      style={{ background: done ? 'color-mix(in srgb, var(--color-lime) 14%, transparent)' : 'var(--color-panel-2)' }}
-    >
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="label text-ink-faint">{done ? 'Rest is up' : 'Resting'}</div>
-          <div className="figure text-[26px] mt-1" style={{ color: done ? 'var(--color-lime)' : 'var(--color-ink)' }}>
-            {done ? 'Go' : clock(rest * 1000)}
-          </div>
-        </div>
-        <div className="flex gap-1 shrink-0">
-          {REST_S.map((n) => (
-            <button
-              key={n}
-              onClick={() => onLength(n)}
-              aria-pressed={length === n}
-              className="label min-w-[44px] min-h-[44px] rounded-[var(--radius-sm)] transition-colors"
-              style={{
-                background: length === n ? 'var(--color-panel)' : 'transparent',
-                color: length === n ? 'var(--color-ink)' : 'var(--color-ink-faint)',
-                boxShadow: length === n ? 'var(--elev)' : undefined,
-              }}
-            >
-              {n}s
-            </button>
-          ))}
-        </div>
-      </div>
-      {!done && (
-        <div className="mt-2.5">
-          <Bar pct={1 - rest / length} color="var(--color-neon)" height={4} />
-        </div>
-      )}
-    </div>
-  )
-}
-
 /**
  * One exercise, as a card you fill in.
  *
@@ -441,14 +386,19 @@ function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onU
  * A gym session, as a list you build.
  *
  * Everything that is not the list moved out: the clock and the controls are in
- * the bar above, the rest timer sits under it, and what the session is worth
- * waits until the end where it belongs. What is left is the exercises, in the
- * order you did them.
+ * the bar above, and what the session is worth waits until the end where it
+ * belongs. What is left is the exercises, in the order you did them.
+ *
+ * There was a rest timer between sets and it has gone. The app's job here is
+ * to hold the clock from the moment you walk into the gym and to keep what you
+ * lifted — a countdown telling you when to stand up again is a coaching
+ * opinion, and it is one most people already have. You finish a set, you log
+ * it, it goes on the day's session. Nothing to dismiss and nothing counting
+ * down at you between them.
  */
-function StrengthReadout({ session, ms }) {
+function StrengthReadout({ session }) {
   const { state, sessionSet, sessionAddLift, sessionUndoSet, saveRoutine } = useGame()
   const [picking, setPicking] = useState(false)
-  const [rest, setRest] = useState(90)
   const [naming, setNaming] = useState(null)
   const sets = session.sets ?? NONE
   const plan = session.plan ?? NONE
@@ -481,8 +431,6 @@ function StrengthReadout({ session, ms }) {
 
   return (
     <>
-      <RestClock sets={sets} ms={ms} length={rest} onLength={setRest} />
-
       {order.length === 0 && (
         <Panel className="p-5 text-center">
           <div className="font-display text-[17px] text-ink">Nothing in this one yet</div>
@@ -818,7 +766,7 @@ function Running({ session, act }) {
         onFinish={finishSession}
       />
 
-      {mode === 'strength' && <StrengthReadout session={session} ms={ms} />}
+      {mode === 'strength' && <StrengthReadout session={session} />}
 
       {mode !== 'strength' && (
         <Panel className="p-4 text-center" accent={tint}>
