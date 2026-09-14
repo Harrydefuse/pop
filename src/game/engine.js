@@ -18,6 +18,7 @@ import {
   setForRarity,
 } from './config'
 import { CAMPAIGN, WEAK_MULT } from './campaign'
+import { ARENAS, arenaFor } from './arenas'
 
 // ------------------------------------------------------------------ progression
 
@@ -240,6 +241,10 @@ export function campaignState(player, campaign) {
 
   return {
     defeated,
+    // The room this bracket happens in. Every boss has one, including the one
+    // you have not reached yet, so no screen that draws a boss is ever left
+    // without a name, a colour and a crest.
+    arena: arenaFor(boss ? boss.id : CAMPAIGN[CAMPAIGN.length - 1].id),
     // The boss you are actually swinging at, or null while a bracket is out
     // of reach or the road is clear.
     current: reached ? boss : null,
@@ -258,6 +263,26 @@ export function campaignState(player, campaign) {
     pct: hp ? Math.min(1, damage / hp) : 0,
     finished,
   }
+}
+
+/**
+ * The whole ladder, one entry per arena, with the bracket and the boss folded
+ * in.
+ *
+ * The level bands are not written down anywhere — a boss's `level` is the
+ * bottom of its bracket and the next boss's `level` is the top — so this is
+ * the one place that derives them, and the ladder screen reads them rather
+ * than repeating them. Add a boss to CAMPAIGN and the bands move on their own.
+ */
+export function arenaLadder() {
+  return ARENAS.map((a) => {
+    const i = CAMPAIGN.findIndex((b) => b.id === a.boss)
+    const boss = CAMPAIGN[i]
+    const next = CAMPAIGN[i + 1]
+    const from = boss.level
+    const to = next ? next.level - 1 : MAX_LEVEL
+    return { arena: a, boss, from, to, hp: Math.max(1, bracketXp(from, to + 1)) }
+  })
 }
 
 /** What one logged session does to a boss. Its XP, doubled on the weakness. */
@@ -476,7 +501,7 @@ export function fightPower(player, log, now) {
  * Shares the XP curve's exponent on purpose: a boss's health is the XP of its
  * level bracket, so the yardstick for hitting it has to grow the same shape.
  */
-function parAttack(level) {
+export function parAttack(level) {
   return Math.round(60 + Math.pow(level, 1.22) * 6.5)
 }
 
@@ -484,7 +509,19 @@ function parAttack(level) {
 export function swingFor(player, log, boss, hp) {
   const me = fightPower(player, log)
   const ratio = Math.min(2.2, Math.max(0.3, me.attack / parAttack(boss.level)))
-  return Math.max(1, Math.round(hp * 0.075 * ratio))
+  // The arena's guard: the share of a swing the room turns aside, from nothing
+  // in Stone to nearly half in Everforge.
+  //
+  // It is applied HERE and nowhere else on purpose. Guard was going to shave
+  // logged sessions, and that would have quietly broken the rule the whole
+  // ladder stands on — a boss's health IS the XP of its level bracket, so a
+  // session that pays 400 XP has to deal 400 damage or the health bar and the
+  // level bar stop being the same bar, and a late arena would leave you five
+  // levels past a boss still standing. Training always lands in full. What
+  // guard changes is the fight: the place where you choose to swing, and where
+  // you can lose.
+  const guard = arenaFor(boss.id).guard
+  return Math.max(1, Math.round(hp * 0.075 * ratio * (1 - guard)))
 }
 
 /**

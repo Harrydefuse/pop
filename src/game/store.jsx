@@ -26,6 +26,10 @@ function baseState() {
     // The moment right after the effort is where "I earned this" happens, so
     // it gets a screen rather than six toasts that scroll past each other.
     sessionReward: null,
+    // The highest arena this player has been shown the door to. A promotion is
+    // the difference between this and where their level actually puts them, so
+    // it survives a reload and cannot fire twice for the same room.
+    arenaSeen: 1,
     // A milestone that happened while nobody was looking — a streak tier ticks
     // over at midnight, not at the end of a set. It waits here and pays out on
     // the next session, when there is somebody there to see it.
@@ -67,6 +71,10 @@ function load() {
     // Someone who was training before best efforts existed still has the
     // evidence in their log and on their record board. Read it back once.
     if (!parsed.bests) merged.bests = effortsFromLog(merged.log, merged.records)
+    // Somebody who has been training since before arenas existed is already
+    // standing in one. Start them where they are rather than marching them
+    // through six promotions they earned months ago.
+    if (parsed.arenaSeen == null) merged.arenaSeen = campaignState(merged.player, merged.campaign).arena.n
     return merged
   } catch {
     return baseState()
@@ -786,6 +794,10 @@ function reducer(state, action) {
     case 'dismissSessionReward':
       return { ...state, sessionReward: null }
 
+    // The promotion has been read. Never again for this room.
+    case 'seeArena':
+      return { ...state, arenaSeen: Math.max(state.arenaSeen ?? 1, action.n) }
+
     case 'equip': {
       const item = state.player.inventory.find((i) => i.id === action.itemId)
       if (!item) return state
@@ -936,6 +948,11 @@ function reducer(state, action) {
           // the test account's bests are the same bests the app would compute.
           bests: effortsFromLog(TEST_ACCOUNT.log, TEST_ACCOUNT.records),
           dailies: freshDailies(),
+          // Dropped in at level 100, not promoted there — otherwise the first
+          // thing the test account does is congratulate you on nine rooms you
+          // did not walk through.
+          arenaSeen: campaignState({ ...state.player, ...TEST_ACCOUNT.player }, TEST_ACCOUNT.campaign ?? state.campaign)
+            .arena.n,
         },
         { kind: 'level', title: 'Test account', body: 'Level 100, every drop, and LVL100 itself still standing.' },
       )
@@ -1000,6 +1017,7 @@ export function GameProvider({ children }) {
       openGift: () => dispatch({ type: 'openGift' }),
       dismissReward: () => dispatch({ type: 'dismissReward' }),
       dismissSessionReward: () => dispatch({ type: 'dismissSessionReward' }),
+      seeArena: (n) => dispatch({ type: 'seeArena', n }),
       equip: (itemId) => dispatch({ type: 'equip', itemId }),
       equipBest: () => dispatch({ type: 'equipBest' }),
       unequip: (slot) => dispatch({ type: 'unequip', slot }),

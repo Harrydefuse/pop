@@ -5,6 +5,7 @@ import Avatar from './Avatar'
 import { BossArt, BossFace, HeroView } from './Sprites'
 import { useGame } from '../game/useGame'
 import { campaignState, fightOdds, fightPower, fmtFull, resolveFight, swingFor, todayKey, wornGear } from '../game/engine'
+import { arenaFor } from '../game/arenas'
 
 /**
  * Where the campaign is actually decided.
@@ -245,6 +246,9 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
   // Health and damage both come off the campaign state now: a boss owns a
   // level bracket, and its pool is the XP that bracket costs.
   const c = campaignState(p, state.campaign)
+  // The room, not the state: this screen can be opened for a boss that is not
+  // the one your level has you on, so it reads the arena off the boss.
+  const arena = arenaFor(boss.id)
   const spent = state.campaign.lastFightDay === todayKey()
 
   const worn = useMemo(() => wornGear(p), [p])
@@ -347,8 +351,13 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
           className="font-display text-[16px]"
           style={{ color: over ? (fight.won ? DECK.mine : DECK.theirs) : tone }}
         >
-          {over ? (fight.won ? 'VICTORY' : 'DEFEATED') : 'THE ARENA'}
+          {over ? (fight.won ? 'VICTORY' : 'DEFEATED') : arena.name.toUpperCase()}
         </span>
+        {!over && (
+          <span className="font-display text-[12px]" style={{ color: 'rgba(255,236,205,0.5)' }}>
+            ARENA {arena.n} · {arena.theme.toUpperCase()}
+          </span>
+        )}
         <div className="flex-1" />
         {live ? (
           <button
@@ -506,6 +515,8 @@ export default function Arena({ boss, onClose, tone = '#ff3d63' }) {
               {me.form.sessions === 0
                 ? 'Nothing logged in seven days. You walk in cold — every swing is at half strength.'
                 : `${me.form.sessions} ${me.form.sessions === 1 ? 'session' : 'sessions'} behind you this week, and the kit you have on. Both go into every swing.`}
+              {arena.guard > 0 &&
+                ` ${arena.name} turns aside ${Math.round(arena.guard * 100)}% of every one of them before it lands.`}
             </p>
 
             {spent ? (

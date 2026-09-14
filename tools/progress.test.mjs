@@ -27,8 +27,9 @@ const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEf
 const { EXERCISES, searchExercises, muscleOf, muscleSplit, neglected, exerciseByName } =
   await server.ssrLoadModule('/src/game/exercises.js')
 const { buildCard, encodeCard, decodeCard, leaderboard } = await server.ssrLoadModule('/src/game/profile.js')
-const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaignState, xpToNext, resolveFight } =
+const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaignState, xpToNext, resolveFight, swingFor, fightPower, parAttack, bossHit, arenaLadder } =
   await server.ssrLoadModule('/src/game/engine.js')
+const { ARENAS, arenaFor } = await server.ssrLoadModule('/src/game/arenas.js')
 const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
@@ -343,8 +344,61 @@ const arena = (worn) => {
 }
 is('a boss nobody has touched cannot be put down in one visit', arena(0).won, false)
 is('nor one worn a third of the way down', arena(0.33).won, false)
-is('one worn past halfway falls', arena(0.62).won, true)
+is('nor one worn past halfway, in a room that guards', arena(0.62).won, false)
+is('one worn two thirds down falls', arena(0.68).won, true)
 is('a losing visit still takes a bite out of it', arena(0).dealt > 0, true)
+
+// Guard is the only thing that separates one arena from another beyond size,
+// so it is worth pinning that it is applied, that it is applied to the SWING,
+// and that it is applied to nothing else.
+console.log('\nthe arena you are in turns part of your swing aside')
+// The bare swing, before the room gets to it: the same arithmetic swingFor
+// does, written out, so the assertion is about the guard and nothing else.
+const bare = (bossId) => {
+  const i = CAMPAIGN.findIndex((b) => b.id === bossId)
+  const player = { ...INITIAL_STATE.player, level: CAMPAIGN[i].level }
+  const c = campaignState(player, { defeated: CAMPAIGN.slice(0, i).map((b) => b.id), damage: {} })
+  const me = fightPower(player, INITIAL_STATE.log)
+  const ratio = Math.min(2.2, Math.max(0.3, me.attack / parAttack(c.current.level)))
+  return {
+    swing: swingFor(player, INITIAL_STATE.log, c.current, c.hp),
+    raw: c.hp * 0.075 * ratio,
+    guard: c.arena.guard,
+    player,
+    c,
+  }
+}
+for (const id of ['golem', 'ironjaw', 'lvl100']) {
+  const b = bare(id)
+  is(`${arenaFor(id).name} takes ${Math.round(b.guard * 100)}% off every swing`,
+    b.swing, Math.max(1, Math.round(b.raw * (1 - b.guard))))
+}
+is('Stone takes nothing off', arenaFor('golem').guard, 0)
+is('and Everforge takes nearly half', arenaFor('lvl100').guard, 0.45)
+
+// The rule the whole ladder stands on: a boss's health is its bracket's XP, so
+// a session has to deal exactly what it pays or the health bar and the level
+// bar stop being the same bar.
+const session = { tag: 'gym', name: 'Gym' }
+is('a logged session deals its XP in full, whatever room it is in',
+  [bossHit(CAMPAIGN[0], session, 400).damage, bossHit(CAMPAIGN[CAMPAIGN.length - 1], session, 400).damage],
+  [400, 400])
+
+console.log('\nten arenas, one per bracket')
+is('there is an arena for every boss', ARENAS.length, CAMPAIGN.length)
+is('and every arena points at a boss that exists',
+  ARENAS.every((a) => CAMPAIGN.some((b) => b.id === a.boss)), true)
+is('they are numbered one to ten in order',
+  ARENAS.map((a) => a.n), CAMPAIGN.map((_, i) => i + 1))
+is('guard never goes down as you climb',
+  ARENAS.every((a, i) => i === 0 || a.guard >= ARENAS[i - 1].guard), true)
+const rungs = arenaLadder()
+is('the ladder starts at level 1 and ends at the cap',
+  [rungs[0].from, rungs[rungs.length - 1].to], [1, MAX_LEVEL])
+is('and no bracket leaves a level unaccounted for',
+  rungs.every((r, i) => i === 0 || r.from === rungs[i - 1].to + 1), true)
+is('every rung carries the boss that stands in it',
+  rungs.map((r) => r.boss.id), CAMPAIGN.map((b) => b.id))
 
 // Getting out, the gym, and the games you already play. These are what the
 // app is for, so each one has to report a number that moved rather than a

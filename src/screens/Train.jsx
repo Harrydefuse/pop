@@ -3,8 +3,8 @@ import { Bar, Btn, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import ExercisePicker from '../components/ExercisePicker'
 import CampaignSheet from '../components/CampaignSheet'
+import ArenaEmblem from '../components/ArenaEmblem'
 import StreakFlame from '../components/StreakFlame'
-import { BossArt } from '../components/Sprites'
 import { useGame } from '../game/useGame'
 import {
   INTERVAL,
@@ -32,7 +32,6 @@ import {
   minutesOf,
   resolveActivity,
 } from '../game/engine'
-import { actById } from '../game/campaign'
 import { PILLARS, pillarBest, pillarEmpty, pillarWeek } from '../game/pillars'
 import { challengeLabel, challengeProgress } from '../game/challenge'
 import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
@@ -1228,38 +1227,41 @@ function Progression({ weeks, bests, games, onStart }) {
  * This was a full card, and a full card is the wrong weight for it. The boss
  * is not a thing you do on this screen — it is a thing your sessions do to it,
  * on their own, whether or not you look. So it reads the way a Clash Royale
- * arena reads: one strip that says where you are, how far through, and nothing
- * else. Everything it used to shout about — the weakness, the drop, the HP in
- * full — is a tap away, on the screen that exists for it.
+ * arena reads: one strip that says which room you are in, how far through, and
+ * nothing else. Everything it used to shout about — the weakness, the drop,
+ * the HP in full — is a tap away, on the screen that exists for it.
  *
  * It sits under START ACTIVITY for the same reason. The button is what you
  * came here to press; the badge is what pressing it moves.
+ *
+ * The whole strip is tinted by the arena rather than the act, so the screen
+ * changes colour ten times on the way to a hundred and the change is the thing
+ * you notice first.
  */
 function ArenaBadge({ player, campaign, onOpen }) {
   const c = campaignState(player, campaign)
+  const arena = c.arena
 
   if (c.finished) {
     return (
       <Panel className="px-3 py-2.5 flex items-center gap-2.5">
         <Icon name="check" size={13} color="var(--color-gold)" />
-        <span className="font-display text-[14px] text-gold">Every boss down</span>
+        <span className="font-display text-[14px] text-gold">Everforge is empty</span>
         <span className="text-[14px] text-ink-faint ml-auto">Level {player.level}</span>
       </Panel>
     )
   }
 
-  // Nothing reachable: the badge still shows the next one, greyed, so the
+  // Nothing reachable: the badge still shows the room ahead, greyed, so the
   // ladder never goes blank on you.
   if (!c.current) {
     const levels = c.gatedBy
     return (
       <Panel className="px-3 py-2.5 flex items-center gap-3">
-        <div className="w-11 h-11 shrink-0 grid place-items-center border border-line bg-panel-2">
-          <BossArt sprite={c.locked.sprite} size={28} style={{ filter: 'grayscale(1) brightness(0.55)', opacity: 0.7 }} />
-        </div>
+        <ArenaEmblem arena={arena} size={44} dim />
         <div className="min-w-0 flex-1">
-          <div className="label text-ink-faint">LEVEL {player.level}</div>
-          <div className="font-display text-[14px] text-ink-dim mt-1 truncate">{c.locked.name} is waiting</div>
+          <div className="label text-ink-faint">ARENA {arena.n} · {arena.name.toUpperCase()}</div>
+          <div className="font-display text-[14px] text-ink-dim mt-1 truncate">The doors open at level {c.from}</div>
         </div>
         <span className="text-[14px] text-ink-faint shrink-0">
           {levels === 1 ? '1 level' : `${levels} levels`}
@@ -1269,29 +1271,24 @@ function ArenaBadge({ player, campaign, onOpen }) {
   }
 
   const boss = c.current
-  const act = actById(boss.act)
+  const tint = arena.tint
 
   return (
     <button
       onClick={onOpen}
       className="w-full text-left transition-transform active:scale-[0.99]"
-      aria-label={`${c.band}, fighting ${boss.name}, ${Math.round(c.pct * 100)} per cent down. Open the story.`}
+      aria-label={`Arena ${arena.n}, ${arena.name}. ${c.band}, fighting ${boss.name}, ${Math.round(c.pct * 100)} per cent down. Open the ladder.`}
     >
-      <Panel className="px-3 py-2.5">
+      <Panel className="px-3 py-2.5" style={{ borderColor: alpha(tint, 45) }}>
         <div className="flex items-center gap-3">
-          {/* The arena tile: framed and tinted in the act's colour, so the
-              badge changes character as the story does. */}
-          <div
-            className="w-11 h-11 shrink-0 grid place-items-center border"
-            style={{ borderColor: alpha(act.color, 55), background: alpha(act.color, 10) }}
-          >
-            <BossArt sprite={boss.sprite} size={30} />
-          </div>
+          <ArenaEmblem arena={arena} size={44} />
 
           <div className="min-w-0 flex-1">
-            <div className="label" style={{ color: act.color }}>
-              {c.band}
+            <div className="label truncate" style={{ color: tint }}>
+              ARENA {arena.n} · {arena.name.toUpperCase()}
             </div>
+            {/* Two lines, two different facts: the room you are standing in,
+                and the thing standing in it. */}
             <div className="font-display text-[14px] text-ink mt-1 truncate">{boss.name}</div>
           </div>
 

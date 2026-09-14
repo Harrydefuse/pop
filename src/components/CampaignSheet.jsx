@@ -7,8 +7,10 @@ import Arena from './Arena'
 import WorldRaid from './WorldRaid'
 import { useGame } from '../game/useGame'
 import { ACTIVITIES, RARITY } from '../game/config'
-import { ACTS, CAMPAIGN, actById } from '../game/campaign'
-import { campaignState, fmtFull } from '../game/engine'
+import { actById } from '../game/campaign'
+import { ARENAS, guardNote, guardPips } from '../game/arenas'
+import { arenaLadder, campaignState, fmtFull } from '../game/engine'
+import ArenaEmblem from './ArenaEmblem'
 import { alpha } from '../game/color'
 
 /**
@@ -30,17 +32,48 @@ function statusOf(boss, player, c) {
 
 const SILHOUETTE = { filter: 'grayscale(1) brightness(0.45)', opacity: 0.7 }
 
-/** The boss you are standing in front of. One target, one action. */
+/** Five pips, one per step of guard. The only per-arena number on a row. */
+function GuardPips({ arena, className = '' }) {
+  const filled = guardPips(arena.guard)
+  return (
+    <span className={`flex gap-[3px] ${className}`} title={guardNote(arena.guard)}>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <span
+          key={i}
+          className="w-[7px] h-[7px]"
+          style={{ background: i < filled ? arena.tint : 'var(--color-line)' }}
+        />
+      ))}
+    </span>
+  )
+}
+
+/** The boss you are standing in front of, in the room it stands in. */
 function CurrentBoss({ boss, c, onFight, onArena }) {
   const act = actById(boss.act)
+  const arena = c.arena
 
   return (
-    <Panel accent={act.color} className="p-3.5 text-center">
-      <Chip color={act.color} className="mb-3">
-        ACT {act.numeral} · {c.band}
-      </Chip>
-      <BossArt sprite={boss.sprite} size={116} className="mx-auto float-soft" />
-      <div className="font-display text-[20px] mt-2" style={{ color: act.color }}>
+    <Panel accent={arena.tint} className="p-3.5 text-center">
+      {/* The room first, the boss second. Which arena you are in is the rank;
+          the boss is what is standing in it this time. */}
+      <div
+        className="-mx-3.5 -mt-3.5 px-3.5 pt-4 pb-3.5 flex items-center gap-3 text-left"
+        style={{ background: alpha(arena.tint, 10) }}
+      >
+        <ArenaEmblem arena={arena} size={46} plate={false} />
+        <div className="min-w-0">
+          <div className="label" style={{ color: arena.tint }}>
+            ARENA {arena.n} OF {ARENAS.length} · {arena.name.toUpperCase()}
+          </div>
+          <div className="font-display text-[14px] text-ink mt-1 truncate">{arena.theme}</div>
+          <div className="text-[14px] text-ink-faint mt-0.5">{c.band}</div>
+        </div>
+        <GuardPips arena={arena} className="ml-auto shrink-0" />
+      </div>
+
+      <BossArt sprite={boss.sprite} size={116} className="mx-auto float-soft mt-3" />
+      <div className="font-display text-[20px] mt-2" style={{ color: arena.tint }}>
         {boss.name}
       </div>
       <div className="text-[14px] text-ink-dim mt-1">{boss.title}</div>
@@ -73,7 +106,8 @@ function CurrentBoss({ boss, c, onFight, onArena }) {
       </div>
 
       {/* Sessions wear the boss down on their own; the arena is where you can
-          take a swing at finishing it early, and where you can fail. */}
+          take a swing at finishing it early, and where you can fail. Guard is
+          the one thing that only bites in here, so it is said in here. */}
       <button
         onClick={onArena}
         className="w-full mt-3.5 py-4 border-2 font-display text-[22px] transition-transform active:scale-[0.98]"
@@ -87,6 +121,7 @@ function CurrentBoss({ boss, c, onFight, onArena }) {
         Battle
         <span className="block font-display text-[12px] mt-1.5 opacity-80">{boss.name}</span>
       </button>
+      <div className="text-[14px] text-ink-faint mt-2 leading-snug">{guardNote(arena.guard)}</div>
       <Btn full variant="ghost" size="sm" className="mt-1.5" onClick={onFight}>
         What am I fighting?
       </Btn>
@@ -111,58 +146,64 @@ function Gated({ boss, levels }) {
   )
 }
 
-/** One rung of the ladder. State reads off colour, art and a single tag. */
-function PathRow({ boss, status, c, onOpen }) {
-  const act = actById(boss.act)
+/**
+ * One rung of the ladder.
+ *
+ * Every one of the ten shows, from the first session — which is the point of a
+ * ladder, and the one thing the old act-grouped path would not do. What stays
+ * hidden is the BOSS: a room ahead of you has a name, a colour, a level band
+ * and a guard rating, and a question mark where the fight is. You can see how
+ * far the climb goes without being told how it ends.
+ */
+function ArenaRow({ arena, from, to, status, c, onOpen }) {
   const cleared = status === 'cleared'
   const fighting = status === 'fighting'
   const locked = status === 'locked'
+  // Tappable once you can see who is in there. The room itself is never a
+  // secret — its colour, its crest and its guard show from the first session,
+  // because a ladder you cannot see the length of is not a ladder. What is
+  // withheld is the boss, which is the part that would give the story away.
+  const known = !locked || c.arena.n + 1 >= arena.n
+  const Tag = known ? 'button' : 'div'
 
   return (
-    <button onClick={onOpen} className="w-full text-left active:brightness-125">
+    <Tag
+      onClick={known ? onOpen : undefined}
+      className={`w-full text-left block ${known ? 'active:brightness-125' : ''}`}
+    >
       <div
-        className="flex items-center gap-2.5 px-2 py-2 border-b border-line last:border-0 min-h-[50px]"
-        style={fighting ? { background: alpha(act.color, 14) } : undefined}
+        className="flex items-center gap-2.5 px-2 py-2 border-b border-line last:border-0 min-h-[54px]"
+        style={fighting ? { background: alpha(arena.tint, 14) } : undefined}
       >
-        <div
-          className="w-9 h-9 grid place-items-center shrink-0 border"
-          style={{ borderColor: fighting ? act.color : 'var(--color-line)' }}
-        >
-          <BossArt
-            sprite={boss.sprite}
-            size={24}
-            style={locked ? SILHOUETTE : cleared ? { filter: 'grayscale(0.85)', opacity: 0.45 } : undefined}
-          />
-        </div>
+        <ArenaEmblem arena={arena} size={38} />
 
         <div className="min-w-0 flex-1">
-          <div
-            className="font-display text-[13px] truncate"
-            style={{ color: fighting ? act.color : cleared ? 'var(--color-ink-faint)' : 'var(--color-ink)' }}
-          >
-            {boss.name}
+          <div className="flex items-baseline gap-2">
+            <span
+              className="font-display text-[13px] truncate"
+              style={{ color: fighting ? arena.tint : cleared ? 'var(--color-ink-faint)' : 'var(--color-ink)' }}
+            >
+              {arena.name}
+            </span>
+            <span className="label text-ink-faint shrink-0">LV {from}–{to}</span>
           </div>
           {fighting ? (
             <Bar pct={c.pct} color="var(--color-danger)" height={3} className="mt-1.5" />
           ) : (
-            // A boss you already have the level for is queued, not locked, so it
-            // shows its name rather than a requirement you have already met.
-            <div className="text-[14px] text-ink-faint mt-1 truncate">
-              {locked ? `Steps out at level ${boss.level}` : boss.title}
-            </div>
+            <div className="text-[14px] text-ink-faint mt-1 truncate">{arena.theme}</div>
           )}
         </div>
 
+        <GuardPips arena={arena} className="shrink-0" />
         {cleared && <Icon name="check" size={13} color="var(--color-lime)" />}
         {fighting && (
-          <span className="text-[14px] shrink-0" style={{ color: act.color }}>
+          <span className="text-[14px] shrink-0 tabular-nums" style={{ color: arena.tint }}>
             {Math.round(c.pct * 100)}%
           </span>
         )}
-        {locked && <Icon name="lock" size={12} color="var(--color-ink-faint)" />}
-        {status === 'ahead' && <span className="font-display text-[12px] text-ink-faint shrink-0">LV {boss.level}</span>}
+        {!cleared && !fighting && <Icon name="lock" size={12} color="var(--color-ink-faint)" />}
       </div>
-    </button>
+    </Tag>
   )
 }
 
@@ -259,20 +300,13 @@ export default function CampaignSheet({ onClose }) {
   const [fighting, setFighting] = useState(null)
   const [arena, setArena] = useState(null)
   const c = campaignState(state.player, state.campaign)
-  // Everything you have put down, the one you are on, and one silhouette of
-  // what comes next — nothing further.
-  const seen = useMemo(() => {
-    const out = CAMPAIGN.filter((b) => c.defeated.includes(b.id)).map((b) => b.id)
-    if (c.current) out.push(c.current.id)
-    const rest = CAMPAIGN.filter((b) => !out.includes(b.id))
-    if (rest.length) out.push(rest[0].id)
-    return out
-  }, [c])
-  const ahead = CAMPAIGN.length - seen.length
+  // The whole ladder, every time. The bands and the bosses come off the
+  // campaign data rather than being written down twice.
+  const ladder = useMemo(() => arenaLadder(), [])
 
   return (
     <>
-      <Modal open onClose={onClose} wide title={detail ? 'BOSS' : 'YOUR STORY'}>
+      <Modal open onClose={onClose} wide title={detail ? 'BOSS' : 'THE LADDER'}>
         {detail ? (
           <Detail
             boss={detail}
@@ -304,59 +338,38 @@ export default function CampaignSheet({ onClose }) {
 
             <Panel className="p-2.5">
               <div className="flex items-center justify-between">
-                <span className="font-display text-[13px] text-ink-faint">Bosses down</span>
+                <span className="font-display text-[13px] text-ink-faint">Arenas cleared</span>
                 <span className="text-[15px] text-neon-bright">
-                  {c.cleared} / {c.total}
+                  {c.cleared} / {ARENAS.length}
                 </span>
               </div>
-              <Bar pct={c.cleared / c.total} color="var(--color-neon)" height={6} className="mt-2" />
+              <Bar pct={c.cleared / ARENAS.length} color="var(--color-neon)" height={6} className="mt-2" />
             </Panel>
 
-            <SectionTitle right={<span className="text-[14px] text-ink-faint">what you have walked</span>}>
-              The path
+            <SectionTitle right={<span className="text-[14px] text-ink-faint">Stone to Everforge</span>}>
+              The ladder
             </SectionTitle>
-            {/* Only what you have actually met: the ones you put down, the one
-                in front of you, and a silhouette of whatever is next. Listing
-                all ten from the first session gave the story away and buried
-                the only boss you can reach under nine you cannot. */}
-            {ACTS.map((act) => {
-              const bosses = CAMPAIGN.filter((b) => b.act === act.id && seen.includes(b.id))
-              if (!bosses.length) return null
-              const all = CAMPAIGN.filter((b) => b.act === act.id)
-              const done = all.filter((b) => c.defeated.includes(b.id)).length
-              return (
-                <div key={act.id}>
-                  <div className="flex items-center gap-2 px-0.5 mb-1.5">
-                    <span className="font-display text-[13px]" style={{ color: act.color }}>
-                      ACT {act.numeral}
-                    </span>
-                    <span className="font-display text-[12px] text-ink-faint truncate">{act.name}</span>
-                    <span className="ml-auto text-[14px] text-ink-faint shrink-0">
-                      {done}/{all.length}
-                    </span>
-                  </div>
-                  <Panel className="p-0.5">
-                    {bosses.map((b) => (
-                      <PathRow
-                        key={b.id}
-                        boss={b}
-                        status={statusOf(b, state.player, c)}
-                        c={c}
-                        onOpen={() => setDetail(b)}
-                      />
-                    ))}
-                  </Panel>
-                </div>
-              )
-            })}
-            {ahead > 0 && (
-              <Panel className="p-3 text-center">
-                <div className="font-display text-[13px] text-ink-faint">{ahead} MORE AHEAD</div>
-                <div className="text-[14px] text-ink-dim mt-1.5">
-                  You meet them one at a time. Put this one down and the next comes into view.
-                </div>
-              </Panel>
-            )}
+            {/* All ten rooms, from the first session. The climb is the thing
+                you are meant to be able to see the length of — what stays
+                hidden is who is standing in each one, which is the part that
+                would give the story away. */}
+            <Panel className="p-0.5">
+              {ladder.map((row) => (
+                <ArenaRow
+                  key={row.arena.n}
+                  arena={row.arena}
+                  from={row.from}
+                  to={row.to}
+                  status={statusOf(row.boss, state.player, c)}
+                  c={c}
+                  onOpen={() => setDetail(row.boss)}
+                />
+              ))}
+            </Panel>
+            <div className="text-[14px] text-ink-dim px-0.5 leading-snug">
+              Your level decides which room you are standing in. The pips are guard — how much of a swing that arena
+              turns aside when you walk into the fight. Training always lands in full.
+            </div>
 
             {/* The world raid, under the story rather than beside it. Both are
                 bosses; one is yours and one is everybody's, and that is a

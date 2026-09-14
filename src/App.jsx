@@ -6,6 +6,7 @@ import TabBar from './components/TabBar'
 import Toasts from './components/Toasts'
 import RewardModal from './components/RewardModal'
 import SessionReward from './components/SessionReward'
+import ArenaPromotion from './components/ArenaPromotion'
 import Onboarding from './components/Onboarding'
 import Icon from './components/Icon'
 import Home from './screens/Home'
@@ -104,6 +105,7 @@ function Device() {
       <UpdateBar />
       <RewardModal />
       <SessionReward />
+      {entered && <ArenaPromotion />}
       {map && <MapSheet onClose={() => setMap(false)} />}
     </div>
   )
