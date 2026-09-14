@@ -5,7 +5,7 @@ import Avatar from '../components/Avatar'
 import StreakFlame from '../components/StreakFlame'
 import Hero from './Hero'
 import { useGame } from '../game/useGame'
-import { ACTIVITIES } from '../game/config'
+import { ACTIVITIES, GAMES } from '../game/config'
 import { classById, fmt, powerScore, rankFor } from '../game/engine'
 import { WEEKS_KEPT, weekActivities, weekOf, weekSeries } from '../game/progress'
 import { pinnedEfforts } from '../game/efforts'
@@ -36,6 +36,7 @@ export default function Profile() {
   const { rank } = rankFor(power)
   const cls = classById(p.classId)
   const friends = state.friends ?? NONE
+  const plays = useMemo(() => GAMES.filter((g) => (p.games ?? NONE).includes(g.id)), [p.games])
 
   return (
     <div className="stack-in p-3 space-y-3">
@@ -67,6 +68,19 @@ export default function Profile() {
             </div>
           ))}
         </div>
+
+        {/* What they said they play. Asked at character creation, and shown
+            here because a question whose answer never appears anywhere is a
+            question that should not have been asked. */}
+        {plays.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-line">
+            {plays.map((g) => (
+              <span key={g.id} className="label px-2 py-1 rounded-full bg-panel-2 text-ink-dim">
+                {g.name}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2 mt-4">
           <Btn size="sm" variant="ghost" onClick={() => setEditing(true)}>
@@ -126,7 +140,10 @@ export default function Profile() {
 function Progress({ state }) {
   const [act, setAct] = useState(null)
   const series = useMemo(() => weekSeries(state.weeks, WEEKS_KEPT).map((w) => weekOf(w, act)), [state.weeks, act])
-  const options = useMemo(() => weekActivities(state.weeks).slice(0, 5), [state.weeks])
+  // Everything they have actually done, not a top five: the row scrolls, and
+  // cutting it at five hid whichever discipline they had least time for, which
+  // is usually the one they opened this screen to check on.
+  const options = useMemo(() => weekActivities(state.weeks, state.log), [state.weeks, state.log])
   const cur = series[series.length - 1]
   const activity = act ? ACTIVITIES.find((a) => a.id === act) : null
   // Distance for the ones measured in it, minutes for everything else — a

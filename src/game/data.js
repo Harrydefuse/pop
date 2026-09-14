@@ -2,7 +2,8 @@
 // empty RPG demo tells you nothing about whether the systems feel good.
 
 import { HAIR_BASE, SKIN_BASE, TUNIC } from './sprites'
-import { ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, SLOT_STATS, armourSet, offhandKind } from './config'
+import { ACTIVITIES, ARMOUR_SETS, DAILY_SLOTS, EQUIP_SLOTS, OFFHAND_KINDS, SLOT_STATS, armourSet, offhandKind } from './config'
+import { foldWeek, weekStart } from './progress'
 
 // ------------------------------------------------------------------- catalogues
 
@@ -210,40 +211,100 @@ export const FRESH_START = {
  */
 const WEEK_MS = 7 * 24 * 3600 * 1000
 
-function seededWeeks() {
-  // The dip at weeks 5 and 6 is deliberate. A chart where every bar is taller
-  // than the last is a chart nobody believes.
-  const shape = [126, 148, 155, 172, 40, 0, 96, 164, 178, 191, 186, 176, 214]
+/**
+ * The quarter behind the demo character, as sessions rather than as totals.
+ *
+ * These weeks used to be thirteen hand-written totals with an invented
+ * gym/run/swim split stamped on every one of them, which meant the profile's
+ * activity filter offered three disciplines whether or not anything had been
+ * done in them — the demo asserting a swim a week that never happened, and
+ * asserting it to a player whose own filter should only ever list what they
+ * did. So the weeks are folded out of sessions now, the same way a real
+ * week is, and a filtered chart shows exactly the weeks there are sessions
+ * for because there is nothing else for it to show.
+ *
+ * The dip at weeks five and six is deliberate. A chart where every bar is
+ * taller than the last is a chart nobody believes.
+ */
+const WEEKLY_SESSIONS = [4, 4, 4, 5, 1, 0, 3, 4, 5, 5, 5, 4, 5]
+
+/** What a week is made of, cycled through so no two weeks are identical and
+ *  none of them is a tidy alternation either. */
+const ROTATION = [
+  { id: 'gym', amount: 52 },
+  { id: 'run', amount: 6.4 },
+  { id: 'gym', amount: 46 },
+  { id: 'walk', amount: 38 },
+  { id: 'swim', amount: 30 },
+  { id: 'run', amount: 4.8 },
+]
+
+/**
+ * Fills each week of the quarter up to the number of sessions it should have.
+ *
+ * A top-up rather than a back-catalogue: the last few weeks already carry
+ * hand-written sessions with real splits, routes and lifts, and generating on
+ * top of those would count the same training twice. So each week is counted
+ * first and only the shortfall is made up — which also means the current week
+ * is populated whatever day it is read on, instead of the demo looking like
+ * nobody has trained since Sunday.
+ */
+function seededHistory(recent) {
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
-  return shape
-    .map((minutes, i) => {
-      const at = start.getTime() - (shape.length - 1 - i) * WEEK_MS
-      const sessions = minutes ? Math.max(1, Math.round(minutes / 42)) : 0
-      const km = Math.round(minutes * 0.09 * 10) / 10
-      // Split across the three things this character does, so the profile's
-      // per-activity filter has thirteen weeks to draw rather than one.
-      const gym = Math.round(minutes * 0.55)
-      const runKm = Math.round(km * 0.8 * 10) / 10
-      return {
-        key: new Date(at).toISOString().slice(0, 10),
+  const monday = start.getTime()
+
+  const already = new Map()
+  for (const l of recent) {
+    const w = Math.round((monday - weekStart(l.at)) / WEEK_MS)
+    if (w >= 0 && w < WEEKLY_SESSIONS.length) already.set(w, (already.get(w) ?? 0) + 1)
+  }
+
+  const out = []
+  let turn = 0
+  for (let w = 0; w < WEEKLY_SESSIONS.length; w++) {
+    const from = monday - w * WEEK_MS
+    // How much of the week has actually happened. The current one is only
+    // partly over, and a demo claiming five sessions on a Monday morning is
+    // the same lie as a chart with no dip in it — so this week fills up as
+    // the week does.
+    const span = Math.max(0, Math.min(WEEK_MS, Date.now() - from))
+    const target = w === 0 ? Math.round(WEEKLY_SESSIONS[0] * (span / WEEK_MS)) : WEEKLY_SESSIONS[w]
+    const need = target - (already.get(w) ?? 0)
+    for (let i = 0; i < need; i++) {
+      const pick = ROTATION[turn++ % ROTATION.length]
+      const act = ACTIVITIES.find((a) => a.id === pick.id)
+      // Spread across the elapsed part of the week, so the sessions list
+      // reads like a diary rather than a loop counter.
+      const at = from + Math.round(((i + 0.5) / need) * span)
+      out.push({
+        id: `seed-h${w}-${i}`,
+        activityId: act.id,
+        amount: pick.amount,
+        verified: true,
         at,
-        minutes,
-        sessions,
-        volume: Math.round(minutes * 88),
-        km,
-        xp: Math.round(minutes * 11),
-        byAct: minutes
-          ? {
-              gym: { sessions: Math.max(1, Math.round(sessions * 0.5)), minutes: gym, km: 0 },
-              run: { sessions: Math.max(1, Math.round(sessions * 0.35)), minutes: minutes - gym - 20, km: runKm },
-              swim: { sessions: Math.max(0, sessions - Math.round(sessions * 0.85)), minutes: 20, km: Math.round((km - runKm) * 10) / 10 },
-            }
-          : {},
-      }
-    })
-    .reverse()
+        xp: Math.round(act.xp * (pick.amount / act.per)),
+        source: 'tracked',
+      })
+    }
+  }
+  return out
+}
+
+/**
+ * The weeks, folded out of the sessions — the same call the app makes when you
+ * finish a real one, so the totals, the breakdown and the log cannot disagree
+ * with each other.
+ */
+function weeksFrom(log) {
+  let weeks = []
+  for (const l of [...log].sort((a, b) => a.at - b.at)) {
+    const act = ACTIVITIES.find((a) => a.id === l.activityId)
+    if (!act) continue
+    weeks = foldWeek(weeks, { act, amount: l.amount, xp: l.xp ?? 0, detail: l.detail }, l.at)
+  }
+  return weeks
 }
 
 const SEEDED_LAST_SETS = {
@@ -379,6 +440,30 @@ function seededRuns() {
  * is a switch that puts you there, and it is meant to be deleted the day the
  * game is in front of players rather than in front of us.
  */
+/** Every seeded session, newest first — the one list the demo's log, its
+ *  weekly breakdown and its best-effort board are all built from. */
+/** A walk from this morning. A 214-day streak means this character trained
+ *  today, and without it the demo reads as unbroken-but-idle — and "this
+ *  week" is empty every Monday, which is a worse first look than it deserves. */
+const SEEDED_TODAY = {
+  id: 'seed-today',
+  activityId: 'walk',
+  amount: 42,
+  verified: true,
+  // Five hours ago, unless the week is younger than that — on a Monday
+  // morning "five hours ago" is last week, which is the one case this exists
+  // to avoid.
+  at: Math.max(weekStart(Date.now()) + 3600 * 1000, Date.now() - 5 * 3600 * 1000),
+  xp: 126,
+  source: 'tracked',
+}
+
+const SEEDED_RECENT = [SEEDED_TODAY, ...seededGymLog(), ...seededRuns()]
+const SEEDED_LOG = [
+  ...SEEDED_RECENT,
+  ...seededHistory(SEEDED_RECENT),
+].sort((a, b) => b.at - a.at)
+
 export const TEST_ACCOUNT = {
   onboarded: true,
   player: {
@@ -445,8 +530,8 @@ export const TEST_ACCOUNT = {
     { id: 'r_push', name: 'Push day', lifts: ['Bench press', 'Overhead press'], at: Date.now() - 3 * 24 * 3600 * 1000 },
     { id: 'r_lower', name: 'Lower body', lifts: ['Squat', 'Deadlift'], at: Date.now() - 7 * 24 * 3600 * 1000 },
   ],
-  weeks: seededWeeks(),
-  log: [...seededGymLog(), ...seededRuns()].sort((a, b) => b.at - a.at),
+  weeks: weeksFrom(SEEDED_LOG),
+  log: SEEDED_LOG,
 }
 
 // ----------------------------------------------------------------- initial save

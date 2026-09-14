@@ -33,7 +33,7 @@ import {
   resolveActivity,
 } from '../game/engine'
 import { actById } from '../game/campaign'
-import { PILLARS, pillarBest, pillarWeek } from '../game/pillars'
+import { PILLARS, pillarBest, pillarEmpty, pillarWeek } from '../game/pillars'
 import { challengeLabel, challengeProgress } from '../game/challenge'
 import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
@@ -1196,7 +1196,7 @@ function LiftBoard({ records, log }) {
  * Each card is a button that starts a session of that kind, because the honest
  * answer to "am I improving at this" is usually "go and do one".
  */
-function Pillar({ pillar, week, best, onStart }) {
+function Pillar({ pillar, week, best, empty, onStart }) {
   const up = week.delta > 0
   const down = week.delta < 0
   const shown =
@@ -1244,7 +1244,7 @@ function Pillar({ pillar, week, best, onStart }) {
             better, and this is the line that knows the difference. */}
         <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-line">
           <Icon name={best ? 'trophy' : 'spark'} size={12} color={best ? 'var(--color-gold)' : 'var(--color-ink-faint)'} />
-          <span className="text-[14px] text-ink-dim min-w-0 flex-1 truncate">{best ? best.name : pillar.empty}</span>
+          <span className="text-[14px] text-ink-dim min-w-0 flex-1 truncate">{best ? best.name : empty}</span>
           {best && (
             <span className="text-[14px] text-gold shrink-0 tabular-nums">
               {best.value}
@@ -1257,11 +1257,18 @@ function Pillar({ pillar, week, best, onStart }) {
   )
 }
 
-function Progression({ weeks, bests, onStart }) {
+function Progression({ weeks, bests, games, onStart }) {
   return (
     <div className="space-y-2">
       {PILLARS.map((p) => (
-        <Pillar key={p.id} pillar={p} week={pillarWeek(weeks, p)} best={pillarBest(p, bests)} onStart={() => onStart(p)} />
+        <Pillar
+          key={p.id}
+          pillar={p}
+          week={pillarWeek(weeks, p)}
+          best={pillarBest(p, bests)}
+          empty={pillarEmpty(p, games)}
+          onStart={() => onStart(p)}
+        />
       ))}
     </div>
   )
@@ -2045,6 +2052,7 @@ function Pick() {
               <Progression
                 weeks={state.weeks}
                 bests={state.bests ?? {}}
+                games={p.games ?? NONE}
                 onStart={(pillar) => setStarting(pillar)}
               />
             </div>

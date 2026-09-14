@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Btn } from './ui'
+import { Bar, Btn, Panel } from './ui'
 import Icon from './Icon'
 import { HeroView, PetView } from './Sprites'
 import PixelSprite from './PixelSprite'
 import TitleRoom from './TitleRoom'
 import { useGame } from '../game/useGame'
 import { AVATAR_BODIES, AVATAR_HAIR, AVATAR_SKINS, TITLE_SWORD, TUNIC } from '../game/sprites'
-import { CLASSES } from '../game/config'
+import { CLASSES, GAMES, playsAim } from '../game/config'
 import { TRACKED } from '../game/session'
 
 // The title card's own furniture. It is deliberately not the app's button and
@@ -20,6 +20,22 @@ const BOARD = {
   backgroundColor: '#2a1810',
   backgroundImage: 'linear-gradient(180deg, #3d2718 0%, #2a1810 60%, #1e100a 100%)',
   boxShadow: '0 0 0 3px #140a06, 0 0 0 6px #a97c2e, 0 0 0 9px #140a06, 0 9px 0 rgba(10,18,32,0.3)',
+}
+
+/**
+ * The ground this screen stands on.
+ *
+ * `app-bg` alone is the flat void the app uses behind its cards, and a screen
+ * that is nothing but cards on void reads as a settings page. The wash is the
+ * same radial the arena and the character stage use, in the app's own neon —
+ * enough colour that signing up looks like the game rather than the form in
+ * front of it.
+ */
+const WASH = {
+  backgroundImage:
+    'radial-gradient(120% 55% at 50% 0%, color-mix(in srgb, var(--color-neon) 12%, transparent), transparent 70%)',
+  backgroundRepeat: 'no-repeat',
+  backgroundAttachment: 'local',
 }
 
 const OUTLINE = (c) =>
@@ -221,20 +237,28 @@ function Orb({ size = 26, thinking }) {
   )
 }
 
-/** The guide's line. One phrase in it is lit, because that is the question. */
+/**
+ * The guide's line, on the app's own furniture.
+ *
+ * This screen used to be flat type on a flat background — clean, and nothing
+ * like the app behind it, so signing up felt like filling in a form on a
+ * different website before the game would let you in. It is a Panel with a
+ * neon edge now, which is the same card every screen in the app is built out
+ * of, so the first thing a person sees is the thing they are about to use.
+ */
 function Said({ ack, ask, mark }) {
   const [before, after] = mark && ask.includes(mark) ? ask.split(mark) : [ask, null]
   return (
     <div className="ask-in flex items-start gap-2.5">
       <Orb />
-      <div className="min-w-0 flex-1 pt-0.5">
-        {ack && <p className="text-[16px] text-ink-dim leading-relaxed">{ack}</p>}
-        <p className={`text-[19px] text-ink leading-snug font-display ${ack ? 'mt-3.5' : ''}`}>
+      <Panel accent="var(--color-neon)" className="min-w-0 flex-1 px-3.5 pt-3.5 pb-3">
+        {ack && <p className="text-[15px] text-ink-dim leading-relaxed">{ack}</p>}
+        <p className={`text-[19px] text-ink leading-snug font-display ${ack ? 'mt-3' : ''}`}>
           {before}
           {after !== null && <span className="text-neon">{mark}</span>}
           {after}
         </p>
-      </div>
+      </Panel>
     </div>
   )
 }
@@ -244,8 +268,11 @@ function Replied({ children, tone }) {
   return (
     <div className="ask-done flex justify-end">
       <span
-        className="max-w-[85%] px-3.5 py-2.5 rounded-full text-[15px] text-ink text-right"
-        style={{ background: tone ? `color-mix(in srgb, ${tone} 20%, var(--color-panel-2))` : 'var(--color-panel-2)' }}
+        className="raise max-w-[85%] px-3.5 py-2.5 rounded-full text-[15px] text-ink text-right border border-line"
+        style={{
+          background: tone ? `color-mix(in srgb, ${tone} 18%, var(--color-panel))` : 'var(--color-panel)',
+          borderColor: tone ? `color-mix(in srgb, ${tone} 45%, transparent)` : 'var(--color-line)',
+        }}
       >
         {children}
       </span>
@@ -258,10 +285,10 @@ function Choice({ children, onClick, tone, sub }) {
   return (
     <button
       onClick={onClick}
-      className="ask-in block ml-auto max-w-[88%] text-right px-4 min-h-[48px] py-2.5 rounded-full transition-colors active:brightness-125"
+      className="ask-in raise block ml-auto max-w-[88%] text-right px-4 min-h-[48px] py-2.5 rounded-full border transition-colors active:brightness-125"
       style={{
-        background: tone ? `color-mix(in srgb, ${tone} 16%, var(--color-panel-2))` : 'var(--color-panel-2)',
-        boxShadow: tone ? `inset 0 0 0 1px color-mix(in srgb, ${tone} 45%, transparent)` : undefined,
+        background: tone ? `color-mix(in srgb, ${tone} 14%, var(--color-panel))` : 'var(--color-panel)',
+        borderColor: tone ? `color-mix(in srgb, ${tone} 50%, transparent)` : 'var(--color-line)',
       }}
     >
       <span className="block font-display text-[15px] text-ink">{children}</span>
@@ -281,10 +308,11 @@ function Chips({ value, onToggle }) {
             key={a.id}
             onClick={() => onToggle(a.id)}
             aria-pressed={on}
-            className="ask-in flex items-center gap-2 min-h-[44px] px-3.5 rounded-full transition-colors active:brightness-125"
+            className="ask-in raise flex items-center gap-2 min-h-[44px] px-3.5 rounded-full border transition-colors active:brightness-125"
             style={{
               color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
-              background: on ? 'var(--color-neon)' : 'var(--color-panel-2)',
+              background: on ? 'var(--color-neon)' : 'var(--color-panel)',
+              borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
             }}
           >
             <Icon name={a.icon} size={15} color="currentColor" />
@@ -296,7 +324,33 @@ function Chips({ value, onToggle }) {
   )
 }
 
-/** Every rarity gets a turn on the wall, best kept for the top rack. */
+/** What they play. Same chips, no icons — twenty game names with twenty
+ *  little glyphs beside them is a wall rather than a list. */
+function GameChips({ value, onToggle }) {
+  return (
+    <div className="flex flex-wrap justify-end gap-2">
+      {GAMES.map((g) => {
+        const on = value.includes(g.id)
+        return (
+          <button
+            key={g.id}
+            onClick={() => onToggle(g.id)}
+            aria-pressed={on}
+            className="ask-in raise min-h-[44px] px-3.5 rounded-full border transition-colors active:brightness-125"
+            style={{
+              color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
+              background: on ? 'var(--color-neon)' : 'var(--color-panel)',
+              borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
+            }}
+          >
+            <span className="font-display text-[13px]">{g.name.toUpperCase()}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function Onboarding({ onContinue }) {
   const { state, onboard, testAccount } = useGame()
   const has = state.onboarded
@@ -311,6 +365,7 @@ export default function Onboarding({ onContinue }) {
     endRef.current.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'end' })
   }, [at, thinking, step])
   const [goalId, setGoalId] = useState(null)
+  const [plays, setPlays] = useState(state.links?.games ?? [])
   const [doing, setDoing] = useState([])
   const [days, setDays] = useState(4)
   // The test account used to skip character creation entirely, which meant
@@ -422,6 +477,17 @@ export default function Onboarding({ onContinue }) {
     },
     {
       ack: 'Noted.',
+      ask: 'What do you play?',
+      mark: 'What do you play',
+      said: () => GAMES.filter((g) => plays.includes(g.id)).map((g) => g.name).join(' · '),
+    },
+    {
+      // The one reply that earns its place: it tells an FPS player that the
+      // thing they already do every night is trainable here, which is the
+      // whole pitch in one line.
+      ack: playsAim(plays)
+        ? 'Then aim training counts here — score and accuracy, kept like any other personal best.'
+        : 'Saved.',
       ask: 'What do you want out of this?',
       mark: 'want out of this',
       said: () => goal?.title ?? '',
@@ -476,6 +542,19 @@ export default function Onboarding({ onContinue }) {
     }
     if (at === 1) {
       return (
+        <div className="ask-in flex flex-col items-end gap-2.5">
+          <GameChips
+            value={plays}
+            onToggle={(id) => setPlays((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]))}
+          />
+          <Choice onClick={() => answer()} tone={plays.length ? 'var(--color-neon)' : undefined}>
+            {plays.length ? 'That is what I play' : 'I will skip this'}
+          </Choice>
+        </div>
+      )
+    }
+    if (at === 2) {
+      return (
         <div className="flex flex-col items-end gap-2">
           {GOALS.map((g) => {
             const cls = CLASSES.find((c) => c.id === g.classId)
@@ -501,7 +580,7 @@ export default function Onboarding({ onContinue }) {
         </div>
       )
     }
-    if (at === 2) {
+    if (at === 3) {
       return (
         <div className="ask-in flex flex-col items-end gap-2.5">
           <Chips
@@ -541,13 +620,13 @@ export default function Onboarding({ onContinue }) {
   // want out of this" and "what will you actually do".
   if (step === 2) {
     return (
-      <div className="absolute inset-0 z-50 bg-void overflow-y-auto scroll-thin">
+      <div className="absolute inset-0 z-50 app-bg overflow-y-auto scroll-thin" style={WASH}>
         <div className="min-h-full flex flex-col p-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setStep(1)}
               aria-label="Back"
-              className="grid place-items-center w-11 h-11 rounded-full bg-panel-2 active:brightness-125"
+              className="grid place-items-center w-11 h-11 rounded-full bg-panel border border-line raise active:brightness-125"
             >
               <Icon name="chevron" size={14} color="var(--color-ink-dim)" className="rotate-180" />
             </button>
@@ -609,7 +688,7 @@ export default function Onboarding({ onContinue }) {
                   handle: handle.trim() || who.toLowerCase().replace(/[^a-z0-9]/g, '') || 'newchallenger',
                   classId: goal?.classId ?? 'ironstride',
                   avatar: { seed: 0, body, skin, hair, shirt: TUNIC },
-                  games: [],
+                  games: plays,
                   health: [],
                   goalDays: days,
                   picks: doing,
@@ -627,19 +706,30 @@ export default function Onboarding({ onContinue }) {
   }
 
   return (
-    <div className="absolute inset-0 z-50 bg-void overflow-y-auto scroll-thin">
+    <div className="absolute inset-0 z-50 app-bg overflow-y-auto scroll-thin" style={WASH}>
       <div className="min-h-full flex flex-col p-4">
+        {/* The same strip the app wears at the top of every screen: a bordered
+            header and a neon bar underneath it. The bar is the app's own
+            idiom — it is how XP, a boss and the week's goal all read — so the
+            progress through five questions is shown the way progress is shown
+            everywhere else rather than as "2 / 5". */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => (at === 0 ? setStep(0) : setAt(at - 1))}
             aria-label="Back"
-            className="grid place-items-center w-11 h-11 rounded-full bg-panel-2 active:brightness-125"
+            className="grid place-items-center w-11 h-11 rounded-full bg-panel border border-line raise active:brightness-125"
           >
             <Icon name="chevron" size={14} color="var(--color-ink-dim)" className="rotate-180" />
           </button>
           <span className="font-display text-[13px] text-ink-faint tracking-widest">NEW CHARACTER</span>
           <span className="ml-auto label text-ink-faint">{Math.min(at + 1, TURNS.length)} / {TURNS.length}</span>
         </div>
+        <Bar
+          pct={Math.min(1, (done ? TURNS.length : at) / TURNS.length)}
+          height={6}
+          shine
+          className="mt-3"
+        />
 
         {testing && (
           <div className="font-display text-[12px] text-gold mt-3">

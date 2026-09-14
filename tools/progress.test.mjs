@@ -16,7 +16,7 @@ const server = await createServer({
   appType: 'custom',
   logLevel: 'error',
 })
-const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, weekStart, topSet, foldLastSets, lastPlan } =
+const { e1rm, newRecords, foldRecords, foldWeek, weekSeries, weekOverWeek, weekKey, weekStart, weekActivities, topSet, foldLastSets, lastPlan } =
   await server.ssrLoadModule('/src/game/progress.js')
 // The real activity, not a stand-in: minutes are worked out from the activity's
 // own minPerUnit, so a hand-made stub without one quietly folds zero minutes
@@ -32,7 +32,8 @@ const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaig
 const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
-const { PILLARS, pillarOf, pillarWeek, pillarBest } = await server.ssrLoadModule('/src/game/pillars.js')
+const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
+const { GAMES, playsAim } = await server.ssrLoadModule('/src/game/config.js')
 const { petSprite, PET_SPRITES } = await server.ssrLoadModule('/src/game/sprites.js')
 const { petStage } = await server.ssrLoadModule('/src/game/engine.js')
 const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
@@ -381,6 +382,13 @@ is('a week with no measurable distance falls back to minutes',
   pillarWeek(poolOnly, PILLARS.find((p) => p.id === 'out'), NOW).unit, 'min')
 is('and reports the minutes', pillarWeek(poolOnly, PILLARS.find((p) => p.id === 'out'), NOW).value, 90)
 
+// The case that read "0.0 km, 1 session": a walk logged by the clock after a
+// week that had runs in it. The unit follows this week, not last.
+const walkedOnly = [wk(NOW, { walk: { sessions: 1, minutes: 42, km: 0 } }), wk(NOW - WEEK, { run: { sessions: 2, minutes: 60, km: 10 } })]
+const walked = pillarWeek(walkedOnly, PILLARS.find((p) => p.id === 'out'), NOW)
+is('a week of walks after a week of runs is not headed "0 km"', [walked.unit, walked.value], ['min', 42])
+is('and the comparison is like for like', walked.delta, 42 - 60)
+
 // The freshest proof, not the biggest: a 5k from March answers "am I getting
 // better" worse than a bench single from Tuesday.
 const pillarBoard = {
@@ -430,6 +438,34 @@ is('ascended uses its own', petSprite('frost', 4), ascended)
 is('a later stage may be drawn on a bigger canvas', [petSprite('frost', 4).w, petSprite('frost', 4).h], [4, 4])
 PET_SPRITES.frost = saved
 is('and the fixture is put back', petSprite('frost', 4), saved)
+
+// The filter on the profile offers what this person has done, not a fixed
+// set. It used to read the folded weeks alone, which miss anything logged
+// today, anything older than the thirteen kept, and anything from a week
+// folded before the breakdown existed.
+console.log('\nprogress offers what you have actually done')
+const weekOfRun = [wk(NOW, { run: { sessions: 2, minutes: 60, km: 10 } })]
+is('an activity in the weeks is offered', weekActivities(weekOfRun, []), ['run'])
+is('an activity logged today is offered even before its week is folded',
+  weekActivities([], [{ id: 'a', activityId: 'gym', at: NOW }]), ['gym'])
+is('both sources together, most-used first',
+  weekActivities(weekOfRun, [{ id: 'a', activityId: 'gym', at: NOW }]), ['run', 'gym'])
+is('nothing done, nothing offered', weekActivities([], []), [])
+is('and an activity nobody has ever done is never offered',
+  weekActivities(weekOfRun, []).includes('swim'), false)
+
+// What they play decides whether the app suggests aim training at all.
+console.log('\nwhat you play changes what the app suggests')
+const gaming = PILLARS.find((p) => p.id === 'gaming')
+is('an FPS player is told aim training pays off in the game they named',
+  pillarEmpty(gaming, ['valorant']), 'Aim training pays off in Valorant.')
+is('somebody who plays neither gets the plain line', pillarEmpty(gaming, ['minecraft']),
+  'Aim training and VOD review both count.')
+is('and somebody who skipped the question gets the default', pillarEmpty(gaming, []), gaming.empty)
+is('the other pillars ignore it', pillarEmpty(PILLARS[0], ['valorant']), PILLARS[0].empty)
+is('playsAim reads the catalogue', [playsAim(['cs']), playsAim(['minecraft']), playsAim([])], [true, false, false])
+is('every game has a name and a kind',
+  GAMES.every((g) => g.id && g.name && g.kind), true)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

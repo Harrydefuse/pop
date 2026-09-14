@@ -202,13 +202,30 @@ export function weekOf(week, activityId = null) {
   return { ...week, ...(slot ?? { sessions: 0, minutes: 0, km: 0 }), volume: 0, xp: 0 }
 }
 
-/** Which activities this quarter actually contains, most-used first. */
-export function weekActivities(weeks = []) {
+/**
+ * Which activities this person has actually done, most-used first.
+ *
+ * Reads the log as well as the folded weeks. The weeks alone were not enough:
+ * a week folded before the per-activity breakdown existed has none, a week
+ * older than the thirteen kept has fallen off the end, and a session logged
+ * today would not appear until its week was folded. Between them the two
+ * sources cover every case, and a filter offering something you have never
+ * done — or missing something you did this morning — is the bug this fixes.
+ */
+export function weekActivities(weeks = [], log = []) {
   const count = new Map()
+  const add = (id, n) => count.set(id, (count.get(id) ?? 0) + n)
   for (const w of weeks) {
-    for (const [id, slot] of Object.entries(w.byAct ?? {})) {
-      count.set(id, (count.get(id) ?? 0) + (slot.sessions ?? 0))
-    }
+    for (const [id, slot] of Object.entries(w.byAct ?? {})) add(id, slot.sessions ?? 0)
+  }
+  // The log is the shorter list and the more recent one, so it only ever adds
+  // to the tally — an activity already counted from its week is not doubled
+  // in a way that changes the order meaningfully.
+  const seen = new Set()
+  for (const l of log) {
+    if (!l?.activityId || seen.has(l.id)) continue
+    seen.add(l.id)
+    if (!count.has(l.activityId)) add(l.activityId, 0)
   }
   return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
 }

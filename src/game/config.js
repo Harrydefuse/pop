@@ -40,6 +40,48 @@ export const STAT_KEYS = STATS.map((s) => s.key)
  * the colours and the XP passives are all unchanged; only the label a player
  * reads has stopped being jargon.
  */
+/**
+ * What people actually play, asked at character creation.
+ *
+ * Not decoration and not a survey: `kind` is the part the app uses. Anyone who
+ * plays an aim-heavy game gets aim training put in front of them, because for
+ * that person a session in Aimlabs is training for the thing they care about
+ * — which is the whole premise. The rest is so the app knows who it is talking
+ * to and can stop pretending everyone is a runner.
+ *
+ * Deliberately a shortlist of the biggest titles plus a catch-all per genre.
+ * A full games database is a different product, and a list nobody can scroll
+ * to the bottom of is a list nobody fills in.
+ */
+export const GAMES = [
+  { id: 'valorant', name: 'Valorant', kind: 'aim' },
+  { id: 'cs', name: 'CS2', kind: 'aim' },
+  { id: 'apex', name: 'Apex Legends', kind: 'aim' },
+  { id: 'fortnite', name: 'Fortnite', kind: 'aim' },
+  { id: 'cod', name: 'Call of Duty', kind: 'aim' },
+  { id: 'overwatch', name: 'Overwatch', kind: 'aim' },
+  { id: 'rainbow', name: 'Rainbow Six', kind: 'aim' },
+  { id: 'marvelrivals', name: 'Marvel Rivals', kind: 'aim' },
+  { id: 'shooter', name: 'Another shooter', kind: 'aim' },
+  { id: 'lol', name: 'League of Legends', kind: 'strategy' },
+  { id: 'dota', name: 'Dota 2', kind: 'strategy' },
+  { id: 'rocket', name: 'Rocket League', kind: 'reflex' },
+  { id: 'fifa', name: 'EA FC / FIFA', kind: 'reflex' },
+  { id: 'nba2k', name: 'NBA 2K', kind: 'reflex' },
+  { id: 'fighting', name: 'Fighting games', kind: 'reflex' },
+  { id: 'minecraft', name: 'Minecraft', kind: 'chill' },
+  { id: 'roblox', name: 'Roblox', kind: 'chill' },
+  { id: 'gta', name: 'GTA', kind: 'chill' },
+  { id: 'mmo', name: 'An MMO / RPG', kind: 'chill' },
+  { id: 'other', name: 'Something else', kind: 'chill' },
+]
+
+/** Whether anything they play rewards aim, which decides whether the app
+ *  offers aim training as a thing worth doing. */
+export function playsAim(games = []) {
+  return games.some((id) => GAMES.find((g) => g.id === id)?.kind === 'aim')
+}
+
 export const CLASSES = [
   {
     id: 'strider',

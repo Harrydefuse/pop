@@ -14,6 +14,7 @@
  * proof you are actually improving rather than merely turning up.
  */
 
+import { GAMES } from './config'
 import { weekSeries } from './progress'
 import { readEffort } from './efforts'
 
@@ -52,6 +53,22 @@ export const PILLARS = [
     empty: 'Log an aim session with its score.',
   },
 ]
+
+/**
+ * The empty line under a pillar, which for gaming depends on what they play.
+ *
+ * Telling somebody who only plays Minecraft to go and train their aim is the
+ * app not listening. Telling a Valorant player the same thing is the whole
+ * pitch, so the games question they answered at character creation decides
+ * which of the two they get.
+ */
+export function pillarEmpty(pillar, games = []) {
+  if (pillar.id !== 'gaming') return pillar.empty
+  const named = GAMES.filter((g) => games.includes(g.id) && g.kind === 'aim')
+  if (named.length) return `Aim training pays off in ${named[0].name}.`
+  if (games.length) return 'Aim training and VOD review both count.'
+  return pillar.empty
+}
 
 /** Which pillar an activity belongs to. Sleep belongs to none — it is
  *  recovery, it pays XP, and it is not a thing you are getting better at. */
@@ -92,9 +109,11 @@ export function pillarWeek(weeks = [], pillar, now = Date.now()) {
   }
   const a = sum(cur)
   const b = sum(prev)
-  // A week of swimming and five-a-side covers no measurable ground, and
-  // reporting "0 km" for it would be the app calling a good week nothing.
-  const field = pillar.unit === 'km' && (a.km > 0 || b.km > 0) ? 'km' : 'minutes'
+  // Measured on what THIS week has. A week of swimming, five-a-side or walks
+  // logged by the clock covers no ground the app can see, and heading it
+  // "0.0 km · 1 session" is the app calling a session nothing. Both sides of
+  // the comparison switch together, so the delta is always like for like.
+  const field = pillar.unit === 'km' && a.km > 0 ? 'km' : 'minutes'
   return {
     sessions: a.sessions,
     minutes: a.minutes,
