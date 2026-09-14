@@ -399,8 +399,15 @@ export default function Onboarding({ onContinue }) {
   const goalClass = goal && CLASSES.find((c) => c.id === goal.classId)
   const who = name.trim().toUpperCase()
 
-  // Five turns. Each carries the question, the phrase in it worth lighting, and
-  // what the guide says back once you have answered.
+  // Four questions. Each carries the question, the phrase in it worth
+  // lighting, and what the guide says back once you have answered.
+  //
+  // Picking a face used to be one of them, and it was the odd one out: the
+  // other four are things the app needs to know to work out what your week is
+  // measured against, and that one is you playing dress-up. Sitting in the
+  // middle of a questionnaire it got two swatches and a 140px preview, which
+  // is a poor look at the character you are about to spend a season with. It
+  // is its own screen now, after the questions are done.
   //
   // The replies say what the answer will be used for and stop. An earlier pass
   // had them making small talk — "good to meet you", "that will do nicely" —
@@ -414,13 +421,7 @@ export default function Onboarding({ onContinue }) {
       said: () => who,
     },
     {
-      ack: 'Got it.',
-      ask: 'What do you look like in there?',
-      mark: 'look like',
-      said: () => AVATAR_BODIES.find((b) => b.id === body)?.label ?? body,
-    },
-    {
-      ack: 'Saved. You can change any of that later.',
+      ack: 'Noted.',
       ask: 'What do you want out of this?',
       mark: 'want out of this',
       said: () => goal?.title ?? '',
@@ -475,33 +476,6 @@ export default function Onboarding({ onContinue }) {
     }
     if (at === 1) {
       return (
-        <div className="ask-in ml-auto max-w-[92%] p-3 rounded-[var(--radius-lg)] bg-panel-2">
-          <div className="flex justify-center">
-            <HeroView av={preview} height={140} />
-          </div>
-          <div className="mt-3">
-            <Pick value={body} onChange={setBody} options={AVATAR_BODIES} />
-          </div>
-          <div className="label text-ink-faint mt-3.5 mb-2">SKIN</div>
-          <div className="flex gap-2 flex-wrap">
-            {AVATAR_SKINS.map((c) => (
-              <Swatch key={c} color={c} selected={skin === c} onClick={() => setSkin(c)} label={`Skin ${c}`} />
-            ))}
-          </div>
-          <div className="label text-ink-faint mt-3.5 mb-2">HAIR</div>
-          <div className="flex gap-2 flex-wrap">
-            {AVATAR_HAIR.map((c) => (
-              <Swatch key={c} color={c} selected={hair === c} onClick={() => setHair(c)} label={`Hair ${c}`} />
-            ))}
-          </div>
-          <Btn full className="mt-3.5" onClick={() => answer()}>
-            That&apos;s them
-          </Btn>
-        </div>
-      )
-    }
-    if (at === 2) {
-      return (
         <div className="flex flex-col items-end gap-2">
           {GOALS.map((g) => {
             const cls = CLASSES.find((c) => c.id === g.classId)
@@ -527,7 +501,7 @@ export default function Onboarding({ onContinue }) {
         </div>
       )
     }
-    if (at === 3) {
+    if (at === 2) {
       return (
         <div className="ask-in flex flex-col items-end gap-2.5">
           <Chips
@@ -554,6 +528,100 @@ export default function Onboarding({ onContinue }) {
             {d === 6 ? '6 or more days a week' : `${d} days a week`}
           </Choice>
         ))}
+      </div>
+    )
+  }
+
+  // ---------------------------------------------------------- the character
+  //
+  // Its own screen, after the questions, because it is not one of them. The
+  // other four decide what your week is measured against; this one is the
+  // first thing you will look at every time you open the app, and it was
+  // getting a 140px preview squeezed into a chat bubble between "what do you
+  // want out of this" and "what will you actually do".
+  if (step === 2) {
+    return (
+      <div className="absolute inset-0 z-50 bg-void overflow-y-auto scroll-thin">
+        <div className="min-h-full flex flex-col p-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setStep(1)}
+              aria-label="Back"
+              className="grid place-items-center w-11 h-11 rounded-full bg-panel-2 active:brightness-125"
+            >
+              <Icon name="chevron" size={14} color="var(--color-ink-dim)" className="rotate-180" />
+            </button>
+            <span className="font-display text-[13px] text-ink-faint tracking-widest">{who || 'YOUR CHARACTER'}</span>
+          </div>
+
+          {testing && (
+            <div className="font-display text-[12px] text-gold mt-3">
+              TEST ACCOUNT · LEVEL 100 AND EVERY DROP, AS WHOEVER YOU BUILD
+            </div>
+          )}
+
+          {/* A stage rather than a thumbnail: a floor, a wash of light and the
+              character at the size they are actually drawn at. Changing a
+              swatch should feel like changing a character, not editing a
+              field. */}
+          <div
+            className="stack-in relative mt-4 flex items-end justify-center pt-5 pb-2 rounded-[var(--radius-lg)] bg-panel"
+            style={{ backgroundImage: 'radial-gradient(120% 80% at 50% 100%, rgba(109,40,217,0.14), transparent 70%)' }}
+          >
+            <HeroView av={preview} height={200} />
+            <span
+              aria-hidden="true"
+              className="absolute bottom-0 left-8 right-8 h-[2px] rounded-full"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(109,40,217,0.5), transparent)' }}
+            />
+          </div>
+
+          <div className="mt-5">
+            <Pick label="BUILD" value={body} onChange={setBody} options={AVATAR_BODIES} />
+          </div>
+
+          <div className="label text-ink-faint mt-5 mb-2">SKIN</div>
+          <div className="flex gap-2 flex-wrap">
+            {AVATAR_SKINS.map((c) => (
+              <Swatch key={c} color={c} selected={skin === c} onClick={() => setSkin(c)} label={`Skin ${c}`} />
+            ))}
+          </div>
+
+          <div className="label text-ink-faint mt-5 mb-2">HAIR</div>
+          <div className="flex gap-2 flex-wrap">
+            {AVATAR_HAIR.map((c) => (
+              <Swatch key={c} color={c} selected={hair === c} onClick={() => setHair(c)} label={`Hair ${c}`} />
+            ))}
+          </div>
+
+          <p className="text-[14px] text-ink-faint mt-5 leading-snug">
+            None of this is locked in — you can change the lot on the YOU screen whenever you like.
+          </p>
+
+          <div className="mt-auto pt-6">
+            <Btn
+              full
+              size="lg"
+              variant="go"
+              onClick={() => {
+                onboard({
+                  name: who,
+                  handle: handle.trim() || who.toLowerCase().replace(/[^a-z0-9]/g, '') || 'newchallenger',
+                  classId: goal?.classId ?? 'ironstride',
+                  avatar: { seed: 0, body, skin, hair, shirt: TUNIC },
+                  games: [],
+                  health: [],
+                  goalDays: days,
+                  picks: doing,
+                })
+                if (testing) testAccount()
+                onContinue?.()
+              }}
+            >
+              {testing ? 'START MAXED' : `ENTER AS ${who}`}
+            </Btn>
+          </div>
+        </div>
       </div>
     )
   }
@@ -592,10 +660,7 @@ export default function Onboarding({ onContinue }) {
           {done && (
             <div className="space-y-3">
               <Said ask={endAck} />
-              <div className="ask-in flex items-center gap-2.5 pt-2">
-                <Orb size={20} thinking />
-                <span className="text-[15px] text-ink-dim">Building your character…</span>
-              </div>
+              <Said ask="One thing left — what do they look like?" mark="what do they look like" />
             </div>
           )}
 
@@ -617,26 +682,8 @@ export default function Onboarding({ onContinue }) {
 
         {done && (
           <div className="mt-auto pt-6">
-            <Btn
-              full
-              size="lg"
-              variant="go"
-              onClick={() => {
-                onboard({
-                  name: who,
-                  handle: handle.trim() || who.toLowerCase().replace(/[^a-z0-9]/g, '') || 'newchallenger',
-                  classId: goal?.classId ?? 'ironstride',
-                  avatar: { seed: 0, body, skin, hair, shirt: TUNIC },
-                  games: [],
-                  health: [],
-                  goalDays: days,
-                  picks: doing,
-                })
-                if (testing) testAccount()
-                onContinue?.()
-              }}
-            >
-              {testing ? 'START MAXED' : `ENTER AS ${who}`}
+            <Btn full size="lg" variant="go" onClick={() => setStep(2)}>
+              BUILD {who}
             </Btn>
           </div>
         )}
