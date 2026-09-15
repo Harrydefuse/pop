@@ -57,6 +57,14 @@ export const PET_CATALOG = [
     blurb: 'Hatched by a fire and never left. Fits in a rucksack, thinks it does not.',
   },
   {
+    id: 'kookie',
+    name: 'KOOKIE',
+    rarity: 'epic',
+    stat: 'STR',
+    species: 'Goblin brute',
+    blurb: 'Started small and angry. Still angry. No longer small.',
+  },
+  {
     id: 'tuskling',
     name: 'TUSKLING',
     rarity: 'legendary',
