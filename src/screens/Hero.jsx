@@ -6,7 +6,7 @@ import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
 import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, WEAPON_GLOW, WEAPON_INK, WEAPON_KINDS, isWeapon, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
-import { classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor, wornGear } from '../game/engine'
+import { PET_STAGES, classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor, wornGear } from '../game/engine'
 import { pinnedEfforts } from '../game/efforts'
 import { alpha } from '../game/color'
 
@@ -256,7 +256,7 @@ function PetSheet({ pet, onClose }) {
       <div className="mt-3.5 border border-line bg-panel-2 p-3">
         <div className="font-display text-[12px] text-ink-faint mb-2.5">Evolution</div>
         <div className="flex items-end justify-between gap-1">
-          {[1, 25, 50, 75, 100].map((lv) => {
+          {PET_STAGES.map(({ at: lv, name }) => {
             const reached = pet.level >= lv
             return (
               <div key={lv} className="text-center flex-1 min-w-0" style={{ opacity: reached ? 1 : 0.3 }}>
@@ -266,6 +266,17 @@ function PetSheet({ pet, onClose }) {
                 <div className="h-1 mt-1" style={{ background: reached ? color : 'var(--color-panel-2)' }} />
                 <div className="font-display text-[11px] mt-1" style={{ color: reached ? color : 'var(--color-ink-faint)' }}>
                   {lv}
+                </div>
+                {/* The rung is named as well as numbered now that there are
+                    four of them and each one is a different drawing. Its own
+                    size rather than the shared label one: four names across a
+                    360px sheet is 78px a column, and HATCHLING does not fit in
+                    that at 11.5px. */}
+                <div
+                  className="font-display text-ink-faint mt-0.5 truncate"
+                  style={{ fontSize: 9.5, letterSpacing: '0.04em' }}
+                >
+                  {name}
                 </div>
               </div>
             )

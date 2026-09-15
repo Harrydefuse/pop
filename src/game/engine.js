@@ -398,13 +398,29 @@ export function grantPetXp(pet, playerLevel, amount) {
   return { ...pet, level, xp, leveled }
 }
 
-/** Evolution stages mirror the collection art: 1 / 25 / 50 / 75 / 100. */
+/**
+ * Four forms, not five.
+ *
+ * There were five stages and the art was drawn for four, and the art wins —
+ * five thresholds against four drawings meant two consecutive levels showing
+ * the same animal under different names, which is worse than having one fewer
+ * stage. So ADULT is gone and the remaining three step-ups are spread wider.
+ *
+ * The last one lands at 85 rather than 100. A final form you only meet on the
+ * last level of the game is a reward almost nobody sees; at 85 it arrives
+ * around the same time as the last arena and you get to keep it for a while.
+ */
+export const PET_STAGES = [
+  { at: 1, name: 'HATCHLING', scale: 0.9, aura: false },
+  { at: 25, name: 'JUVENILE', scale: 1.05, aura: false },
+  { at: 55, name: 'PRIME', scale: 1.18, aura: false },
+  { at: 85, name: 'ASCENDED', scale: 1.32, aura: true },
+]
+
 export function petStage(level) {
-  if (level >= 100) return { idx: 4, name: 'ASCENDED', scale: 1.32, aura: true }
-  if (level >= 75) return { idx: 3, name: 'PRIME', scale: 1.2, aura: false }
-  if (level >= 50) return { idx: 2, name: 'ADULT', scale: 1.1, aura: false }
-  if (level >= 25) return { idx: 1, name: 'JUVENILE', scale: 1.02, aura: false }
-  return { idx: 0, name: 'HATCHLING', scale: 0.9, aura: false }
+  let idx = 0
+  for (let i = 0; i < PET_STAGES.length; i++) if (level >= PET_STAGES[i].at) idx = i
+  return { idx, ...PET_STAGES[idx] }
 }
 
 /** How many minutes of effort an amount of an activity represents. */

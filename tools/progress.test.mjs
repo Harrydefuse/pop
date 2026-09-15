@@ -36,7 +36,7 @@ const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js
 const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
 const { GAMES, playsAim } = await server.ssrLoadModule('/src/game/config.js')
 const { petSprite, PET_SPRITES } = await server.ssrLoadModule('/src/game/sprites.js')
-const { petStage } = await server.ssrLoadModule('/src/game/engine.js')
+const { petStage, PET_STAGES } = await server.ssrLoadModule('/src/game/engine.js')
 const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
@@ -470,28 +470,45 @@ is('and it reads out as a score', readEffort('aim:score', { value: 84210 }).name
 
 // A pet can carry a drawing per growth stage. Every slot is optional and
 // falls back down the stages, so adding one grid has to be a complete change
-// rather than a thing you can only do five at a time.
+// rather than a thing you can only do four at a time.
 console.log('\na pet can change shape as it levels')
 const at = (lv) => petStage(lv).idx
-is('the stages are the five the pet screen names',
-  [1, 25, 50, 75, 100].map(at), [0, 1, 2, 3, 4])
+is('there are four stages, not five', PET_STAGES.length, 4)
+is('and the thresholds are the ones the pet screen draws',
+  PET_STAGES.map((s) => s.at).map(at), [0, 1, 2, 3])
+is('a level below the first threshold is still the first stage', at(0), 0)
+is('and the last one holds all the way to the cap', [at(85), at(100)], [3, 3])
+is('the final form arrives before the last level, not on it',
+  PET_STAGES[3].at < MAX_LEVEL, true)
+is('each stage is drawn bigger than the one before',
+  PET_STAGES.every((s, i) => i === 0 || s.scale > PET_STAGES[i - 1].scale), true)
+
+// pup has no growth series, which is the case the fallback exists for.
 is('a pet with no stage art uses its one drawing at every level',
-  [0, 1, 2, 3, 4].every((i) => petSprite('frost', i) === PET_SPRITES.frost), true)
-is('an unknown pet falls back rather than crashing', petSprite('nonsense', 4), PET_SPRITES.pup)
+  [0, 1, 2, 3].every((i) => petSprite('pup', i) === PET_SPRITES.pup), true)
+is('an unknown pet falls back rather than crashing', petSprite('nonsense', 3), PET_SPRITES.pup)
+
+// The three that do have one carry a drawing for every stage.
+for (const ref of ['frost', 'ember', 'zeus']) {
+  is(`${ref} has a drawing for all four`, PET_SPRITES[ref].stages.length, 4)
+  is(`and ${ref} shows a different one at each`,
+    new Set([0, 1, 2, 3].map((i) => petSprite(ref, i))).size, 4)
+  is(`and every ${ref} form is on the same canvas`,
+    PET_SPRITES[ref].stages.every((g) => g.w === 50 && g.h === 44), true)
+}
 
 const juvenile = { id: 'x', w: 2, h: 2, palette: { a: '#111' }, grid: ['aa', 'aa'] }
 const ascended = { id: 'x', w: 4, h: 4, palette: { a: '#222' }, grid: ['aaaa', 'aaaa', 'aaaa', 'aaaa'] }
-const grown = { ...PET_SPRITES.frost, stages: [null, juvenile, null, null, ascended] }
-const saved = PET_SPRITES.frost
-PET_SPRITES.frost = grown
-is('a hatchling with no art of its own uses the base', petSprite('frost', 0), grown)
-is('a juvenile uses its own', petSprite('frost', 1), juvenile)
-is('an adult falls back to the juvenile rather than skipping ahead', petSprite('frost', 2), juvenile)
-is('prime does the same', petSprite('frost', 3), juvenile)
-is('ascended uses its own', petSprite('frost', 4), ascended)
-is('a later stage may be drawn on a bigger canvas', [petSprite('frost', 4).w, petSprite('frost', 4).h], [4, 4])
-PET_SPRITES.frost = saved
-is('and the fixture is put back', petSprite('frost', 4), saved)
+const grown = { ...PET_SPRITES.pup, stages: [null, juvenile, null, ascended] }
+const saved = PET_SPRITES.pup
+PET_SPRITES.pup = grown
+is('a hatchling with no art of its own uses the base', petSprite('pup', 0), grown)
+is('a juvenile uses its own', petSprite('pup', 1), juvenile)
+is('prime falls back to the juvenile rather than skipping ahead', petSprite('pup', 2), juvenile)
+is('ascended uses its own', petSprite('pup', 3), ascended)
+is('a later stage may be drawn on a bigger canvas', [petSprite('pup', 3).w, petSprite('pup', 3).h], [4, 4])
+PET_SPRITES.pup = saved
+is('and the fixture is put back', petSprite('pup', 3), saved)
 
 // The filter on the profile offers what this person has done, not a fixed
 // set. It used to read the folded weeks alone, which miss anything logged
