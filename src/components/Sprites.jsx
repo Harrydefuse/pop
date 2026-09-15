@@ -113,8 +113,8 @@ function Arc({ spec }) {
   )
 }
 
-export function PetView({ refId, level = 1, size = 72, float, delay, className = '' }) {
-  const stage = petStage(level)
+export function PetView({ refId, stage: at = 1, size = 72, float, delay, className = '' }) {
+  const stage = petStage(at)
   // Art per stage where a pet has it, the one drawing where it does not.
   const sprite = petSprite(refId, stage.idx)
   const art = PET_SPRITES[refId] ?? PET_SPRITES.pup

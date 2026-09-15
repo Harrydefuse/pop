@@ -426,11 +426,11 @@ export default function Onboarding({ onContinue }) {
           <div className="flex items-end gap-1">
             {/* All five bob, on five different clocks. Only FROST floated
                 before, which made the other four look switched off. */}
-            <PetView refId="pup" level={1} size={34} float delay="0s" />
-            <PetView refId="turbo" level={30} size={38} float delay="-1.2s" />
-            <PetView refId="frost" level={55} size={44} float delay="-0.45s" />
-            <PetView refId="ember" level={80} size={38} float delay="-2.1s" />
-            <PetView refId="zeus" level={100} size={34} float delay="-0.8s" />
+            <PetView refId="pup" stage={1} size={34} float delay="0s" />
+            <PetView refId="turbo" stage={2} size={38} float delay="-1.2s" />
+            <PetView refId="frost" stage={3} size={44} float delay="-0.45s" />
+            <PetView refId="ember" stage={3} size={38} float delay="-2.1s" />
+            <PetView refId="zeus" stage={4} size={34} float delay="-0.8s" />
           </div>
 
           {/* Only when there is somebody to carry on as. The plaque used to

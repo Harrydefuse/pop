@@ -184,6 +184,8 @@ export const FRESH_START = {
     inventory: [{ id: 'start-boots', ...gearPiece('boots', 'leather'), level: 1 }],
     pets: [],
     activePetId: null,
+    // One per logged session, spent on whichever pet you choose to grow.
+    treats: 0,
     stones: [],
     titles: [],
     lifetime: { volume: 0, distance: 0, sessions: 0, coop: 0, streak: 0, balance: 0, bossKm: 0 },
@@ -505,10 +507,11 @@ export const TEST_ACCOUNT = {
       name: pet.name,
       rarity: pet.rarity,
       stat: pet.stat,
-      level: [100, 90, 80, 70, 100, 65, 55][i] ?? 50,
-      xp: 0,
+      stage: [4, 3, 3, 2, 4, 2, 1][i] ?? 1,
+      fed: [0, 8, 2, 11, 0, 4, 3][i] ?? 0,
     })),
     activePetId: 't_zeus',
+    treats: 64,
     stones: ['power', 'space', 'reality', 'soul', 'time', 'mind'],
     titles: [],
     lifetime: { volume: 1840000, distance: 6120, sessions: 2140, coop: 410, streak: 214, balance: 812, bossKm: 964 },
@@ -566,11 +569,12 @@ export const INITIAL_STATE = {
       { id: 'i9', ...gearPiece('offhand', 'bone', 'sword'), level: 2 },
     ],
     pets: [
-      { id: 'p_pup', ref: 'pup', name: 'PUP', rarity: 'common', stat: 'VIT', level: 27, xp: 0 },
-      { id: 'p_turbo', ref: 'turbo', name: 'TURBO', rarity: 'uncommon', stat: 'END', level: 14, xp: 0 },
-      { id: 'p_frost', ref: 'frost', name: 'FROST', rarity: 'rare', stat: 'FOCUS', level: 8, xp: 0 },
+      { id: 'p_pup', ref: 'pup', name: 'PUP', rarity: 'common', stat: 'VIT', stage: 2, fed: 6 },
+      { id: 'p_turbo', ref: 'turbo', name: 'TURBO', rarity: 'uncommon', stat: 'END', stage: 1, fed: 3 },
+      { id: 'p_frost', ref: 'frost', name: 'FROST', rarity: 'rare', stat: 'FOCUS', stage: 1, fed: 1 },
     ],
     activePetId: 'p_pup',
+    treats: 9,
     stones: ['reality'],
     // Titles are the visible receipt for a boss kill — the one reward that is
     // not a number and cannot be rolled for.

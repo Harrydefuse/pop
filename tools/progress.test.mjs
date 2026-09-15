@@ -36,7 +36,8 @@ const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js
 const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
 const { GAMES, playsAim } = await server.ssrLoadModule('/src/game/config.js')
 const { petSprite, PET_SPRITES } = await server.ssrLoadModule('/src/game/sprites.js')
-const { petStage, PET_STAGES } = await server.ssrLoadModule('/src/game/engine.js')
+const { petStage, PET_STAGES, TREAT_PER_SESSION, feedPet, treatsToNext, petPct } =
+  await server.ssrLoadModule('/src/game/engine.js')
 const { RARITY_ORDER } = await server.ssrLoadModule('/src/game/config.js')
 const gym = ACTIVITIES.find((a) => a.id === 'gym')
 
@@ -472,16 +473,43 @@ is('and it reads out as a score', readEffort('aim:score', { value: 84210 }).name
 // falls back down the stages, so adding one grid has to be a complete change
 // rather than a thing you can only do four at a time.
 console.log('\na pet can change shape as it levels')
-const at = (lv) => petStage(lv).idx
-is('there are four stages, not five', PET_STAGES.length, 4)
-is('and the thresholds are the ones the pet screen draws',
-  PET_STAGES.map((s) => s.at).map(at), [0, 1, 2, 3])
-is('a level below the first threshold is still the first stage', at(0), 0)
-is('and the last one holds all the way to the cap', [at(85), at(100)], [3, 3])
-is('the final form arrives before the last level, not on it',
-  PET_STAGES[3].at < MAX_LEVEL, true)
-is('each stage is drawn bigger than the one before',
+const at = (n) => petStage(n).idx
+is('there are four forms, not five', PET_STAGES.length, 4)
+is('and a form number maps straight onto its drawing', [1, 2, 3, 4].map(at), [0, 1, 2, 3])
+is('a bad stage is clamped rather than rendering nothing', [at(0), at(9), at(undefined)], [0, 3, 0])
+is('each form is drawn bigger than the one before',
   PET_STAGES.every((s, i) => i === 0 || s.scale > PET_STAGES[i - 1].scale), true)
+is('and is worth more than the one before',
+  PET_STAGES.every((s, i) => i === 0 || s.bonus > PET_STAGES[i - 1].bonus), true)
+
+// The costs are the whole economy of the collection, so they are pinned here
+// rather than left to whatever the screen happens to render.
+console.log('\ntreats are what move a pet up')
+is('the three steps cost 5, 15 and 50', PET_STAGES.map((s) => s.cost), [5, 15, 50, 0])
+is('so a finished pet is seventy sessions',
+  PET_STAGES.reduce((n, s) => n + s.cost, 0), 70)
+is('and a session pays exactly one treat', TREAT_PER_SESSION, 1)
+
+const hatch = { rarity: 'common', stat: 'VIT', stage: 1, fed: 0 }
+is('a treat short of the cost does not evolve it',
+  [feedPet(hatch, 4).pet.stage, feedPet(hatch, 4).pet.fed, feedPet(hatch, 4).grew], [1, 4, false])
+is('the fifth one does', [feedPet(hatch, 5).pet.stage, feedPet(hatch, 5).grew], [2, true])
+is('and the remainder carries into the next form rather than being eaten',
+  [feedPet(hatch, 8).pet.stage, feedPet(hatch, 8).pet.fed], [2, 3])
+is('pouring the whole seventy walks it all the way up',
+  [feedPet(hatch, 70).pet.stage, feedPet(hatch, 70).spent], [4, 70])
+is('and anything past that is not spent',
+  [feedPet(hatch, 200).pet.stage, feedPet(hatch, 200).spent], [4, 70])
+is('a fully grown pet takes no more treats',
+  [feedPet({ ...hatch, stage: 4 }, 10).spent, treatsToNext({ stage: 4 })], [0, 0])
+is('feeding nothing changes nothing', feedPet(hatch, 0).spent, 0)
+
+// The bonus endpoints are what the old level curve reached, so a finished pet
+// is worth what it always was — only the road to it changed.
+is('a fully grown legendary is worth what it used to be',
+  petPct({ rarity: 'legendary', stage: 4 }), 56)
+is('and a hatchling common is where it used to start',
+  petPct({ rarity: 'common', stage: 1 }), 3)
 
 // pup has no growth series, which is the case the fallback exists for.
 is('a pet with no stage art uses its one drawing at every level',

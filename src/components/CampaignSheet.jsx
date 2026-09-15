@@ -269,7 +269,7 @@ function Detail({ boss, status, c, onBack, onFight }) {
           )}
           {r.pet && (
             <span className="flex items-center gap-1.5">
-              <PetView refId={r.pet} level={1} size={24} />
+              <PetView refId={r.pet} stage={1} size={24} />
               <span className="font-display text-[12px] text-cyan">Companion</span>
             </span>
           )}

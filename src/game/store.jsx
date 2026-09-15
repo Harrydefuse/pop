@@ -4,7 +4,7 @@ import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, 
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { MILESTONES, bestLoadout, bossHit, campaignState, grantPetXp, grantXp, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey } from './engine'
+import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
@@ -61,6 +61,15 @@ function baseState() {
   }
 }
 
+/** The form an old 1-100 pet level had reached, on the thresholds that were
+ *  in force when it was earned. */
+function stageForOldLevel(level) {
+  if (level >= 85) return 4
+  if (level >= 55) return 3
+  if (level >= 25) return 2
+  return 1
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
@@ -75,6 +84,14 @@ function load() {
     // standing in one. Start them where they are rather than marching them
     // through six promotions they earned months ago.
     if (parsed.arenaSeen == null) merged.arenaSeen = campaignState(merged.player, merged.campaign).arena.n
+    // Pets used to hold a level from 1 to 100 and ride along on your XP. They
+    // hold a form from 1 to 4 now and are moved by treats. A save from before
+    // keeps whatever form its old level had earned, so nobody who grew a pet
+    // the old way is handed a hatchling.
+    merged.player.treats = merged.player.treats ?? 0
+    merged.player.pets = (merged.player.pets ?? []).map((pet) =>
+      pet.stage ? pet : { ...pet, stage: stageForOldLevel(pet.level ?? 1), fed: 0, level: undefined, xp: undefined },
+    )
     return merged
   } catch {
     return baseState()
@@ -161,7 +178,7 @@ function grantBossReward(state, boss) {
     } else {
       player = {
         ...player,
-        pets: [...player.pets, { id: nextId('p_'), ref: base.id, name: base.name, rarity: base.rarity, stat: base.stat, level: 1, xp: 0 }],
+        pets: [...player.pets, { id: nextId('p_'), ref: base.id, name: base.name, rarity: base.rarity, stat: base.stat, stage: 1, fed: 0 }],
       }
       drops.push({ kind: 'pet', rarity: base.rarity, ref: base.id, name: base.name })
     }
@@ -283,18 +300,9 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   if (verified) lifetime.sessions += 1
   lifetime.bossKm = Math.round((lifetime.bossKm + result.bossDamage) * 10) / 10
 
-  // Pet rides along on your sessions
-  let pets = player.pets
-  let petLeveled = null
-  if (player.activePetId) {
-    pets = player.pets.map((p) => {
-      if (p.id !== player.activePetId) return p
-      const grown = grantPetXp(p, level, Math.round(result.xp * 0.4))
-      if (grown.leveled) petLeveled = grown
-      const { leveled: _ignored, ...rest } = grown
-      return rest
-    })
-  }
+  // A session pays a treat. Which pet it goes to is the player's call, made
+  // later on the pet screen — that decision is the whole of the collection.
+  const pets = player.pets
 
   const week = {
     ...player.week,
@@ -314,6 +322,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
       pets,
       week,
       cores: player.cores + result.cores,
+      treats: (player.treats ?? 0) + TREAT_PER_SESSION,
     },
     dailies: bumpDailies(state.dailies, act, amount),
     world: { ...state.world, bossKm: state.world.bossKm + result.bossDamage },
@@ -353,7 +362,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     prs: prs.map((r) => ({ lift: r.lift, reps: r.reps, weight: r.weight, e1rm: r.e1rm, prev: r.prev })),
     drops: [],
     milestones: [],
-    pet: petLeveled ? { name: petLeveled.name, level: petLeveled.level } : null,
+    treats: TREAT_PER_SESSION,
     damage: 0,
     boss: null,
     stones: [],
@@ -842,6 +851,35 @@ function reducer(state, action) {
       )
     }
 
+    /**
+     * Spend treats on one pet. The reducer does the arithmetic rather than the
+     * screen, because a button that trusts the UI for how many treats you have
+     * is a button that can be pressed twice.
+     */
+    case 'feedPet': {
+      const pet = state.player.pets.find((p) => p.id === action.petId)
+      if (!pet) return state
+      const have = state.player.treats ?? 0
+      const want = Math.max(0, Math.min(have, Math.floor(action.treats ?? 1)))
+      if (!want) return state
+      const { pet: fedPet, spent, grew } = feedPet(pet, want)
+      if (!spent) return state
+      const next = {
+        ...state,
+        player: {
+          ...state.player,
+          treats: have - spent,
+          pets: state.player.pets.map((p) => (p.id === pet.id ? fedPet : p)),
+        },
+      }
+      if (!grew) return next
+      return toast(next, {
+        kind: 'level',
+        title: `${pet.name} evolved`,
+        body: `Now ${petStage(fedPet.stage).name.toLowerCase()}`,
+      })
+    }
+
     case 'setPet':
       return { ...state, player: { ...state.player, activePetId: action.petId } }
 
@@ -1023,6 +1061,7 @@ export function GameProvider({ children }) {
       unequip: (slot) => dispatch({ type: 'unequip', slot }),
       upgrade: (itemId, cost) => dispatch({ type: 'upgrade', itemId, cost }),
       setPet: (petId) => dispatch({ type: 'setPet', petId }),
+      feedPet: (petId, treats = 1) => dispatch({ type: 'feedPet', petId, treats }),
       toggleHealth: (id) => dispatch({ type: 'toggleHealth', id }),
       toggleGame: (id) => dispatch({ type: 'toggleGame', id }),
       like: (postId) => dispatch({ type: 'like', postId }),

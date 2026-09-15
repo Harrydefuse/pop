@@ -80,12 +80,20 @@ export function activePet(player) {
   return player.pets.find((p) => p.id === player.activePetId) ?? null
 }
 
-/** Pets give a percentage buff to one stat, scaling with pet level and rarity. */
+/**
+ * Pets give a percentage buff to one stat, off the form they are in and their
+ * rarity. The endpoints are the ones the old level curve reached — a fully
+ * grown legendary is still worth about 56% — so nothing about how strong a
+ * finished pet is has changed, only what it takes to finish one.
+ */
 export function petBonus(player) {
   const pet = activePet(player)
   if (!pet) return null
-  const r = RARITY[pet.rarity]
-  return { stat: pet.stat, pct: Math.round((3 + pet.level * 0.12) * r.mult) }
+  return { stat: pet.stat, pct: petPct(pet) }
+}
+
+export function petPct(pet) {
+  return Math.round(petStage(pet.stage).bonus * RARITY[pet.rarity].mult)
 }
 
 /**
@@ -380,47 +388,81 @@ export function resolveActivity(player, { activityId, amount, verified, log = []
   }
 }
 
-/** Pets level from your sessions but can never out-level you — they ride along. */
-export function petXpToNext(level) {
-  return Math.round(180 * Math.pow(level, 1.1))
+
+/**
+ * Four forms, and treats are what move a pet between them.
+ *
+ * Pets used to ride along on your XP: they levelled whenever you did, at a
+ * fixed fraction of the session, and there was no decision in it anywhere. The
+ * active one grew and the rest sat still, which meant the collection was
+ * really a list of one pet you happened to have equipped and six you had
+ * stopped thinking about.
+ *
+ * A treat per session and a cost per form turns that into the only choice the
+ * collection ever had: pour everything into one and see its final form inside
+ * a couple of months, or spread it and walk three of them up together. The
+ * costs climb steeply on purpose — 5, then 15, then 50 — so the first
+ * evolution arrives quickly enough to teach the mechanic and the last one is
+ * something you decide to go after rather than something that happens to you.
+ *
+ * Seventy treats is a full pet. That is seventy sessions, which at four a week
+ * is about four months for one animal, and the whole collection is a long way
+ * past the end of the level ladder. That is the intent: the arenas end and the
+ * pets do not.
+ */
+export const PET_STAGES = [
+  { n: 1, name: 'HATCHLING', scale: 0.9, aura: false, cost: 5, bonus: 3 },
+  { n: 2, name: 'JUVENILE', scale: 1.05, aura: false, cost: 15, bonus: 6 },
+  { n: 3, name: 'PRIME', scale: 1.18, aura: false, cost: 50, bonus: 10 },
+  { n: 4, name: 'ASCENDED', scale: 1.32, aura: true, cost: 0, bonus: 14 },
+]
+
+export const MAX_STAGE = PET_STAGES.length
+
+/** One treat per logged session, whatever the session was. */
+export const TREAT_PER_SESSION = 1
+
+/** The form a pet is in. Clamped, so a bad save cannot render nothing. */
+export function petStage(stage = 1) {
+  const n = Math.min(MAX_STAGE, Math.max(1, Math.round(stage || 1)))
+  return { idx: n - 1, ...PET_STAGES[n - 1] }
 }
 
-export function grantPetXp(pet, playerLevel, amount) {
-  let { level, xp } = pet
-  xp += amount
-  let leveled = false
-  while (level < Math.min(playerLevel, MAX_LEVEL) && xp >= petXpToNext(level)) {
-    xp -= petXpToNext(level)
-    level += 1
-    leveled = true
-  }
-  if (level >= Math.min(playerLevel, MAX_LEVEL)) xp = Math.min(xp, petXpToNext(level) - 1)
-  return { ...pet, level, xp, leveled }
+/** What it costs to leave the form it is in. Zero once there is nowhere up. */
+export function treatsToNext(pet) {
+  return petStage(pet?.stage).cost
 }
 
 /**
- * Four forms, not five.
+ * Feed a pet, and let it evolve as many times as the treats allow.
  *
- * There were five stages and the art was drawn for four, and the art wins —
- * five thresholds against four drawings meant two consecutive levels showing
- * the same animal under different names, which is worse than having one fewer
- * stage. So ADULT is gone and the remaining three step-ups are spread wider.
- *
- * The last one lands at 85 rather than 100. A final form you only meet on the
- * last level of the game is a reward almost nobody sees; at 85 it arrives
- * around the same time as the last arena and you get to keep it for a while.
+ * Pouring rather than one-at-a-time because somebody sitting on sixty treats
+ * should not have to press a button sixty times, and the loop has to carry
+ * the remainder across a boundary or the last treat of a stage would be spent
+ * twice over.
  */
-export const PET_STAGES = [
-  { at: 1, name: 'HATCHLING', scale: 0.9, aura: false },
-  { at: 25, name: 'JUVENILE', scale: 1.05, aura: false },
-  { at: 55, name: 'PRIME', scale: 1.18, aura: false },
-  { at: 85, name: 'ASCENDED', scale: 1.32, aura: true },
-]
+export function feedPet(pet, treats) {
+  let stage = petStage(pet.stage).n
+  let fed = pet.fed ?? 0
+  let spent = 0
+  let grew = false
+  let left = Math.max(0, Math.floor(treats))
 
-export function petStage(level) {
-  let idx = 0
-  for (let i = 0; i < PET_STAGES.length; i++) if (level >= PET_STAGES[i].at) idx = i
-  return { idx, ...PET_STAGES[idx] }
+  while (left > 0 && stage < MAX_STAGE) {
+    const cost = PET_STAGES[stage - 1].cost
+    const need = cost - fed
+    const give = Math.min(need, left)
+    fed += give
+    left -= give
+    spent += give
+    if (fed >= cost) {
+      stage += 1
+      fed = 0
+      grew = true
+    }
+  }
+
+  return { pet: { ...pet, stage, fed }, spent, grew }
 }
 
 /** How many minutes of effort an amount of an activity represents. */

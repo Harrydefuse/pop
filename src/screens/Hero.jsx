@@ -6,7 +6,7 @@ import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
 import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, WEAPON_GLOW, WEAPON_INK, WEAPON_KINDS, isWeapon, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
-import { PET_STAGES, classById, fmt, fmtFull, itemScore, petBonus, petStage, petXpToNext, powerScore, rankFor, wornGear } from '../game/engine'
+import { MAX_STAGE, PET_STAGES, classById, fmt, fmtFull, itemScore, petBonus, petPct, petStage, treatsToNext, powerScore, rankFor, wornGear } from '../game/engine'
 import { pinnedEfforts } from '../game/efforts'
 import { alpha } from '../game/color'
 
@@ -225,53 +225,84 @@ export function ItemSheet({ item, onClose }) {
   )
 }
 
-function PetSheet({ pet, onClose }) {
-  const { state, setPet } = useGame()
+/**
+ * One pet, and the decision the collection is made of.
+ *
+ * Pets used to level on your XP, which meant this screen was a read-out: it
+ * told you how far along the one you had equipped was and there was nothing to
+ * do about it. Treats turn it into a choice — the same treat can finish a
+ * hatchling today or go into the fifty a PRIME needs — so the screen is built
+ * around spending them.
+ */
+function PetSheet({ pet: seed, onClose }) {
+  const { state, setPet, feedPet } = useGame()
   const p = state.player
+  // Read the live pet, not the one that was handed over when the tile was
+  // tapped. The sheet used to hold that snapshot, so feeding twice in a row
+  // spent the second lot against the first lot's numbers — it would offer to
+  // pour two treats into a pet that needed one, and eat both.
+  const pet = p.pets.find((x) => x.id === seed.id) ?? seed
   const active = p.activePetId === pet.id
   const color = RARITY[pet.rarity].color
-  const stage = petStage(pet.level)
+  const stage = petStage(pet.stage)
+  const cost = treatsToNext(pet)
+  const fed = pet.fed ?? 0
+  const treats = p.treats ?? 0
+  const maxed = stage.n >= MAX_STAGE
+  const need = Math.max(0, cost - fed)
+  const canPour = Math.min(treats, need)
 
   return (
     <Modal open onClose={onClose} title={pet.name}>
       <div className="text-center">
-        <PetView refId={pet.ref} level={pet.level} size={104} float className="mx-auto" />
+        <PetView refId={pet.ref} stage={pet.stage} size={104} float className="mx-auto" />
         <div className="flex items-center justify-center gap-1.5 mt-2">
           <RarityTag rarity={pet.rarity} />
           <Chip color={color}>{stage.name}</Chip>
         </div>
       </div>
 
+      {/* ---- what it costs to move it up, and what you have to spend */}
       <div className="mt-3.5">
-        <div className="flex justify-between mb-1.5">
-          <span className="font-display text-[13px]" style={{ color }}>LEVEL {pet.level}</span>
-          <span className="text-[14px] text-ink-faint">
-            {fmt(pet.xp)}/{fmt(petXpToNext(pet.level))} XP
+        <div className="flex justify-between items-baseline mb-1.5">
+          <span className="font-display text-[13px]" style={{ color }}>
+            {maxed ? 'FULLY GROWN' : `FORM ${stage.n} OF ${MAX_STAGE}`}
+          </span>
+          <span className="text-[14px] text-ink-faint tabular-nums">
+            {maxed ? `+${petPct(pet)}% ${pet.stat}` : `${fed}/${cost} treats`}
           </span>
         </div>
-        <Bar pct={pet.xp / petXpToNext(pet.level)} color={color} height={8} />
+        <Bar pct={maxed ? 1 : fed / cost} color={color} height={8} shine={maxed} />
       </div>
 
-      {/* Evolution is the whole point of levelling a pet, so show the ladder. */}
-      <div className="mt-3.5 border border-line bg-panel-2 p-3">
+      {!maxed && (
+        <div className="mt-3 flex items-center gap-2.5 border border-line bg-panel-2 rounded-[var(--radius-sm)] px-3 py-2.5">
+          <Icon name="bone" size={16} color={treats > 0 ? 'var(--color-gold)' : 'var(--color-ink-faint)'} />
+          <span className="text-[14px] text-ink-dim">
+            You have <span className="figure text-ink">{treats}</span> {treats === 1 ? 'treat' : 'treats'}
+          </span>
+          <span className="ml-auto text-[14px] text-ink-faint tabular-nums">{need} to go</span>
+        </div>
+      )}
+
+      {/* ---- the four forms, and which one it is standing in */}
+      <div className="mt-3 border border-line bg-panel-2 p-3">
         <div className="font-display text-[12px] text-ink-faint mb-2.5">Evolution</div>
         <div className="flex items-end justify-between gap-1">
-          {PET_STAGES.map(({ at: lv, name }) => {
-            const reached = pet.level >= lv
+          {PET_STAGES.map(({ n, name, cost: step }) => {
+            const reached = stage.n >= n
             return (
-              <div key={lv} className="text-center flex-1 min-w-0" style={{ opacity: reached ? 1 : 0.3 }}>
+              <div key={n} className="text-center flex-1 min-w-0" style={{ opacity: reached ? 1 : 0.32 }}>
                 <div className="grid place-items-center h-12">
-                  <PetView refId={pet.ref} level={lv} size={38} />
+                  <PetView refId={pet.ref} stage={n} size={38} />
                 </div>
                 <div className="h-1 mt-1" style={{ background: reached ? color : 'var(--color-panel-2)' }} />
+                {/* The number under a rung is what it costs to LEAVE it, which
+                    is the number somebody is actually deciding about. The last
+                    one has nothing above it, so it shows the bonus instead. */}
                 <div className="font-display text-[11px] mt-1" style={{ color: reached ? color : 'var(--color-ink-faint)' }}>
-                  {lv}
+                  {step ? `${step}` : '—'}
                 </div>
-                {/* The rung is named as well as numbered now that there are
-                    four of them and each one is a different drawing. Its own
-                    size rather than the shared label one: four names across a
-                    360px sheet is 78px a column, and HATCHLING does not fit in
-                    that at 11.5px. */}
                 <div
                   className="font-display text-ink-faint mt-0.5 truncate"
                   style={{ fontSize: 9.5, letterSpacing: '0.04em' }}
@@ -282,10 +313,36 @@ function PetSheet({ pet, onClose }) {
             )
           })}
         </div>
-        <div className="text-[14px] text-lime mt-3">+{Math.round((3 + pet.level * 0.12) * RARITY[pet.rarity].mult)}% {pet.stat}</div>
+        <div className="text-[14px] text-lime mt-3">
+          +{petPct(pet)}% {pet.stat}
+          {!maxed && <span className="text-ink-faint"> · +{petPct({ ...pet, stage: stage.n + 1 })}% at {PET_STAGES[stage.n].name.toLowerCase()}</span>}
+        </div>
       </div>
 
-      <Btn full className="mt-3.5" variant={active ? 'dim' : 'primary'} disabled={active} onClick={() => { setPet(pet.id); onClose() }}>
+      {!maxed && (
+        <div className="flex gap-1.5 mt-3.5">
+          <Btn className="flex-1" disabled={treats < 1} onClick={() => feedPet(pet.id, 1)}>
+            Give a treat
+          </Btn>
+          {/* Pouring matters once the costs get real: nobody should press a
+              button fifty times to finish a PRIME. It only appears when it
+              would do something the button beside it does not — at one treat
+              from a new form, "Give a treat" is already the evolve button. */}
+          {canPour >= 2 && (
+            <Btn className="flex-1" variant="ghost" onClick={() => feedPet(pet.id, canPour)}>
+              {canPour >= need ? `Evolve · ${need}` : `Give ${canPour}`}
+            </Btn>
+          )}
+        </div>
+      )}
+
+      <Btn
+        full
+        className="mt-1.5"
+        variant={active ? 'dim' : maxed ? 'primary' : 'ghost'}
+        disabled={active}
+        onClick={() => { setPet(pet.id); onClose() }}
+      >
         {active ? 'ALREADY OUT' : 'BRING THIS ONE'}
       </Btn>
     </Modal>
@@ -478,15 +535,14 @@ export default function Hero({ embedded = false }) {
               onClick={() => setOpenPet(pet)}
               className="flex-1 min-w-0 flex flex-col items-center text-center active:brightness-125"
             >
-              <PetView refId={pet.ref} level={pet.level} size={104} float />
+              <PetView refId={pet.ref} stage={pet.stage} size={104} float />
               <div className="font-display text-[14px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
                 {pet.name}
               </div>
               {/* One fact per line. "LV 100 · ASCENDED" is 140px of text in a
                   130px column on a small phone, and it wrapped in the middle of
                   itself. Height is the one thing this column has to spare. */}
-              <div className="text-[14px] text-ink-faint">LV {pet.level}</div>
-              <div className="label text-ink-faint mt-0.5">{petStage(pet.level).name}</div>
+              <div className="label text-ink-faint">{petStage(pet.stage).name}</div>
               {bonus && <div className="text-[14px] text-lime mt-1">+{bonus.pct}% {bonus.stat}</div>}
             </button>
           )}
@@ -610,12 +666,12 @@ export default function Hero({ embedded = false }) {
                 <Tile
                   key={x.id}
                   rarity={x.rarity}
-                  level={x.level}
+                  level={petStage(x.stage).n}
                   equipped={x.id === p.activePetId}
-                  label={`${x.name}, ${RARITY[x.rarity].label}, level ${x.level}`}
+                  label={`${x.name}, ${RARITY[x.rarity].label}, ${petStage(x.stage).name.toLowerCase()}`}
                   onClick={() => setOpenPet(x)}
                 >
-                  <PetView refId={x.ref} level={x.level} size={34} />
+                  <PetView refId={x.ref} stage={x.stage} size={34} />
                 </Tile>
               ))}
             </div>

@@ -641,17 +641,17 @@ export default function Site({ onEnterApp }) {
               </p>
               <div className="pet-row stagger">
                 {[
-                  ['pup', 20, 'Pup', 'Common'],
-                  ['turbo', 40, 'Turbo', 'Uncommon'],
-                  ['frost', 60, 'Frost', 'Rare'],
-                  ['ember', 80, 'Ember', 'Epic'],
-                  ['zeus', 100, 'Zeus', 'Legendary'],
-                ].map(([ref, lv, name, tier]) => (
+                  ['pup', 1, 'Pup', 'Common'],
+                  ['turbo', 2, 'Turbo', 'Uncommon'],
+                  ['frost', 3, 'Frost', 'Rare'],
+                  ['ember', 4, 'Ember', 'Epic'],
+                  ['zeus', 4, 'Zeus', 'Legendary'],
+                ].map(([ref, at, name, tier]) => (
                   <figure className="pet-cell" key={ref}>
                     {/* Sprites scale up with evolution stage, so the frame is
                         taller than the sprite to keep the caption clear. */}
                     <span className="pet-art">
-                      <PetView refId={ref} level={lv} size={84} />
+                      <PetView refId={ref} stage={at} size={84} />
                     </span>
                     <figcaption>
                       <span className="pix">{name}</span>

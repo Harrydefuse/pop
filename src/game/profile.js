@@ -69,7 +69,7 @@ export function buildCard(state) {
       .filter(Boolean),
     pet: (() => {
       const pet = p.pets?.find((x) => x.id === p.activePetId)
-      return pet ? { name: pet.name, ref: pet.ref, level: pet.level, rarity: pet.rarity } : null
+      return pet ? { name: pet.name, ref: pet.ref, stage: pet.stage ?? 1, rarity: pet.rarity } : null
     })(),
   }
 }

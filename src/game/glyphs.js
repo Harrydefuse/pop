@@ -153,6 +153,13 @@ export const GLYPHS = {
   ),
   // Where the cores go. A bag, because everything else that means "shop" at
   // this size means something else first.
+  // A treat. Two knuckles and a shaft — the one shape that reads as "food for
+  // an animal" at twelve pixels without being a whole drawing.
+  bone: stroke(
+    'M8.6 9.6 15.4 14.4',
+    'M7.7 6.6a2.1 2.1 0 1 0-2.4 2.4 2.1 2.1 0 1 0 2.4-2.4z',
+    'M18.7 15.4a2.1 2.1 0 1 0-2.4 2.4 2.1 2.1 0 1 0 2.4-2.4z',
+  ),
   bag: stroke(
     'M5.4 8.6h13.2l.9 10.6a1.4 1.4 0 0 1-1.4 1.5H5.9a1.4 1.4 0 0 1-1.4-1.5z',
     'M8.9 11V6.9a3.1 3.1 0 0 1 6.2 0V11',

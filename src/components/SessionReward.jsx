@@ -171,7 +171,7 @@ export default function SessionReward() {
               >
                 <RarityFrame rarity={d.rarity} size={46}>
                   {d.kind === 'pet' ? (
-                    <PetView refId={d.ref} level={1} size={38} />
+                    <PetView refId={d.ref} stage={1} size={38} />
                   ) : (
                     <GearIcon slot={d.slot} kind={d.side ?? d.slot} set={d.set} size={28} />
                   )}
@@ -197,9 +197,12 @@ export default function SessionReward() {
           Level {r.levels[r.levels.length - 1]} reached.
         </div>
       )}
-      {r.pet && (
-        <div className="mt-2 text-[14px] text-ink-dim text-center">
-          {r.pet.name} grew to level {r.pet.level}.
+      {r.treats > 0 && (
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-[14px] text-ink-dim">
+          <Icon name="bone" size={13} color="var(--color-gold)" />
+          <span>
+            +{r.treats} {r.treats === 1 ? 'treat' : 'treats'} — spend it on a pet.
+          </span>
         </div>
       )}
       {r.stones.map((st) => (
