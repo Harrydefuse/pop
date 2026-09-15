@@ -452,19 +452,31 @@ export default function Hero({ embedded = false }) {
         {/* Gear is drawn onto the body, and the pet stands beside them. The
             character is the point of this screen, so it gets the room: at 168
             the helm, the pauldrons and the gauntlets ran together into one
-            shape and you could not tell which piece was which. */}
-        <div className="flex items-end justify-center gap-3 mt-3">
-          <HeroView av={p.avatar} equipped={worn} height={250} />
+            shape and you could not tell which piece was which.
+
+            The pet had the other half of the row and was using a third of it.
+            Bottom-aligned at 64px with three lines of text under it, the whole
+            top of its column was empty — a companion you levelled to ASCENDED
+            rendered smaller than the chest icon in the shop. It takes the
+            column now: `flex-1` so the space is actually allotted to it rather
+            than left over, and big enough that the art is worth looking at. */}
+        <div className="flex items-end justify-center gap-2 mt-3">
+          <HeroView av={p.avatar} equipped={worn} height={250} className="shrink-0" />
           {pet && (
-            <button onClick={() => setOpenPet(pet)} className="text-center shrink-0 active:brightness-125">
-              <PetView refId={pet.ref} level={pet.level} size={64} float />
-              <div className="font-display text-[12px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
+            <button
+              onClick={() => setOpenPet(pet)}
+              className="flex-1 min-w-0 flex flex-col items-center text-center active:brightness-125"
+            >
+              <PetView refId={pet.ref} level={pet.level} size={104} float />
+              <div className="font-display text-[14px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
                 {pet.name}
               </div>
-              <div className="text-[14px] text-ink-faint">
-                LV {pet.level} · {petStage(pet.level).name}
-              </div>
-              {bonus && <div className="text-[14px] text-lime mt-0.5">+{bonus.pct}% {bonus.stat}</div>}
+              {/* One fact per line. "LV 100 · ASCENDED" is 140px of text in a
+                  130px column on a small phone, and it wrapped in the middle of
+                  itself. Height is the one thing this column has to spare. */}
+              <div className="text-[14px] text-ink-faint">LV {pet.level}</div>
+              <div className="label text-ink-faint mt-0.5">{petStage(pet.level).name}</div>
+              {bonus && <div className="text-[14px] text-lime mt-1">+{bonus.pct}% {bonus.stat}</div>}
             </button>
           )}
         </div>
