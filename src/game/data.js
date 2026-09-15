@@ -501,14 +501,19 @@ export const TEST_ACCOUNT = {
       { id: 'g16', ...gearPiece('boots', 'iron'), level: 5 },
       { id: 'g17', ...gearPiece('chest', 'leather'), level: 4 },
     ],
-    pets: PET_CATALOG.map((pet, i) => ({
+    pets: PET_CATALOG.map((pet) => ({
       id: `t_${pet.id}`,
       ref: pet.id,
       name: pet.name,
       rarity: pet.rarity,
       stat: pet.stat,
-      stage: [4, 3, 3, 2, 4, 2, 1][i] ?? 1,
-      fed: [0, 8, 2, 11, 0, 4, 3][i] ?? 0,
+      // Every one fully grown. This account exists to look at the game, and
+      // half of the pet art is the half you only see at the top. Written as a
+      // literal rather than imported from the engine: this runs at module
+      // scope, and a seed that reaches into another module to build itself is
+      // a seed that depends on import order.
+      stage: 4,
+      fed: 0,
     })),
     activePetId: 't_zeus',
     treats: 64,

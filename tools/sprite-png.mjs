@@ -102,13 +102,49 @@ const server = await createServer({
 const s = await server.ssrLoadModule('/src/game/sprites.js')
 
 // Everything worth handing to an artist, under the name they would ask for.
+//
+// The three character canvases are deliberately all here. They are not the
+// same size as each other and never have been: the body is one resolution and
+// the armour worn on it is drawn at double, so "the character canvas" is an
+// answer that depends on which of the two you are about to draw.
+const armour = (build, slot) => s.wornOverlay(build, { set: 'iron', kind: slot === 'offhand' ? 'shield' : slot }, slot)
+
 const TABLE = {
   ...s.PET_SPRITES,
   crate: s.CHEST_SPRITE,
   loot: s.LOOT_CHEST_SPRITE,
   vault: s.VAULT_SPRITE,
-  hero: s.heroSprite?.(),
   map: s.MAP_ICON,
+
+  // bodies
+  hero: s.heroSprite?.(),
+  'hero-female': s.heroSprite?.(undefined, undefined, undefined, 'female'),
+
+  // armour as it is worn, at the canvas it is drawn on
+  'worn-helm': armour('male', 'helm'),
+  'worn-chest': armour('male', 'chest'),
+  'worn-legs': armour('male', 'legs'),
+  'worn-gloves': armour('male', 'gloves'),
+  'worn-boots': armour('male', 'boots'),
+  'worn-shield': armour('male', 'offhand'),
+  'worn-helm-female': armour('female', 'helm'),
+  'worn-chest-female': armour('female', 'chest'),
+
+  // weapons as they are held, which are on the BODY canvas rather than the
+  // armour one — the one real inconsistency in the character art
+  'held-sword': s.WEAPON_OVERLAYS?.male?.sword,
+  'held-axe': s.WEAPON_OVERLAYS?.male?.axe,
+  'held-bow': s.WEAPON_OVERLAYS?.male?.bow,
+  'held-staff': s.WEAPON_OVERLAYS?.male?.staff,
+
+  // the 32x32 item icons, one per slot
+  'icon-helm': s.armourSprite?.('helm', 'iron'),
+  'icon-chest': s.armourSprite?.('chest', 'iron'),
+  'icon-legs': s.armourSprite?.('legs', 'iron'),
+  'icon-gloves': s.armourSprite?.('gloves', 'iron'),
+  'icon-boots': s.armourSprite?.('boots', 'iron'),
+  'icon-shield': s.armourSprite?.('shield', 'iron'),
+  'icon-sword': s.armourSprite?.('sword', 'iron'),
 }
 
 const args = process.argv.slice(2)
@@ -121,7 +157,12 @@ if (args.includes('--list') || !args.length) {
 const [name, dir = '.'] = args
 const scaleArg = args.indexOf('--scale')
 const scales = scaleArg > -1 ? [1, Number(args[scaleArg + 1])] : [1, 10]
-const sprite = TABLE[name]
+// Worn-armour grids are authored in neutral palette slots and coloured per set
+// at render time, so on their own they have no colours to write out. Iron is
+// the reference set.
+const sprite = TABLE[name] && !TABLE[name].palette
+  ? { ...TABLE[name], palette: s.ARMOUR_PALETTES?.iron }
+  : TABLE[name]
 if (!sprite) {
   console.error(`no sprite called "${name}". Try --list.`)
   await server.close()

@@ -37,19 +37,52 @@ framing and how much of the frame to fill.
 
 ---
 
-## 2. Worn on the body — **32 x 59**
+## 2. Worn on the body — **88 x 118** (male) · **84 x 130** (female)
 
-Export at **8x = 256 x 472**. This is the same piece drawn **on the character**,
-so it lines up when equipped.
+Export at **4x = 352 x 472** and **336 x 520**. Templates: `worn-chest.png`,
+`worn-helm.png` and the rest, written by `tools/sprite-png.mjs` (below).
 
-- Paint directly onto `templates/worn-body.png`, which is the bare character.
-- **Do not move the body.** Head, shoulders, hands and feet must stay exactly
-  where they are.
-- Show **only the armour** in the final file — delete the body before exporting,
-  leaving magenta or transparent everywhere the armour is not.
+**This canvas is exactly double the body's.** Worn armour is drawn at twice the
+resolution of the character underneath it and rendered back down over him,
+which is why a breastplate can carry rivets the body has no room for. Drawing a
+piece at the body's own size is the one mistake that cannot be fixed on import
+— it lands at half scale on his waist.
+
+- Paint onto the matching `worn-*.png` template, which has the current piece on
+  the full canvas so you can see where it sits.
+- **Do not move the body.** Head, shoulders, hands and feet stay where they are.
+- Show **only the armour** in the final file — everything else transparent or
+  magenta.
 - Same hard-edges rule.
 
-This one is optional. Send icons alone and the game will still show the item
+### Armour is drawn per LOOK, not per set
+
+There are five sets and only four looks. A set is a palette; the drawing comes
+from its profile:
+
+| Set | Profile |
+| --- | --- |
+| Leather | `rough` |
+| Iron | `plate` |
+| Bone | `spiked` |
+| Verdant | `spiked` |
+| Astral (gilded) | `regal` |
+
+So a **new set is free** — it is a colour ramp and nothing else. A **new look**
+is six pieces (helm, chest, legs, gloves, boots, shield) times two builds, and
+is the expensive thing to ask for.
+
+Worn grids are authored in neutral palette slots — `o` outline, `d` dark, `m`
+mid, `l` light, `A` trim, `s` strap — which is what lets one drawing come back
+as all five sets.
+
+### Weapons are the exception
+
+A held weapon is drawn on the **body** canvas (44 x 59 / 42 x 65), not the
+doubled one. There is no good reason for it; it is just how the two grew up. If
+you are drawing a sword, use the body size.
+
+This whole section is optional. Send icons alone and the game shows the item
 everywhere except on the character; send the worn version too and it appears on
 the hero properly.
 
@@ -89,69 +122,52 @@ invent, and the armour is measured off that same shape, so it lines up.
 Transcribe with `python3 tools/outline_fill.py art/your-outline.png`, which
 reports every enclosed region and its position.
 
-### Option B — send finished art at **48 x 64**
+### Option B — send finished art at the body size
 
-Export at **8x = 384 x 512**. Template: `templates/character-48x64.png`.
+| Build | Canvas | Export at 8x |
+| --- | --- | --- |
+| Male | **44 x 59** | 352 x 472 |
+| Female | **42 x 65** | 336 x 520 |
 
-Send **two files on this identical canvas**:
+Templates: `hero.png` and `hero-female.png` from `tools/sprite-png.mjs`.
+
+Send **two files on the identical canvas**:
 
 ```
 character.png        the character as he should look by default, clothed
 character-bare.png   the same character, same pose, clothes removed
 ```
 
-Both are needed. Armour is layered on top of a body, so there has to be a body
-underneath — without it, clothes show through at every edge. The game stores
+Both are needed. Armour layers on top of a body, so there has to be a body
+underneath — without one, clothes show through at every edge. The game stores
 the character as three layers: body, clothes, armour. Clothes are drawn only
-where that slot has no armour, so equipping a breastplate simply stops the
-tunic being drawn.
+where that slot has no armour, so equipping a breastplate stops the tunic being
+drawn.
 
 Rules:
 
 - **The two files must line up exactly.** Same pose, same position, same size.
-  Draw the clothed one, then remove the clothes for the second — do not redraw.
-- **The body should be about 32 wide and 56-60 tall**, standing on the bottom
-  bottom of the frame, with the character centred. The extra width either side
-  is deliberate headroom for pauldrons, weapons and capes, which currently get
-  clipped.
+  Draw the clothed one, then remove the clothes — do not redraw.
+- Feet on the bottom of the frame, character centred. The spare width either
+  side is headroom for pauldrons and weapons.
 - Front on, arms down at the sides, feet apart. It is a paper doll, not a pose.
-- **Transparent background.** Magenta `#ff00ff` is accepted too if your tool
-  makes that easier — both are detected and trimmed.
+- **Transparent background.** Magenta `#ff00ff` works too.
 - **Hard edges only.** No anti-aliasing, no glow, no drop shadow.
 
-The old canvas was 32 x 59 (`templates/worn-body.png`). That still works if you
-would rather not change size — say which you are drawing on and worn armour
-will be regenerated to match. 48 x 64 is the better canvas if you are starting
-fresh.
+**Changing the body size means redrawing every piece of worn armour**, on both
+builds and all four looks. The canvases above are the ones the existing gear is
+cut to.
 
 ### The female build
 
-Signing up offers MALE and FEMALE. The male build is the character already in
-the game. The female build has no art of its own yet, so she currently borrows
-the long-haired male grids — the option is wired all the way through and saved
-with the character, but she is not her until these arrive:
+She has her own art and her own gear. Her body is **42 x 65** and her worn
+armour is **84 x 130** — a different canvas from his in both cases, so a piece
+drawn for him does not fit her and vice versa. Every look in the game exists on
+both.
 
-```
-female.png        her as she should look by default, clothed
-female-bare.png   the same pose, clothes removed
-```
-
-**Draw her at 32 x 59** — the same canvas as `templates/worn-body.png`, exported
-at **8x = 256 x 472**. This matters more than it sounds: every piece of worn
-armour in the game is drawn on that exact frame, so at 32 x 59 her gear works
-the day she lands. At 48 x 64 every gear overlay has to be redrawn for her.
-
-Everything else is the same as Option B above: identical canvas for both files,
-front on, arms down, feet apart, transparent background, hard edges only. Give
-her whatever hairstyle she should have — hair length is a male-build control and
-is hidden when FEMALE is picked, so her hair is baked into her sprite. Hair
-colour still recolours from the palette, so draw her hair in the base brown
-(`#6d3c1c`) and its shades.
-
-Once both files are in `art/`, the only code change is one row of the
-`HERO_BODIES` table in `src/game/sprites.js`.
-
----
+Hair length is a male-build control and is hidden when FEMALE is picked, so her
+hair is baked into her sprite. Hair colour still recolours from the palette, so
+draw it in the base brown (`#6d3c1c`) and its shades.
 
 ## 4. Bosses — **48 x 48**
 
@@ -185,17 +201,20 @@ left, on four legs or two, filling the frame. FROST occupies 47 x 43 of the
   above the character it is standing next to, which reads as a bug.
 - Keep it under about 16 distinct colours. FROST uses nine.
 
-### One pet, five stages
+### One pet, four forms
 
-A pet has five growth stages, and it can carry a different drawing at each:
+A pet has four growth forms and can carry a different drawing at each. Forms
+are bought with treats — one per logged session — not reached by levelling:
 
-| Stage | Level | Drawn at |
+| Form | Treats to leave it | Drawn at |
 | --- | --- | --- |
-| HATCHLING | 1–24 | 0.90x |
-| JUVENILE | 25–49 | 1.02x |
-| ADULT | 50–74 | 1.10x |
-| PRIME | 75–99 | 1.20x |
-| ASCENDED | 100 | 1.32x, with an aura behind it |
+| HATCHLING | 5 | 0.90x |
+| JUVENILE | 15 | 1.05x |
+| PRIME | 50 | 1.18x |
+| ASCENDED | — | 1.32x, with a living aura behind it |
+
+Seventy treats is a finished pet. FROST, EMBER and ZEUS have all four; the rest
+have one drawing used at every form.
 
 The scale ramp applies on top of whatever art the stage has, so the drawings do
 not have to carry the size change themselves — draw the *difference*, not the
@@ -270,18 +289,59 @@ them at the same pixel density as the rest of the game.
 
 ---
 
+## Getting a template
+
+Any canvas in the game can be exported at its true size, with the current art
+on it so you can see the scale and where things sit:
+
+```
+node tools/sprite-png.mjs --list                 # every name
+node tools/sprite-png.mjs worn-chest art/ --scale 4
+node tools/sprite-png.mjs hero-female art/
+```
+
+Each writes two files: the exact grid at 1x — draw on this one — and a scaled
+copy for looking at. What the game holds is what comes out; nothing is
+resampled on the way.
+
+The canvases, all of them:
+
+| What | Male | Female |
+| --- | --- | --- |
+| Body | 44 x 59 | 42 x 65 |
+| Armour worn on the body | 88 x 118 | 84 x 130 |
+| Weapon held in the hand | 44 x 59 | 42 x 65 |
+| Item icon (inventory, shop) | 32 x 32 | same |
+| Pet | 50 x 44 | — |
+| Boss | 48 x 48 | — |
+| Chest, interface icon | 32 x 32 | — |
+
+---
+
 ## Importing
 
 One command handles every case:
 
 ```
-python3 tools/import_art.py art/your-file.png [width] [height] --name SPRITE_NAME
+python3 tools/png2grid.py art/your-file.png --canvas WxH --name SPRITE_NAME
 ```
 
-It detects whether the source is a clean pixel export or a soft render. Clean
-art is transcribed byte-for-byte. A soft render — anti-aliased edges, a glow,
-thousands of colours — is quantised and resampled, which is lossy, so hard
-edges are always worth it.
+Useful flags:
+
+- `--block N` — how many image pixels make one sprite pixel. Art out of a
+  generator reads as being on a grid but is a pixel out here and there, so
+  detection fails and the whole image tries to become the sprite. A 400 x 352
+  drawing of a 50 x 44 sprite is `--block 8`.
+- `--sharpen N` — snap to N colours, for anything anti-aliased. Near-identical
+  shades are merged before counting, so an outline claims one slot rather than
+  seven.
+- `--sample mean` — average each cell instead of taking its middle pixel, for
+  art whose detail is finer than the cell. Better for filigree, worse for
+  one-pixel highlights.
+- `--preview out.png` — write what actually came out, so a bad transcription is
+  something you see now rather than find in the app later.
+
+Hard edges in the source are always better than any of this.
 
 ---
 
@@ -289,10 +349,12 @@ edges are always worth it.
 
 - **`hero.png`** — the current character, fully clothed. Everything was
   reconstructed from this.
-- **`templates/worn-body.png`** — the current bare body at 32 x 59.
-- **`templates/character-48x64.png`** — the roomier canvas, with the current
-  character centred inside it for scale.
 - **`templates/pet-50x44.png`** — the pet canvas, with FROST on it for scale.
+
+The older templates in `templates/` (`worn-body.png` at 32 x 59,
+`character-48x64.png`) are from a smaller character and no longer match what
+the game holds. Use `tools/sprite-png.mjs` instead — it reads the real art, so
+it cannot go stale the way a checked-in PNG does.
 
 Every template has a transparent background and contains nothing but the art,
 so it can be painted over directly.
