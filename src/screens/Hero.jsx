@@ -6,7 +6,7 @@ import SaveSheet from '../components/SaveSheet'
 import { useGame } from '../game/useGame'
 import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, WEAPON_GLOW, WEAPON_INK, WEAPON_KINDS, isWeapon, upgradeCost } from '../game/config'
 import { GEAR_CATALOG } from '../game/data'
-import { MAX_STAGE, PET_STAGES, classById, fmt, fmtFull, itemScore, petBonus, petPct, petStage, treatsToNext, powerScore, rankFor, wornGear } from '../game/engine'
+import { MAX_STAGE, PET_STAGES, campaignState, classById, fmt, fmtFull, itemScore, petBonus, petPct, petStage, treatsToNext, powerScore, rankFor, wornGear } from '../game/engine'
 import { pinnedEfforts } from '../game/efforts'
 import { alpha } from '../game/color'
 
@@ -473,6 +473,7 @@ export default function Hero({ embedded = false }) {
   const cls = classById(p.classId)
   const power = powerScore(p)
   const { rank, next, pct } = rankFor(power)
+  const arena = campaignState(p, state.campaign).arena
   const pet = p.pets.find((x) => x.id === p.activePetId)
   const bonus = petBonus(p)
 
@@ -508,7 +509,10 @@ export default function Hero({ embedded = false }) {
             <div className="font-display text-[16px]">{p.name}</div>
             <div className="flex items-center gap-1.5 mt-1.5">
               <Chip color={cls.color}>{cls.name}</Chip>
-              <Chip color={rank.color}>{rank.name}</Chip>
+              {/* The arena, not the power rank. The card above this one says
+                  METEORITE; saying PLATINUM here made one screen answer "how
+                  am I doing" two different ways. */}
+              <Chip color={arena.tint}>{arena.name.toUpperCase()}</Chip>
             </div>
           </div>
           <div className="text-right shrink-0">

@@ -3,10 +3,11 @@ import { Bar, Btn, Chip, Modal, Panel, SectionTitle } from '../components/ui'
 import Icon from '../components/Icon'
 import Avatar from '../components/Avatar'
 import StreakFlame from '../components/StreakFlame'
+import RankBadge from '../components/RankBadge'
 import Hero from './Hero'
 import { useGame } from '../game/useGame'
 import { ACTIVITIES, GAMES } from '../game/config'
-import { classById, fmt, powerScore, rankFor } from '../game/engine'
+import { campaignState, classById, fmt, powerScore } from '../game/engine'
 import { WEEKS_KEPT, weekActivities, weekOf, weekSeries } from '../game/progress'
 import { pinnedEfforts } from '../game/efforts'
 import { buildCard, cardAge, cardTitle, encodeCard, leaderboard } from '../game/profile'
@@ -33,7 +34,7 @@ export default function Profile() {
   const [sharing, setSharing] = useState(false)
   const [editing, setEditing] = useState(false)
   const power = powerScore(p)
-  const { rank } = rankFor(power)
+  const arena = campaignState(p, state.campaign).arena
   const cls = classById(p.classId)
   const friends = state.friends ?? NONE
   const plays = useMemo(() => GAMES.filter((g) => (p.games ?? NONE).includes(g.id)), [p.games])
@@ -43,21 +44,26 @@ export default function Profile() {
       {/* ------------------------------------------------------------ who */}
       <Panel accent={cls.color} className="p-4">
         <div className="flex items-center gap-3">
-          <Avatar av={p.avatar} size={64} ring={rank.color} className="rounded-full" />
+          <Avatar av={p.avatar} size={64} ring={arena.tint} className="rounded-full" />
           <div className="min-w-0 flex-1">
             <div className="font-display text-[20px] text-ink truncate">{p.name}</div>
             <div className="label text-ink-faint mt-1 truncate">@{p.handle}</div>
             <div className="flex items-center gap-1.5 mt-2">
               <Chip color={cls.color}>{cls.name}</Chip>
-              <Chip color={rank.color}>{rank.name}</Chip>
+              <Chip color={arena.tint}>{arena.name.toUpperCase()}</Chip>
             </div>
           </div>
+          {/* The rank, beside the name. The badge is the thing somebody
+              recognises their own profile by — it is the one picture on this
+              screen that says how far they have come rather than what they
+              are wearing. */}
+          <RankBadge arena={arena} size={54} className="shrink-0" />
         </div>
 
         <div className="grid grid-cols-3 gap-2 mt-4 text-center">
           {[
             [p.level, 'Level', 'var(--color-neon)'],
-            [fmt(power), 'Power', rank.color],
+            [fmt(power), 'Power', arena.tint],
             [friends.length, friends.length === 1 ? 'Friend' : 'Friends', 'var(--color-ink)'],
           ].map(([v, label, tone]) => (
             <div key={label}>

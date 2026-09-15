@@ -50,10 +50,25 @@
      else is a neutral surface with a hairline on it.
 
      Every accent still goes deep enough to clear 4.5:1 on the page, and deep
-     enough that white sits on it when it is used as a fill. */
+     enough that white sits on it when it is used as a fill.
+
+     THE HUES ARE DARK MODE'S HUES. That is the whole of it. Light mode used to
+     be a second palette that happened to also be legible — forest green beside
+     olive beside teal beside rust — and six deep colours from six different
+     families read as mud, which is what made leaving dark mode feel like
+     leaving the app. Every accent here is now the dark-mode colour of the same
+     name, at the same hue, taken to the deepest saturated version of itself
+     that still clears 4.7:1 on the tinted panel (which is the worst ground any
+     of them lands on). Same colours, adapted to the paper rather than replaced
+     for it.
+
+     What cannot come across is the brightness. #a3e635 on white is 1.6:1 —
+     invisible, not "low contrast" — so the fluorescent end of dark mode is
+     physically unavailable here and always will be. It lives in the -glow
+     tokens instead, which are used for light and never for words. */
   /* The current arena's colour, republished by the app shell every time your
      level moves you to a new one. Defined here so nothing breaks outside it. */
-  --arena: #6d28d9;
+  --arena: #790ae6;
   --arena-wash: transparent;
 
   --color-void: #f3f4f7; /* the page */
@@ -62,20 +77,16 @@
   --color-line: #e0e3ea; /* hairline border */
   --color-line-hot: #c5cad4; /* border on active/hover */
 
-  --color-neon: #6d28d9; /* primary violet — 7.1:1 on paper */
-  --color-neon-bright: #7c3aed;
+  --color-neon: #790ae6; /* primary violet — 7.0:1 on paper */
+  --color-neon-bright: #932cf6;
   --color-neon-dim: #a78bfa;
-  --color-cyan: #0e7490; /* secondary signal */
-  --color-lime: #3f6212; /* success / gains */
-  /* Gold, not rust. #92400e sat at hue 24 — an orange-brown that read as mud
-     wherever it was asked to be treasure. This is the same luminance at the
-     hue gold actually is (41), so every number and label that uses it still
-     clears 5:1 on paper and 4.6:1 on the tinted panel, and it stops looking
-     like something went wrong when you leave dark mode. The bright end of the
+  --color-cyan: #067384; /* secondary signal */
+  --color-lime: #487105; /* success / gains */
+  /* Gold, not rust — see the note above the accents. The bright end of the
      metal lives in --color-gold-glow and on the rank badge's gradient, where
      nothing has to be read through it. */
-  --color-gold: #8f6200; /* currency, legendary */
-  --color-danger: #be123c; /* boss / warnings */
+  --color-gold: #846106; /* currency, legendary */
+  --color-danger: #d30926; /* boss / warnings */
 
   /* Kept for glow, wash and anything decorative that never carries a word. */
   --color-neon-glow: #a855f7;
@@ -94,16 +105,16 @@
   /* Colours the game data reaches for by name that are not one of the five
      signals above — ranks, acts, slots, sources. They live here rather than as
      hex in config so a theme swap moves them too. */
-  --tone-green: #166534;
+  --tone-green: #057a30;
   /* Go. The one button that starts a session, in the colour every training app
      has already taught people to look for. Dark enough to carry white. */
-  --color-go: #15803d;
-  --tone-sky: #0369a1;
+  --color-go: #05712c;
+  --tone-sky: #076f9d;
   --tone-slate: #64748b;
-  --tone-orange: #c2410c;
-  --tone-jade: #0f766e;
-  --tone-blue: #1d4ed8;
-  --tone-bronze: #92400e;
+  --tone-orange: #a64f07;
+  --tone-jade: #057664;
+  --tone-blue: #0963d3;
+  --tone-bronze: #984806;
 
   /* What sits on top of a filled accent. On paper the accents are deep and
      this is white; on a dark screen they are fluorescent and it inverts. */
@@ -120,10 +131,10 @@
   /* Common is the one rarity that has to work as small text on the raised
      surface as well as on the card, and mid-slate does not. */
   --color-r-common: #4b5563;
-  --color-r-uncommon: #166534;
-  --color-r-rare: #0369a1;
-  --color-r-epic: #7c3aed;
-  --color-r-legendary: #92400e;
+  --color-r-uncommon: #057a30;
+  --color-r-rare: #076f9d;
+  --color-r-epic: #9028f6;
+  --color-r-legendary: #8e5b06;
 
   /* Press Start 2P is the game's logo and nothing else. Everything the
      interface says is set in a face people can actually read: an eight-pixel
