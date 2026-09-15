@@ -785,7 +785,7 @@ function reducer(state, action) {
         { ...state, player: { ...state.player, cores: state.player.cores - spec.cost } },
         drops,
       )
-      return { ...next, lastReward: { kind: 'shop', name: spec.name, spent: spec.cost, drops } }
+      return { ...next, lastReward: { kind: 'shop', name: spec.name, art: spec.art, spent: spec.cost, drops } }
     }
 
     case 'dismissReward':

@@ -94,7 +94,9 @@ export default function RewardModal() {
     <Modal open onClose={dismissReward} title={bought ? reward.name : DAILY_CHEST.name}>
       <div className="text-center">
         <div className="loot-pop inline-grid place-items-center">
-          <ChestArt size={60} />
+          {/* The one you actually bought. Opening an epic vault and being shown
+              a wooden crate is a small lie the screen does not need to tell. */}
+          <ChestArt kind={reward.art} size={60} />
         </div>
         <div className="font-display text-[13px] text-ink-faint mt-3">
           {bought ? 'OPENED' : "TODAY'S PULL"}

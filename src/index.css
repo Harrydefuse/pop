@@ -731,7 +731,9 @@ button:disabled {
   width: 112px;
   height: 112px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-gold) 32%, transparent) 0%, transparent 68%);
+  /* `--glow` lets a caller light it in the chest's own rarity; gold is what a
+     chest has always been, so that is the fallback. */
+  background: radial-gradient(circle, color-mix(in srgb, var(--glow, var(--color-gold)) 32%, transparent) 0%, transparent 68%);
   animation: chest-breathe 3.6s ease-in-out infinite;
   z-index: 0;
 }

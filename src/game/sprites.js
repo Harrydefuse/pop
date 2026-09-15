@@ -981,6 +981,115 @@ export function armourSprite(slot, set = 'leather') {
 }
 
 // The treasure chest, imported from art/chest.png at 32x32.
+/**
+ * The two chests above the supply crate.
+ *
+ * Drawn by tools/chests.py rather than typed: a steel strongbox with an arched
+ * lid and a stone in the lock, and a vault door with a wheel on it. The vault
+ * deliberately is not a chest at all — at 40px on a shelf beside two others,
+ * the only thing that reads is a different outline, and a fourth colour of lid
+ * would have read as the same box again.
+ */
+export const LOOT_CHEST_SPRITE = {
+  w: 32,
+  h: 32,
+  palette: {
+    a: '#0c1018',
+    b: '#1b2431',
+    c: '#26303f',
+    d: '#3d4c63',
+    e: '#5d7091',
+    f: '#93a6c6',
+    h: '#0b4f74',
+    i: '#1e9ad0',
+    j: '#9fe8ff',
+  },
+  grid: [
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '.........aaaaaaaaaaaaaa.........',
+    '......aaaaffffffffffffaaaa......',
+    '.....aabbfffffffffffffcbbaa.....',
+    '....aacbbfeeeeeeeeeeeecbbfaa....',
+    '...aafcbbeeeebbbbbbeeecbbffaa...',
+    '...affcbbedddbddddbdddcbbeffa...',
+    '..aafecbbddddbddddbdddcbbeefaa..',
+    '..accccbbccccbhhhhbccccbbcccca..',
+    '..accccbbccccbhjihbccccbbcccca..',
+    '..aeeecbbeeeehiiiiheeecbbeeeea..',
+    '..aeddcbbddddbhiihbdddcbbdddea..',
+    '..adddcbbddddbhhhhbdddcbbdddda..',
+    '..adddcbbddddbdccdbdddcbbdddda..',
+    '..adddcbbddddbdccdbdddcbbdddda..',
+    '..adddcbbddddbdccdbdddcbbdddda..',
+    '..adddcbbddddbbbbbbdddcbbdddda..',
+    '..adddcbbdddddddddddddcbbdddda..',
+    '.aadddcbbdddddddddddddcbbddddaa.',
+    '.acccccbbccccccccccccccbbccccca.',
+    '.acccccbbccccccccccccccbbccccca.',
+    '.acccccbbccccccccccccccbbccccca.',
+    '.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.',
+    '................................',
+  ],
+}
+
+export const VAULT_SPRITE = {
+  w: 32,
+  h: 32,
+  palette: {
+    a: '#0a0712',
+    b: '#150f22',
+    c: '#241a38',
+    d: '#3b2b59',
+    e: '#6a4f9c',
+    f: '#2d2144',
+    h: '#a855f7',
+    i: '#d8b4fe',
+    j: '#f3e8ff',
+  },
+  grid: [
+    '................................',
+    '................................',
+    '.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.',
+    '.acccccccccccccccccccccccccccca.',
+    '.acddddddddddddddddddddddddddca.',
+    '.acdbebbbbbbbbbbbbbbbbbbbbebdca.',
+    '.acdeeebbbbbeeeeeeeeebbbbeeedca.',
+    '.acdbebbbbeeedddddddeeebbbebdca.',
+    '.acdbbbbbeedffhhhhhffdeebbbbdca.',
+    '.acdbbbbeedfhhfffffhhfdeebbbdca.',
+    '.acdbbbeedhhfeeeeeeefhhdeebbdca.',
+    '.acdbbbedhhfeeffeffeefhhdebbdca.',
+    '.acdbbedfhfeffffeffffefhfdebdca.',
+    '.acdbbedhfefffffefffffefhdebdca.',
+    '.acdbeefhfefffffhfffffefhfeedca.',
+    '.acdbedfheffffhhihhffffehfdedca.',
+    '.acdbedfheeeeehjiiheeeeehfdedca.',
+    '.acdbedfheeeeehiiiheeeeehfdedca.',
+    '.acdbedfheffffhhihhffffehfdedca.',
+    '.acdbeefhfefffffhfffffefhfeedca.',
+    '.acdbbedhfefffffefffffefhdebdca.',
+    '.acdbbedfhfeffffeffffefhfdebdca.',
+    '.acdbbbedhhfeeffeffeefhhdebbdca.',
+    '.acdbbbeedhhfeeeeeeefhhdeebbdca.',
+    '.acdbbbbeedfhhfffffhhfdeebbbdca.',
+    '.acdbebbbeedffhhhhhffdeebbebdca.',
+    '.acdeeebbbeeedddddddeeebbeeedca.',
+    '.acdbebbbbbbeeeeeeeeebbbbbebdca.',
+    '.acddddddddddddddddddddddddddca.',
+    '.acccccccccccccccccccccccccccca.',
+    '.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.',
+    '................................',
+  ],
+}
+
 export const CHEST_SPRITE = {
   w: 32,
   h: 32,

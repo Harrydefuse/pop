@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
+import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, LOOT_CHEST_SPRITE, VAULT_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -57,8 +57,8 @@ function gearAura(equipped) {
 }
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
-export function GearIcon({ slot, kind, set = 'leather', size = 34 }) {
-  return <PixelSprite sprite={armourSprite(kind ?? slot, set)} size={size} />
+export function GearIcon({ slot, kind, set = 'leather', size = 34, className, style }) {
+  return <PixelSprite sprite={armourSprite(kind ?? slot, set)} size={size} className={className} style={style} />
 }
 
 /**
@@ -244,9 +244,26 @@ export function HeroView({ av = {}, equipped = {}, height = 150, className = '' 
   )
 }
 
-/** The treasure chest, drawn art rather than a UI glyph. */
-export function ChestArt({ size = 48, className = '', style }) {
-  return <PixelSprite sprite={CHEST_SPRITE} size={size} className={className} style={style} />
+/**
+ * A chest, drawn art rather than a UI glyph.
+ *
+ * `kind` picks which one. Everywhere a chest is just "a chest" — the daily, the
+ * founder gift, the reward screen — leaves it off and gets the wooden one,
+ * which is the chest this game has always meant. The shop passes a kind,
+ * because up there the three rungs have to be told apart at a glance.
+ */
+const CHEST_ART = { crate: CHEST_SPRITE, loot: LOOT_CHEST_SPRITE, vault: VAULT_SPRITE }
+
+export function ChestArt({ kind = 'crate', size = 48, className = '', style, title }) {
+  return (
+    <PixelSprite
+      sprite={CHEST_ART[kind] ?? CHEST_SPRITE}
+      size={size}
+      className={className}
+      style={style}
+      title={title}
+    />
+  )
 }
 /**
  * A boss's head, at portrait size.

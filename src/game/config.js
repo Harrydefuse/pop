@@ -406,30 +406,45 @@ export const DAILY_CHEST = {
  * on what can drop rather than for a better chance at the same pool, so the
  * expensive one is a promise and not a nudge.
  */
+/**
+ * Three rungs, and the rung is the rarity.
+ *
+ * The names used to promise one thing and the drop table deliver another — a
+ * WAR CHEST whose floor was uncommon, a VAULT whose floor was rare. There is
+ * one field now and `floor` is it: it names the chest, paints its frame and
+ * sets the worst thing it can give you. A rare chest cannot roll below rare,
+ * which is the only thing the word was ever meant to mean.
+ *
+ * Raising the two floors made both chests better, so both cost more. The
+ * exchange rate is still training and only training.
+ */
 export const SHOP_CHESTS = [
   {
     id: 'crate',
     name: 'Supply crate',
+    art: 'crate',
+    floor: 'common',
     cost: 600,
     rolls: 2,
-    floor: 'common',
     note: 'Two pulls, anything from common up.',
   },
   {
     id: 'warchest',
-    name: 'War chest',
-    cost: 2200,
+    name: 'Loot chest',
+    art: 'loot',
+    floor: 'rare',
+    cost: 3000,
     rolls: 3,
-    floor: 'uncommon',
-    note: 'Three pulls, nothing below uncommon.',
+    note: 'Three pulls, rare at worst.',
   },
   {
     id: 'vault',
-    name: 'Vault chest',
-    cost: 6500,
+    name: 'Epic vault',
+    art: 'vault',
+    floor: 'epic',
+    cost: 9000,
     rolls: 3,
-    floor: 'rare',
-    note: 'Three pulls, rare at worst. Weeks of training.',
+    note: 'Three pulls, epic at worst. Weeks of training.',
   },
 ]
 
