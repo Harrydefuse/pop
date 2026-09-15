@@ -10,6 +10,18 @@ spokes — and the grid falls out of them.
 Run:  python3 tools/chests.py          # prints both sprites as JS
 """
 
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+import png
+
+
+def _rgba(hexcode):
+    if not hexcode:
+        return (0, 0, 0, 0)
+    n = int(hexcode.lstrip('#'), 16)
+    return ((n >> 16) & 255, (n >> 8) & 255, n & 255, 255)
+
+
 W = H = 32
 
 
@@ -68,6 +80,22 @@ def outline(g, ch):
             if near:
                 out[y][x] = ch
     return out
+
+
+def diamond(g, cx, cy, r, ch):
+    for y in range(H):
+        for x in range(W):
+            if abs(x - cx) + abs(y - cy) <= r:
+                g[y][x] = ch
+
+
+def lit(g, gold, light):
+    """Put the light on the top edge of every run of gold, the way the drawing
+    does — a band that is one flat colour reads as a sticker, not as metal."""
+    for x in range(W):
+        for y in range(H):
+            if g[y][x] == gold and (y == 0 or g[y - 1][x] != gold):
+                g[y][x] = light
 
 
 def emit(name, palette, g):
@@ -140,50 +168,100 @@ LOOT_PALETTE = {
 
 
 # ----------------------------------------------------------------------- vault
-# Epic. Not a chest at all: a door with a wheel on it. The silhouette is the
-# whole point — at 40px on a shelf next to two chests, only a different outline
-# reads, and a fourth colour of lid does not.
+# Epic. Purple and gold: a banded chest with a stone set in the lock plate and
+# a smaller stone in each foot, transcribed by eye from a drawing of it.
+#
+# This replaces a vault door drawn here before. The door read well as "not a
+# chest", which turned out to be the problem — the shelf is a ladder of chests
+# and the top of it should be the best chest, not a different object.
+def panel(g, x0, y0, x1, y1, ink, fill, shade, light):
+    """A purple panel let into the gold, with its own black reveal.
+
+    The reveal is the whole trick. Gold bands that merely touch purple read as
+    one flat sticker; a pixel of black between them is what makes the gold sit
+    proud of the panel, and it is what the drawing does everywhere."""
+    rect(g, x0, y0, x1, y1, ink)
+    rect(g, x0 + 1, y0 + 1, x1 - 1, y1 - 1, fill)
+    rect(g, x0 + 1, y1 - 1, x1 - 1, y1 - 1, shade)
+    rect(g, x0 + 1, y0 + 1, x1 - 1, y0 + 1, light)
+
+
 def vault():
     g = blank()
-    rect(g, 2, 3, 29, 29, 'c')           # the frame
-    rect(g, 3, 4, 28, 28, 'd')
-    rect(g, 4, 5, 27, 27, 'b')           # recess
-    disc(g, 16, 16.5, 11.4, 'd')         # the door
-    ring(g, 16, 16.5, 10.2, 11.4, 'e')   # its lit edge
-    disc(g, 16, 16.5, 9.4, 'f')
-    ring(g, 16, 16.5, 8.0, 9.0, 'h')     # the seam the door shuts on
-    ring(g, 16, 16.5, 6.2, 7.2, 'e')     # the rim of the wheel
-    # four thin spokes from the hub out to the rim
-    for y in range(H):
-        for x in range(W):
-            d2 = (x - 16) ** 2 + (y - 16.5) ** 2
-            if d2 > 7.2 * 7.2:
+    # The body is gold all the way through, and the purple is let into it.
+    # Built the other way round — purple box, gold straps laid on — the straps
+    # float and the corners never meet.
+    rect(g, 3, 4, 28, 26, 'g')
+
+    # four panels: two on the lid, two on the body
+    for (x0, x1) in ((6, 13), (18, 25)):
+        panel(g, x0, 6, x1, 13, 'k', 'r', 'p', 's')
+        panel(g, x0, 17, x1, 24, 'k', 'p', 'q', 'r')
+
+    # the lock plate, and the stone set in it
+    rect(g, 13, 16, 18, 23, 'k')
+    rect(g, 14, 16, 17, 22, 'g')
+    diamond(g, 15.5, 14.5, 6, 'k')
+    diamond(g, 15.5, 14.5, 5, 'g')
+    diamond(g, 15.5, 14.5, 3.2, 'k')
+    diamond(g, 15.5, 14.5, 2.4, 's')
+    diamond(g, 15, 14, 1, 't')
+    disc(g, 15.5, 19, 1.4, 'k')          # keyhole
+    rect(g, 15, 20, 16, 22, 'k')
+
+    # feet, each with a stone of its own, and daylight between them
+    rect(g, 9, 27, 22, 29, '.')
+    for x0 in (3, 23):
+        rect(g, x0, 26, x0 + 5, 29, 'g')
+        rect(g, x0 + 1, 27, x0 + 4, 28, 'k')
+        rect(g, x0 + 2, 27, x0 + 3, 28, 's')
+
+    # Light on the top edge of every gold run and shadow under it, so the
+    # frame has a thickness instead of being one flat colour of yellow.
+    #
+    # Read off a snapshot, not off the grid being written: shading in place
+    # makes the second row see the lit first row as "not gold", light itself,
+    # and the highlight runs away down the whole column.
+    was = [row[:] for row in g]
+    for x in range(W):
+        for y in range(H):
+            if was[y][x] != 'g':
                 continue
-            if abs(x - 16) <= 0.5 or abs(y - 16.5) <= 0.5:
-                g[y][x] = 'e'
-    disc(g, 16, 16.5, 2.6, 'h')          # hub
-    disc(g, 16, 16.5, 1.5, 'i')
-    g[16][15] = 'j'
-    # rivets
-    for rx, ry in ((5, 6), (26, 6), (5, 26), (26, 26)):
-        disc(g, rx, ry, 1.2, 'e')
-    g = outline(g, 'a')
+            if y == 0 or was[y - 1][x] != 'g':
+                g[y][x] = 'h'
+            elif y == H - 1 or was[y + 1][x] != 'g':
+                g[y][x] = 'd'
+    # and a few glints where a painter would put them
+    for gx, gy in ((5, 4), (11, 4), (20, 4), (26, 4), (8, 15), (21, 15), (4, 9), (27, 20)):
+        if g[gy][gx] in ('g', 'h', 'd'):
+            g[gy][gx] = 'w'
+            if g[gy][gx + 1] in ('g', 'h', 'd'):
+                g[gy][gx + 1] = 'w'
+
+    g = outline(g, 'k')
     return g
 
 
 VAULT_PALETTE = {
-    'a': '#0a0712',   # outline
-    'b': '#150f22',   # recess
-    'c': '#241a38',   # frame shadow
-    'd': '#3b2b59',   # frame
-    'e': '#6a4f9c',   # lit metal
-    'f': '#2d2144',   # door face
-    'h': '#a855f7',   # the violet in the seams
-    'i': '#d8b4fe',   # hub
-    'j': '#f3e8ff',   # glint
+    'k': '#140a24',   # outline, and the keyhole
+    'q': '#39117d',   # purple, in shadow
+    'p': '#4c1aa3',   # purple
+    'r': '#6d28d9',   # purple, lit
+    's': '#a855f7',   # the stones
+    't': '#f3e8ff',   # their glint
+    'd': '#b8760f',   # gold, in shadow
+    'g': '#f0a827',   # gold
+    'h': '#ffd45e',   # gold, lit
+    'w': '#fff6d8',   # the glints on it
 }
 
 
 if __name__ == '__main__':
+    if '--png' in sys.argv:
+        out = sys.argv[sys.argv.index('--png') + 1]
+        for name, pal, grid in (('loot', LOOT_PALETTE, loot_chest()), ('vault', VAULT_PALETTE, vault())):
+            px = [[_rgba(pal.get(c)) for c in row] for row in grid]
+            png.write('%s/%s.png' % (out, name), px, scale=12, alpha=True)
+        raise SystemExit(0)
     print(emit('LOOT_CHEST_SPRITE', LOOT_PALETTE, loot_chest()))
     print(emit('VAULT_SPRITE', VAULT_PALETTE, vault()))
