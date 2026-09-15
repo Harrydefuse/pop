@@ -998,17 +998,50 @@ button:disabled {
   55% { opacity: 0; }
 }
 
+/* Flame rises and gutters out rather than snapping, which is the difference
+   between fire and a flashing light. */
+.pet-flame {
+  position: absolute;
+  color: var(--aura);
+  filter: drop-shadow(0 0 5px var(--aura));
+  animation: pet-flame 2.2s ease-in-out infinite;
+}
+@keyframes pet-flame {
+  0% { opacity: 0; transform: translateY(7px) scaleY(0.65); }
+  22% { opacity: 1; transform: translateY(0) scaleY(1); }
+  60% { opacity: 0.8; transform: translateY(-7px) scaleY(1.18); }
+  100% { opacity: 0; transform: translateY(-17px) scaleY(0.7); }
+}
+
+/* A shard hangs and turns instead of travelling — ice does not go anywhere,
+   it catches the light and stops. */
+.pet-shard {
+  position: absolute;
+  color: var(--aura);
+  filter: drop-shadow(0 0 5px var(--aura));
+  animation: pet-shard 3.4s ease-in-out infinite;
+}
+@keyframes pet-shard {
+  0%, 100% { opacity: 0.12; transform: translateY(3px) rotate(0deg) scale(0.85); }
+  40% { opacity: 1; transform: translateY(-3px) rotate(9deg) scale(1); }
+  72% { opacity: 0.45; transform: translateY(0) rotate(-7deg) scale(0.92); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* The glow stays — it is what says "this one is finished" — but nothing
-     moves, and the arcs hold rather than flickering. */
+     moves, and whatever it sheds holds rather than flickering. */
   .pet-aura,
   .pet-mote,
-  .pet-arc {
+  .pet-arc,
+  .pet-flame,
+  .pet-shard {
     animation: none;
   }
   .pet-aura { opacity: 0.85; }
   .pet-mote { opacity: 0.7; }
-  .pet-arc { opacity: 0.6; }
+  .pet-arc,
+  .pet-flame,
+  .pet-shard { opacity: 0.6; }
 }
 
 /* ------------------------------------------------------------------- arena

@@ -77,8 +77,9 @@ const MOTES = [
   { x: '28%', y: '40%', dx: '-5px', d: '2.4s', t: '3s' },
 ]
 
-// Four arcs around the silhouette, each on its own clock and rotation, so the
-// lightning crawls around the animal instead of blinking on and off as one.
+// Four flares around the silhouette, each on its own clock and rotation, so
+// whatever the pet throws off crawls around it instead of blinking on and off
+// as one object.
 const ARCS = [
   { x: '-3%', y: '22%', h: 28, rot: -18, d: '0s', t: '1.7s' },
   { x: '84%', y: '14%', h: 32, rot: 16, d: '0.4s', t: '2.1s' },
@@ -86,11 +87,31 @@ const ARCS = [
   { x: '3%', y: '62%', h: 24, rot: 24, d: '1.3s', t: '1.9s' },
 ]
 
-/** One bolt. Drawn rather than a glyph — it has to be thin and jagged. */
-function Arc({ spec }) {
+/**
+ * What a fully grown pet throws off.
+ *
+ * ZEUS's lightning turned out to be the best thing in the collection, and the
+ * reason is that it is HIS — a shared sparkle says "this one is finished",
+ * where a bolt says "this one is made of weather". So the flare is a property
+ * of the animal: bolts for the storm, flame for the two that burn, shards for
+ * the one made of ice. Everything else keeps the motes, which is not a
+ * consolation prize — a brute does not need to be on fire.
+ *
+ * Three shapes, three ways of moving. Lightning is cut with steps() because
+ * electricity is there or it is not; flame rises and gutters; a shard hangs
+ * and turns.
+ */
+const FLARES = {
+  bolt: { cls: 'pet-arc', w: 10, h: 24, d: 'M6 0 L2.5 9 L7 10.5 L3 24', fill: false },
+  flame: { cls: 'pet-flame', w: 12, h: 20, d: 'M6 20 C1 15 2 10 6 0 C10 10 11 15 6 20 Z', fill: true },
+  shard: { cls: 'pet-shard', w: 10, h: 22, d: 'M5 0 L9 11 L5 22 L1 11 Z', fill: true },
+}
+
+function Flare({ kind, spec }) {
+  const f = FLARES[kind] ?? FLARES.bolt
   return (
     <span
-      className="pet-arc"
+      className={f.cls}
       aria-hidden="true"
       style={{
         left: spec.x,
@@ -100,14 +121,18 @@ function Arc({ spec }) {
         animationDuration: spec.t,
       }}
     >
-      <svg width={spec.h * 0.45} height={spec.h} viewBox="0 0 10 24" fill="none">
-        <polyline
-          points="6,0 2.5,9 7,10.5 3,24"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+      <svg width={(spec.h * f.w) / f.h} height={spec.h} viewBox={`0 0 ${f.w} ${f.h}`} fill="none">
+        {f.fill ? (
+          <path d={f.d} fill="currentColor" />
+        ) : (
+          <polyline
+            points="6,0 2.5,9 7,10.5 3,24"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
       </svg>
     </span>
   )
@@ -157,7 +182,7 @@ export function PetView({ refId, stage: at = 1, size = 72, float, delay, classNa
               style={{ left: m.x, top: m.y, '--dx': m.dx, animationDelay: m.d, animationDuration: m.t }}
             />
           ))}
-          {art.arc && ARCS.map((a) => <Arc key={a.x + a.d} spec={a} />)}
+          {art.flare && ARCS.map((a) => <Flare key={a.x + a.d} kind={art.flare} spec={a} />)}
         </span>
       )}
     </div>

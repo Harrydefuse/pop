@@ -57,20 +57,15 @@ export const PET_CATALOG = [
     blurb: 'Hatched by a fire and never left. Fits in a rucksack, thinks it does not.',
   },
   {
+    // Was TUSKLING. Same pet, same slot in the world raid, renamed with the
+    // art — so it keeps its rarity, its stat and its seasonal flag rather than
+    // arriving as a second creature beside the one it replaced.
     id: 'kookie',
     name: 'KOOKIE',
-    rarity: 'epic',
-    stat: 'STR',
-    species: 'Goblin brute',
-    blurb: 'Started small and angry. Still angry. No longer small.',
-  },
-  {
-    id: 'tuskling',
-    name: 'TUSKLING',
     rarity: 'legendary',
     stat: 'END',
-    species: 'Ogre cub',
-    blurb: 'Grimtusk\u2019s cub. Only walks with people who kept walking.',
+    species: 'Grimtusk\u2019s cub',
+    blurb: 'Started small and angry. Still angry. No longer small.',
     seasonal: 'ogre',
   },
 ]
@@ -136,7 +131,7 @@ const SEASONS = [
       { at: 0.25, name: 'Grimtusk banner', kind: 'banner' },
       { at: 0.5, name: 'Plateau-Breaker title + 1,500 cores', kind: 'title' },
       { at: 0.75, name: 'Epic gear cache', kind: 'gear' },
-      { at: 1, name: 'TUSKLING pet', kind: 'pet', ref: 'tuskling' },
+      { at: 1, name: 'KOOKIE pet', kind: 'pet', ref: 'kookie' },
     ],
     personalTiers: [
       { km: 10, reward: '200 cores' },

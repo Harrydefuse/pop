@@ -277,61 +277,6 @@ export const ZEUS = {
   ],
 }
 
-// --------------------------------------------- TUSKLING (legendary, seasonal)
-// Grimtusk's cub: only players who put damage on the Season 2 world raid ever
-// see one, so it carries the boss's greens, its tusks and a club of its own.
-export const TUSKLING = {
-  id: 'tuskling',
-  w: 50,
-  h: 44,
-  palette: { o: '#132009', d: '#2f5a20', g: '#4e8c33', G: '#79b84e', t: '#f4eed6', e: '#ffc93c', k: '#0f1408', h: '#4a2f16', H: '#8a5a2a', w: '#c8b78e' },
-  grid: [
-    '..................................................',
-    '..................................................',
-    '.............ooooooooooooooo......................',
-    '...........ooogGGGGGGggggggooo....................',
-    '..........oogGGGGGGggggggggggoo..........oooooooo.',
-    '.........oogGGGGGgggggggggggggoo........ooHwwwHHoo',
-    '.........ogGGGGggggggggggggggggo........oHwwwHHHHo',
-    '....ooooooGGGGgggggggggggggggggoooooo...oHwwHHHHHo',
-    '..ooogggogggggggggggggggggggggggogggooo.oHHHHHHHHo',
-    '.oogggggogggggggggggggggggggggggogggggoooHHHHwwHHo',
-    '.oggggggogdddddddddgggdddddddddgoggggggoooHHHHHHoo',
-    '.ooggggoogooooooooogggooooooooogooggggoo.ooHHHHHo.',
-    '..oooggogggeeeeeeegggggeeeeeeegggoggooo...oooHHHo.',
-    '....oooogggeetkkeegggggeetkkeegggoooo......ooHHHo.',
-    '......oogggeeekkeegggggeeekkeegggoo........oHHHHo.',
-    '.......oggoooooeegggggggeeeeoooooo.........oHHHHo.',
-    '.......oogotttogggggggggggggotttoo.........oHHHoo.',
-    '........ogotttogggggggggggggotttoo........ooHHHo..',
-    '........oootttooggdddddggggoottto.........oHHHHo..',
-    '.........oottttogdkdddkdgggotttto.........oHHHHo..',
-    '..........ottttotkkttkkttkkotttto.........oHHHoo..',
-    '.........oootttokkkkkkkkkkootttoo........ooHHHo...',
-    '.......ooogotttoooooooooooootttooooooooo.oHHHHo...',
-    '...oooooooootttogggggggggggotttogggggddo.oHHHHo...',
-    '...oddgggggooooogggggggggggooooogggggddoooHHHoo...',
-    '...oddgggggoGGggggggggggggggggoggggggddooHHHHo....',
-    '...oddgggggoggggggggggggggggggoggggggddooHHHHo....',
-    '...oddgggggoggggggggggggggggggoggggggddooooHoo....',
-    '...oddggggHHHHHHHHHHHHHHHHHHHHHHHggggddgggoHo.....',
-    '...oddgggghhhhhhhhhhhhhhhhhhhhhhgggggddgggoHo.....',
-    '...oddggggghhhhhhhhhhhhhhhhhhhhhggggggggggoHo.....',
-    '.oooddgggggohhhhhhhhhohhhhhhhhhoooggggggggooo.....',
-    '.oggddggggggohhhhhhhgodhhhhhhhdo.oggggggggggo.....',
-    '.oggggggggggoggggggggodddddddddo.oggggggggggo.....',
-    '.oggggggggggoggggggggodddddddddo.ooggggggggoo.....',
-    '.ooggggggggooggggggggodddddddddo..oooooooooo......',
-    '..oooooooooogggggggggodddddddddo......oHHHo.......',
-    '...........ogggggggggodddddddddo......ooooo.......',
-    '.........ooogggggggggodddddddddooo................',
-    '.........ogggggggggggddddddddddddo................',
-    '.........ogggggggggggddddddddddddo................',
-    '.........ogggggggggggddddddddddddo................',
-    '.........ottoottoottoottoottoottoo................',
-    '.........oooooooooooooooooooooooo.................',
-  ],
-}
 
 // The reference the player supplied, imported unchanged and staying that way.
 // It faces left with its wing out like the rest of the roster, so the six drawn
@@ -1199,10 +1144,11 @@ export const ZEUS_S4 = {
 }
 
 /**
- * `aura` is the light a fully grown one throws, and `arc` says whether it
- * throws lightning with it. Taken from the drawing rather than from the
- * rarity: the glow around an ascended FROST should be the blue of its own ice,
- * not the purple every rare item shares.
+ * `aura` is the light a fully grown one throws, and `flare` is what it throws
+ * off with it — bolts, flame or shards. Both come off the drawing rather than
+ * the rarity: the glow around an ascended FROST should be the blue of its own
+ * ice, not the purple every rare item shares, and what it sheds should be ice
+ * rather than lightning.
  */
 export const DRAKE_S1 = {
   w: 50,
@@ -1730,12 +1676,12 @@ export const KOOKIE_S4 = {
 export const PET_SPRITES = {
   pup: { ...PUP, aura: '#c084fc' },
   turbo: { ...TURBO, aura: '#a3e635' },
-  frost: { ...FROST, aura: '#6fe0ff', stages: [FROST_S1, FROST_S2, FROST_S3, FROST_S4] },
-  ember: { ...EMBER, aura: '#ff7a1f', stages: [EMBER_S1, EMBER_S2, EMBER_S3, EMBER_S4] },
-  zeus: { ...ZEUS, aura: '#5cc8ff', arc: true, stages: [ZEUS_S1, ZEUS_S2, ZEUS_S3, ZEUS_S4] },
-  tuskling: { ...TUSKLING, aura: '#c084fc' },
-  drake: { ...DRAKE, aura: '#fb7185', stages: [DRAKE_S1, DRAKE_S2, DRAKE_S3, DRAKE_S4] },
-  // No base drawing of its own: KOOKIE arrived as a growth series, so its
+  frost: { ...FROST, aura: '#6fe0ff', flare: 'shard', stages: [FROST_S1, FROST_S2, FROST_S3, FROST_S4] },
+  ember: { ...EMBER, aura: '#ff7a1f', flare: 'flame', stages: [EMBER_S1, EMBER_S2, EMBER_S3, EMBER_S4] },
+  zeus: { ...ZEUS, aura: '#5cc8ff', flare: 'bolt', stages: [ZEUS_S1, ZEUS_S2, ZEUS_S3, ZEUS_S4] },
+  drake: { ...DRAKE, aura: '#ff8a4c', flare: 'flame', stages: [DRAKE_S1, DRAKE_S2, DRAKE_S3, DRAKE_S4] },
+  // Was TUSKLING, and the old ogre-cub drawing goes with the name — the
+  // growth series replaces it outright. No base drawing of its own, so the
   // first form is also what anything asking for "a kookie" gets.
   kookie: { ...KOOKIE_S1, aura: '#8ad14a', stages: [KOOKIE_S1, KOOKIE_S2, KOOKIE_S3, KOOKIE_S4] },
 }

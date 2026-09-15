@@ -89,9 +89,17 @@ function load() {
     // keeps whatever form its old level had earned, so nobody who grew a pet
     // the old way is handed a hatchling.
     merged.player.treats = merged.player.treats ?? 0
-    merged.player.pets = (merged.player.pets ?? []).map((pet) =>
-      pet.stage ? pet : { ...pet, stage: stageForOldLevel(pet.level ?? 1), fed: 0, level: undefined, xp: undefined },
-    )
+    merged.player.pets = (merged.player.pets ?? []).map((pet) => {
+      // TUSKLING was renamed KOOKIE along with its art. A save holding the old
+      // ref would look up a drawing that no longer exists and fall back to a
+      // puppy, so the ref is rewritten rather than left to fail quietly.
+      const ref = pet.ref === 'tuskling' ? 'kookie' : pet.ref
+      const name = pet.name === 'TUSKLING' ? 'KOOKIE' : pet.name
+      const carried = { ...pet, ref, name }
+      return pet.stage
+        ? carried
+        : { ...carried, stage: stageForOldLevel(pet.level ?? 1), fed: 0, level: undefined, xp: undefined }
+    })
     return merged
   } catch {
     return baseState()
