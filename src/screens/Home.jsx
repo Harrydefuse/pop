@@ -4,9 +4,89 @@ import Icon from '../components/Icon'
 import LogSheet from '../components/LogSheet'
 import { ChestArt } from '../components/Sprites'
 import GiftReveal from '../components/GiftReveal'
+import RankBadge from '../components/RankBadge'
+import CampaignSheet from '../components/CampaignSheet'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS } from '../game/config'
-import { streakTier } from '../game/engine'
+import { arenaLadder, bracketXp, campaignState, fmtFull, streakTier } from '../game/engine'
+import { alpha } from '../game/color'
+
+/**
+ * Your rank, across the top of the first screen you open.
+ *
+ * The ladder existed and the app wore its colour, but neither of those answers
+ * the question somebody opens the app wanting answered: how close am I. A
+ * colour is a state; a number counting down is a reason to train today.
+ *
+ * So the badge is the carrot, the bar is the distance, and the line under it is
+ * the price in XP. Tap it for the whole ladder.
+ *
+ * The rank IS the arena. There is exactly one ladder in this game and adding a
+ * second scored on gear — which is what the old BRONZE-to-IMMORTAL chip was —
+ * would put two different answers to "how am I doing" on one screen.
+ */
+function RankCard({ state, onOpen }) {
+  const p = state.player
+  const c = campaignState(p, state.campaign)
+  const ladder = arenaLadder()
+  const here = ladder.find((r) => r.arena.n === c.arena.n) ?? ladder[0]
+  const next = ladder[c.arena.n] ?? null
+
+  // How far through this arena's level band you are, measured in the XP that
+  // band costs — the same number the boss's health bar is measured in, because
+  // they are the same climb.
+  const total = Math.max(1, bracketXp(here.from, here.to + 1))
+  const done = Math.min(total, bracketXp(here.from, p.level) + (p.xp ?? 0))
+  const left = Math.max(0, Math.round(total - done))
+  const tint = c.arena.tint
+
+  return (
+    <button
+      onClick={onOpen}
+      className="w-full text-left transition-transform active:scale-[0.99]"
+      aria-label={`Rank ${c.arena.name}, arena ${c.arena.n}. ${next ? `${left} XP to ${next.arena.name}` : 'Top of the ladder'}. Open the ladder.`}
+    >
+      <Panel
+        className="p-3 flex items-center gap-3.5 overflow-hidden relative"
+        style={{ borderColor: alpha(tint, 45) }}
+      >
+        {/* The room's light, behind the badge, so the card belongs to the rank
+            rather than being a white box with a rank in it. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-1/2 pointer-events-none"
+          style={{ background: `radial-gradient(ellipse at 14% 50%, ${alpha(tint, 22)}, transparent 72%)` }}
+        />
+
+        <RankBadge arena={c.arena} size={62} className="relative shrink-0" />
+
+        <div className="min-w-0 flex-1 relative">
+          <div className="label" style={{ color: tint }}>
+            ARENA {c.arena.n} · {c.arena.theme.toUpperCase()}
+          </div>
+          <div className="font-display text-[21px] text-ink leading-tight mt-0.5">{c.arena.name}</div>
+
+          <Bar pct={done / total} color={tint} height={7} shine className="mt-2" />
+
+          <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
+            {next ? (
+              <>
+                <span className="figure" style={{ color: tint }}>
+                  {fmtFull(left)}
+                </span>{' '}
+                XP to {next.arena.name}
+              </>
+            ) : (
+              'Top of the ladder. Nothing above this one.'
+            )}
+          </div>
+        </div>
+
+        <Icon name="chevron" size={12} color="var(--color-ink-faint)" className="relative shrink-0" />
+      </Panel>
+    </button>
+  )
+}
 
 /**
  * The beta gift, sat at the very top until it is claimed. It is the first thing
@@ -310,6 +390,7 @@ export default function Home({ onGo }) {
   const [openSlot, setOpenSlot] = useState(null)
   const [logging, setLogging] = useState(null)
   const [gift, setGift] = useState(false)
+  const [ladder, setLadder] = useState(false)
   const p = state.player
   const streak = streakTier(p.streak)
   const doneCount = state.dailies.filter((d) => d.done).length
@@ -318,6 +399,10 @@ export default function Home({ onGo }) {
 
   return (
     <div className="stack-in p-4 space-y-4">
+      {/* First thing on the first screen. Everything below it is today; this is
+          the thing today is for. */}
+      <RankCard state={state} onOpen={() => setLadder(true)} />
+
       {state.gift?.pending && <GiftCard onOpen={() => setGift(true)} />}
 
       <FirstSteps state={state} onGo={onGo} />
@@ -391,6 +476,8 @@ export default function Home({ onGo }) {
       )}
 
       {gift && <GiftReveal onClose={() => setGift(false)} />}
+
+      {ladder && <CampaignSheet onClose={() => setLadder(false)} />}
 
 
       {logging && (
