@@ -1195,14 +1195,20 @@ export const ZEUS_S4 = {
   ],
 }
 
+/**
+ * `aura` is the light a fully grown one throws, and `arc` says whether it
+ * throws lightning with it. Taken from the drawing rather than from the
+ * rarity: the glow around an ascended FROST should be the blue of its own ice,
+ * not the purple every rare item shares.
+ */
 export const PET_SPRITES = {
-  pup: PUP,
-  turbo: TURBO,
-  frost: { ...FROST, stages: [FROST_S1, FROST_S2, FROST_S3, FROST_S4] },
-  ember: { ...EMBER, stages: [EMBER_S1, EMBER_S2, EMBER_S3, EMBER_S4] },
-  zeus: { ...ZEUS, stages: [ZEUS_S1, ZEUS_S2, ZEUS_S3, ZEUS_S4] },
-  tuskling: TUSKLING,
-  drake: DRAKE,
+  pup: { ...PUP, aura: '#c084fc' },
+  turbo: { ...TURBO, aura: '#a3e635' },
+  frost: { ...FROST, aura: '#6fe0ff', stages: [FROST_S1, FROST_S2, FROST_S3, FROST_S4] },
+  ember: { ...EMBER, aura: '#ff7a1f', stages: [EMBER_S1, EMBER_S2, EMBER_S3, EMBER_S4] },
+  zeus: { ...ZEUS, aura: '#5cc8ff', arc: true, stages: [ZEUS_S1, ZEUS_S2, ZEUS_S3, ZEUS_S4] },
+  tuskling: { ...TUSKLING, aura: '#c084fc' },
+  drake: { ...DRAKE, aura: '#fb7185' },
 }
 
 /**

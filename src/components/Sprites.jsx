@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, LOOT_CHEST_SPRITE, VAULT_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
+import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, PET_SPRITES, LOOT_CHEST_SPRITE, VAULT_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
 import { alpha } from '../game/color'
@@ -66,10 +66,63 @@ export function GearIcon({ slot, kind, set = 'leather', size = 34, className, st
  * physically fills more of its frame than a hatchling — the growth is visible
  * before you read a single number.
  */
+// Where the motes leave from and which way they drift. Fixed rather than
+// random, for the same reason the gear sparks are: a pet that glitters
+// differently on every render reads as a rendering bug, not as magic.
+const MOTES = [
+  { x: '14%', y: '62%', dx: '-7px', d: '0s', t: '2.9s' },
+  { x: '78%', y: '54%', dx: '6px', d: '0.7s', t: '3.2s' },
+  { x: '46%', y: '74%', dx: '3px', d: '1.3s', t: '2.6s' },
+  { x: '88%', y: '70%', dx: '8px', d: '1.9s', t: '3.4s' },
+  { x: '28%', y: '40%', dx: '-5px', d: '2.4s', t: '3s' },
+]
+
+// Four arcs around the silhouette, each on its own clock and rotation, so the
+// lightning crawls around the animal instead of blinking on and off as one.
+const ARCS = [
+  { x: '-3%', y: '22%', h: 28, rot: -18, d: '0s', t: '1.7s' },
+  { x: '84%', y: '14%', h: 32, rot: 16, d: '0.4s', t: '2.1s' },
+  { x: '74%', y: '58%', h: 26, rot: -30, d: '0.9s', t: '1.5s' },
+  { x: '3%', y: '62%', h: 24, rot: 24, d: '1.3s', t: '1.9s' },
+]
+
+/** One bolt. Drawn rather than a glyph — it has to be thin and jagged. */
+function Arc({ spec }) {
+  return (
+    <span
+      className="pet-arc"
+      aria-hidden="true"
+      style={{
+        left: spec.x,
+        top: spec.y,
+        transform: `rotate(${spec.rot}deg)`,
+        animationDelay: spec.d,
+        animationDuration: spec.t,
+      }}
+    >
+      <svg width={spec.h * 0.45} height={spec.h} viewBox="0 0 10 24" fill="none">
+        <polyline
+          points="6,0 2.5,9 7,10.5 3,24"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  )
+}
+
 export function PetView({ refId, level = 1, size = 72, float, delay, className = '' }) {
   const stage = petStage(level)
   // Art per stage where a pet has it, the one drawing where it does not.
   const sprite = petSprite(refId, stage.idx)
+  const art = PET_SPRITES[refId] ?? PET_SPRITES.pup
+  const aura = art.aura ?? '#c084fc'
+  // Motes and arcs are suppressed on the small renders. On a 38px rung of the
+  // evolution ladder they are bigger than the animal's head, and five of them
+  // around a thumbnail is noise rather than magic.
+  const lively = stage.aura && size >= 56
   // An ascended pet scales past the size it was given, so the box has to grow
   // with it — otherwise the sprite spills over its own name.
   const px = Math.round(size * stage.scale * 0.92)
@@ -78,11 +131,9 @@ export function PetView({ refId, level = 1, size = 72, float, delay, className =
     <div className={`relative grid place-items-center ${className}`} style={{ width: box, height: box }}>
       {stage.aura && (
         <span
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(168,85,247,0.45), transparent 65%)',
-            filter: 'blur(4px)',
-          }}
+          className="pet-aura absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          style={{ '--aura': aura }}
         />
       )}
       {/* `delay` offsets the bob. A row of pets all floating on the same clock
@@ -94,6 +145,21 @@ export function PetView({ refId, level = 1, size = 72, float, delay, className =
         className={float ? 'float-soft relative' : 'relative'}
         style={float && delay ? { animationDelay: delay } : undefined}
       />
+
+      {/* Over the sprite, so the light lands on the animal rather than only
+          behind it. */}
+      {lively && (
+        <span className="absolute inset-0 pointer-events-none" style={{ '--aura': aura }} aria-hidden="true">
+          {MOTES.map((m) => (
+            <span
+              key={m.x + m.d}
+              className="pet-mote"
+              style={{ left: m.x, top: m.y, '--dx': m.dx, animationDelay: m.d, animationDuration: m.t }}
+            />
+          ))}
+          {art.arc && ARCS.map((a) => <Arc key={a.x + a.d} spec={a} />)}
+        </span>
+      )}
     </div>
   )
 }

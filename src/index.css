@@ -67,7 +67,14 @@
   --color-neon-dim: #a78bfa;
   --color-cyan: #0e7490; /* secondary signal */
   --color-lime: #3f6212; /* success / gains */
-  --color-gold: #92400e; /* currency, legendary */
+  /* Gold, not rust. #92400e sat at hue 24 — an orange-brown that read as mud
+     wherever it was asked to be treasure. This is the same luminance at the
+     hue gold actually is (41), so every number and label that uses it still
+     clears 5:1 on paper and 4.6:1 on the tinted panel, and it stops looking
+     like something went wrong when you leave dark mode. The bright end of the
+     metal lives in --color-gold-glow and on the rank badge's gradient, where
+     nothing has to be read through it. */
+  --color-gold: #8f6200; /* currency, legendary */
   --color-danger: #be123c; /* boss / warnings */
 
   /* Kept for glow, wash and anything decorative that never carries a word. */
@@ -939,6 +946,75 @@ button:disabled {
   }
   .confetti { opacity: 0; }
   .loot-rise { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------- a fully grown pet
+   The end of a long climb used to be marked by a static purple smudge behind
+   the sprite, the same smudge for every animal. A final form is the single
+   biggest reward in the collection and it was the quietest thing on the
+   screen.
+
+   Three layers, all off one `--aura` colour the pet brings with it: a glow
+   that breathes, motes that rise off it, and — for the ones made of weather —
+   arcs that fire. Everything is a CSS animation on a handful of spans; there
+   is no loop and no per-frame work, which is what lets it sit on a list of
+   pets without costing anything. */
+.pet-aura {
+  background: radial-gradient(circle at 50% 56%, color-mix(in srgb, var(--aura) 60%, transparent), transparent 66%);
+  filter: blur(5px);
+  animation: pet-breathe 3.2s ease-in-out infinite;
+}
+@keyframes pet-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.07); }
+}
+
+.pet-mote {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--aura);
+  box-shadow: 0 0 6px var(--aura);
+  animation: pet-mote 2.9s ease-in-out infinite;
+}
+@keyframes pet-mote {
+  0% { opacity: 0; transform: translate(0, 5px) scale(0.5); }
+  22% { opacity: 1; }
+  72% { opacity: 0.75; }
+  100% { opacity: 0; transform: translate(var(--dx, 4px), -24px) scale(1.2); }
+}
+
+/* Electricity does not fade, it is there or it is not — so the arcs are cut
+   with steps() rather than eased, and each one runs on its own clock so they
+   never fire together and read as one flashing object. */
+.pet-arc {
+  position: absolute;
+  color: var(--aura);
+  filter: drop-shadow(0 0 4px var(--aura));
+  animation: pet-arc 1.7s steps(1, end) infinite;
+}
+@keyframes pet-arc {
+  0%, 100% { opacity: 0; }
+  3% { opacity: 1; }
+  7% { opacity: 0.4; }
+  10% { opacity: 0; }
+  48% { opacity: 0; }
+  51% { opacity: 0.95; }
+  55% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The glow stays — it is what says "this one is finished" — but nothing
+     moves, and the arcs hold rather than flickering. */
+  .pet-aura,
+  .pet-mote,
+  .pet-arc {
+    animation: none;
+  }
+  .pet-aura { opacity: 0.85; }
+  .pet-mote { opacity: 0.7; }
+  .pet-arc { opacity: 0.6; }
 }
 
 /* ------------------------------------------------------------------- arena
