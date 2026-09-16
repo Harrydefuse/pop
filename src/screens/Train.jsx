@@ -34,10 +34,11 @@ import {
 } from '../game/engine'
 import { PILLARS, pillarBest, pillarEmpty, pillarWeek } from '../game/pillars'
 import { challengeLabel, challengeProgress } from '../game/challenge'
-import { WEEKS_KEPT, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
+import { WEEKS_KEPT, e1rm, lastPlan, liftBoard, liftSeries, topSet, weekOverWeek, weekSeries } from '../game/progress'
 import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
 import { MUSCLES, muscleOf, muscleSplit, neglected } from '../game/exercises'
 import { guessActivity, readWorkoutFile } from '../game/importFile'
+import { beatsRecord, nextTarget, planToday, plateLoad, targetLabel } from '../game/coach'
 import { alpha } from '../game/color'
 
 /** One empty array, shared: `?? []` builds a new one every render, and every
@@ -271,6 +272,83 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
 }
 
 /**
+ * What to load on the bar, under the weight you are about to lift.
+ *
+ * Only shown when the number can actually be made from a bar and pairs of
+ * plates. A cable stack or a fixed dumbbell has no answer here, and inventing
+ * one is worse than staying quiet.
+ */
+function Plates({ weight }) {
+  const load = plateLoad(weight)
+  if (!load) return null
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+      <span className="label text-ink-faint">Per side</span>
+      <span className="label px-1.5 py-0.5 rounded-full bg-panel-2 text-ink-faint">bar {load.bar}</span>
+      {load.side.map((p) => (
+        <span
+          key={p.plate}
+          className="label px-1.5 py-0.5 rounded-full text-[var(--color-on-accent)]"
+          style={{ background: 'var(--color-ink-dim)' }}
+        >
+          {p.n > 1 ? `${p.n} × ` : ''}
+          {p.plate}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * How hard that was, on the scale every coach already uses.
+ *
+ * Optional on purpose — it is off until you touch it, and a set with no RPE on
+ * it is a complete set, not a half-filled form. What it buys is the difference
+ * between two identical-looking sessions, one of which nearly killed you.
+ */
+const RPE_STEPS = [6, 7, 8, 9, 10]
+const RPE_NOTE = {
+  6: 'easy',
+  7: 'solid',
+  8: 'hard',
+  9: 'one left',
+  10: 'all of it',
+}
+
+function RpeRow({ value, onChange }) {
+  return (
+    <div className="mt-2">
+      <div className="flex items-baseline gap-2">
+        <span className="font-display text-[11px] text-ink-faint">HOW HARD</span>
+        <span className="label text-ink-faint">{value ? RPE_NOTE[value] : 'optional'}</span>
+        {value ? (
+          <button onClick={() => onChange(null)} className="label text-ink-faint ml-auto px-1 active:text-danger">
+            Clear
+          </button>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-5 gap-1 mt-1">
+        {RPE_STEPS.map((n) => (
+          <button
+            key={n}
+            onClick={() => onChange(value === n ? null : n)}
+            aria-pressed={value === n}
+            className="min-h-[44px] border font-display text-[14px] tabular-nums transition-colors"
+            style={{
+              borderColor: value === n ? 'var(--arena)' : 'var(--color-line)',
+              background: value === n ? alpha('var(--arena)', 20) : 'transparent',
+              color: value === n ? 'var(--arena)' : 'var(--color-ink-dim)',
+            }}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
  * One exercise, as a card you fill in.
  *
  * The old screen asked you to hold three things in your head at once: which
@@ -282,14 +360,29 @@ function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, suffix 
  * Only the card you are working on opens its steppers. Five exercises with five
  * sets of controls is the same wall of numbers in a different arrangement.
  */
-function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onUndo }) {
+function ExerciseCard({ name, sets, last, best, record, custom, open, onOpen, onAdd, onUndo }) {
   const muscle = MUSCLES.find((m) => m.id === muscleOf(name, custom))
   const [reps, setReps] = useState(8)
   const [weight, setWeight] = useState(40)
+  const [warmup, setWarmup] = useState(false)
+  const [rpe, setRpe] = useState(null)
 
-  // Opens on the heaviest set you did of it last time, so the common case —
-  // repeat, or add a little — is already dialled in before you touch anything.
+  // What last time says to try today. Only offered before the first working
+  // set — once you are into the exercise, the thing you are doing is the plan.
+  const target = useMemo(
+    () => (sets.some((x) => !x.warmup) ? null : nextTarget(last?.sets ?? [])),
+    [sets, last],
+  )
+
+  // Opens on the target if there is one, otherwise on the heaviest set you did
+  // last time, so the common case is dialled in before you touch anything.
   useEffect(() => {
+    const t = sets.length ? null : nextTarget(last?.sets ?? [])
+    if (t) {
+      setReps(t.reps)
+      setWeight(t.weight)
+      return
+    }
     const top = topSet(sets.length ? sets : (last?.sets ?? []))
     if (!top) return
     setReps(top.reps)
@@ -298,7 +391,23 @@ function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onU
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, name])
 
-  const volume = sets.reduce((n, s) => n + s.reps * (s.weight ?? 0), 0)
+  // The bar to clear, which is the stored board OR anything already done
+  // today, whichever is higher. Records only fold back into state when the
+  // session ends, so comparing against the stored one alone would call every
+  // repeat of a record set a record of its own.
+  const bar = useMemo(() => {
+    let best = record?.e1rm ?? 0
+    for (const x of sets) if (!x.warmup) best = Math.max(best, e1rm(x.reps, x.weight))
+    return best ? { e1rm: best } : null
+  }, [record, sets])
+
+  // Whether the set currently dialled in would go on the board. Answered here
+  // rather than at the end of the session, because "that was a record" lands
+  // while you are still standing over the bar and does nothing an hour later.
+  const pr = beatsRecord(bar ? { [name]: bar } : {}, name, reps, weight, warmup)
+
+  const volume = sets.reduce((n, s) => n + (s.warmup ? 0 : s.reps * (s.weight ?? 0)), 0)
+  const working = sets.filter((x) => !x.warmup).length
 
   return (
     <Panel className="overflow-hidden">
@@ -315,11 +424,13 @@ function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onU
         <span className="min-w-0 flex-1">
           <span className="block font-display text-[16px] text-ink truncate">{name}</span>
           <span className="block label text-ink-faint mt-1">
-            {sets.length
-              ? `${sets.length} ${sets.length === 1 ? 'set' : 'sets'}${volume ? ` · ${Math.round(volume).toLocaleString()}kg` : ''}`
-              : last
-                ? `last time ${since(last.at)}`
-                : 'nothing logged yet'}
+            {working
+              ? `${working} ${working === 1 ? 'set' : 'sets'}${volume ? ` · ${Math.round(volume).toLocaleString()}kg` : ''}`
+              : sets.length
+                ? `${sets.length} warm-up${sets.length === 1 ? '' : 's'}`
+                : last
+                  ? `last time ${since(last.at)}`
+                  : 'nothing logged yet'}
           </span>
         </span>
         {best ? <span className="label text-ink-faint shrink-0">{Math.round(best.e1rm)}kg est.</span> : null}
@@ -330,10 +441,21 @@ function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onU
         <div className="px-3.5 pb-2">
           {sets.map((s, i) => (
             <div key={`${s.at}-${i}`} className="flex items-center gap-3 py-1.5 border-t border-line">
-              <span className="figure text-[13px] text-ink-faint w-4 shrink-0">{i + 1}</span>
-              <span className="text-[15px] text-ink">
+              <span className="figure text-[13px] text-ink-faint w-4 shrink-0">
+                {s.warmup ? 'W' : sets.slice(0, i + 1).filter((x) => !x.warmup).length}
+              </span>
+              <span className={`text-[15px] ${s.warmup ? 'text-ink-faint' : 'text-ink'}`}>
                 {s.weight ? `${s.weight} kg × ${s.reps}` : `${s.reps} reps`}
               </span>
+              {s.rpe ? <span className="label text-ink-faint">@{s.rpe}</span> : null}
+              {s.pr ? (
+                <span
+                  className="label px-1.5 py-0.5 rounded-full text-[var(--color-on-accent)]"
+                  style={{ background: 'var(--color-gold)', color: '#241a05' }}
+                >
+                  RECORD
+                </span>
+              ) : null}
               {i === sets.length - 1 && (
                 <button
                   onClick={onUndo}
@@ -360,6 +482,31 @@ function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onU
               ))}
             </div>
           )}
+          {/* What last time says to try. One tap fills the steppers with it,
+              which is the entire feature — the number is easy, remembering to
+              go up at all is the part people lose. */}
+          {target && (
+            <button
+              onClick={() => {
+                setReps(target.reps)
+                setWeight(target.weight)
+                setWarmup(false)
+              }}
+              className="w-full flex items-center gap-2 mb-2.5 px-2.5 py-2 min-h-[44px] border text-left active:brightness-125"
+              style={{ borderColor: 'var(--arena)', background: alpha('var(--arena)', 14) }}
+            >
+              <Icon name="spark" size={13} color="var(--arena)" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-[13px]" style={{ color: 'var(--arena)' }}>
+                  Try {targetLabel(target)}
+                </span>
+                <span className="block label text-ink-faint mt-0.5">
+                  {target.why === 'weight' ? 'You topped the rep range — add the smallest plate.' : 'One more rep than last time.'}
+                </span>
+              </span>
+            </button>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             <Stepper label="REPS" value={reps} onChange={setReps} min={1} max={500} />
             <Stepper
@@ -372,8 +519,59 @@ function ExerciseCard({ name, sets, last, best, custom, open, onOpen, onAdd, onU
             />
           </div>
           {weight === 0 && <div className="text-[13px] text-ink-faint mt-1.5">Bodyweight — reps only.</div>}
-          <Btn full variant="go" className="mt-2" onClick={() => onAdd(reps, weight)}>
-            {weight === 0 ? `Add ${reps} reps` : `Add ${weight}kg × ${reps}`}
+          <Plates weight={weight} />
+
+          {/* A warm-up is logged so the session reads the way it happened, but
+              it is not work: it stays out of tonnage and can never set a
+              record. Without this, three sets with an empty bar and three at
+              your top weight are the same six sets. */}
+          <button
+            onClick={() => setWarmup((v) => !v)}
+            aria-pressed={warmup}
+            className="w-full flex items-center gap-2 mt-2 px-2.5 min-h-[44px] border text-left transition-colors"
+            style={{
+              borderColor: warmup ? 'var(--color-ink-faint)' : 'var(--color-line)',
+              background: warmup ? 'var(--color-panel-2)' : 'transparent',
+            }}
+          >
+            <span
+              className="grid place-items-center w-4 h-4 shrink-0 border"
+              style={{
+                borderColor: warmup ? 'var(--color-ink-dim)' : 'var(--color-line-hot)',
+                background: warmup ? 'var(--color-ink-dim)' : 'transparent',
+              }}
+            >
+              {warmup && <Icon name="check" size={9} color="var(--color-panel)" />}
+            </span>
+            <span className="text-[14px] text-ink-dim">Warm-up set</span>
+            <span className="label text-ink-faint ml-auto">no volume, no records</span>
+          </button>
+
+          <RpeRow value={rpe} onChange={setRpe} />
+
+          {/* The record is called before the set is logged, not after it. */}
+          {pr && (
+            <div
+              className="flex items-center gap-2 mt-2 px-2.5 py-2"
+              style={{ background: alpha('var(--color-gold)', 22) }}
+            >
+              <Icon name="spark" size={13} color="var(--color-gold)" />
+              <span className="text-[13px] text-ink">
+                That beats your best by {(pr.by).toFixed(1)}kg
+              </span>
+            </div>
+          )}
+
+          <Btn
+            full
+            variant="go"
+            className="mt-2"
+            onClick={() => {
+              onAdd(reps, weight, { warmup, rpe })
+              setRpe(null)
+            }}
+          >
+            {warmup ? 'Add warm-up' : weight === 0 ? `Add ${reps} reps` : `Add ${weight}kg × ${reps}`}
           </Btn>
         </div>
       )}
@@ -423,8 +621,8 @@ function StrengthReadout({ session }) {
     return out
   }, [done, state.log])
 
-  const add = (lift, reps, weight) => {
-    sessionSet(lift, reps, weight)
+  const add = (lift, reps, weight, opts = {}) => {
+    sessionSet(lift, reps, weight, opts)
     setOpen(lift)
   }
 
@@ -446,10 +644,11 @@ function StrengthReadout({ session }) {
           sets={sets.filter((s) => (s.lift ?? 'Other') === name)}
           last={state.lastSets?.[name]}
           best={state.records?.[name]}
+          record={state.records?.[name]}
           custom={state.exercises ?? NONE}
           open={open === name}
           onOpen={() => setOpen(open === name ? null : name)}
-          onAdd={(reps, weight) => add(name, reps, weight)}
+          onAdd={(reps, weight, opts) => add(name, reps, weight, opts)}
           onUndo={sessionUndoSet}
         />
       ))}
@@ -1354,11 +1553,42 @@ function WeekGoal({ state }) {
  * not lifters yet — they are gamers who do not currently exercise — and "log a
  * workout" is a door a walker does not think is for them.
  */
-function StartBlock({ onStart, onImport, preview }) {
+function StartBlock({ plan, onStart, onPlan, onImport, preview }) {
+  const act = plan ? TRACKED.find((a) => a.id === plan.activityId) : null
   return (
     <div className="space-y-2">
+      {/* The screen's answer to "what am I doing today", given before it is
+          asked. A list of twelve activities is a menu; this is a plan, with
+          the reason for it written underneath so it can be argued with. */}
+      {plan && act && (
+        <button
+          onClick={() => onPlan(plan)}
+          className="w-full text-left transition-transform active:scale-[0.99]"
+          aria-label={`Today: ${plan.title}. ${plan.why}. Start ${act.name}.`}
+        >
+          <Panel className="p-3.5" style={{ borderColor: alpha(plan.tone, 50) }}>
+            <div className="flex items-center gap-3">
+              <span
+                className="grid place-items-center w-11 h-11 shrink-0 rounded-[var(--radius-sm)]"
+                style={{ background: alpha(plan.tone, 20) }}
+              >
+                <Icon name={act.icon} size={20} color={plan.tone} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block label" style={{ color: plan.tone }}>
+                  TODAY
+                </span>
+                <span className="block font-display text-[18px] text-ink truncate mt-0.5">{plan.title}</span>
+              </span>
+              <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
+            </div>
+            <div className="text-[14px] text-ink-dim leading-snug mt-2.5">{plan.why}</div>
+          </Panel>
+        </button>
+      )}
+
       <Btn full size="lg" variant="go" onClick={onStart}>
-        START ACTIVITY
+        {plan && act ? `START ${act.name.toUpperCase()}` : 'START ACTIVITY'}
       </Btn>
       {preview}
       <button
@@ -1965,6 +2195,8 @@ function Pick() {
   const [sessions, setSessions] = useState(false)
   const [efforts, setEditingEfforts] = useState(false)
   const p = state.player
+  // Recomputed when the log moves, not on every render — it walks the log.
+  const plan = useMemo(() => planToday(state), [state])
 
   return (
     <>
@@ -1990,7 +2222,9 @@ function Pick() {
         {view === 'quest' ? (
           <>
             <StartBlock
+              plan={plan}
               onStart={() => setStarting(true)}
+              onPlan={(t) => startSession(t.activityId)}
               onImport={() => setImporting(true)}
               preview={<EarnPreview player={p} log={state.log} />}
             />

@@ -31,6 +31,9 @@ const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaig
   await server.ssrLoadModule('/src/game/engine.js')
 const { ARENAS, arenaFor } = await server.ssrLoadModule('/src/game/arenas.js')
 const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
+const { nextTarget, targetLabel, beatsRecord, plateLoad, planToday } =
+  await server.ssrLoadModule('/src/game/coach.js')
+const { setTotals, byLift } = await server.ssrLoadModule('/src/game/session.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
 const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
@@ -565,6 +568,53 @@ is('the other pillars ignore it', pillarEmpty(PILLARS[0], ['valorant']), PILLARS
 is('playsAim reads the catalogue', [playsAim(['cs']), playsAim(['minecraft']), playsAim([])], [true, false, false])
 is('every game has a name and a kind',
   GAMES.every((g) => g.id && g.name && g.kind), true)
+
+
+// The coach is the part of the app with an opinion, so it is the part most
+// worth pinning down: a bad suggestion is worse than no suggestion.
+console.log('\nthe next set is one step on from the last one')
+is('an unfinished rep range adds a rep', nextTarget([{ reps: 8, weight: 60 }]), { reps: 9, weight: 60, why: 'reps' })
+is('the top of the range adds the smallest plate and drops back',
+  nextTarget([{ reps: 12, weight: 60 }]), { reps: 5, weight: 62.5, why: 'weight' })
+is('bodyweight work only ever goes up in reps',
+  nextTarget([{ reps: 10, weight: 0 }]), { reps: 11, weight: 0, why: 'reps' })
+is('it reads the heaviest set, not the last one — a drop set must not set you backwards',
+  nextTarget([{ reps: 5, weight: 100 }, { reps: 12, weight: 40 }]), { reps: 6, weight: 100, why: 'reps' })
+is('a lift with no history gets no opinion', nextTarget([]), null)
+is('and the label reads the way a person says it',
+  [targetLabel({ reps: 8, weight: 60 }), targetLabel({ reps: 8, weight: 0 })], ['60kg × 8', '8 reps'])
+
+console.log('\na record is a record, and nothing else is')
+const prBoard = { Bench: { e1rm: e1rm(6, 65) } }
+is('beating the board is a record', Boolean(beatsRecord(prBoard, 'Bench', 7, 65)), true)
+is('matching it is not', Boolean(beatsRecord(prBoard, 'Bench', 6, 65)), false)
+is('a lift with no record yet is a first entry, not a best',
+  Boolean(beatsRecord({}, 'Squat', 5, 200)), false)
+is('and a warm-up can never be one', Boolean(beatsRecord(prBoard, 'Bench', 12, 100, true)), false)
+
+console.log('\nwarm-ups are logged but they are not work')
+const mixed = [{ lift: 'Bench', reps: 10, weight: 20, warmup: true }, { lift: 'Bench', reps: 5, weight: 80 }]
+is('they stay out of the tonnage', setTotals(mixed), { sets: 1, reps: 5, volume: 400 })
+is('they stay out of the per-lift breakdown', byLift(mixed).length, 1)
+is('and they cannot set a record', newRecords({ Bench: { e1rm: 50 } }, [mixed[0]]), [])
+
+console.log('\nthe bar loads in pairs')
+is('60kg is a twenty a side', plateLoad(60), { bar: 20, side: [{ plate: 20, n: 1 }] })
+is('an awkward number still comes out', plateLoad(82.5),
+  { bar: 20, side: [{ plate: 25, n: 1 }, { plate: 5, n: 1 }, { plate: 1.25, n: 1 }] })
+is('the empty bar is the empty bar', plateLoad(20), { bar: 20, side: [] })
+is('and anything under the bar has no answer', plateLoad(15), null)
+
+console.log('\ntoday has one answer, not a menu')
+const DAY = 86400000
+is('a blank week asks only that you start', planToday({ log: [] }).kind, 'start')
+const pushOnly = {
+  log: [{ id: 'a', activityId: 'gym', at: NOW - DAY, detail: { mode: 'strength', lifts: [
+    { lift: 'Bench press', sets: 9 }, { lift: 'Squat', sets: 9 }, { lift: 'Overhead press', sets: 9 },
+  ] } }],
+}
+is('a body with a hole in it names the hole', planToday(pushOnly, { now: NOW }).kind, 'muscle')
+is('and points it at the gym', planToday(pushOnly, { now: NOW }).activityId, 'gym')
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

@@ -47,6 +47,7 @@ export function e1rm(reps, weight) {
 export function bestPerLift(sets = []) {
   const out = new Map()
   for (const s of sets) {
+    if (s.warmup) continue
     const est = e1rm(s.reps, s.weight)
     if (!est) continue
     const lift = s.lift ?? 'Other'
@@ -104,6 +105,7 @@ export function topSet(sets = []) {
 export function foldLastSets(lastSets = {}, sets = [], at = Date.now()) {
   const byLift = new Map()
   for (const s of sets) {
+    if (s.warmup) continue
     const lift = s.lift ?? 'Other'
     if (!byLift.has(lift)) byLift.set(lift, [])
     byLift.get(lift).push({ reps: s.reps, weight: s.weight ?? 0 })

@@ -5,7 +5,8 @@ import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARI
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
 import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey } from './engine'
-import { PR_DAMAGE, PR_PER_SESSION, PR_XP, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
+import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
+import { beatsRecord } from './coach'
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
 import { exerciseByName } from './exercises'
@@ -556,12 +557,32 @@ function reducer(state, action) {
       if (!state.session) return state
       const reps = Math.max(1, Math.min(500, Math.round(action.reps)))
       const weight = Math.max(0, Math.min(1000, Math.round((action.weight ?? 0) * 2) / 2))
+      // RPE is optional and only stored when it was actually given — an
+      // untouched dial should not read back as "this felt like a 7".
+      const rpe = action.rpe ? Math.max(5, Math.min(10, Math.round(action.rpe * 2) / 2)) : undefined
+      const set = { lift: action.lift ?? 'Other', reps, weight, at: elapsedMs(state.session) }
+      if (action.warmup) set.warmup = true
+      if (rpe) set.rpe = rpe
+      // Marked here rather than taken from the caller: the board is the only
+      // thing that can say whether this was a record, and it is the thing the
+      // end-of-session tally will ask too. A flag passed in from a screen is a
+      // second opinion that can disagree with the first.
+      // Measured against the board AND what this session has already done, so
+      // repeating a record set does not mark a second record. The end-of-
+      // session tally takes the single best per lift, and these two have to
+      // agree or the badges promise more than the payout delivers.
+      let bar = state.records?.[set.lift]?.e1rm ?? 0
+      for (const x of state.session.sets ?? []) {
+        if (x.warmup || (x.lift ?? 'Other') !== set.lift) continue
+        bar = Math.max(bar, e1rm(x.reps, x.weight))
+      }
+      if (!set.warmup && bar && beatsRecord({ [set.lift]: { e1rm: bar } }, set.lift, reps, weight)) set.pr = true
       return {
         ...state,
         session: {
           ...state.session,
           lift: action.lift ?? state.session.lift,
-          sets: [...(state.session.sets ?? []), { lift: action.lift ?? 'Other', reps, weight, at: elapsedMs(state.session) }],
+          sets: [...(state.session.sets ?? []), set],
         },
       }
     }
@@ -1052,7 +1073,8 @@ export function GameProvider({ children }) {
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),
       sessionScore: (score, accuracy) => dispatch({ type: 'sessionScore', score, accuracy }),
-      sessionSet: (lift, reps, weight) => dispatch({ type: 'sessionSet', lift, reps, weight }),
+      sessionSet: (lift, reps, weight, opts = {}) =>
+        dispatch({ type: 'sessionSet', lift, reps, weight, warmup: opts.warmup, rpe: opts.rpe }),
       sessionAddLift: (lift) => dispatch({ type: 'sessionAddLift', lift }),
       sessionUndoSet: () => dispatch({ type: 'sessionUndoSet' }),
       sessionInterval: (work, rest) => dispatch({ type: 'sessionInterval', work, rest }),

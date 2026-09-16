@@ -113,7 +113,10 @@ export const WEIGHT_STEP = 2.5
  * weight, so it adds reps and no volume rather than being thrown away.
  */
 export function setTotals(sets = []) {
-  return sets.reduce(
+  // Warm-ups are logged so the session reads the way it happened, but they are
+  // not work. Counting an empty-bar set toward volume makes a heavy day and a
+  // long warm-up look the same, which is the one thing tonnage is for.
+  return sets.filter((s) => !s.warmup).reduce(
     (acc, s) => ({
       sets: acc.sets + 1,
       reps: acc.reps + s.reps,
@@ -127,6 +130,7 @@ export function setTotals(sets = []) {
 export function byLift(sets = []) {
   const out = new Map()
   for (const s of sets) {
+    if (s.warmup) continue
     const key = s.lift ?? 'Other'
     const at = out.get(key) ?? { lift: key, sets: 0, reps: 0, volume: 0, top: 0 }
     at.sets += 1
