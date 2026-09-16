@@ -39,6 +39,7 @@ import { EFFORT_SLOTS, effortList, pinnedEfforts } from '../game/efforts'
 import { MUSCLES, muscleOf, muscleSplit, neglected } from '../game/exercises'
 import { guessActivity, readWorkoutFile } from '../game/importFile'
 import { beatsRecord, nextTarget, planToday, plateLoad, targetLabel } from '../game/coach'
+import { GOALS, SPLITS, goalById, prescription, splitById, todaysSession } from '../game/splits'
 import { alpha } from '../game/color'
 
 /** One empty array, shared: `?? []` builds a new one every render, and every
@@ -1507,6 +1508,100 @@ function ArenaBadge({ player, campaign, onOpen }) {
 }
 
 /**
+ * Choosing a shape for the week, and what it is for.
+ *
+ * Two questions on one sheet because they are not independent: a five-day
+ * split for somebody whose goal is "get fit" is the app setting them up to
+ * fail, and the goal is the thing that makes the same split produce a
+ * different session. Asked together, answered once.
+ */
+function SplitSheet({ split, goal, onClose, onSave }) {
+  const [pickSplit, setPickSplit] = useState(split ?? 'ppl')
+  const [pickGoal, setPickGoal] = useState(goal ?? 'muscle')
+  const preview = useMemo(() => todaysSession(pickSplit, pickGoal, NONE), [pickSplit, pickGoal])
+
+  return (
+    <Modal open onClose={onClose} title="YOUR SPLIT">
+      <SectionTitle>What shape is your week?</SectionTitle>
+      <div className="space-y-2">
+        {SPLITS.map((sp) => {
+          const on = pickSplit === sp.id
+          return (
+            <button
+              key={sp.id}
+              onClick={() => setPickSplit(sp.id)}
+              aria-pressed={on}
+              className="w-full px-3 py-2.5 min-h-[56px] border text-left transition-colors active:brightness-125"
+              style={{
+                borderColor: on ? 'var(--arena)' : 'var(--color-line)',
+                background: on ? alpha('var(--arena)', 14) : 'transparent',
+              }}
+            >
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-[15px]" style={{ color: on ? 'var(--arena)' : 'var(--color-ink)' }}>
+                  {sp.name}
+                </span>
+                <span className="label text-ink-faint ml-auto shrink-0">{sp.days.length} days</span>
+              </div>
+              <div className="text-[13px] text-ink-dim mt-1 leading-snug">{sp.blurb}</div>
+              <div className="label text-ink-faint mt-1">{sp.best}</div>
+            </button>
+          )
+        })}
+      </div>
+
+      <SectionTitle className="mt-5">And what are you training for?</SectionTitle>
+      <div className="space-y-2">
+        {GOALS.map((g) => {
+          const on = pickGoal === g.id
+          return (
+            <button
+              key={g.id}
+              onClick={() => setPickGoal(g.id)}
+              aria-pressed={on}
+              className="w-full px-3 py-2.5 min-h-[56px] border text-left transition-colors active:brightness-125"
+              style={{
+                borderColor: on ? 'var(--color-gold)' : 'var(--color-line)',
+                background: on ? alpha('var(--color-gold)', 14) : 'transparent',
+              }}
+            >
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-[15px]" style={{ color: on ? 'var(--color-gold)' : 'var(--color-ink)' }}>
+                  {g.name}
+                </span>
+                <span className="label text-ink-faint ml-auto shrink-0">{prescription(g)}</span>
+              </div>
+              <div className="text-[13px] text-ink-dim mt-1 leading-snug">{g.blurb}</div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Both answers, shown as the session they actually produce. The pair of
+          choices is abstract until you can see what Monday looks like. */}
+      {preview && (
+        <Panel className="p-3 mt-5">
+          <div className="label text-ink-faint">FIRST SESSION</div>
+          <div className="font-display text-[16px] text-ink mt-1">{preview.day.name}</div>
+          <div className="space-y-1 mt-2">
+            {preview.exercises.map((name) => (
+              <div key={name} className="flex items-baseline gap-2">
+                <span className="text-[14px] text-ink flex-1 min-w-0 truncate">{name}</span>
+                <span className="label text-ink-faint shrink-0">{preview.prescribe}</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      <Btn full variant="go" className="mt-4" onClick={() => onSave(pickSplit, pickGoal)}>
+        Save this split
+      </Btn>
+    </Modal>
+  )
+}
+
+/**
  * The week's goal, and what meeting it drops.
  *
  * A goal ring is a fitness-app staple and it is also the cleanest payout
@@ -1583,6 +1678,22 @@ function StartBlock({ plan, onStart, onPlan, onImport, preview }) {
               <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
             </div>
             <div className="text-[14px] text-ink-dim leading-snug mt-2.5">{plan.why}</div>
+
+            {/* The exercises themselves, not just the name of the day. A card
+                that says "Push day" and stops has told you the thing you
+                already knew; the list is the part that gets you moving. */}
+            {plan.session?.exercises?.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-line space-y-1.5">
+                {plan.session.exercises.map((name, i) => (
+                  <div key={name} className="flex items-baseline gap-2.5">
+                    <span className="figure text-[12px] text-ink-faint w-3 shrink-0">{i + 1}</span>
+                    <span className="text-[14px] text-ink flex-1 min-w-0 truncate">{name}</span>
+                    <span className="label text-ink-faint shrink-0">{plan.session.prescribe}</span>
+                  </div>
+                ))}
+                <div className="label text-ink-faint pt-1.5">{plan.session.goal.note}</div>
+              </div>
+            )}
           </Panel>
         </button>
       )}
@@ -2187,14 +2298,16 @@ const VIEWS = [
 ]
 
 function Pick() {
-  const { state, startSession, deleteRoutine, setEfforts, importWorkout } = useGame()
+  const { state, startSession, deleteRoutine, setEfforts, setSplit, importWorkout } = useGame()
   const [view, setView] = useState('quest')
   const [story, setStory] = useState(false)
   const [starting, setStarting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [sessions, setSessions] = useState(false)
   const [efforts, setEditingEfforts] = useState(false)
+  const [splitting, setSplitting] = useState(false)
   const p = state.player
+  const mySplit = splitById(p.split)
   // Recomputed when the log moves, not on every render — it walks the log.
   const plan = useMemo(() => planToday(state), [state])
 
@@ -2224,7 +2337,7 @@ function Pick() {
             <StartBlock
               plan={plan}
               onStart={() => setStarting(true)}
-              onPlan={(t) => startSession(t.activityId)}
+              onPlan={(t) => startSession(t.activityId, t.session?.exercises)}
               onImport={() => setImporting(true)}
               preview={<EarnPreview player={p} log={state.log} />}
             />
@@ -2240,6 +2353,27 @@ function Pick() {
                 onStart={(pillar) => setStarting(pillar)}
               />
             </div>
+
+            {/* The split lives right under the thing it drives. Somebody who
+                has one rarely opens this; somebody who has not needs to see
+                that it exists. */}
+            <button
+              onClick={() => setSplitting(true)}
+              className="w-full flex items-center gap-3 px-3.5 py-3 min-h-[56px] border border-line text-left active:bg-panel-2"
+            >
+              <Icon name="dumbbell" size={16} color={mySplit ? 'var(--color-gold)' : 'var(--color-ink-faint)'} />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-[15px] text-ink truncate">
+                  {mySplit ? mySplit.name : 'Pick a training split'}
+                </span>
+                <span className="block label text-ink-faint mt-0.5 truncate">
+                  {mySplit
+                    ? `${goalById(p.goal).name} · ${prescription(p.goal)}`
+                    : 'Then the app knows what today is'}
+                </span>
+              </span>
+              <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
+            </button>
 
             <ArenaBadge player={p} campaign={state.campaign} onOpen={() => setStory(true)} />
 
@@ -2287,6 +2421,17 @@ function Pick() {
             startSession(id, plan)
           }}
           onDeleteRoutine={deleteRoutine}
+        />
+      )}
+      {splitting && (
+        <SplitSheet
+          split={p.split}
+          goal={p.goal}
+          onClose={() => setSplitting(false)}
+          onSave={(sp, gl) => {
+            setSplit(sp, gl)
+            setSplitting(false)
+          }}
         />
       )}
       {story && <CampaignSheet onClose={() => setStory(false)} />}

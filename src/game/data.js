@@ -180,6 +180,11 @@ export const FRESH_START = {
     // and which activities they said they would actually do.
     goalDays: 4,
     picks: [],
+    // The shape of the training week, and what it is for. Both null until
+    // chosen — the app has an opinion about today either way, and a split
+    // somebody never picked is a plan they never agreed to.
+    split: null,
+    goal: null,
     stats: { STR: 0, END: 0, AGI: 0, VIT: 0, FOCUS: 0 },
     // The clothes you stand up in. Nothing equipped, nothing in the bag but
     // the boots — a first drop should feel like a drop.

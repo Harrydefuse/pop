@@ -89,9 +89,9 @@ export function Panel({ children, className = '', accent, as: Tag = 'div', ...re
   )
 }
 
-export function SectionTitle({ children, right }) {
+export function SectionTitle({ children, right, className = '' }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 mb-3">
+    <div className={`flex items-baseline justify-between gap-3 mb-3 ${className}`}>
       <h2 className="font-display text-[19px] text-ink">{children}</h2>
       {right}
     </div>

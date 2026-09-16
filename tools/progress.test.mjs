@@ -33,6 +33,8 @@ const { ARENAS, arenaFor } = await server.ssrLoadModule('/src/game/arenas.js')
 const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
 const { nextTarget, targetLabel, beatsRecord, plateLoad, planToday } =
   await server.ssrLoadModule('/src/game/coach.js')
+const { SPLITS, GOALS, splitById, goalById, nextDay, recommend, todaysSession, prescription } =
+  await server.ssrLoadModule('/src/game/splits.js')
 const { setTotals, byLift } = await server.ssrLoadModule('/src/game/session.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
@@ -615,6 +617,74 @@ const pushOnly = {
 }
 is('a body with a hole in it names the hole', planToday(pushOnly, { now: NOW }).kind, 'muscle')
 is('and points it at the gym', planToday(pushOnly, { now: NOW }).activityId, 'gym')
+
+
+// A split is the one place the app makes a plan on somebody's behalf, so the
+// rules it follows have to hold for every combination, not just the demo.
+console.log('\na split knows what today is')
+const ppl = splitById('ppl')
+is('a fresh split starts at its first day', nextDay(ppl, []).day.name, 'Push')
+const pushed = [{ at: NOW, detail: { mode: 'strength', lifts: [
+  { lift: 'Bench press' }, { lift: 'Overhead press' }, { lift: 'Tricep pushdown' },
+] } }]
+is('after a push session it moves to pull', nextDay(ppl, pushed).day.name, 'Pull')
+const legged = [{ at: NOW, detail: { mode: 'strength', lifts: [{ lift: 'Squat' }, { lift: 'Leg curl' }] } }]
+is('and the cycle wraps', nextDay(ppl, legged).day.name, 'Push')
+is('one exercise is not a training day and does not move the rotation',
+  nextDay(ppl, [{ at: NOW, detail: { mode: 'strength', lifts: [{ lift: 'Wrist curl' }] } }]).day.name, 'Push')
+is('but a back-only pull day still counts as pull',
+  nextDay(ppl, [{ at: NOW, detail: { mode: 'strength', lifts: [
+    { lift: 'Deadlift' }, { lift: 'Barbell row' }, { lift: 'Lat pulldown' },
+  ] } }]).day.name, 'Legs')
+is('every split has days and every day has muscles',
+  SPLITS.every((s) => s.days.length && s.days.every((d) => d.muscles.length)), true)
+
+console.log('\nthe same day is a different session for a different goal')
+const forGoal = (g) => recommend(ppl.days[0], g, { log: [] })
+is('each goal produces the number of exercises it asks for',
+  GOALS.map((g) => forGoal(g.id).length), GOALS.map((g) => g.count))
+is('strength leads on the barbell', forGoal('strong')[0], 'Bench press')
+is('and general fitness does not', forGoal('fit')[0] === 'Bench press', false)
+is('the three goals do not produce the same session',
+  new Set(GOALS.map((g) => forGoal(g.id).join('|'))).size, 3)
+is('nothing is suggested twice', GOALS.every((g) => {
+  const list = forGoal(g.id)
+  return new Set(list).size === list.length
+}), true)
+is('and no session pairs a movement with its own variant', GOALS.every((g) =>
+  forGoal(g.id).every((a, i) => forGoal(g.id).every((b, j) => {
+    if (i === j) return true
+    const x = a.toLowerCase(); const y = b.toLowerCase()
+    return !x.includes(y) && !y.includes(x)
+  }))), true)
+
+console.log('\nevery split and goal together produce a usable session')
+let bad = []
+for (const sp of SPLITS) for (const g of GOALS) for (const d of sp.days) {
+  const list = recommend(d, g.id, { log: [] })
+  if (list.length !== g.count) bad.push(`${sp.id}/${g.id}/${d.id} gave ${list.length}`)
+}
+is('all of them fill the session', bad, [])
+is('and today reads back everything a card needs', (() => {
+  const t = todaysSession('ul', 'muscle', [])
+  return Boolean(t.day && t.exercises.length && t.prescribe && t.split && t.goal)
+})(), true)
+is('prescription is written the way a coach writes it', prescription('strong'), '5 × 3–6')
+is('an unknown goal falls back rather than throwing', goalById('nonsense').id, 'muscle')
+is('and an unknown split is simply absent', splitById('nonsense'), null)
+
+console.log('\na chosen split outranks the app\'s own guess')
+const withSplit = {
+  player: { split: 'ppl', goal: 'strong' },
+  log: [{ id: 'a', activityId: 'gym', at: NOW - 3600000, detail: { mode: 'strength', lifts: [
+    { lift: 'Bench press', sets: 9 }, { lift: 'Squat', sets: 9 }, { lift: 'Overhead press', sets: 9 },
+  ] } }],
+}
+is('the split drives the card', planToday(withSplit, { now: NOW }).kind, 'split')
+is('and it carries the session with it',
+  planToday(withSplit, { now: NOW }).session.exercises.length > 0, true)
+is('but a blank week still just asks you to start',
+  planToday({ player: { split: 'ppl', goal: 'strong' }, log: [] }, { now: NOW }).kind, 'start')
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

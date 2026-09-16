@@ -594,6 +594,17 @@ function reducer(state, action) {
      * walked in with — adding one mid-session appends to it, which is what
      * makes the screen a list you build rather than a form you retype.
      */
+    case 'setSplit': {
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          split: action.split ?? state.player.split,
+          goal: action.goal ?? state.player.goal,
+        },
+      }
+    }
+
     case 'sessionAddLift': {
       if (!state.session) return state
       const lift = String(action.lift ?? '').trim()
@@ -1075,6 +1086,7 @@ export function GameProvider({ children }) {
       sessionScore: (score, accuracy) => dispatch({ type: 'sessionScore', score, accuracy }),
       sessionSet: (lift, reps, weight, opts = {}) =>
         dispatch({ type: 'sessionSet', lift, reps, weight, warmup: opts.warmup, rpe: opts.rpe }),
+      setSplit: (split, goal) => dispatch({ type: 'setSplit', split, goal }),
       sessionAddLift: (lift) => dispatch({ type: 'sessionAddLift', lift }),
       sessionUndoSet: () => dispatch({ type: 'sessionUndoSet' }),
       sessionInterval: (work, rest) => dispatch({ type: 'sessionInterval', work, rest }),

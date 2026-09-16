@@ -20,6 +20,7 @@
 import { MUSCLES, muscleOf, muscleSplit, neglected } from './exercises'
 import { e1rm, topSet, weekStart } from './progress'
 import { PILLARS, pillarOf } from './pillars'
+import { todaysSession } from './splits'
 
 /* ------------------------------------------------------------ overload --- */
 
@@ -160,6 +161,25 @@ export function planToday(state, { now = Date.now() } = {}) {
   for (const e of week) {
     const p = pillarOf(e.activityId)
     if (p) touched.add(p.id)
+  }
+
+  // 0. A split somebody chose beats anything the app worked out on its own.
+  // They told us the shape of their week; second-guessing that with "your back
+  // is behind" is the app talking over them. The one exception is a completely
+  // blank week, where starting matters more than starting with the right day.
+  const chosen = state.player?.split
+  if (chosen && week.length) {
+    const t = todaysSession(chosen, state.player?.goal, log, { custom })
+    if (t) {
+      return {
+        kind: 'split',
+        activityId: 'gym',
+        title: `${t.day.name} day`,
+        why: `${t.split.name} · day ${t.index + 1} of ${t.of} · ${t.prescribe}`,
+        tone: 'var(--color-gold)',
+        session: t,
+      }
+    }
   }
 
   // 1. A blank week. Anything at all beats a clever recommendation.
