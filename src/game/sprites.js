@@ -344,7 +344,7 @@ export const DRAKE = {
  * so the feet land on the same line at every stage and only the animal
  * changes. Import lines, for when the art is redrawn:
  *
- *   python3 tools/png2grid.py "art/zeus baby.png" \
+ *   python3 tools/png2grid.py "art/zeus-s1-v1.png" \
  *     --canvas 50x44 --name ZEUS_S1 --block 8 --sharpen 12
  *
  * `--block 8` because these came out of a generator rather than a pixel
@@ -1372,42 +1372,42 @@ export const DRAKE_S4 = {
     '..................................................',
     '..................................................',
     '..................................................',
-    '.....................bbbbb........................',
-    '.................bbbbaaccb........................',
-    '...............bbaaaaaacb......bb.................',
-    '.............bbaaaaaadab.......bcbb....b..........',
-    '............baaaaadddaab.......bcccbb..bb.........',
-    '..........bbaaaaddccdaab........bcccbb.jl.........',
-    '.........baaaaddcccdaaab.........bcccbejcm........',
-    '........baaaddcccccdadaab.....bbbbbcccbajm........',
-    '.......baaddccccccdaadaab.....bcccbbcccgdb.b......',
-    '......baadcccccccdaacdaab....bbbcccebccgadbcb.....',
-    '.....baadccccccccdaccdaab..bbaaabcccebbbkagccb....',
-    '....baadccccccccdaaccdaab.baaadabbbbbaaaddabcb....',
-    '...baeccccccccccdacccdaaabaaddda.bccckaaakaabb....',
-    '..baaccccccccccdaccccdaaabadffda..bccbbdahbaab..b.',
-    '..bacbbbbbcccccdaccccddaaabcffda...bbeecnkobaabbb.',
-    '.babb.....bcccdaccccccddaahcffde..bfbebciaoooabcb.',
-    'bab........bccdiccccccdddaakmfdkb.gccdfjlileeaabb.',
-    '....bb.....bcdacbbbcccadddaaabdbcbcbcdaffbbccahaab',
-    '...beab.....mdcb...bccadnndaaabbcjfbbeacf..bbcaaab',
-    '..bcaaa.....kab....bccenccndaaabbcbcbeaccj...bcab.',
-    '...bdaabc...hg......bceclliddaaaabbccgaafj....bb..',
-    '....badcc...........bjabbccbddaaaaehcgaaccb.......',
-    '...bcadcb............bb..cccgddaaaaaggaaccbb......',
-    '..bccadb..........ccb.b.beeddddaadaaageaffcbb.....',
-    '.bcceab.b.........bccbgdaaaaaeddedaaaabacccbeb....',
-    '.bcbeabbc.....bccbbcdeeaaaadaaaddaaaaabacccbeb....',
-    '.bbbcahcc..bb..bccbeahaaaaabddddkaaaaegccfbeh.....',
-    '...bcaadcb.bcb.bcdaedaaaaaabffffhaaaabncclgeb.....',
-    '...bcaaadcbgccbbdaadgaaaaakiiiffkaaabfffmdeb......',
-    '....bcfaaahgaaaaeekaaeaaab..beifiaaabffbheaab.....',
-    '.....jcccaaaaaadffgaaddbb..beedejdaaabb.deaab.....',
-    '......jcccceenfffbaadbb....eedebbchaab..beeaa.....',
-    '.......bccccccfcbbaab......edeb..bbaaa...beaabb...',
-    '..........bbbbb.badadf......hedfb..bakib..beadclb.',
-    '................bcbcfcm.....bfffc..bccbcb.bdccjcb.',
-    '................bbbbfbm.....bbcbc..bccbcb..bbcbcb.',
+    '........................bbbbb.....................',
+    '........................bccaabbbb.................',
+    '.................bb......bcaaaaaabb...............',
+    '..........b....bbcb.......badaaaaaabb.............',
+    '.........bb..bbcccb.......baadddaaaaab............',
+    '.........lj.bbcccb........baadccddaaaabb..........',
+    '........mcjebcccb.........baaadcccddaaaab.........',
+    '........mjabcccbbbbb.....baadadcccccddaaab........',
+    '......b.bdgcccbbcccb.....baadaadccccccddaab.......',
+    '.....bcbdagccbecccbbb....baadcaadcccccccdaab......',
+    '....bccgakbbbecccbaaabb..baadccadccccccccdaab.....',
+    '....bcbaddaaabbbbbadaaab.baadccaadccccccccdaab....',
+    '....bbaakaaakcccb.adddaabaaadcccadcccccccccceab...',
+    '.b..baabhadbbccb..adffdabaaadccccadccccccccccaab..',
+    '.bbbaaboknceebb...adffcbaaaddccccadcccccbbbbbcab..',
+    '.bcbaoooaicbebfb..edffchaaddccccccadcccb.....bbab.',
+    '.bbaaeeliljfdccg.bkdfmkaadddccccccidccb........bab',
+    'baahaccbbffadcbcbcbdbaaadddacccbbbcadcb.....bb....',
+    'baaacbb..fcaebbfjcbbaaadnndaccb...bcdm.....baeb...',
+    '.bacb...jccaebcbcbbaaadnccneccb....bak.....aaacb..',
+    '..bb....jfaagccbbaaaaddillcecb......gh...cbaadb...',
+    '.......bccaagcheaaaaddbccbbajb...........ccdab....',
+    '......bbccaaggaaaaaddgccc..bb............bcdacb...',
+    '.....bbcffaegaaadaaddddeeb.b.bcc..........bdaccb..',
+    '....bebcccabaaaadeddeaaaaadgbccb.........b.baeccb.',
+    '....bebcccabaaaaaddaaadaaaaeedcbbccb.....cbbaebcb.',
+    '.....hebfccgeaaaakddddbaaaaahaebccb..bb..cchacbbb.',
+    '.....beglccnbaaaahffffbaaaaaadeadcb.bcb.bcdaacb...',
+    '......bedmfffbaaakffiiikaaaaagdaadbbccgbcdaaacb...',
+    '.....baaehbffbaaaifieb..baaaeaakeeaaaaghaaafcb....',
+    '.....baaed.bbaaadjedeeb..bbddaagffdaaaaaacccj.....',
+    '.....aaeeb..baahcbbedee....bbdaabfffneeccccj......',
+    '...bbaaeb...aaabb..bede......baabbcfccccccb.......',
+    '.blcdaeb..bikab..bfdeh......fdadab.bbbbb..........',
+    '.bcjccdb.bcbccb..cfffb.....mcfcbcb................',
+    '.bcbcbb..bcbccb..cbcbb.....mbfbbbb................',
     '..................................................',
   ],
 }
@@ -2275,7 +2275,7 @@ export function armourSprite(slot, set = 'leather') {
   return { w: grid[0].length, h: grid.length, palette: ARMOUR_PALETTES[set] ?? ARMOUR_PALETTES.leather, grid }
 }
 
-// The treasure chest, imported from art/chest.png at 32x32.
+// The treasure chest, imported from art/chest-common-v1.png at 32x32.
 /**
  * The two chests above the supply crate.
  *
@@ -2934,7 +2934,7 @@ export const LVL100_SPRITE = {
   ],
 }
 
-// Act I's boss, imported from art/warden.png. Sampled on the 8x grid it was
+// Act I's boss, imported from art/boss-warden-v1.png. Sampled on the 8x grid it was
 // drawn on, at 96x96 — the source carries more detail than the game's usual
 // density and losing it made the crown and hammer read as mush.
 export const GOLEM_SPRITE = {
@@ -3075,7 +3075,7 @@ export const BOSS_SPRITES = { 'couch-titan': BOSS_SPRITE, ogre: OGRE_SPRITE }
 // A full-body 16x24 character for the loadout screen. The 12x12 avatar is a
 // head-and-shoulders bust — fine in a list row, but it crops to a face at the
 // size the paper doll needs, so the hero gets its own taller sprite.
-// The base character, transcribed from art/hero.png. The source is a
+// The base character, transcribed from art/hero-male-v1.png. The source is a
 // soft-edged render rather than a true pixel export, so it was reconstructed:
 // quantised to a small palette, then sampled by dominant colour per cell, which
 // keeps the edges hard instead of muddy. See tools/png2grid.py.
@@ -3502,7 +3502,7 @@ export function heroPalette(skin = SKIN_BASE, hair = HAIR_BASE, shirt = TUNIC) {
 }
 
 // ---------------------------------------------------------------------------
-// The female character, transcribed from art/female avatar.png by
+// The female character, transcribed from art/hero-female-v1.png by
 // tools/import_female.py. Her frame is 30 x 65, not the male's 32 x 59 — she is
 // taller and narrower, and squashing her into his made her stubby, which is not
 // the art that was sent. Colours are the shared hero palette keys, so skin and

@@ -345,9 +345,48 @@ Hard edges in the source are always better than any of this.
 
 ---
 
+## Naming
+
+Every file here is versioned, so nothing ever has to be deleted to avoid
+confusion and the newest art is obvious at a glance:
+
+```
+<subject>-<slot>-v<n>.png
+```
+
+- Pets use the stage as the slot: `drake-s1-v1.png` through `drake-s4-v3.png`.
+  `s1`..`s4` are the four forms; `s4` is the final one.
+- **`v<n>` counts redraws of that exact slot, and only ever goes up.** A third
+  attempt at drake's final form is `drake-s4-v3.png`, sitting next to `v1` and
+  `v2` if they are still around. Never re-use a number, never add words like
+  `UPDATED`, `new`, `final` or `attempt 2` — the number already says it.
+- Everything else follows the same shape: `hero-male-v1.png`,
+  `boss-warden-v1.png`, `weapon-sword-common-v1.png`, `map-icon-v1.png`.
+
+When a new version is imported the older ones become dead weight; delete them
+once the new art is in the game and looks right. Git keeps the history either
+way, so a deleted file is still recoverable from an earlier commit.
+
+`reference/` holds mood boards, screenshots and downloaded inspiration. Nothing
+in there feeds the game, so it is left exactly as it arrived.
+
+---
+
+## Facing
+
+**Pets face left.** They are drawn on the right of the character card with the
+hero on their left, so a pet facing right has its back to the player. Every
+stage of a pet has to face the same way, or it appears to spin round as it
+evolves. Mirroring a finished grid horizontally is a safe fix — it is what
+`drake-s4-v3.png` needed.
+
+Front-facing pets (KOOKIE) are fine as they are.
+
+---
+
 ## Existing files
 
-- **`hero.png`** — the current character, fully clothed. Everything was
+- **`hero-male-v1.png`** — the current character, fully clothed. Everything was
   reconstructed from this.
 - **`templates/pet-50x44.png`** — the pet canvas, with FROST on it for scale.
 

@@ -27,12 +27,12 @@ PIECES = {
     'gloves': 'kit/gloves_common.png',
     'boots': 'kit/boots_common.png',
     'shield': 'kit/shield_common.png',
-    'sword': 'sword_1_common.png',
-    'axe': 'axe_1_common.png',
-    'bow': 'bow_1_common.png',
-    'dagger': 'dagger_1_common.png',
-    'spear': 'spear_1_common.png',
-    'staff': 'staff_1_common.png',
+    'sword': 'weapon-sword-common-v1.png',
+    'axe': 'weapon-axe-common-v1.png',
+    'bow': 'weapon-bow-common-v1.png',
+    'dagger': 'weapon-dagger-common-v1.png',
+    'spear': 'weapon-spear-common-v1.png',
+    'staff': 'weapon-staff-common-v1.png',
 }
 
 # Darkest to lightest. 'o' is the outline, 's' the cast shadow, then the metal

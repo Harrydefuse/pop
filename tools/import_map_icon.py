@@ -11,7 +11,7 @@ from collections import Counter
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import png
 
-SRC = pathlib.Path(__file__).resolve().parents[1] / 'art' / 'ChatGPT Image Aug 30, 2026, 10_07_45 PM.png'
+SRC = pathlib.Path(__file__).resolve().parents[1] / 'art' / 'map-icon-v1.png'
 BG = (207, 206, 206)
 W = H = 24
 

@@ -17,7 +17,7 @@ from collections import Counter
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import png
 
-SRC = pathlib.Path(__file__).resolve().parents[1] / 'art/female avatar.png'
+SRC = pathlib.Path(__file__).resolve().parents[1] / 'art/hero-female-v1.png'
 GW, GH = 30, 65
 
 # The hero palette, by key. Each source colour is snapped to the nearest of
