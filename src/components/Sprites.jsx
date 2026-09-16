@@ -57,8 +57,8 @@ function gearAura(equipped) {
 }
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
-export function GearIcon({ slot, kind, set = 'leather', size = 34, className, style }) {
-  return <PixelSprite sprite={armourSprite(kind ?? slot, set)} size={size} className={className} style={style} />
+export function GearIcon({ slot, kind, set = 'leather', size = 34, fill = false, className, style }) {
+  return <PixelSprite sprite={armourSprite(kind ?? slot, set)} size={size} fill={fill} className={className} style={style} />
 }
 
 /**

@@ -39,7 +39,11 @@ function Tile({ rarity, level, equipped, weapon, label, onClick, children }) {
         boxShadow: ring,
       }}
     >
-      {children}
+      {/* The art takes the whole tile rather than sitting in the middle of it
+          at a fixed 30px. A breastplate at a third of its own frame reads as a
+          smudge — you could tell the rarity from the border and nothing else
+          about the piece. The inset is only what the level badge needs. */}
+      <span className="absolute inset-0 grid place-items-center p-1 pb-2.5">{children}</span>
       <span
         className="absolute bottom-0 right-0 font-display text-[11px] px-1 py-0.5 leading-none"
         style={{ background: 'var(--color-panel)', color }}
@@ -139,7 +143,9 @@ function Loadout({ player, onPick }) {
             style={{ borderColor: color, background: item ? alpha(color, 26) : 'transparent' }}
           >
             {item ? (
-              <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={26} />
+              <span className="absolute inset-0 grid place-items-center p-0.5 pb-2">
+                <GearIcon slot={item.slot} kind={item.kind} set={item.set} fill />
+              </span>
             ) : (
               <Icon name={s.icon} size={16} color="var(--color-ink-faint)" />
             )}
@@ -413,8 +419,11 @@ function Collection({ kinds, owned, onPick, weapons }) {
                         there. Darkened rather than faded, too: a locked piece
                         used to be a pale ghost of grey metal on a pale ground,
                         which is a way of showing something by hiding it. */}
-                    <span style={mine ? undefined : { filter: 'grayscale(1) brightness(0.45) contrast(1.3)', opacity: 0.7 }}>
-                      <GearIcon slot={g.slot} kind={g.kind} set={g.set} size={26} />
+                    <span
+                      className="absolute inset-0 grid place-items-center p-1"
+                      style={mine ? undefined : { filter: 'grayscale(1) brightness(0.45) contrast(1.3)', opacity: 0.7 }}
+                    >
+                      <GearIcon slot={g.slot} kind={g.kind} set={g.set} fill />
                     </span>
                     {!mine && (
                       <span className="absolute -bottom-px -right-px grid place-items-center w-3.5 h-3.5 bg-void">
@@ -650,7 +659,7 @@ export default function Hero({ embedded = false }) {
                         label={`${i.name}, ${RARITY[i.rarity].label}, level ${i.level}`}
                         onClick={() => setOpenItem(i)}
                       >
-                        <GearIcon slot={i.slot} kind={i.kind} set={i.set} size={30} />
+                        <GearIcon slot={i.slot} kind={i.kind} set={i.set} fill />
                       </Tile>
                     ))}
                   </div>
@@ -675,7 +684,7 @@ export default function Hero({ embedded = false }) {
                   label={`${x.name}, ${RARITY[x.rarity].label}, ${petStage(x.stage).name.toLowerCase()}`}
                   onClick={() => setOpenPet(x)}
                 >
-                  <PetView refId={x.ref} stage={x.stage} size={34} />
+                  <PetView refId={x.ref} stage={x.stage} size={46} />
                 </Tile>
               ))}
             </div>
