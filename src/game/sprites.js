@@ -3959,8 +3959,24 @@ export const WORN_FEMALE = {
 
 /** Which set of worn art a build uses. */
 /** The set a piece belongs to picks its shape. */
+/**
+ * Hand-drawn wooden chest plate, from art/chest-wooden-v1.png.
+ *
+ * Every other worn piece here is drawn in code; this one was painted and
+ * transcribed. The letters are the same brightness ramp the rest of the armour
+ * uses, so leather's own palette colours it — which happens to already be wood.
+ *
+ * It borrows the rest of its slots from `rough`, so only the chest changes.
+ */
+const TIMBER = {
+  ...WORN_MALE.rough,
+  chest: worn({ 57: '......................sooooooool..........................sooooooool....................', 58: '....................domlllllmooos.......................mooodllllllos...................', 59: '................oooooomlmmmmdssos.......................dossdmmmmllooooool..............', 60: '.............moollllsomllmmmdssooooml...............lloooossdmmmmllosllllsos............', 61: '...........lodllmmmmsodmmmmmmmmsossssoom.........loossssoodmmmmmmmmosmmmmllmoo..........', 62: '.........soolldmmmmmsodmmmmmmmmsossssssooooooooooossssssoodmmmmmmmmoommmmmmmlloo........', 63: '.........doollmmmmmmmmsoommmmmmsosssssssssssssssssssssssoodmmmmmsoodmmmmmmmmlloo........', 64: '.........doolldmmmmmmmsoommmmmmsosssossssssssssssssssossoodmmmmmsoodmmmmmmmmlloo........', 65: '.........doodmllmmmmmmsooddddddssmmmdoooooooooooooooddmmdoddddddooodmmmmmlllmmoo........', 66: '..........llodmmmmmmmmsoslmmmmlssmmmmmmmmmmmmmmmmmmmmmmmsommmmmlsoodmmmmlmmdoo..........', 67: '...........loosdllllllsoommmmmmsossssmmmmmmmmmmmmmmmdsssoodmmmmmsoolllllldssoo..........', 68: '.............moolmmmmmsooooooooosllmdssoooosssoooooodmlldoooooooooodmmmmmoos............', 69: '................ooooooooossssoodmllmdmmmmmmsosmmmmmmmmllmmoossssoooooooool..............', 70: '....................dosssssssoosmllmdddmmmmsosmmmmdddmllmmoosssdsssos...................', 71: '......................sosddssoosmllmdddmmmmsosmmmmdddmllmmoosssdsool....................', 72: '......................sosddssoodmmmmmddmmmmsosmmmmddmmmmmmoosssdsool....................', 73: '....................mosssssoooodmmmmmddmmmmsosddmmddmmmmmmooooossssos...................', 74: '....................dosssssosmmssmmmmddmmmdsssddmmddmmmmsommdoossssos...................', 75: '......................soooollmmmdoodmmmmddmsosmmddmmmmsosmmmmllooool....................', 76: '........................moollmmmdoodmmmmddmsosmmddmmmmsosmmmmllod.......................', 77: '........................moommddddoodmmmmddmsosmmddmmmmsosdddmmmos.......................', 78: '........................moossssssooooooooooooooooooooooosdssssdod.......................', 79: '......................ooossssssssssssssooslllllloosssssssssssssssool....................', 80: '....................dodddddoooossssssssooommllmmoossssssssooooodddddd...................', 81: '....................dommmmmmdddooooooooooommmmmmoooooooooodddmmmmmmss...................', 82: '.................loomllllmmmdddosmmmdmmsooooooooosmmmdmmdodddmmmmlllmoom................', 83: '................mmssdmmmmmmmmddosmmmdmmmmmmdssmmmmmmmdmmdodddmmmmmmmmssml...............', 84: '................osllmmmmmmmmmddosmmmmmmmmmmdssmmmmmmmmmmdodddmmmmmmmmllmol..............', 85: '................mdssmlmmmmmssooosllmmddmmmmdssmmmmddmmlldooosssmmmmllsosl...............', 86: '....................dolllmmssooosllmmddmmmmdssmmmmddmmlldooosssmmllso...................', 87: '......................soooood...loomlmdmmmmdssmmmmmdmlsom...mooooool....................', 88: '...................................lmddmmmmdssmmmmdddm..................................', 89: '.....................................lldosldssllosl.....................................', 90: '..........................................oooooo........................................' }),
+}
+WORN_MALE.timber = TIMBER
+WORN_FEMALE.timber = { ...WORN_FEMALE.rough, chest: TIMBER.chest }
+
 export const SET_PROFILE = {
-  leather: 'rough',
+  leather: 'timber',
   iron: 'plate',
   bone: 'spiked',
   verdant: 'spiked',

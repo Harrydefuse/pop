@@ -39,29 +39,40 @@ framing and how much of the frame to fill.
 
 ## 2. Worn on the body — **88 x 118** (male) · **84 x 130** (female)
 
-Export at **4x = 352 x 472** and **336 x 520**. Templates: `worn-chest.png`,
-`worn-helm.png` and the rest, written by `tools/sprite-png.mjs` (below).
+This canvas is **double the body**, which is 44 x 59. Draw at 88 x 118 and the
+piece lands pixel-for-pixel.
 
-**This canvas is exactly double the body's.** Worn armour is drawn at twice the
-resolution of the character underneath it and rendered back down over him,
-which is why a breastplate can carry rivets the body has no room for. Drawing a
-piece at the body's own size is the one mistake that cannot be fixed on import
-— it lands at half scale on his waist.
+**The canvas is the whole character, not the item.** This is the one thing that
+catches people out. An armour piece is not centred in the frame filling it — it
+sits at the exact rows where it lands on the body, and everything else stays
+transparent. A chest plate drawn to fill 88 x 118 covers the hero head to foot.
 
-- Paint onto the matching `worn-*.png` template, which has the current piece on
-  the full canvas so you can see where it sits.
-- **Do not move the body.** Head, shoulders, hands and feet stay where they are.
-- Show **only the armour** in the final file — everything else transparent or
-  magenta.
-- Same hard-edges rule.
+`templates/worn-slots-88x118.png` is the body, ghosted, with all four bands
+drawn on it. Paint inside the box and it will line up.
 
-### Armour is drawn per LOOK, not per set
+| Slot | Rows (y) | Columns (x) | Piece size |
+| --- | --- | --- | --- |
+| `helm` | **7 – 56** | 19 – 70 | 52 x 50 |
+| `chest` | **57 – 90** | 9 – 80 | 72 x 34 |
+| `gloves` | **77 – 92** | 13 – 76 | 64 x 16 |
+| `legs` | **91 – 106** | 23 – 66 | 44 x 16 |
+| `boots` | **107 – 117** | 23 – 66 | 44 x 11 |
+| `offhand` | **55 – 92** | 7 – 34 | 28 x 38 |
 
-There are five sets and only four looks. A set is a palette; the drawing comes
-from its profile:
+Columns are the widest the piece may go — chest reaches 9–80 because that
+includes the pauldrons over the arms. Rows are the part that must be obeyed.
 
-| Set | Profile |
-| --- | --- |
+The character is a chibi: a big head, a short wide torso, stubby legs. A chest
+plate is **wider than it is tall** (72 x 34, about 2:1). Armour drawn on
+realistic proportions has to be squashed to fit and loses its detail.
+
+Colour is not fixed by the file. Worn pieces are stored as a **brightness
+ramp** — outline, shade, dark, mid, light, accent — and each set paints its own
+colours onto it, so one drawing serves leather, iron, bone, verdant and gilded.
+Draw in any colours you like with clearly separated dark-to-light steps; the
+import reads the steps, not the hues.
+
+--- | --- |
 | Leather | `rough` |
 | Iron | `plate` |
 | Bone | `spiked` |
