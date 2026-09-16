@@ -12,6 +12,8 @@ import { WEEKS_KEPT, weekActivities, weekOf, weekSeries } from '../game/progress
 import { pinnedEfforts } from '../game/efforts'
 import { buildCard, cardAge, cardTitle, encodeCard, leaderboard } from '../game/profile'
 import { alpha } from '../game/color'
+import { markTone } from '../game/gameMarks'
+import { GameMark } from '../components/Sprites'
 
 const NONE = []
 
@@ -81,7 +83,12 @@ export default function Profile() {
         {plays.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-line">
             {plays.map((g) => (
-              <span key={g.id} className="label px-2 py-1 rounded-full bg-panel-2 text-ink-dim">
+              <span
+                key={g.id}
+                className="flex items-center gap-1.5 label pl-1.5 pr-2.5 py-1 rounded-full"
+                style={{ background: alpha(markTone(g.id), 16), color: 'var(--color-ink-dim)' }}
+              >
+                <GameMark id={g.id} size={16} />
                 {g.name}
               </span>
             ))}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bar, Btn, Panel } from './ui'
 import Icon from './Icon'
-import { HeroView, PetView } from './Sprites'
+import { GameMark, HeroView, PetView } from './Sprites'
 import PixelSprite from './PixelSprite'
 import TitleRoom from './TitleRoom'
 import { useGame } from '../game/useGame'
@@ -336,14 +336,17 @@ function GameChips({ value, onToggle }) {
             key={g.id}
             onClick={() => onToggle(g.id)}
             aria-pressed={on}
-            className="ask-in raise min-h-[44px] px-3.5 rounded-full border transition-colors active:brightness-125"
+            className="ask-in raise min-h-[44px] pl-2.5 pr-3.5 rounded-full border transition-colors active:brightness-125"
             style={{
               color: on ? 'var(--color-on-accent)' : 'var(--color-ink-dim)',
               background: on ? 'var(--color-neon)' : 'var(--color-panel)',
               borderColor: on ? 'var(--color-neon)' : 'var(--color-line)',
             }}
           >
-            <span className="font-display text-[13px]">{g.name.toUpperCase()}</span>
+            <span className="flex items-center gap-2">
+              <GameMark id={g.id} size={18} />
+              <span className="font-display text-[13px]">{g.name.toUpperCase()}</span>
+            </span>
           </button>
         )
       })}

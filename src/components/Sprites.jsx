@@ -1,4 +1,5 @@
 import PixelSprite from './PixelSprite'
+import { gameMark } from '../game/gameMarks'
 import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, PET_SPRITES, LOOT_CHEST_SPRITE, VAULT_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
@@ -54,6 +55,15 @@ function gearAura(equipped) {
     strength: Math.min(1, (best - 1) / 3 + matching / 12),
     sparks: best >= 3 ? (best >= 4 ? 6 : 3) : 0,
   }
+}
+
+/**
+ * The mark for a game somebody plays.
+ *
+ * Original pixel art, not the game's logo — see game/gameMarks.js for why.
+ */
+export function GameMark({ id, size = 16, className, style }) {
+  return <PixelSprite sprite={gameMark(id)} size={size} className={className} style={style} />
 }
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */
