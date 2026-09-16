@@ -64,7 +64,10 @@ function ChestRow({ spec, cores, onPick }) {
         <span
           className="font-display text-[13px] min-h-[36px] px-2.5 border shrink-0 rounded-[var(--radius-sm)] flex items-center gap-1.5"
           style={{
-            color: can ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
+            // Ink rather than on-accent: gold is the one accent that stays
+            // bright in light mode, so what sits on it has to be dark in both
+            // themes where everything else flips.
+            color: can ? '#241a05' : 'var(--color-ink-faint)',
             background: can ? 'var(--color-gold)' : 'transparent',
             borderColor: can ? 'var(--color-gold)' : 'var(--color-line)',
           }}
@@ -315,7 +318,7 @@ function Bench({ items, cores, worn, onUpgrade, onOpen }) {
                     aria-label={`Upgrade ${item.name} for ${cost} cores`}
                     className="font-display text-[12px] min-h-[44px] px-2.5 border shrink-0 disabled:opacity-40 active:brightness-125"
                     style={{
-                      color: can ? 'var(--color-on-accent)' : 'var(--color-ink-faint)',
+                      color: can ? '#241a05' : 'var(--color-ink-faint)',
                       background: can ? 'var(--color-gold)' : 'transparent',
                       borderColor: can ? 'var(--color-gold)' : 'var(--color-line)',
                     }}

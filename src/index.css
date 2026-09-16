@@ -41,83 +41,77 @@
 @custom-variant pitch (@media (min-width: 1024px) and (min-height: 720px));
 
 @theme {
-  /* ONE PALETTE. LIGHT MODE CHANGES THE GROUND AND NOTHING ELSE.
-     ==============================================================
-     Every accent below is the dark-mode value, unchanged — same violet, same
-     cyan, same lime, same gold. What light mode swaps is the ground it all
-     sits on: the void, the panels, the lines, and the ink, because text the
-     colour of dark-mode text is invisible on paper and that is not a palette
-     choice, it is a blank screen.
+  /* ONE PALETTE, TWO GROUNDS.
+     =========================
+     Light mode is dark mode's colours on white. Every accent below is the
+     dark-mode colour of the same name at the same hue and saturation, taken
+     down in lightness until it clears roughly 4.8:1 on paper — so it is
+     recognisably the same violet, the same cyan, the same green, only deep
+     enough to hold its own against white instead of dissolving into it.
+     Nothing was rehued and nothing swapped family, which is what made the two
+     themes read as two different apps the last time this was tuned.
 
-     This was asked for directly and twice, so it is worth writing down what it
-     costs rather than quietly re-deciding it later. On white these accents run
-     1.6:1 to 2.7:1. AA wants 4.5:1 for text. So anything SET in an accent — a
-     coin figure, a rarity label, an arena name, the XP-to-next line — is now
-     low-contrast in light mode, worst for lime and gold. Nothing is broken and
-     nothing is unreadable at size, but it is thin in bright sun and thin for
-     anyone whose eyes are.
+     GOLD IS THE ONE EXCEPTION AND IT IS DELIBERATE. --color-gold stays
+     #fbbf24 exactly, because the rank badge is the thing this palette exists
+     to serve and gold that is dark enough to read is not gold, it is rust. It
+     runs 1.7:1 on white, so anything SET in it — the coin figure, "+97
+     coins" — is decorative rather than readable, and that is the trade that
+     was asked for. Everything that has to be READ is ink.
 
-     Two things keep it from being worse than that. Body copy, headings and
-     captions are ink, not accent, so the words you actually read are 12:1 or
-     better. And a filled accent — the START button, a primary — carries
-     --color-on-accent, which is dark here exactly as it is in dark mode, so
-     the text on a fill is fine.
+     On-accent is white here and dark in dark mode, because the accents are
+     deep here and fluorescent there. The two places gold is used as a FILL
+     set their own dark text rather than taking it. */
 
-     If it ever needs winding back, the move is not to re-deepen everything: it
-     is to deepen only the tokens that carry words and leave the fills bright.
-     That is what the previous version did, and it is why the two themes looked
-     like two different apps. */
-
-  --arena: #b168f8;
+  --arena: #891af4;
   --arena-wash: transparent;
 
-  /* ---- the ground. The only part light mode owns. */
+  /* ---- the ground */
   --color-void: #ffffff; /* the page */
   --color-panel: #ffffff; /* card surface */
   --color-panel-2: #f1f2f6; /* raised surface / rows */
   --color-line: #e2e4ec; /* hairline border */
   --color-line-hot: #c6cad6; /* border on active/hover */
 
-  /* ---- the ink. Flipped, because dark-mode ink on paper is nothing at all. */
+  /* ---- the ink */
   --color-ink: #14161d;
   --color-ink-dim: #545b6b;
   --color-ink-faint: #5f6675;
 
-  /* ---- everything else: dark mode's values, to the character. */
-  --color-neon: #b168f8;
-  --color-neon-bright: #c894fd;
-  --color-neon-dim: #6d28d9;
-  --color-cyan: #22d3ee;
-  --color-lime: #a3e635;
-  --color-gold: #fbbf24;
-  --color-danger: #fb7185;
+  /* ---- the accents: dark mode's hues, deep enough for paper */
+  --color-neon: #891af4;
+  --color-neon-bright: #9b3cfb;
+  --color-neon-dim: #b168f8;
+  --color-cyan: #0b7d8e;
+  --color-lime: #537d0c;
+  --color-gold: #fbbf24; /* unchanged from dark on purpose — see above */
+  --color-danger: #e40627;
 
+  /* Decorative only. Never put a word in these. */
   --color-neon-glow: #c084fc;
-  --color-cyan-glow: #67e8f9;
-  --color-lime-glow: #bef264;
+  --color-cyan-glow: #22d3ee;
+  --color-lime-glow: #a3e635;
   --color-gold-glow: #fcd34d;
 
-  --tone-green: #4ade80;
-  --color-go: #4ade80;
-  --tone-sky: #38bdf8;
-  --tone-slate: #c5cdd8;
-  --tone-orange: #fb923c;
-  --tone-jade: #5eead4;
-  --tone-blue: #60a5fa;
-  --tone-bronze: #c99163;
+  --tone-green: #0d8238;
+  --color-go: #0d8238;
+  --tone-sky: #0679ac;
+  --tone-slate: #5f6675;
+  --tone-orange: #b95504;
+  --tone-jade: #0d8270;
+  --tone-blue: #076eed;
+  --tone-bronze: #b05911;
 
-  /* Dark, on both themes now — the accents it sits on are bright on both. */
-  --color-on-accent: #12081f;
+  --color-on-accent: #ffffff;
 
-  --color-r-rare-glow: #7dd3fc;
-  --color-r-epic-glow: #d8b4fe;
+  --color-r-rare-glow: #38bdf8;
+  --color-r-epic-glow: #c084fc;
   --color-r-legendary-glow: #fcd34d;
 
-  --color-r-common: #b8bfcc;
-  --color-r-uncommon: #4ade80;
-  --color-r-rare: #38bdf8;
-  --color-r-epic: #c084fc;
-  --color-r-legendary: #f59e0b;
+  --color-r-common: #4b5563;
+  --color-r-uncommon: #0d8238;
+  --color-r-rare: #0679ac;
+  --color-r-epic: #9c3dfa;
+  --color-r-legendary: #9d6506;
 
   /* Press Start 2P is the game's logo and nothing else. Everything the
      interface says is set in a face people can actually read: an eight-pixel
