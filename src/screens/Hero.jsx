@@ -1,0 +1,705 @@
+import { useMemo, useState } from 'react'
+import { Bar, Btn, Chip, Modal, Panel, RarityTag } from '../components/ui'
+import Icon from '../components/Icon'
+import { GearIcon, HeroView, PetView } from '../components/Sprites'
+import SaveSheet from '../components/SaveSheet'
+import { useGame } from '../game/useGame'
+import { ARMOUR_SETS, EQUIP_SLOTS, OFFHAND_KINDS, RARITY, RARITY_ORDER, WEAPON_GLOW, WEAPON_INK, WEAPON_KINDS, isWeapon, upgradeCost } from '../game/config'
+import { GEAR_CATALOG } from '../game/data'
+import { MAX_STAGE, PET_STAGES, campaignState, classById, fmt, fmtFull, itemScore, petBonus, petPct, petStage, treatsToNext, powerScore, rankFor, wornGear } from '../game/engine'
+import { pinnedEfforts } from '../game/efforts'
+import { alpha } from '../game/color'
+
+/* ------------------------------------------------------------------ tiles --- */
+
+/**
+ * One tile per owned thing: the icon on a ground tinted with its rarity, the
+ * level in the corner, a marker if it is currently worn. Small enough that a
+ * full collection fits on one screen instead of a long scrolling list.
+ */
+function Tile({ rarity, level, equipped, weapon, label, onClick, children }) {
+  const color = RARITY[rarity].color
+  // A blade and a breastplate were the same tile in the same colours, and the
+  // weapon art is thin where the armour art is a solid block — so the weapons
+  // were the ones that disappeared. They get their own light: rarity still owns
+  // the border and the ground, steel owns the ring around it.
+  const ring = weapon
+    ? `0 0 0 2px ${WEAPON_GLOW}, 0 0 16px -3px ${WEAPON_GLOW}${equipped ? `, 0 0 0 4px ${color}` : ''}`
+    : equipped
+      ? `0 0 0 2px ${color}, 0 0 14px -4px ${color}`
+      : undefined
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="relative grid place-items-center aspect-square border-2 press"
+      style={{
+        borderColor: color,
+        background: alpha(color, equipped ? 40 : 22),
+        boxShadow: ring,
+      }}
+    >
+      {/* The art takes the whole tile rather than sitting in the middle of it
+          at a fixed 30px. A breastplate at a third of its own frame reads as a
+          smudge — you could tell the rarity from the border and nothing else
+          about the piece. The inset is only what the level badge needs. */}
+      <span className="absolute inset-0 grid place-items-center p-1 pb-2.5">{children}</span>
+      <span
+        className="absolute bottom-0 right-0 font-display text-[11px] px-1 py-0.5 leading-none"
+        style={{ background: 'var(--color-panel)', color }}
+      >
+        {level}
+      </span>
+      {equipped && <span className="absolute top-0 left-0 w-1.5 h-1.5" style={{ background: color }} />}
+    </button>
+  )
+}
+
+/* ---------------------------------------------------------------- loadout --- */
+
+/**
+ * The six slots, and everything you own that fits each one.
+ *
+ * Putting a piece on was always possible, but only by finding it in a grid of
+ * every item in the game and opening its sheet — which is fine once you know
+ * where the boots are and hopeless the first time. This is the other direction:
+ * start from the empty slot, see the candidates, tap one.
+ */
+function SlotPicker({ slot, onClose }) {
+  const { state, equip, unequip } = useGame()
+  const p = state.player
+  const name = EQUIP_SLOTS.find((x) => x.key === slot)?.name ?? slot
+  const fits = useMemo(
+    () => p.inventory.filter((i) => i.slot === slot).sort((a, b) => itemScore(b) - itemScore(a)),
+    [p.inventory, slot],
+  )
+
+  return (
+    <Modal open onClose={onClose} title={name.toUpperCase()} accent="var(--color-neon)">
+      {fits.length === 0 ? (
+        <div className="text-[14px] text-ink-faint py-4 text-center">
+          Nothing for this slot yet. Chests and bosses drop them.
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {fits.map((item) => {
+            const on = p.equipped[slot] === item.id
+            const color = RARITY[item.rarity].color
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (!on) equip(item.id)
+                  onClose()
+                }}
+                className="w-full flex items-center gap-3 min-h-[44px] px-2 py-1.5 border text-left transition-colors active:brightness-125"
+                style={{ borderColor: on ? color : 'var(--color-line)', background: on ? alpha(color, 18) : 'transparent' }}
+              >
+                <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={30} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-display text-[13px] truncate" style={{ color }}>
+                    {item.name.toUpperCase()}
+                  </div>
+                  <div className="text-[14px] text-ink-faint">
+                    LV {item.level} · {RARITY[item.rarity].label} · {Math.round(itemScore(item))} pwr
+                  </div>
+                </div>
+                {on && <span className="font-display text-[12px] shrink-0" style={{ color }}>ON</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {p.equipped[slot] && (
+        <Btn
+          full
+          variant="ghost"
+          className="mt-3"
+          onClick={() => {
+            unequip(slot)
+            onClose()
+          }}
+        >
+          Take off
+        </Btn>
+      )}
+    </Modal>
+  )
+}
+
+function Loadout({ player, onPick }) {
+  return (
+    <div className="grid grid-cols-6 gap-1.5">
+      {EQUIP_SLOTS.map((s) => {
+        const item = player.inventory.find((i) => i.id === player.equipped[s.key])
+        const color = item ? RARITY[item.rarity].color : 'var(--color-line-hot)'
+        return (
+          <button
+            key={s.key}
+            onClick={() => onPick(s.key)}
+            aria-label={item ? `${s.name}: ${item.name}. Change` : `${s.name}: empty. Choose one`}
+            className="relative grid place-items-center aspect-square border-2 min-h-[44px] press"
+            style={{ borderColor: color, background: item ? alpha(color, 26) : 'transparent' }}
+          >
+            {item ? (
+              <span className="absolute inset-0 grid place-items-center p-0.5 pb-2">
+                <GearIcon slot={item.slot} kind={item.kind} set={item.set} fill />
+              </span>
+            ) : (
+              <Icon name={s.icon} size={16} color="var(--color-ink-faint)" />
+            )}
+            {item && (
+              <span
+                className="absolute bottom-0 right-0 font-display text-[11px] px-0.5 leading-none"
+                style={{ background: 'var(--color-panel)', color }}
+              >
+                {item.level}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ----------------------------------------------------------------- detail --- */
+
+export function ItemSheet({ item, onClose }) {
+  const { state, equip, unequip, upgrade } = useGame()
+  const p = state.player
+  const equipped = p.equipped[item.slot] === item.id
+  const cost = upgradeCost(item)
+  const color = RARITY[item.rarity].color
+  const slotName = EQUIP_SLOTS.find((s) => s.key === item.slot)?.name ?? item.slot
+
+  return (
+    <Modal open onClose={onClose} title={item.name}>
+      <div className="flex items-center gap-3">
+        <div
+          className="grid place-items-center w-16 h-16 shrink-0 border-2"
+          style={{ borderColor: color, background: alpha(color, 22) }}
+        >
+          <GearIcon slot={item.slot} kind={item.kind} set={item.set} size={40} />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <RarityTag rarity={item.rarity} />
+            <Chip color="var(--color-ink-faint)">{slotName}</Chip>
+          </div>
+          <div className="font-display text-[16px] mt-2" style={{ color }}>
+            LEVEL {item.level}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3.5 border border-line bg-panel-2 p-3">
+        <div className="font-display text-[12px] text-ink-faint mb-2">STATS</div>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(item.stats).map(([k, v]) => (
+            <span key={k} className="text-[15px] text-lime">
+              +{Math.round(v * RARITY[item.rarity].mult * (1 + (item.level - 1) * 0.35))} {k}
+            </span>
+          ))}
+        </div>
+        <div className="text-[14px] text-ink-faint mt-2.5">
+          Rarity multiplies every point, so a legendary at level 1 can still beat a common at level 5.
+        </div>
+      </div>
+
+      <div className="flex gap-2 mt-3.5">
+        <Btn
+          full
+          onClick={() => {
+            if (equipped) unequip(item.slot)
+            else equip(item.id)
+            onClose()
+          }}
+        >
+          {equipped ? 'TAKE OFF' : 'PUT ON'}
+        </Btn>
+        <Btn
+          variant={p.cores >= cost ? 'gold' : 'dim'}
+          disabled={p.cores < cost}
+          onClick={() => upgrade(item.id, cost)}
+        >
+          UPGRADE {fmt(cost)}
+        </Btn>
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * One pet, and the decision the collection is made of.
+ *
+ * Pets used to level on your XP, which meant this screen was a read-out: it
+ * told you how far along the one you had equipped was and there was nothing to
+ * do about it. Treats turn it into a choice — the same treat can finish a
+ * hatchling today or go into the fifty a PRIME needs — so the screen is built
+ * around spending them.
+ */
+function PetSheet({ pet: seed, onClose }) {
+  const { state, setPet, feedPet } = useGame()
+  const p = state.player
+  // Read the live pet, not the one that was handed over when the tile was
+  // tapped. The sheet used to hold that snapshot, so feeding twice in a row
+  // spent the second lot against the first lot's numbers — it would offer to
+  // pour two treats into a pet that needed one, and eat both.
+  const pet = p.pets.find((x) => x.id === seed.id) ?? seed
+  const active = p.activePetId === pet.id
+  const color = RARITY[pet.rarity].color
+  const stage = petStage(pet.stage)
+  const cost = treatsToNext(pet)
+  const fed = pet.fed ?? 0
+  const treats = p.treats ?? 0
+  const maxed = stage.n >= MAX_STAGE
+  const need = Math.max(0, cost - fed)
+  const canPour = Math.min(treats, need)
+
+  return (
+    <Modal open onClose={onClose} title={pet.name}>
+      <div className="text-center">
+        <PetView refId={pet.ref} stage={pet.stage} size={104} float className="mx-auto" />
+        <div className="flex items-center justify-center gap-1.5 mt-2">
+          <RarityTag rarity={pet.rarity} />
+          <Chip color={color}>{stage.name}</Chip>
+        </div>
+      </div>
+
+      {/* ---- what it costs to move it up, and what you have to spend */}
+      <div className="mt-3.5">
+        <div className="flex justify-between items-baseline mb-1.5">
+          <span className="font-display text-[13px]" style={{ color }}>
+            {maxed ? 'FULLY GROWN' : `FORM ${stage.n} OF ${MAX_STAGE}`}
+          </span>
+          <span className="text-[14px] text-ink-faint tabular-nums">
+            {maxed ? `+${petPct(pet)}% ${pet.stat}` : `${fed}/${cost} treats`}
+          </span>
+        </div>
+        <Bar pct={maxed ? 1 : fed / cost} color={color} height={8} shine={maxed} />
+      </div>
+
+      {!maxed && (
+        <div className="mt-3 flex items-center gap-2.5 border border-line bg-panel-2 rounded-[var(--radius-sm)] px-3 py-2.5">
+          <Icon name="bone" size={16} color={treats > 0 ? 'var(--color-gold)' : 'var(--color-ink-faint)'} />
+          <span className="text-[14px] text-ink-dim">
+            You have <span className="figure text-ink">{treats}</span> {treats === 1 ? 'treat' : 'treats'}
+          </span>
+          <span className="ml-auto text-[14px] text-ink-faint tabular-nums">{need} to go</span>
+        </div>
+      )}
+
+      {/* ---- the four forms, and which one it is standing in */}
+      <div className="mt-3 border border-line bg-panel-2 p-3">
+        <div className="font-display text-[12px] text-ink-faint mb-2.5">Evolution</div>
+        <div className="flex items-end justify-between gap-1">
+          {PET_STAGES.map(({ n, name, cost: step }) => {
+            const reached = stage.n >= n
+            return (
+              <div key={n} className="text-center flex-1 min-w-0" style={{ opacity: reached ? 1 : 0.32 }}>
+                <div className="grid place-items-center h-12">
+                  <PetView refId={pet.ref} stage={n} size={38} />
+                </div>
+                <div className="h-1 mt-1" style={{ background: reached ? color : 'var(--color-panel-2)' }} />
+                {/* The number under a rung is what it costs to LEAVE it, which
+                    is the number somebody is actually deciding about. The last
+                    one has nothing above it, so it shows the bonus instead. */}
+                <div className="font-display text-[11px] mt-1" style={{ color: reached ? color : 'var(--color-ink-faint)' }}>
+                  {step ? `${step}` : '—'}
+                </div>
+                <div
+                  className="font-display text-ink-faint mt-0.5 truncate"
+                  style={{ fontSize: 9.5, letterSpacing: '0.04em' }}
+                >
+                  {name}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="text-[14px] text-lime mt-3">
+          +{petPct(pet)}% {pet.stat}
+          {!maxed && <span className="text-ink-faint"> · +{petPct({ ...pet, stage: stage.n + 1 })}% at {PET_STAGES[stage.n].name.toLowerCase()}</span>}
+        </div>
+      </div>
+
+      {!maxed && (
+        <div className="flex gap-1.5 mt-3.5">
+          <Btn className="flex-1" disabled={treats < 1} onClick={() => feedPet(pet.id, 1)}>
+            Give a treat
+          </Btn>
+          {/* Pouring matters once the costs get real: nobody should press a
+              button fifty times to finish a PRIME. It only appears when it
+              would do something the button beside it does not — at one treat
+              from a new form, "Give a treat" is already the evolve button. */}
+          {canPour >= 2 && (
+            <Btn className="flex-1" variant="ghost" onClick={() => feedPet(pet.id, canPour)}>
+              {canPour >= need ? `Evolve · ${need}` : `Give ${canPour}`}
+            </Btn>
+          )}
+        </div>
+      )}
+
+      <Btn
+        full
+        className="mt-1.5"
+        variant={active ? 'dim' : maxed ? 'primary' : 'ghost'}
+        disabled={active}
+        onClick={() => { setPet(pet.id); onClose() }}
+      >
+        {active ? 'ALREADY OUT' : 'BRING THIS ONE'}
+      </Btn>
+    </Modal>
+  )
+}
+
+/* ------------------------------------------------------------------- root --- */
+
+const FILTERS = [
+  { id: 'all', label: 'Yours' },
+  { id: 'pets', label: 'Pets' },
+  { id: 'armoury', label: 'Armoury' },
+  { id: 'weapons', label: 'Weapons' },
+]
+
+/**
+ * Everything in the game, whether you own it or not.
+ *
+ * Drops are the only way gear arrives, so a new character has a pair of boots
+ * and no idea what else exists — which makes the chest a lottery for a prize
+ * you cannot picture. This is the prize list, and it is arranged by piece
+ * rather than by set: a row is one thing, five columns are the five ways it
+ * can come out of a chest, so you read it as "the axe, and how good an axe
+ * gets" instead of "another twelve icons".
+ */
+const ARMOUR_KINDS = ['helm', 'chest', 'legs', 'gloves', 'boots', 'shield']
+
+function kindName(kind) {
+  return (
+    OFFHAND_KINDS.find((k) => k.id === kind)?.name ??
+    EQUIP_SLOTS.find((s) => s.key === kind)?.name ??
+    kind
+  )
+}
+
+function Collection({ kinds, owned, onPick, weapons }) {
+  const have = useMemo(() => new Set(owned.map((i) => `${i.set}:${i.kind}`)), [owned])
+  return (
+    <>
+      {kinds.map((kind) => {
+        const row = ARMOUR_SETS.map((set) => GEAR_CATALOG.find((g) => g.set === set.id && g.kind === kind)).filter(Boolean)
+        const got = row.filter((g) => have.has(`${g.set}:${g.kind}`)).length
+        return (
+          <div key={kind} className="mb-3.5 last:mb-0">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="font-display text-[12px] text-ink-dim">{kindName(kind).toUpperCase()}</span>
+              <span className="text-[14px] text-ink-faint">
+                {got}/{row.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-5 gap-1.5">
+              {row.map((g) => {
+                const mine = have.has(`${g.set}:${g.kind}`)
+                const color = RARITY[g.rarity].color
+                return (
+                  <button
+                    key={g.set}
+                    onClick={() => onPick(g)}
+                    aria-label={`${g.name}${mine ? '' : ', locked'}`}
+                    className="relative grid place-items-center aspect-square border press"
+                    style={{
+                      borderColor: mine ? color : 'var(--color-line)',
+                      background: mine ? alpha(color, 20) : 'var(--color-panel-2)',
+                      boxShadow: mine && weapons ? `0 0 0 2px ${WEAPON_GLOW}, 0 0 14px -4px ${WEAPON_GLOW}` : undefined,
+                    }}
+                  >
+                    {/* Dimmed, not hidden — the point is seeing what is out
+                        there. Darkened rather than faded, too: a locked piece
+                        used to be a pale ghost of grey metal on a pale ground,
+                        which is a way of showing something by hiding it. */}
+                    <span
+                      className="absolute inset-0 grid place-items-center p-1"
+                      style={mine ? undefined : { filter: 'grayscale(1) brightness(0.45) contrast(1.3)', opacity: 0.7 }}
+                    >
+                      <GearIcon slot={g.slot} kind={g.kind} set={g.set} fill />
+                    </span>
+                    {!mine && (
+                      <span className="absolute -bottom-px -right-px grid place-items-center w-3.5 h-3.5 bg-void">
+                        <Icon name="lock" size={8} color="var(--color-ink-faint)" />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
+/**
+ * The bench. Everything you own, what the next level costs, and whether you
+ * can pay for it.
+ *
+ * Upgrading was buried one tap inside each item's sheet, which meant the only
+ * way to find out what your cores were for was to open nine things one at a
+ * time. Cheapest first, because that is the order anyone actually spends in.
+ */
+/** A piece you have not found yet: what it is, and what it would do. */
+function CodexSheet({ piece, onClose }) {
+  return (
+    <Modal open onClose={onClose} title={piece.name}>
+      <div className="flex items-center gap-3">
+        <span className="grid place-items-center w-16 h-16 shrink-0 border" style={{ borderColor: RARITY[piece.rarity].color }}>
+          <GearIcon slot={piece.slot} kind={piece.kind} set={piece.set} size={48} />
+        </span>
+        <div className="min-w-0">
+          <RarityTag rarity={piece.rarity} />
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+            {Object.entries(piece.stats).map(([k, v]) => (
+              <span key={k} className="text-[14px] text-ink-dim">
+                {k} +{v}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="text-[14px] text-ink-dim mt-3 leading-snug">
+        Comes out of chests. The rarer the set, the longer you will be waiting — a legendary is a one-in-a-hundred day.
+      </div>
+    </Modal>
+  )
+}
+
+export default function Hero({ embedded = false }) {
+  const [saving, setSaving] = useState(false)
+  const { state, equipBest } = useGame()
+  const p = state.player
+  const cls = classById(p.classId)
+  const power = powerScore(p)
+  const { rank, next, pct } = rankFor(power)
+  const arena = campaignState(p, state.campaign).arena
+  const pet = p.pets.find((x) => x.id === p.activePetId)
+  const bonus = petBonus(p)
+
+  const [filter, setFilter] = useState('all')
+  const [openItem, setOpenItem] = useState(null)
+  const [openSlot, setOpenSlot] = useState(null)
+  const [openCodex, setOpenCodex] = useState(null)
+  const [openPet, setOpenPet] = useState(null)
+
+  const worn = useMemo(() => wornGear(p), [p])
+  const pinned = useMemo(() => pinnedEfforts(state.bests ?? {}, p.efforts ?? []), [state.bests, p.efforts])
+
+  const byRarity = (a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || itemScore(b) - itemScore(a)
+  const gear = useMemo(() => [...p.inventory].sort(byRarity), [p.inventory])
+  // Split rather than mixed. A glow says which is which; two headings say it
+  // before you have to look.
+  const arms = useMemo(() => gear.filter(isWeapon), [gear])
+  const armour = useMemo(() => gear.filter((i) => !isWeapon(i)), [gear])
+  const pets = useMemo(
+    () => [...p.pets].sort((a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || b.level - a.level),
+    [p.pets],
+  )
+
+  const showGear = filter === 'all'
+  const showPets = filter === 'all' || filter === 'pets'
+
+  return (
+    <div className={embedded ? 'space-y-3' : 'stack-in p-3 space-y-3'}>
+      {/* -------------------------------------------------- the character */}
+      <Panel accent={cls.color} className="p-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="font-display text-[16px]">{p.name}</div>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Chip color={cls.color}>{cls.name}</Chip>
+              {/* The arena, not the power rank. The card above this one says
+                  METEORITE; saying PLATINUM here made one screen answer "how
+                  am I doing" two different ways. */}
+              <Chip color={arena.tint}>{arena.name.toUpperCase()}</Chip>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="font-display text-[28px] text-neon">{p.level}</div>
+            <div className="font-display text-[11px] text-ink-faint mt-1">LEVEL</div>
+          </div>
+        </div>
+
+        {/* Gear is drawn onto the body, and the pet stands beside them. The
+            character is the point of this screen, so it gets the room: at 168
+            the helm, the pauldrons and the gauntlets ran together into one
+            shape and you could not tell which piece was which.
+
+            The pet had the other half of the row and was using a third of it.
+            Bottom-aligned at 64px with three lines of text under it, the whole
+            top of its column was empty — a companion you levelled to ASCENDED
+            rendered smaller than the chest icon in the shop. It takes the
+            column now: `flex-1` so the space is actually allotted to it rather
+            than left over, and big enough that the art is worth looking at. */}
+        <div className="flex items-end justify-center gap-2 mt-3">
+          <HeroView av={p.avatar} equipped={worn} height={250} className="shrink-0" />
+          {pet && (
+            <button
+              onClick={() => setOpenPet(pet)}
+              className="flex-1 min-w-0 flex flex-col items-center text-center active:brightness-125"
+            >
+              <PetView refId={pet.ref} stage={pet.stage} size={104} float />
+              <div className="font-display text-[14px] mt-1" style={{ color: RARITY[pet.rarity].color }}>
+                {pet.name}
+              </div>
+              {/* One fact per line. "LV 100 · ASCENDED" is 140px of text in a
+                  130px column on a small phone, and it wrapped in the middle of
+                  itself. Height is the one thing this column has to spare. */}
+              <div className="label text-ink-faint">{petStage(pet.stage).name}</div>
+              {bonus && <div className="text-[14px] text-lime mt-1">+{bonus.pct}% {bonus.stat}</div>}
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between mb-1.5">
+            <span className="font-display text-[13px] text-ink-faint">POWER</span>
+            <span className="font-display text-[20px]" style={{ color: rank.color }}>
+              {fmtFull(power)}
+            </span>
+          </div>
+          <Bar pct={pct} color={rank.color} height={7} />
+          <div className="text-[14px] text-ink-faint mt-1.5 text-right">
+            {next ? `${fmt(next.min - power)} to ${next.name}` : 'MAX RANK'}
+          </div>
+        </div>
+
+        {/* Six slots and what is in them. Tap one to see everything you own
+            that fits it — the way in that starting from a grid of every item in
+            the game never was. */}
+        <div className="font-display text-[12px] text-ink-faint mt-3.5 mb-2">Loadout</div>
+        <Loadout player={p} onPick={setOpenSlot} />
+
+        {/* The three bests they chose to show. Nothing is here unless they
+            picked something — a board that filled itself would put someone's
+            slowest ever kilometre on their profile. */}
+        {pinned.length > 0 && (
+          <div className="mt-3.5 pt-3.5 border-t border-line">
+            <div className="font-display text-[12px] text-ink-faint mb-2">Best efforts</div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {pinned.map((e) => (
+                <div key={e.id} className="min-w-0">
+                  <div className="figure text-[19px] text-ink leading-none">
+                    {e.value}
+                    {e.unit && <span className="text-[13px] text-ink-dim ml-0.5">{e.unit}</span>}
+                  </div>
+                  <div className="label text-ink-faint mt-1.5 truncate" title={e.name}>
+                    {e.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-1.5 mt-3">
+          <Btn size="sm" variant="ghost" onClick={equipBest}>
+            <Icon name="swap" size={10} color="currentColor" /> Equip best
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={() => setSaving(true)}>
+            <Icon name="link" size={10} color="currentColor" /> My character
+          </Btn>
+        </div>
+      </Panel>
+
+      {saving && <SaveSheet onClose={() => setSaving(false)} />}
+
+      {/* ---------------------------------------------------------- filter */}
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-[var(--radius-sm)] bg-panel-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className="font-display text-[13px] py-2 min-h-[44px] rounded-[calc(var(--radius-sm)-2px)] transition-colors"
+            style={{
+              color: filter === f.id ? 'var(--color-ink)' : 'var(--color-ink-faint)',
+              background: filter === f.id ? 'var(--color-panel)' : 'transparent',
+              boxShadow: filter === f.id ? 'var(--elev)' : undefined,
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ----------------------------------------------------------- tiles */}
+      <Panel className="p-3">
+        {filter === 'armoury' && <Collection kinds={ARMOUR_KINDS} owned={p.inventory} onPick={setOpenCodex} />}
+        {filter === 'weapons' && <Collection kinds={WEAPON_KINDS} owned={p.inventory} onPick={setOpenCodex} weapons />}
+
+        {showGear && (
+          <>
+            {[
+              ['WEAPONS', arms, WEAPON_INK],
+              ['ARMOUR', armour, 'var(--color-ink-faint)'],
+            ].map(([heading, list, tone], section) =>
+              list.length ? (
+                <div key={heading} className={section ? 'mt-4' : ''}>
+                  <div className="font-display text-[12px] mb-2.5" style={{ color: tone }}>
+                    {heading} · {list.length}
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {list.map((i) => (
+                      <Tile
+                        key={i.id}
+                        rarity={i.rarity}
+                        level={i.level}
+                        weapon={isWeapon(i)}
+                        equipped={p.equipped[i.slot] === i.id}
+                        label={`${i.name}, ${RARITY[i.rarity].label}, level ${i.level}`}
+                        onClick={() => setOpenItem(i)}
+                      >
+                        <GearIcon slot={i.slot} kind={i.kind} set={i.set} fill />
+                      </Tile>
+                    ))}
+                  </div>
+                </div>
+              ) : null,
+            )}
+          </>
+        )}
+
+        {showPets && (
+          <>
+            <div className={`font-display text-[12px] text-ink-faint mb-2.5 ${showGear ? 'mt-4' : ''}`}>
+              PETS · {pets.length}
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {pets.map((x) => (
+                <Tile
+                  key={x.id}
+                  rarity={x.rarity}
+                  level={petStage(x.stage).n}
+                  equipped={x.id === p.activePetId}
+                  label={`${x.name}, ${RARITY[x.rarity].label}, ${petStage(x.stage).name.toLowerCase()}`}
+                  onClick={() => setOpenPet(x)}
+                >
+                  <PetView refId={x.ref} stage={x.stage} size={34} />
+                </Tile>
+              ))}
+            </div>
+          </>
+        )}
+
+        {(filter === 'all' || filter === 'pets') && !gear.length && !pets.length && (
+          <div className="text-[14px] text-ink-faint text-center py-6">Open a chest to start collecting.</div>
+        )}
+      </Panel>
+
+      {openSlot && <SlotPicker slot={openSlot} onClose={() => setOpenSlot(null)} />}
+      {openItem && <ItemSheet item={openItem} onClose={() => setOpenItem(null)} />}
+      {openCodex && <CodexSheet piece={openCodex} onClose={() => setOpenCodex(null)} />}
+      {openPet && <PetSheet pet={openPet} onClose={() => setOpenPet(null)} />}
+    </div>
+  )
+}
