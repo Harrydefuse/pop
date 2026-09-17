@@ -356,6 +356,15 @@ Hard edges in the source are always better than any of this.
 
 ---
 
+## Game logos
+
+`logos/` holds the real brand mark for each game somebody can say they play,
+and has its own README with the filenames and the import command. They are the
+one thing in here that cannot be drawn to spec — they have to be the actual
+logos, so somebody has to put the files in.
+
+---
+
 ## Naming
 
 Every file here is versioned, so nothing ever has to be deleted to avoid

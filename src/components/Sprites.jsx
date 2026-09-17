@@ -74,7 +74,9 @@ export function GameMark({ id, size = 18, className = '', style, title }) {
       title={title}
       aria-hidden={title ? undefined : 'true'}
     >
-      {logo.kind === 'mark' ? (
+      {logo.kind === 'art' ? (
+        <img src={logo.src} alt="" width={size} height={size} className="block" />
+      ) : logo.kind === 'mark' ? (
         <svg viewBox="0 0 24 24" width={Math.round(size * 0.68)} height={Math.round(size * 0.68)}>
           <path d={logo.d} fill={logo.color} />
         </svg>
