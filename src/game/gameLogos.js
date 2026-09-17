@@ -83,7 +83,19 @@ function tooDark(hex) {
  */
 export function gameLogo(id) {
   const art = LOGO_ART[id]
-  if (art) return { kind: 'art', src: `data:image/png;base64,${art}`, tone: MONOGRAMS[id]?.hex ?? BRANDS[id]?.hex ?? '#7b8494' }
+  if (art) {
+    // A logo drawn in one tone needs a plate or it vanishes on the theme that
+    // matches it. Fixed colours rather than theme variables, because the whole
+    // point is that this plate does NOT follow the theme — a white logo needs
+    // a dark ground in light mode just as much as in dark.
+    const plate = art.ink === 'light' ? '#20242c' : art.ink === 'dark' ? '#eef0f5' : null
+    return {
+      kind: 'art',
+      src: `data:image/png;base64,${art.src}`,
+      plate,
+      tone: MONOGRAMS[id]?.hex ?? BRANDS[id]?.hex ?? '#7b8494',
+    }
+  }
 
   const brand = BRANDS[id]
   if (brand) {

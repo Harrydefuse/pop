@@ -68,14 +68,26 @@ export function GameMark({ id, size = 18, className = '', style, title }) {
   return (
     <span
       className={`grid place-items-center shrink-0 rounded-[4px] overflow-hidden ${className}`}
-      style={{ width: size, height: size, background: alpha(logo.tone, 18), ...style }}
+      style={{
+        width: size,
+        height: size,
+        background: logo.plate ?? alpha(logo.tone, 18),
+        ...style,
+      }}
       role={title ? 'img' : 'presentation'}
       aria-label={title}
       title={title}
       aria-hidden={title ? undefined : 'true'}
     >
       {logo.kind === 'art' ? (
-        <img src={logo.src} alt="" width={size} height={size} className="block" />
+        <img
+          src={logo.src}
+          alt=""
+          width={size}
+          height={size}
+          className="block"
+          style={logo.plate ? { padding: Math.round(size * 0.1) } : undefined}
+        />
       ) : logo.kind === 'mark' ? (
         <svg viewBox="0 0 24 24" width={Math.round(size * 0.68)} height={Math.round(size * 0.68)}>
           <path d={logo.d} fill={logo.color} />
