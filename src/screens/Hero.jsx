@@ -684,7 +684,7 @@ export default function Hero({ embedded = false }) {
                   label={`${x.name}, ${RARITY[x.rarity].label}, ${petStage(x.stage).name.toLowerCase()}`}
                   onClick={() => setOpenPet(x)}
                 >
-                  <PetView refId={x.ref} stage={x.stage} size={46} />
+                  <PetView refId={x.ref} stage={x.stage} size={34} />
                 </Tile>
               ))}
             </div>

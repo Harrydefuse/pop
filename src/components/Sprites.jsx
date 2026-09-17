@@ -1,5 +1,5 @@
 import PixelSprite from './PixelSprite'
-import { gameMark } from '../game/gameMarks'
+import { gameLogo } from '../game/gameLogos'
 import { ARMOUR_PALETTES, WEAPON_PALETTES, BOSS_SPRITES, CHEST_SPRITE, PET_SPRITES, LOOT_CHEST_SPRITE, VAULT_SPRITE, FOUNDER_PALETTE, CAMPAIGN_SPRITES, petSprite, WEAPON_OVERLAYS, armourSprite, heroClothes, heroHands, heroSprite, underHelm, wornOverlay } from '../game/sprites'
 import { petStage } from '../game/engine'
 import { RARITY, RARITY_ORDER } from '../game/config'
@@ -60,10 +60,34 @@ function gearAura(equipped) {
 /**
  * The mark for a game somebody plays.
  *
- * Original pixel art, not the game's logo — see game/gameMarks.js for why.
+ * The real logo where one exists, a monogram where it does not, both on the
+ * same tile so a row of them reads as one set. See game/gameLogos.js.
  */
-export function GameMark({ id, size = 16, className, style }) {
-  return <PixelSprite sprite={gameMark(id)} size={size} className={className} style={style} />
+export function GameMark({ id, size = 18, className = '', style, title }) {
+  const logo = gameLogo(id)
+  return (
+    <span
+      className={`grid place-items-center shrink-0 rounded-[4px] overflow-hidden ${className}`}
+      style={{ width: size, height: size, background: alpha(logo.tone, 18), ...style }}
+      role={title ? 'img' : 'presentation'}
+      aria-label={title}
+      title={title}
+      aria-hidden={title ? undefined : 'true'}
+    >
+      {logo.kind === 'mark' ? (
+        <svg viewBox="0 0 24 24" width={Math.round(size * 0.68)} height={Math.round(size * 0.68)}>
+          <path d={logo.d} fill={logo.color} />
+        </svg>
+      ) : (
+        <span
+          className="font-display leading-none"
+          style={{ color: logo.color, fontSize: Math.max(7, Math.round(size * (logo.label.length > 2 ? 0.3 : 0.42))) }}
+        >
+          {logo.label}
+        </span>
+      )}
+    </span>
+  )
 }
 
 /** `kind` is the slot for every piece except the offhand, which is a choice. */

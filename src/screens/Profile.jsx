@@ -12,7 +12,6 @@ import { WEEKS_KEPT, weekActivities, weekOf, weekSeries } from '../game/progress
 import { pinnedEfforts } from '../game/efforts'
 import { buildCard, cardAge, cardTitle, encodeCard, leaderboard } from '../game/profile'
 import { alpha } from '../game/color'
-import { markTone } from '../game/gameMarks'
 import { GameMark } from '../components/Sprites'
 
 const NONE = []
@@ -81,16 +80,13 @@ export default function Profile() {
             here because a question whose answer never appears anywhere is a
             question that should not have been asked. */}
         {plays.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-line">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-line">
+            {/* The marks alone. A logo is the fastest thing on this card to
+                read and the name next to it was saying the same thing twice —
+                nobody needs "Valorant" written beside the Valorant logo. The
+                name stays as the accessible label and the tooltip. */}
             {plays.map((g) => (
-              <span
-                key={g.id}
-                className="flex items-center gap-1.5 label pl-1.5 pr-2.5 py-1 rounded-full"
-                style={{ background: alpha(markTone(g.id), 16), color: 'var(--color-ink-dim)' }}
-              >
-                <GameMark id={g.id} size={16} />
-                {g.name}
-              </span>
+              <GameMark key={g.id} id={g.id} size={34} title={g.name} />
             ))}
           </div>
         )}
