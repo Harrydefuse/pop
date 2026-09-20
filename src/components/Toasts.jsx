@@ -6,10 +6,10 @@ const KIND = {
   xp: { icon: 'bolt', color: 'var(--color-cyan)' },
   level: { icon: 'spark', color: 'var(--color-neon)' },
   pet: { icon: 'heart', color: 'var(--color-r-uncommon)' },
-  chest: { icon: 'chest', color: 'var(--color-gold)' },
+  chest: { icon: 'chest', color: 'var(--color-gold-ink)' },
   stone: { icon: 'spark', color: 'var(--color-neon)' },
   gear: { icon: 'shield', color: 'var(--color-r-rare)' },
-  pr: { icon: 'trophy', color: 'var(--color-gold)' },
+  pr: { icon: 'trophy', color: 'var(--color-gold-ink)' },
 }
 
 function Toast({ t, onDone }) {

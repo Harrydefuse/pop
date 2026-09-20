@@ -47,7 +47,7 @@ export default function WorldRaid() {
           </div>
         </div>
 
-        <Bar pct={pct} color="var(--color-danger)" height={10} shine className="mt-3" />
+        <Bar pct={pct} color="var(--color-danger)" height={10} shine className="mt-3" label="World boss health remaining" />
         <div className="flex justify-between mt-1.5">
           <span className="text-[14px] text-danger tabular-nums">{fmtFull(km)} km</span>
           <span className="text-[14px] text-ink-faint tabular-nums">{fmtFull(BOSS.goalKm)} km</span>

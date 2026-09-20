@@ -1566,7 +1566,7 @@ function SplitSheet({ split, goal, onClose, onSave }) {
               }}
             >
               <div className="flex items-baseline gap-2">
-                <span className="font-display text-[15px]" style={{ color: on ? 'var(--color-gold)' : 'var(--color-ink)' }}>
+                <span className="font-display text-[15px]" style={{ color: on ? 'var(--color-gold-ink)' : 'var(--color-ink)' }}>
                   {g.name}
                 </span>
                 <span className="label text-ink-faint ml-auto shrink-0">{prescription(g)}</span>
@@ -1621,7 +1621,7 @@ function WeekGoal({ state }) {
           {challengeLabel(c)}
         </span>
       </div>
-      <Bar pct={c.pct} color={tone} height={9} shine className="mt-2" />
+      <Bar pct={c.pct} color={tone} height={9} shine className="mt-2" label="Progress through this week's goal" />
       <div className="flex items-center gap-2 mt-2.5">
         <Icon name={done ? 'check' : 'chest'} size={13} color={done ? 'var(--color-lime)' : 'var(--color-gold)'} />
         <span className="text-[14px] text-ink-dim leading-snug">

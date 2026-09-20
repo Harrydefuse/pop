@@ -176,7 +176,7 @@ export function planToday(state, { now = Date.now() } = {}) {
         activityId: 'gym',
         title: `${t.day.name} day`,
         why: `${t.split.name} · day ${t.index + 1} of ${t.of} · ${t.prescribe}`,
-        tone: 'var(--color-gold)',
+        tone: 'var(--color-gold-ink)',
         session: t,
       }
     }

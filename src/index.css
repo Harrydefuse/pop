@@ -79,12 +79,17 @@
 
   /* ---- the accents: dark mode's hues, deep enough for paper */
   --color-neon: #891af4;
-  --color-neon-bright: #9b3cfb;
+  --color-neon-bright: #953af1;
   --color-neon-dim: #b168f8;
-  --color-cyan: #0b7d8e;
-  --color-lime: #537d0c;
+  --color-cyan: #0b7a8b;
+  --color-lime: #517a0c;
   --color-gold: #fbbf24; /* unchanged from dark on purpose — see above */
-  --color-danger: #e40627;
+  /* Gold as INK is a different job from gold as a surface. #fbbf24 on white is
+     1.7:1 — a heading in it is a smear, not a colour choice. The shield, the
+     badge and every gold fill keep the exact gold; gold TEXT gets a readable
+     one. Same hue, enough of it to read. */
+  --color-gold-ink: #8a6914;
+  --color-danger: #dd0626;
 
   /* Decorative only. Never put a word in these. */
   --color-neon-glow: #c084fc;
@@ -92,14 +97,14 @@
   --color-lime-glow: #a3e635;
   --color-gold-glow: #fcd34d;
 
-  --tone-green: #0d8238;
-  --color-go: #0d8238;
-  --tone-sky: #0679ac;
+  --tone-green: #0d7f37;
+  --color-go: #0d7f37;
+  --tone-sky: #0675a7;
   --tone-slate: #5f6675;
-  --tone-orange: #b95504;
-  --tone-jade: #0d8270;
-  --tone-blue: #076eed;
-  --tone-bronze: #b05911;
+  --tone-orange: #b35204;
+  --tone-jade: #0c7d6c;
+  --tone-blue: #0768e1;
+  --tone-bronze: #ac5711;
 
   --color-on-accent: #ffffff;
 
@@ -108,10 +113,10 @@
   --color-r-legendary-glow: #fcd34d;
 
   --color-r-common: #4b5563;
-  --color-r-uncommon: #0d8238;
-  --color-r-rare: #0679ac;
-  --color-r-epic: #9c3dfa;
-  --color-r-legendary: #9d6506;
+  --color-r-uncommon: #0d7f37;
+  --color-r-rare: #0675a7;
+  --color-r-epic: #943aee;
+  --color-r-legendary: #9a6306;
 
   /* Press Start 2P is the game's logo and nothing else. Everything the
      interface says is set in a face people can actually read: an eight-pixel
@@ -146,6 +151,28 @@
    nothing here introduces a colour the light theme does not have a twin for,
    which is what stops the two themes drifting apart as the app grows.
    Specificity beats the bare :root that @theme emits, so these win. */
+/* Present to a screen reader, absent to everyone else. Tailwind ships this,
+   but the app pulls in only the theme layer, so it is declared here. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Gold text, everywhere it appears, resolves to the ink rather than the fill.
+   One rule rather than fifty edits, and it keeps `bg-gold` on the real gold —
+   a gold button and gold lettering are not the same colour problem. */
+.text-gold,
+.text-\[var\(--color-gold\)\] {
+  color: var(--color-gold-ink);
+}
+
 :root[data-theme='dark'] {
   color-scheme: dark;
   --arena: #b168f8;
@@ -165,6 +192,7 @@
   --color-cyan: #22d3ee;
   --color-lime: #a3e635;
   --color-gold: #fbbf24;
+  --color-gold-ink: #fbbf24;
   --color-danger: #fb7185;
 
   /* On a dark ground the accents are already fluorescent, so the decorative

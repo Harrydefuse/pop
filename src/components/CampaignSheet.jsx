@@ -79,7 +79,7 @@ function CurrentBoss({ boss, c, onFight, onArena }) {
       <div className="text-[14px] text-ink-dim mt-1">{boss.title}</div>
 
       <div className="mt-3.5">
-        <Bar pct={c.pct} color="var(--color-danger)" height={12} shine />
+        <Bar pct={c.pct} color="var(--color-danger)" height={12} shine label="Damage done to this boss" />
         <div className="flex justify-between mt-1.5">
           <span className="text-[14px] text-danger">{fmtFull(Math.round(c.damage))}</span>
           <span className="text-[14px] text-ink-faint">{fmtFull(c.hp)} HP</span>
@@ -343,7 +343,7 @@ export default function CampaignSheet({ onClose }) {
                   {c.cleared} / {ARENAS.length}
                 </span>
               </div>
-              <Bar pct={c.cleared / ARENAS.length} color="var(--color-neon)" height={6} className="mt-2" />
+              <Bar pct={c.cleared / ARENAS.length} color="var(--color-neon)" height={6} className="mt-2" label="Arenas cleared" />
             </Panel>
 
             <SectionTitle right={<span className="text-[14px] text-ink-faint">Stone to Everforge</span>}>

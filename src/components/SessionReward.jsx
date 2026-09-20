@@ -73,7 +73,7 @@ export default function SessionReward() {
 
   const cells = [
     { icon: 'spark', color: 'var(--color-neon)', value: r.xp, label: 'XP' },
-    { icon: 'core', color: 'var(--color-gold)', value: r.coins, label: 'coins' },
+    { icon: 'core', color: 'var(--color-gold-ink)', value: r.coins, label: 'coins' },
   ]
   if (r.damage > 0) cells.push({ icon: 'swords', color: 'var(--color-danger)', value: r.damage, label: 'damage' })
 
@@ -105,7 +105,7 @@ export default function SessionReward() {
             {maxed ? 'MAX' : `${fmtFull(Math.round(p.xp))} / ${fmtFull(cap)}`}
           </span>
         </div>
-        <Bar pct={maxed ? 1 : p.xp / cap} height={9} shine className="mt-1.5" />
+        <Bar pct={maxed ? 1 : p.xp / cap} height={9} shine className="mt-1.5" label={maxed ? 'Level 100, maxed' : 'Progress to the next level'} />
       </div>
 
       {r.boss && (
@@ -116,7 +116,7 @@ export default function SessionReward() {
               {fmtFull(Math.round(r.boss.damage))} / {fmtFull(r.boss.hp)}
             </span>
           </div>
-          <Bar pct={r.boss.damage / r.boss.hp} color="var(--color-danger)" height={9} shine className="mt-1.5" />
+          <Bar pct={r.boss.damage / r.boss.hp} color="var(--color-danger)" height={9} shine className="mt-1.5" label="Damage done to this boss" />
         </div>
       )}
 

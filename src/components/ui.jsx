@@ -158,16 +158,23 @@ export function Chip({ children, color = 'var(--color-ink-dim)', filled, classNa
  * grid of notches. It is a plain rounded bar that moves smoothly to the value
  * it actually has.
  */
-export function Bar({ pct, color = 'var(--color-neon)', height = 8, shine, track = 'var(--color-panel-2)', className = '' }) {
+export function Bar({ pct, color = 'var(--color-neon)', height = 8, shine, track = 'var(--color-panel-2)', className = '', label }) {
   const clamped = Math.min(1, Math.max(0, pct || 0))
+  // A progressbar with no name is announced as "progress bar, 61 per cent" and
+  // nothing else — the number is useless without knowing what it measures. A
+  // bar that sits directly under the thing it describes can say so with
+  // `label`; one that is purely decorative is hidden instead of narrated.
+  const named = Boolean(label)
   return (
     <div
       className={`relative overflow-hidden rounded-full ${className}`}
       style={{ height, background: track }}
-      role="progressbar"
-      aria-valuenow={Math.round(clamped * 100)}
-      aria-valuemin={0}
-      aria-valuemax={100}
+      role={named ? 'progressbar' : 'presentation'}
+      aria-label={label}
+      aria-valuenow={named ? Math.round(clamped * 100) : undefined}
+      aria-valuemin={named ? 0 : undefined}
+      aria-valuemax={named ? 100 : undefined}
+      aria-hidden={named ? undefined : 'true'}
     >
       <div
         className={`relative h-full rounded-full ${shine ? 'xp-shine' : ''}`}
@@ -211,7 +218,15 @@ export function RarityFrame({ rarity, children, size = 56, className = '', onCli
 
 /* --------------------------------------------------------------------- modal */
 
+let modalSeq = 0
+
 export function Modal({ open, onClose, title, children, wide }) {
+  // A dialog with no accessible name is announced as "dialog" and nothing
+  // else. Pointing it at its own heading is the fix, and it needs an id that
+  // is unique even when two sheets are mounted at once.
+  const titleId = useRef(null)
+  if (titleId.current === null) titleId.current = `modal-title-${(modalSeq += 1)}`
+
   useEffect(() => {
     if (!open) return
     const onKey = (e) => e.key === 'Escape' && onClose?.()
@@ -244,9 +259,14 @@ export function Modal({ open, onClose, title, children, wide }) {
         style={{ boxShadow: 'var(--elev-lift)' }}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId.current}
       >
         <div className="flex items-center justify-between pl-4 pr-2 py-3 border-b border-line shrink-0">
-          <span className="font-display text-[17px] text-ink">{title}</span>
+          {/* A heading, not a span: a dialog's title is the top of its own
+              document outline, and the sections inside it hang off this. */}
+          <h2 id={titleId.current} className="font-display text-[17px] text-ink">
+            {title}
+          </h2>
           <button
             onClick={onClose}
             aria-label="Close dialog"

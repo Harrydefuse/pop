@@ -278,7 +278,7 @@ function PetSheet({ pet: seed, onClose }) {
             {maxed ? `+${petPct(pet)}% ${pet.stat}` : `${fed}/${cost} treats`}
           </span>
         </div>
-        <Bar pct={maxed ? 1 : fed / cost} color={color} height={8} shine={maxed} />
+        <Bar pct={maxed ? 1 : fed / cost} color={color} height={8} shine={maxed} label={maxed ? 'Fully grown' : 'Treats towards the next form'} />
       </div>
 
       {!maxed && (
@@ -568,7 +568,7 @@ export default function Hero({ embedded = false }) {
               {fmtFull(power)}
             </span>
           </div>
-          <Bar pct={pct} color={rank.color} height={7} />
+          <Bar pct={pct} color={rank.color} height={7} label="Progress to the next rank" />
           <div className="text-[14px] text-ink-faint mt-1.5 text-right">
             {next ? `${fmt(next.min - power)} to ${next.name}` : 'MAX RANK'}
           </div>

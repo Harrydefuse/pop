@@ -66,7 +66,7 @@ function RankCard({ state, onOpen }) {
           </div>
           <div className="font-display text-[21px] text-ink leading-tight mt-0.5">{c.arena.name}</div>
 
-          <Bar pct={done / total} color={tint} height={7} shine className="mt-2" />
+          <Bar pct={done / total} color={tint} height={7} shine className="mt-2" label="Today's slots done" />
 
           <div className="text-[14px] text-ink-dim mt-1.5 leading-snug">
             {next ? (
@@ -370,7 +370,7 @@ function DailyChest({ state, onOpen }) {
 
       <div
         className="font-display text-[24px] leading-none mt-2"
-        style={{ color: ready ? 'var(--color-gold)' : 'var(--color-ink-faint)' }}
+        style={{ color: ready ? 'var(--color-gold-ink)' : 'var(--color-ink-faint)' }}
       >
         Daily chest
       </div>

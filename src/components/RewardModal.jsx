@@ -105,7 +105,7 @@ export default function RewardModal() {
           <Icon name="core" size={13} color={bought ? 'var(--color-ink-faint)' : 'var(--color-gold)'} />
           <span
             className="font-display text-[22px]"
-            style={{ color: bought ? 'var(--color-ink-faint)' : 'var(--color-gold)' }}
+            style={{ color: bought ? 'var(--color-ink-faint)' : 'var(--color-gold-ink)' }}
           >
             {bought ? `−${fmtFull(reward.spent)}` : `+${fmtFull(reward.cores)}`}
           </span>

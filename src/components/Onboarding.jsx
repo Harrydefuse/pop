@@ -399,7 +399,14 @@ export default function Onboarding({ onContinue }) {
       <div className="absolute inset-0 z-50 overflow-hidden select-none">
         <TitleRoom className="absolute inset-0" />
 
-        <div className="absolute inset-0 flex flex-col items-center px-6 pt-[9%] pb-6">
+        {/* A landmark, so everything on the title card belongs somewhere a
+            screen reader can jump to rather than floating outside the page's
+            structure. A labelled region rather than <main>, because this card
+            sits over the app shell and that already has one. */}
+        <section
+          aria-label="LVL100 title screen"
+          className="absolute inset-0 flex flex-col items-center px-6 pt-[9%] pb-6"
+        >
           <TitleLogo />
 
           {/* The menu gets its own board rather than floating on the sky:
@@ -447,7 +454,7 @@ export default function Onboarding({ onContinue }) {
               CARRY ON AS {(state.player.name || 'ROOKIE').toUpperCase()}
             </p>
           )}
-        </div>
+        </section>
       </div>
     )
   }

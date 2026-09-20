@@ -108,6 +108,12 @@ function Device() {
             new one — which is what lets it animate in. Without the key, React
             reconciles the two screens into one and nothing has a mount to
             animate from. */}
+        {/* Every screen needs a top-level heading so a screen reader can
+            announce where the tab just landed, and so the heading order under
+            it starts from something. It is visually hidden because the screen
+            already says what it is — this is for the people the visual
+            hierarchy does not reach. */}
+        <h1 className="sr-only">{TAB_TITLE[tab]}</h1>
         <div key={tab} className="screen-in mx-auto w-full max-w-[520px]">
           {tab === 'home' && <Home onGo={(where) => (where === 'map' ? setMap(true) : setTab(where))} />}
           {tab === 'train' && <Train />}
@@ -128,6 +134,14 @@ function Device() {
       {map && <MapSheet onClose={() => setMap(false)} />}
     </div>
   )
+}
+
+/** What each tab is, said once, for the heading a screen reader reads first. */
+const TAB_TITLE = {
+  home: 'Today',
+  train: 'Train',
+  shop: 'Shop',
+  hero: 'Your character',
 }
 
 export default function App({ onExit }) {

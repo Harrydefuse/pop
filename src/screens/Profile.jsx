@@ -12,6 +12,8 @@ import { WEEKS_KEPT, weekActivities, weekOf, weekSeries } from '../game/progress
 import { pinnedEfforts } from '../game/efforts'
 import { buildCard, cardAge, cardTitle, encodeCard, leaderboard } from '../game/profile'
 import { alpha } from '../game/color'
+import LegalSheet from '../components/LegalSheet'
+import { DOCS, DOC_ORDER } from '../game/legal'
 import { GameMark } from '../components/Sprites'
 
 const NONE = []
@@ -33,6 +35,7 @@ export default function Profile() {
   // progress and friends are both things you come here to read.
   const [tab, setTab] = useState('character')
   const [sharing, setSharing] = useState(false)
+  const [legal, setLegal] = useState(null)
   const [editing, setEditing] = useState(false)
   const power = powerScore(p)
   const arena = campaignState(p, state.campaign).arena
@@ -130,8 +133,24 @@ export default function Profile() {
       {tab === 'character' && <Hero embedded />}
       {tab === 'friends' && <Friends state={state} onShare={() => setSharing(true)} />}
 
+      {/* Reachable from inside the app, not only from a website footer.
+          Somebody wondering where their training data goes is wondering it
+          while they are using the thing, not while browsing a landing page. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-2 pt-2 pb-1">
+        {DOC_ORDER.map((k) => (
+          <button
+            key={k}
+            onClick={() => setLegal(k)}
+            className="label text-ink-faint min-h-[44px] px-2 active:text-ink"
+          >
+            {DOCS[k].title}
+          </button>
+        ))}
+      </div>
+
       {sharing && <ShareSheet state={state} onClose={() => setSharing(false)} />}
       {editing && <EditSheet player={p} onClose={() => setEditing(false)} />}
+      {legal && <LegalSheet start={legal} onClose={() => setLegal(null)} />}
     </div>
   )
 }

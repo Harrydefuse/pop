@@ -104,7 +104,7 @@ export default function TopBar({ onOpenProfile, onOpenMap }) {
         <span className="figure text-[15px] shrink-0" style={{ color: 'var(--arena)' }}>
           LV {p.level}
         </span>
-        <Bar pct={maxed ? 1 : p.xp / need} height={7} shine color="var(--arena)" className="flex-1" />
+        <Bar pct={maxed ? 1 : p.xp / need} height={7} shine color="var(--arena)" className="flex-1" label={maxed ? 'Level 100, maxed' : `Progress to level ${p.level + 1}`} />
         <span className="text-[13px] text-ink-faint shrink-0 tabular-nums">
           {maxed ? `MAX ${MAX_LEVEL}` : `${fmt(p.xp)}/${fmt(need)}`}
         </span>

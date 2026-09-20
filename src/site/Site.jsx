@@ -585,10 +585,10 @@ export default function Site({ onEnterApp }) {
             </div>
             <div className="facts stagger">
               <div className="fact">
-                <span className="n"><Count to={5} /></span>
+                <span className="n"><Count to={2} /></span>
                 <p>
-                  Health services it reads from — Apple Health, Health Connect, Strava, Garmin and
-                  WHOOP. If none of them recorded it, it doesn&rsquo;t score.
+                  File formats it reads — GPX and TCX, which Strava, Garmin, Coros, Suunto and Apple
+                  Fitness all export. Live connections to those services are not built yet.
                 </p>
               </div>
               <div className="fact">
@@ -602,7 +602,7 @@ export default function Site({ onEnterApp }) {
                 <span className="n">0</span>
                 <p>
                   Ways to buy progress. No loot boxes for sale, no premium currency, no paid rolls.
-                  Coaching is a flat five pounds, and that&rsquo;s the whole shop.
+                  Nothing is for sale at all yet — the app takes no payments.
                 </p>
               </div>
             </div>
@@ -710,6 +710,20 @@ export default function Site({ onEnterApp }) {
               Open it
             </a>
             .
+          </p>
+          {/* The documents live in the app, because the app is the thing that
+              holds the data they describe. The footer points at them rather
+              than keeping a second copy that can drift out of date. */}
+          <p style={{ maxWidth: '60ch' }}>
+            Nothing leaves your device: no account, no server, no analytics and no cookies. The{' '}
+            <a href="#/app" onClick={go} style={{ display: 'inline-block', padding: '0.75rem 0' }}>
+              privacy, terms, cookies and refunds pages
+            </a>{' '}
+            are inside the app, under You.
+          </p>
+          <p style={{ maxWidth: '60ch' }}>
+            Game names and logos are the trademarks of their owners, used only to identify the games
+            somebody plays. LVL100 is not affiliated with or endorsed by any of them.
           </p>
         </div>
       </footer>
