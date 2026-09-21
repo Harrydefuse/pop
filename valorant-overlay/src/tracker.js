@@ -14,7 +14,7 @@ export class Tracker extends EventEmitter {
   constructor(config) {
     super()
     this.config = config
-    this.catalog = new TierCatalog(config.cacheDir)
+    this.catalog = new TierCatalog(config.cacheDir, config.overrideDir)
     this.lock = null
     this.auth = null
     this.identity = null
@@ -265,7 +265,7 @@ export class Tracker extends EventEmitter {
         group: tier.group,
         division: tier.division,
         color: tier.color,
-        icon: tier.localIcon || tier.icon,
+        icon: tier.icon,
         placementsLeft,
       },
       rr,

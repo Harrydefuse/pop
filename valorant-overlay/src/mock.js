@@ -9,9 +9,9 @@ export class MockTracker extends EventEmitter {
   constructor(config) {
     super()
     this.config = config
-    this.catalog = new TierCatalog(config.cacheDir)
-    this.tier = 16
-    this.rr = 45
+    this.catalog = new TierCatalog(config.cacheDir, config.overrideDir)
+    this.tier = config.mockTier
+    this.rr = config.mockRr
     this.status = 'menus'
     this.games = []
     this.sessionStartedAt = Date.now()
@@ -90,7 +90,7 @@ export class MockTracker extends EventEmitter {
         group: tier.group,
         division: tier.division,
         color: tier.color,
-        icon: tier.localIcon || tier.icon,
+        icon: tier.icon,
         placementsLeft: null,
       },
       rr: this.rr,

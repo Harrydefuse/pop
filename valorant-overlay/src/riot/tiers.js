@@ -47,9 +47,14 @@ function hexFromRiot(color) {
   return `#${color.slice(0, 6).toUpperCase()}`
 }
 
+// Immortal and Radiant, fetched before everything else.
+const PRIORITY_TIERS = [27, 26, 25, 24]
+const OVERRIDE_EXTENSIONS = ['png', 'svg', 'webp', 'jpg', 'jpeg']
+
 export class TierCatalog {
-  constructor(cacheDir) {
+  constructor(cacheDir, overrideDir) {
     this.iconDir = path.join(cacheDir, 'icons')
+    this.overrideDir = overrideDir
     this.tiers = fallbackTiers()
     this.actId = null
     fs.mkdirSync(this.iconDir, { recursive: true })
@@ -101,30 +106,47 @@ export class TierCatalog {
 
   /** Store icons locally so the overlay renders even without internet in OBS. */
   async cacheIcons() {
-    await Promise.all(
-      Object.values(this.tiers).map(async (tier) => {
-        if (!tier.icon) return
-        const file = path.join(this.iconDir, `${tier.tier}.png`)
-        if (fs.existsSync(file)) return
-        try {
-          const res = await request(tier.icon, { timeout: 15000 })
-          if (res.status === 200) fs.writeFileSync(file, res.buffer)
-        } catch {
-          // The overlay falls back to the remote URL.
-        }
-      }),
-    )
+    const all = Object.values(this.tiers)
+    const priority = all.filter((tier) => PRIORITY_TIERS.includes(tier.tier))
+    const rest = all.filter((tier) => !PRIORITY_TIERS.includes(tier.tier))
+
+    // Immortal and Radiant first, so the ranks in play are ready soonest.
+    await Promise.all(priority.map((tier) => this.cacheIcon(tier)))
+    await Promise.all(rest.map((tier) => this.cacheIcon(tier)))
+  }
+
+  async cacheIcon(tier) {
+    if (!tier.icon) return
+    const file = path.join(this.iconDir, `${tier.tier}.png`)
+    if (fs.existsSync(file)) return
+    try {
+      const res = await request(tier.icon, { timeout: 15000 })
+      if (res.status === 200) fs.writeFileSync(file, res.buffer)
+    } catch {
+      // The overlay falls back to the remote URL, then to drawn artwork.
+    }
+  }
+
+  /** An image dropped in public/ranks (e.g. 27.png) wins over everything. */
+  overrideFor(tier) {
+    if (!this.overrideDir) return null
+    for (const extension of OVERRIDE_EXTENSIONS) {
+      if (fs.existsSync(path.join(this.overrideDir, `${tier}.${extension}`))) {
+        return `/ranks/${tier}.${extension}`
+      }
+    }
+    return null
   }
 
   get(tier) {
     const known = this.tiers[tier]
-    if (known) {
-      const cached = path.join(this.iconDir, `${tier}.png`)
-      return {
-        ...known,
-        localIcon: fs.existsSync(cached) ? `/icons/${tier}.png` : null,
-      }
+    if (!known) {
+      return { tier, name: 'Unranked', group: 'Unranked', division: '', color: '#8B8F94', icon: null }
     }
-    return { tier, name: 'Unranked', group: 'Unranked', division: '', color: '#8B8F94', icon: null, localIcon: null }
+    const cached = path.join(this.iconDir, `${tier}.png`)
+    // Override, then Riot's art cached locally, then Riot's art over the wire.
+    const icon =
+      this.overrideFor(tier) || (fs.existsSync(cached) ? `/icons/${tier}.png` : null) || known.icon || null
+    return { ...known, icon }
   }
 }

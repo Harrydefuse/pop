@@ -73,25 +73,72 @@ function render(state) {
 }
 
 /**
- * Riot's own rank art is used when the agent has it cached. If the art could
- * not be fetched, draw a rank-coloured badge instead so the overlay never
- * shows a broken image on stream.
+ * Riot's own rank art is used whenever the agent has it. These drawings are
+ * only the fallback for when it could not be fetched — close enough to read
+ * correctly at a glance on stream, but not Riot's artwork.
  */
-function renderBadge(state) {
+function immortalArt(subTier) {
+  // 1-3 pips below the crest mark Immortal 1, 2 and 3.
+  const pips = Array.from({ length: subTier }, (_, i) => {
+    const x = 50 + (i - (subTier - 1) / 2) * 12
+    return `<path d="M${x - 4.5} 88 L${x} 77 L${x + 4.5} 88 Z" />`
+  }).join('')
+
+  return `
+    <defs>
+      <linearGradient id="art" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FF7286" />
+        <stop offset="55%" stop-color="#D33B54" />
+        <stop offset="100%" stop-color="#8E2438" />
+      </linearGradient>
+    </defs>
+    <g fill="url(#art)" stroke="#FFD9DF" stroke-width="1.5" stroke-linejoin="round">
+      <path d="M50 6 L82 33 L73 44 L50 24 L27 44 L18 33 Z" />
+      <path d="M50 33 L78 56 L69 67 L50 50 L31 67 L22 56 Z" />
+    </g>
+    <g fill="#FFD9DF">${pips}</g>`
+}
+
+function radiantArt() {
+  // A ring of spikes around a bright core, long every third ray.
+  const rays = Array.from({ length: 12 }, (_, i) => {
+    const length = i % 3 === 0 ? 46 : 31
+    const shoulder = 50 - length * 0.2
+    return `<path d="M50 ${50 - length} L54.5 ${shoulder} L50 50 L45.5 ${shoulder} Z"
+      transform="rotate(${i * 30} 50 50)" />`
+  }).join('')
+
+  return `
+    <defs>
+      <radialGradient id="art">
+        <stop offset="0%" stop-color="#FFFFFF" />
+        <stop offset="45%" stop-color="#FFF6C9" />
+        <stop offset="100%" stop-color="#E3BE5C" />
+      </radialGradient>
+    </defs>
+    <g fill="url(#art)">${rays}</g>
+    <circle cx="50" cy="50" r="8.5" fill="#FFFDF2" />`
+}
+
+function divisionArt(state) {
   const division = state.rank.division || ''
-  el.badge.innerHTML = `
-    <svg viewBox="0 0 100 100" role="img" aria-label="${state.rank.name}">
-      <defs>
-        <linearGradient id="badge" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${state.rank.color}" stop-opacity="0.95" />
-          <stop offset="100%" stop-color="${state.rank.color}" stop-opacity="0.45" />
-        </linearGradient>
-      </defs>
-      <path d="M50 6 94 50 50 94 6 50Z" fill="url(#badge)" stroke="${state.rank.color}" stroke-width="3"
-        stroke-linejoin="round" />
-      <text x="50" y="50" text-anchor="middle" dominant-baseline="central" fill="#0b0d12"
-        font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="42" font-weight="700">${division || '–'}</text>
-    </svg>`
+  return `
+    <defs>
+      <linearGradient id="art" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${state.rank.color}" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="${state.rank.color}" stop-opacity="0.45" />
+      </linearGradient>
+    </defs>
+    <path d="M50 6 94 50 50 94 6 50Z" fill="url(#art)" stroke="${state.rank.color}" stroke-width="3"
+      stroke-linejoin="round" />
+    <text x="50" y="50" text-anchor="middle" dominant-baseline="central" fill="#0b0d12"
+      font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="42" font-weight="700">${division || '\u2013'}</text>`
+}
+
+function renderBadge(state) {
+  const tier = state.rank.tier
+  const art = tier >= 27 ? radiantArt() : tier >= 24 ? immortalArt(tier - 23) : divisionArt(state)
+  el.badge.innerHTML = `<svg viewBox="0 0 100 100" role="img" aria-label="${state.rank.name}">${art}</svg>`
 }
 
 function showBadge(state) {

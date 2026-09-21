@@ -92,6 +92,35 @@ browser source.
 restart, and resets automatically after 6 hours of downtime, so an overnight
 gap starts you fresh. Reset it by hand any time from the control page.
 
+## Rank art
+
+The agent downloads Riot's own rank icons from `valorant-api.com` on first run
+and caches them, so they keep working offline afterwards. Immortal 1-3 and
+Radiant are fetched before the other tiers.
+
+Resolution order for each rank, first hit wins:
+
+1. An image you dropped in `public/ranks` (e.g. `27.png` for Radiant)
+2. Riot's art, cached locally from a previous run
+3. Riot's art, fetched live
+4. Drawn artwork built into the overlay — a crimson crest with 1-3 pips for
+   Immortal, a gold starburst for Radiant. A readable stand-in, not Riot's
+   artwork.
+
+To use exact art of your own, save it as the tier number in `public/ranks` and
+restart the agent — `24.png` Immortal 1, `25.png` Immortal 2, `26.png`
+Immortal 3, `27.png` Radiant. See `public/ranks/README.md` for the full list.
+
+### Immortal and Radiant
+
+Immortal 1, 2 and 3 each run 0-100 RR, so the progress bar behaves as it does
+at any other rank. Radiant RR has no ceiling, so the bar is hidden there and
+the raw number is shown. When you hold a leaderboard position, it appears next
+to your RR as `#142`.
+
+`--mock` starts at Immortal 2 with 60 RR, so promotions into Immortal 3 and
+Radiant show up within a few simulated games.
+
 ## Configuration
 
 Copy `config.example.json` to `config.json` to override defaults:
@@ -103,6 +132,8 @@ Copy `config.example.json` to `config.json` to override defaults:
 | `idlePollMs` | `30000` | Rank poll rate when nothing is happening |
 | `activePollMs` | `3000` | Poll rate in-game and just after a match |
 | `sessionIdleResetMs` | `21600000` | Downtime before the session record resets |
+| `mockTier` | `25` | Starting tier for `--mock` (24-27 = Immortal 1 - Radiant) |
+| `mockRr` | `60` | Starting RR for `--mock` |
 
 ## Troubleshooting
 
@@ -117,9 +148,9 @@ keeps polling for three minutes after a match.
 
 **Port 3040 is in use** — set `port` in `config.json`, and update the OBS URL.
 
-**No rank icon, just a coloured diamond** — the agent could not reach
-`valorant-api.com` to download Riot's rank art. It retries, and the overlay
-stays readable in the meantime.
+**Drawn rank art instead of Riot's** — the agent could not reach
+`valorant-api.com` to download the real icons. It retries on a later run; see
+[Rank art](#rank-art) to drop your own in and skip the download entirely.
 
 **Nothing shows in OBS** — open the URL in a normal browser first. If it works
 there, right-click the source and *Refresh*.
@@ -157,4 +188,5 @@ src/
 public/
   overlay.html/css/js   the overlay itself
   control.html          status, session reset, URL builder
+  ranks/                drop your own rank art here to override Riot's
 ```

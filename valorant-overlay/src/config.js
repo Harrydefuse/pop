@@ -10,6 +10,8 @@ const defaults = {
   port: 3040,
   // Where session/record state is kept between restarts.
   stateFile: path.join(root, '.state.json'),
+  // Drop your own rank art here as <tier>.png to override Riot's.
+  overrideDir: path.join(root, 'public', 'ranks'),
   cacheDir: path.join(root, '.cache'),
   // Override only if the Riot Client is installed somewhere unusual.
   lockfilePath: path.join(
@@ -37,6 +39,9 @@ const defaults = {
   activePollMs: 3000,
   // How long to keep fast-polling after a match ends, waiting for RR to land.
   settleWindowMs: 180000,
+  // Starting rank for --mock: Immortal 2 at 60 RR.
+  mockTier: 25,
+  mockRr: 60,
   // Reset the session record automatically if the agent was down this long.
   sessionIdleResetMs: 6 * 60 * 60 * 1000,
 }
