@@ -1,6 +1,13 @@
 import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
-import { readLockfile, getEntitlements, getChatSession, shardFor, getSelfPresence } from './riot/localApi.js'
+import {
+  readLockfile,
+  getEntitlements,
+  getChatSession,
+  getRegionLocale,
+  shardFor,
+  getSelfPresence,
+} from './riot/localApi.js'
 import { PlayerDataClient, getClientVersion } from './riot/pd.js'
 import { TierCatalog } from './riot/tiers.js'
 
@@ -77,12 +84,26 @@ export class Tracker extends EventEmitter {
   async connect() {
     this.lock = readLockfile(this.config.lockfilePath)
     this.auth = await getEntitlements(this.lock)
-    this.identity = await getChatSession(this.lock)
-    const shard = this.config.shard || shardFor(this.identity.region)
+    const session = await getChatSession(this.lock)
+
+    // The chat session publishes a name before it publishes a puuid, so take
+    // the id from the entitlements token, where it is always present, and keep
+    // chat for the display name only.
+    const puuid = this.auth.puuid || session.puuid
+    if (!puuid) {
+      const err = new Error('Riot Client has not finished signing in')
+      err.code = 'NO_PUUID'
+      throw err
+    }
+
+    const region = session.region || (await getRegionLocale(this.lock))
+    this.identity = { puuid, name: session.name, tag: session.tag, region }
+
+    const shard = this.config.shard || shardFor(region)
     this.pd = new PlayerDataClient({ shard, auth: this.auth, version: await getClientVersion(this.config.valorantLogPath) })
     this.connected = true
     this.lastError = null
-    console.log(`[tracker] connected as ${this.identity.name}#${this.identity.tag} (${shard})`)
+    console.log(`[tracker] connected as ${session.name}#${session.tag} (${shard})`)
   }
 
   async start() {
@@ -146,12 +167,12 @@ export class Tracker extends EventEmitter {
     this.lock = null
     this.auth = null
     this.pd = null
-    const waiting = err.code === 'NO_LOCKFILE'
-    const message = waiting ? 'VALORANT is not running' : err.message
+    const { short, detail } = describeFailure(err)
     // One line per change of state, so a long wait does not fill the console.
-    if (this.lastError !== message) {
-      this.lastError = message
-      console.error(`[tracker] ${message}${waiting ? ' — waiting for it to start' : ''}`)
+    if (this.lastError !== short) {
+      this.lastError = short
+      console.error(`[tracker] ${short}${detail ? ` — ${detail}` : ''}`)
+      if (err.status === 404) console.error('[tracker] run check.bat for a full diagnosis')
     }
     this.publish()
   }
@@ -337,6 +358,35 @@ export class Tracker extends EventEmitter {
     this.state = next
     if (changed) this.emit('update', next)
   }
+}
+
+/**
+ * Connection failures are shown on the overlay, which is on screen, so they
+ * have to be short and free of URLs. The longer form goes to the console.
+ */
+function describeFailure(err) {
+  if (err.code === 'NO_LOCKFILE') {
+    return { short: 'VALORANT is not running', detail: 'waiting for it to start' }
+  }
+  if (err.code === 'NO_PUUID') {
+    return { short: 'Riot Client is still signing in', detail: 'waiting for it to finish' }
+  }
+  if (err.code === 'ECONNREFUSED' || /ECONNREFUSED/.test(err.message)) {
+    return {
+      short: 'Riot Client not responding',
+      detail: 'its lockfile points at a port nothing is listening on — fully quit VALORANT and the Riot Client, then reopen',
+    }
+  }
+  if (err.status === 404) {
+    return {
+      short: 'Waiting for the Riot Client',
+      detail: 'it is not signed in yet, or an old lockfile is pointing somewhere wrong — reopen VALORANT and wait for the play menu',
+    }
+  }
+  if (err.status === 401 || err.status === 403) {
+    return { short: 'Riot Client refused the request', detail: 'restart VALORANT to refresh its credentials' }
+  }
+  return { short: 'Cannot reach the Riot Client', detail: err.message }
 }
 
 function stripTimestamp(state) {

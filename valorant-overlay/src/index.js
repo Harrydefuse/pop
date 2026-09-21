@@ -4,6 +4,13 @@ import { MockTracker } from './mock.js'
 import { createServer } from './server.js'
 
 const config = loadConfig()
+
+// Diagnostic mode: report on the local Riot Client and exit.
+if (process.argv.includes('--check')) {
+  const { runCheck } = await import('./check.js')
+  await runCheck(config)
+  process.exit(0)
+}
 const tracker = config.mock ? new MockTracker(config) : new Tracker(config)
 
 const server = createServer(tracker, config)

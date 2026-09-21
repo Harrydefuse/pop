@@ -49,6 +49,19 @@ export async function getChatSession(lock) {
   }
 }
 
+/**
+ * The client's own region, used when the chat session has not published one
+ * yet. Returned uppercase, unlike the chat session's.
+ */
+export async function getRegionLocale(lock) {
+  try {
+    const data = await localGet(lock, '/riotclient/region-locale')
+    return (data.region || '').toLowerCase()
+  } catch {
+    return ''
+  }
+}
+
 // LATAM and BR accounts live on the NA shard; everything else matches.
 const SHARDS = { na: 'na', latam: 'na', br: 'na', eu: 'eu', ap: 'ap', kr: 'kr' }
 

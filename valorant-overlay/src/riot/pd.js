@@ -61,6 +61,12 @@ export async function getClientVersion(logPath) {
   return cachedVersion
 }
 
+/** Guards against requesting /players/ with nothing on the end of it. */
+function requirePuuid(puuid) {
+  if (!puuid) throw new Error('No player id available from the Riot Client yet')
+  return puuid
+}
+
 export class PlayerDataClient {
   constructor({ shard, auth, version }) {
     this.shard = shard
@@ -84,13 +90,13 @@ export class PlayerDataClient {
 
   /** Current tier, RR, act record and the most recent ranked match. */
   async getMmr(puuid) {
-    return getJson(`${this.base}/mmr/v1/players/${puuid}`, { headers: this.headers() })
+    return getJson(`${this.base}/mmr/v1/players/${requirePuuid(puuid)}`, { headers: this.headers() })
   }
 
   /** Recent competitive matches with the RR gained or lost on each. */
   async getCompetitiveUpdates(puuid, count = 20) {
     const data = await getJson(
-      `${this.base}/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=${count}&queue=competitive`,
+      `${this.base}/mmr/v1/players/${requirePuuid(puuid)}/competitiveupdates?startIndex=0&endIndex=${count}&queue=competitive`,
       { headers: this.headers() },
     )
     return data.Matches || []

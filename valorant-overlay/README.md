@@ -61,6 +61,13 @@ leave the window open, and the overlay updates itself after every ranked game.
 Open <http://localhost:3040/control> in a browser for live status, a button to
 reset the session record, and a builder for customised overlay URLs.
 
+### Something wrong? Run the check
+
+Double-click **`check.bat`**. It reports whether the Riot Client is reachable,
+whether it has signed in, and what rank data Riot returns for your account —
+enough to tell "still signing in" from "stale lockfile" from "genuinely
+unranked". Run it while VALORANT is open, at the play menu.
+
 ### Nothing showing up?
 
 Open `http://localhost:3040/overlay` in a normal browser. If the rank appears
@@ -177,8 +184,9 @@ message stays on screen.
 **"VALORANT is not running"** — start the game. The agent picks it up within a
 few seconds; you do not need to restart it.
 
-**Connected, but it says Unranked** — the black window prints the rank it
-read after it connects. If that line says no ranked rating was found, you have
+**Connected, but it says Unranked** — run `check.bat`, which prints every act
+Riot has on record for you and what your last ranked match says. The black
+window also prints the rank it read after it connects. If that line says no ranked rating was found, you have
 not finished placements this act. If it names your real rank but OBS does not
 show it, the problem is the browser source, not the data.
 
@@ -216,6 +224,7 @@ overlay is not reachable from your network.
 ```
 start.bat           double-click to run
 start-demo.bat      double-click to run on fake data
+check.bat           double-click to diagnose a connection problem
 src/
   index.js          entry point: wires the tracker to the server
   config.js         defaults and config.json loading
