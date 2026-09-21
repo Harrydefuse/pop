@@ -1,9 +1,19 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { loadConfig } from './config.js'
 import { Tracker } from './tracker.js'
 import { MockTracker } from './mock.js'
 import { createServer } from './server.js'
 
 const config = loadConfig()
+
+// Printed on startup so it is obvious whether an update actually landed.
+let version = 'unknown'
+try {
+  version = JSON.parse(fs.readFileSync(path.join(config.root, 'package.json'), 'utf8')).version
+} catch {
+  // Version is a convenience, never a reason to fail to start.
+}
 
 // Diagnostic mode: report on the local Riot Client and exit.
 if (process.argv.includes('--check')) {
@@ -16,7 +26,7 @@ const tracker = config.mock ? new MockTracker(config) : new Tracker(config)
 const server = createServer(tracker, config)
 server.listen(config.port, '127.0.0.1', () => {
   console.log('')
-  console.log('  VALORANT rank overlay')
+  console.log(`  VALORANT rank overlay  v${version}`)
   console.log(`  Overlay  →  http://localhost:${config.port}/overlay   (add this as an OBS Browser Source)`)
   console.log(`  Controls →  http://localhost:${config.port}/control`)
   if (config.mock) console.log('  Running in --mock mode: data is fake, a game "finishes" every few seconds.')

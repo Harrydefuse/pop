@@ -2,3 +2,5 @@ node_modules
 .cache
 .state.json
 config.json
+check-output.txt
+rank-data.json

@@ -344,7 +344,9 @@ export class Tracker extends EventEmitter {
         placementsLeft,
       },
       rr,
-      rrMax: 100,
+      // Immortal and Radiant RR accumulates instead of resetting each tier, so
+      // there is no 0-100 scale to draw a bar against.
+      rrMax: tierNumber >= 24 ? null : 100,
       leaderboardRank: leaderboard,
       session: { ...record, games, startedAt: this.session.startedAt },
       act: seasonal ? { wins: seasonal.NumberOfWins || 0, games: seasonal.NumberOfGames || 0 } : null,

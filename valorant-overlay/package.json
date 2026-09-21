@@ -1,10 +1,12 @@
 {
   "name": "valorant-rank-overlay",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "Live VALORANT rank, RR and session record as an OBS browser source.",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node src/index.js",
     "mock": "node src/index.js --mock"

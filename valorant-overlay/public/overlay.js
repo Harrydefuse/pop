@@ -171,8 +171,10 @@ function renderRank(state) {
 }
 
 function renderRr(state) {
-  const isRadiant = state.rank.tier >= 27
-  el.rrFill.parentElement.hidden = isRadiant || !visible.has('rank')
+  // Without a fixed ceiling (Immortal and above) a bar would be inventing a
+  // scale, so the number stands on its own.
+  const scaled = state.rrMax > 0
+  el.rrFill.parentElement.hidden = !scaled || !visible.has('rank')
   el.leaderboard.textContent = state.leaderboardRank ? `#${state.leaderboardRank}` : ''
 
   const from = previous ? previous.rr : state.rr
@@ -180,8 +182,9 @@ function renderRr(state) {
     el.rr.textContent = String(value)
   })
 
-  const pct = Math.max(0, Math.min(100, (state.rr / state.rrMax) * 100))
-  el.rrFill.style.width = `${isRadiant ? 100 : pct}%`
+  if (scaled) {
+    el.rrFill.style.width = `${Math.max(0, Math.min(100, (state.rr / state.rrMax) * 100))}%`
+  }
 
   if (previous && previous.rr !== state.rr) flash(el.rr)
 }

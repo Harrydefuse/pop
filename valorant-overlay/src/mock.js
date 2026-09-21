@@ -40,15 +40,20 @@ export class MockTracker extends EventEmitter {
     const won = Math.random() > 0.45
     const swing = won ? 14 + Math.round(Math.random() * 12) : -(12 + Math.round(Math.random() * 10))
     this.rr += swing
-    while (this.rr >= 100 && this.tier < 27) {
-      this.rr -= 100
-      this.tier += 1
+    if (this.tier >= 24) {
+      // Immortal and above: RR accumulates rather than resetting per tier.
+      this.rr = Math.max(0, this.rr)
+    } else {
+      while (this.rr >= 100 && this.tier < 24) {
+        this.rr -= 100
+        this.tier += 1
+      }
+      while (this.rr < 0 && this.tier > 3) {
+        this.rr += 100
+        this.tier -= 1
+      }
+      if (this.tier <= 3 && this.rr < 0) this.rr = 0
     }
-    while (this.rr < 0 && this.tier > 3) {
-      this.rr += 100
-      this.tier -= 1
-    }
-    if (this.tier <= 3 && this.rr < 0) this.rr = 0
     this.games.push({
       id: `mock-${this.games.length}`,
       outcome: won ? 'win' : 'loss',
@@ -94,7 +99,7 @@ export class MockTracker extends EventEmitter {
         placementsLeft: null,
       },
       rr: this.rr,
-      rrMax: 100,
+      rrMax: this.tier >= 24 ? null : 100,
       leaderboardRank: 0,
       session: { ...record, games: this.games, startedAt: this.sessionStartedAt },
       act: { wins: 40 + record.wins, games: 71 + this.games.length },
