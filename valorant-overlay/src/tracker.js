@@ -28,6 +28,7 @@ export class Tracker extends EventEmitter {
     this.settleUntil = 0
     this.mmr = null
     this.lastError = null
+    this.lastSummary = null
     this.connected = false
 
     this.session = this.loadSession()
@@ -174,6 +175,22 @@ export class Tracker extends EventEmitter {
     await this.resolveOutcomes()
     this.saveSession()
     this.publish()
+    this.reportRank()
+  }
+
+  /**
+   * Say what was read, so the console answers "is it working?" on its own.
+   * Only on change, so an idle session stays quiet.
+   */
+  reportRank() {
+    const { rank, rr, session } = this.state
+    const summary =
+      rank.tier > 0
+        ? `${rank.name} · ${rr} RR · session ${session.wins}-${session.losses}`
+        : 'no ranked rating found for the current act — play a competitive game, or finish placements'
+    if (summary === this.lastSummary) return
+    this.lastSummary = summary
+    console.log(`[tracker] ${summary}`)
   }
 
   /**
@@ -215,17 +232,54 @@ export class Tracker extends EventEmitter {
     const competitive = this.mmr?.QueueSkills?.competitive
     if (!competitive) return null
     const bySeason = competitive.SeasonalInfoBySeasonID || {}
+
+    // The act valorant-api reports as live.
     if (this.catalog.actId && bySeason[this.catalog.actId]) return bySeason[this.catalog.actId]
-    // Fall back to the most recently played act.
+
+    // Otherwise the act of the most recent ranked match, which is the current
+    // act for anyone who has played one. This is the path taken whenever
+    // valorant-api could not be reached.
+    const latestActId = this.mmr?.LatestCompetitiveUpdate?.SeasonID
+    if (latestActId && bySeason[latestActId]) return bySeason[latestActId]
+
+    // Last resort. Key order here is Riot's, not chronological, so choose on
+    // merit rather than position: an act you actually ranked in.
     const entries = Object.values(bySeason)
-    return entries.length ? entries[entries.length - 1] : null
+    const ranked = entries.filter((entry) => entry.CompetitiveTier > 0)
+    if (!ranked.length) return entries.length ? entries[entries.length - 1] : null
+    return ranked.reduce((best, entry) => ((entry.NumberOfGames || 0) >= (best.NumberOfGames || 0) ? entry : best))
+  }
+
+  /**
+   * Tier and RR have to come from the same place or they contradict each
+   * other. A tier of 0 means unranked, which is also how a stale act entry
+   * looks, so fall through to the last ranked match when the act has no rank.
+   */
+  rankSource() {
+    const seasonal = this.seasonalInfo()
+    const latest = this.mmr?.LatestCompetitiveUpdate
+
+    if (seasonal?.CompetitiveTier > 0) {
+      return {
+        tier: seasonal.CompetitiveTier,
+        rr: seasonal.RankedRating || 0,
+        leaderboard: seasonal.LeaderboardRank || 0,
+        seasonal,
+      }
+    }
+    if (latest?.TierAfterUpdate > 0) {
+      return {
+        tier: latest.TierAfterUpdate,
+        rr: latest.RankedRatingAfterUpdate || 0,
+        leaderboard: seasonal?.LeaderboardRank || 0,
+        seasonal,
+      }
+    }
+    return { tier: 0, rr: 0, leaderboard: 0, seasonal }
   }
 
   buildState() {
-    const seasonal = this.seasonalInfo()
-    const latest = this.mmr?.LatestCompetitiveUpdate
-    const tierNumber = seasonal?.CompetitiveTier ?? latest?.TierAfterUpdate ?? 0
-    const rr = seasonal?.RankedRating ?? latest?.RankedRatingAfterUpdate ?? 0
+    const { tier: tierNumber, rr, leaderboard, seasonal } = this.rankSource()
     const tier = this.catalog.get(tierNumber)
 
     const games = this.sessionMatches().map((match) => ({
@@ -270,7 +324,7 @@ export class Tracker extends EventEmitter {
       },
       rr,
       rrMax: 100,
-      leaderboardRank: seasonal?.LeaderboardRank || 0,
+      leaderboardRank: leaderboard,
       session: { ...record, games, startedAt: this.session.startedAt },
       act: seasonal ? { wins: seasonal.NumberOfWins || 0, games: seasonal.NumberOfGames || 0 } : null,
       updatedAt: Date.now(),

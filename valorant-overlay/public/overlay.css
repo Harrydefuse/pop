@@ -54,8 +54,21 @@ body[data-align='right'] {
   opacity: 0;
 }
 
-.overlay[data-state='offline'][data-hide-offline='true'] {
+.overlay[data-state='offline'][data-hide-offline='true'],
+.overlay[data-state='waiting'][data-hide-offline='true'] {
   opacity: 0;
+}
+
+/* Nothing has been received yet: show why, not an empty card. */
+.overlay[data-state='waiting'] .divider,
+.overlay[data-state='waiting'] .stats,
+.overlay[data-state='waiting'] .rr-line,
+.overlay[data-state='waiting'] .rr-bar {
+  display: none;
+}
+
+.overlay[data-state='waiting'] .status-note {
+  opacity: 0.85;
 }
 
 .card {

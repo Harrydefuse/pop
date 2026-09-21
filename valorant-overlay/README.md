@@ -177,6 +177,11 @@ message stays on screen.
 **"VALORANT is not running"** — start the game. The agent picks it up within a
 few seconds; you do not need to restart it.
 
+**Connected, but it says Unranked** — the black window prints the rank it
+read after it connects. If that line says no ranked rating was found, you have
+not finished placements this act. If it names your real rank but OBS does not
+show it, the problem is the browser source, not the data.
+
 **Rank is right but RR looks stale** — RR lands when Riot processes the match,
 which is occasionally a few seconds behind the end-of-game screen. The agent
 keeps polling for three minutes after a match.

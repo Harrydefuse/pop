@@ -247,18 +247,34 @@ function animateNumber(from, to, apply) {
 
 // ------------------------------------------------------------------ feed
 
+/**
+ * An overlay that draws nothing cannot be diagnosed inside OBS, so once it is
+ * clear no agent is answering, say so on the card instead of staying blank.
+ */
+const waitingTimer = setTimeout(() => {
+  if (previous) return
+  overlay.dataset.state = 'waiting'
+  overlay.dataset.status = 'offline'
+  el.name.textContent = 'No data yet'
+  el.note.textContent = 'Is the overlay app running?'
+  el.icon.hidden = true
+  el.badge.hidden = false
+  renderBadge({ rank: { tier: 0, division: '', color: '#8B8F94', name: 'Unranked' } })
+}, 4000)
+
 function connect() {
   const source = new EventSource('/events')
   source.onmessage = (event) => {
     try {
+      clearTimeout(waitingTimer)
       render(JSON.parse(event.data))
     } catch (err) {
       console.error('bad payload', err)
     }
   }
   source.onerror = () => {
-    // EventSource reconnects on its own; surface it only if we never connected.
-    if (!previous) overlay.dataset.state = 'loading'
+    // EventSource reconnects on its own; only a connection that never landed
+    // is worth reporting, and the waiting timer covers that.
   }
 }
 
