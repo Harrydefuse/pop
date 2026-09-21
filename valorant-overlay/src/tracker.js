@@ -7,8 +7,9 @@ import {
   getRegionLocale,
   shardFor,
   getSelfPresence,
+  ALL_SHARDS,
 } from './riot/localApi.js'
-import { PlayerDataClient, getClientVersion } from './riot/pd.js'
+import { PlayerDataClient, getClientVersion, shardFromLog, isEmptyMmr } from './riot/pd.js'
 import { TierCatalog } from './riot/tiers.js'
 
 const MAX_OUTCOME_ATTEMPTS = 6
@@ -36,6 +37,7 @@ export class Tracker extends EventEmitter {
     this.mmr = null
     this.lastError = null
     this.lastSummary = null
+    this.shardProbe = null
     this.connected = false
 
     this.session = this.loadSession()
@@ -99,7 +101,11 @@ export class Tracker extends EventEmitter {
     const region = session.region || (await getRegionLocale(this.lock))
     this.identity = { puuid, name: session.name, tag: session.tag, region }
 
-    const shard = this.config.shard || shardFor(region)
+    // The log names the shard this install actually plays on; a region code
+    // only implies one, and several regions share a shard.
+    const fromLog = shardFromLog(this.config.valorantLogPath)
+    this.logShard = fromLog?.shard || null
+    const shard = this.config.shard || this.logShard || shardFor(region)
     this.pd = new PlayerDataClient({ shard, auth: this.auth, version: await getClientVersion(this.config.valorantLogPath) })
     this.connected = true
     this.lastError = null
@@ -180,7 +186,15 @@ export class Tracker extends EventEmitter {
   // ------------------------------------------------------------------- data
 
   async refresh() {
-    const mmr = await this.pd.getMmr(this.identity.puuid)
+    let mmr = await this.pd.getMmr(this.identity.puuid)
+
+    // A successful but entirely blank record usually means the right account
+    // on the wrong shard, so find the one holding the data rather than
+    // reporting the player as unranked.
+    if (isEmptyMmr(mmr) && !this.shardProbe && !this.config.shard) {
+      if (await this.probeShards()) mmr = await this.pd.getMmr(this.identity.puuid)
+    }
+
     this.mmr = mmr
 
     const latestId = mmr.LatestCompetitiveUpdate?.MatchID || null
@@ -208,7 +222,9 @@ export class Tracker extends EventEmitter {
     const summary =
       rank.tier > 0
         ? `${rank.name} · ${rr} RR · session ${session.wins}-${session.losses}`
-        : 'no ranked rating found for the current act — play a competitive game, or finish placements'
+        : isEmptyMmr(this.mmr)
+          ? 'Riot has no ranked history for the signed-in account on any shard — open /debug'
+          : 'no ranked rating for the current act — play a competitive game, or finish placements'
     if (summary === this.lastSummary) return
     this.lastSummary = summary
     console.log(`[tracker] ${summary}`)
@@ -231,6 +247,33 @@ export class Tracker extends EventEmitter {
         // Match detail lags a little behind the RR update; retry next pass.
       }
     }
+  }
+
+  /**
+   * Try each play shard in turn and keep the first that holds ranked history.
+   * Runs once per session, only after a blank record.
+   */
+  async probeShards() {
+    const started = this.pd.shard
+    this.shardProbe = { from: started, tried: [started], found: null }
+
+    for (const shard of ALL_SHARDS.filter((s) => s !== started)) {
+      const client = new PlayerDataClient({ shard, auth: this.auth, version: this.pd.version })
+      this.shardProbe.tried.push(shard)
+      try {
+        if (!isEmptyMmr(await client.getMmr(this.identity.puuid))) {
+          this.shardProbe.found = shard
+          this.pd = client
+          console.log(`[tracker] ranked data found on the ${shard} shard — switching from ${started}`)
+          return true
+        }
+      } catch {
+        // A shard this account cannot use simply fails; that is an answer too.
+      }
+    }
+
+    console.log(`[tracker] no ranked history on any shard (tried ${this.shardProbe.tried.join(', ')})`)
+    return false
   }
 
   sessionMatches() {
@@ -376,6 +419,9 @@ export class Tracker extends EventEmitter {
       responseKeys: this.mmr ? Object.keys(this.mmr) : [],
       queues: Object.keys(this.mmr?.QueueSkills || {}),
       currentActId: this.catalog.actId,
+      shardFromLog: this.logShard || null,
+      shardProbe: this.shardProbe,
+      emptyRecord: isEmptyMmr(this.mmr),
       acts: Object.entries(bySeason).map(([id, info]) => ({
         id,
         tier: info.CompetitiveTier ?? 0,

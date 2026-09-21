@@ -38,6 +38,35 @@ function versionFromLog(logPath) {
   }
 }
 
+/**
+ * VALORANT logs the endpoints it actually talks to, which names the shard this
+ * installation really plays on. More reliable than mapping a region code,
+ * because the client reports codes that do not map one-to-one onto shards.
+ */
+export function shardFromLog(logPath) {
+  if (!logPath || !fs.existsSync(logPath)) return null
+  let text = ''
+  const handle = fs.openSync(logPath, 'r')
+  try {
+    const size = fs.fstatSync(handle).size
+    const span = Math.min(size, 4 * 1024 * 1024)
+    const buffer = Buffer.alloc(span)
+    fs.readSync(handle, buffer, 0, span, 0)
+    text = buffer.toString('utf8')
+  } catch {
+    return null
+  } finally {
+    fs.closeSync(handle)
+  }
+
+  // glz-{region}-{n}.{shard}.a.pvp.net names both; pd.{shard} names the shard.
+  const glz = text.match(/glz-([a-z0-9]+)-\d+\.([a-z0-9]+)\.a\.pvp\.net/i)
+  if (glz) return { region: glz[1].toLowerCase(), shard: glz[2].toLowerCase() }
+  const pd = text.match(/\bpd\.([a-z0-9]+)\.a\.pvp\.net/i)
+  if (pd) return { region: null, shard: pd[1].toLowerCase() }
+  return null
+}
+
 /** The live client version, required as a header on player-data requests. */
 export async function getClientVersion(logPath) {
   if (cachedVersion && Date.now() - cachedVersionAt < 60 * 60 * 1000) return cachedVersion
@@ -65,6 +94,17 @@ export async function getClientVersion(logPath) {
 function requirePuuid(puuid) {
   if (!puuid) throw new Error('No player id available from the Riot Client yet')
   return puuid
+}
+
+/**
+ * A record that came back successfully but holds no ranked history at all.
+ * Usually means the right player queried on the wrong shard.
+ */
+export function isEmptyMmr(mmr) {
+  if (!mmr) return true
+  const seasonal = mmr.QueueSkills?.competitive?.SeasonalInfoBySeasonID
+  const hasSeasons = seasonal && Object.keys(seasonal).length > 0
+  return !hasSeasons && !mmr.LatestCompetitiveUpdate?.MatchID
 }
 
 export class PlayerDataClient {

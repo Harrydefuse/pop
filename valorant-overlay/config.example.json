@@ -1,5 +1,6 @@
 {
   "_comment": "Copy to config.json to override. Every field is optional.",
+  "_shard": "Force the play shard if auto-detection gets it wrong: na, ap (OCE/Asia), eu or kr.",
   "port": 3040,
   "shard": null,
   "idlePollMs": 30000,

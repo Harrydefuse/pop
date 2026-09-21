@@ -181,7 +181,7 @@ Copy `config.example.json` to `config.json` to override defaults:
 | Key | Default | Notes |
 |---|---|---|
 | `port` | `3040` | Also settable with the `PORT` environment variable |
-| `shard` | auto | Force `na`, `eu`, `ap` or `kr` if detection is wrong |
+| `shard` | auto | Force the play shard: `na`, `ap` (OCE/Asia), `eu`, `kr` |
 | `idlePollMs` | `30000` | Rank poll rate when nothing is happening |
 | `activePollMs` | `3000` | Poll rate in-game and just after a match |
 | `sessionIdleResetMs` | `21600000` | Downtime before the session record resets |
@@ -210,6 +210,12 @@ show it, the problem is the browser source, not the data.
 **Rank is right but RR looks stale** — RR lands when Riot processes the match,
 which is occasionally a few seconds behind the end-of-game screen. The agent
 keeps polling for three minutes after a match.
+
+**Shows Unranked with a real rank in game** — almost always the wrong play
+shard. The client's region code does not always imply it: an OCE account can
+report a LATAM region, and asking the wrong shard returns a valid but empty
+record. The app detects this and retries the other shards automatically; to
+pin it, set `shard` in `config.json` (`ap` for OCE and Asia, `na`, `eu`, `kr`).
 
 **Wrong region or 400 errors** — set `shard` in `config.json`.
 

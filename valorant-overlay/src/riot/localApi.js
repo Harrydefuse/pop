@@ -63,10 +63,22 @@ export async function getRegionLocale(lock) {
 }
 
 // LATAM and BR accounts live on the NA shard; everything else matches.
-const SHARDS = { na: 'na', latam: 'na', br: 'na', eu: 'eu', ap: 'ap', kr: 'kr' }
+/**
+ * The client reports platform-style region codes (la1, br1, oc1 …) as well as
+ * plain ones, and several regions share a play shard. Anything unrecognised
+ * falls back to na, and the tracker then probes for the right one.
+ */
+const SHARDS = {
+  na: 'na', na1: 'na', latam: 'na', la1: 'na', la2: 'na', br: 'na', br1: 'na',
+  eu: 'eu', eu1: 'eu', euw1: 'eu', eun1: 'eu', ru: 'eu', tr1: 'eu',
+  ap: 'ap', oc1: 'ap', sg2: 'ap', ph2: 'ap', th2: 'ap', tw2: 'ap', vn2: 'ap', jp1: 'ap',
+  kr: 'kr', kr1: 'kr',
+}
+
+export const ALL_SHARDS = ['na', 'ap', 'eu', 'kr']
 
 export function shardFor(region) {
-  return SHARDS[region] || 'na'
+  return SHARDS[String(region || '').toLowerCase()] || 'na'
 }
 
 /**

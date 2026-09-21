@@ -54,6 +54,11 @@
           ['Account', esc(d.account || '—')],
           ['Player id found', yn(d.hasPlayerId)],
           ['Region / shard', esc(`${d.region || '?'} / ${d.shard || '?'}`)],
+          ['Shard from VALORANT log', d.shardFromLog ? esc(d.shardFromLog) : '<span class="no">not found</span>'],
+          d.shardProbe
+            ? ['Other shards tried', esc(d.shardProbe.tried.join(', ')) +
+                (d.shardProbe.found ? ` → found on <b>${esc(d.shardProbe.found)}</b>` : ' → none had data')]
+            : null,
           ['Rank response received', yn(d.rankResponseReceived)],
           ['Queues in response', esc(d.queues.join(', ') || 'none')],
           ['Current act known', d.currentActId ? esc(d.currentActId.slice(0, 8) + '…') : '<span class="no">no</span>'],
@@ -93,9 +98,16 @@
         } else if (ranked) {
           v.className = 'verdict bad'
           v.textContent = 'Riot returned a rank but the overlay is not reading it. Copy the diagnosis below and send it to Claude.'
+        } else if (d.emptyRecord) {
+          v.className = 'verdict bad'
+          v.innerHTML =
+            'Riot has <b>no ranked history at all</b> for the account signed into the Riot Client' +
+            (d.shardProbe ? ` (checked ${esc(d.shardProbe.tried.join(', '))})` : '') +
+            '. The usual cause is being signed into a different Riot account than the one ' +
+            'that holds the rank — check the name above matches your VALORANT account.'
         } else {
           v.className = 'verdict warn'
-          v.textContent = 'Riot returned no ranked tier for this account. Copy the diagnosis below and send it to Claude.'
+          v.textContent = 'Riot returned no ranked tier for this act. Copy the diagnosis below and send it to Claude.'
         }
 
         const text = JSON.stringify(d, null, 2)
