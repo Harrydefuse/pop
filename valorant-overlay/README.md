@@ -94,22 +94,21 @@ gap starts you fresh. Reset it by hand any time from the control page.
 
 ## Rank art
 
-The agent downloads Riot's own rank icons from `valorant-api.com` on first run
-and caches them, so they keep working offline afterwards. Immortal 1-3 and
-Radiant are fetched before the other tiers.
+Immortal 1-3 and Radiant art ships in `public/ranks`, so those ranks render
+correctly with no download and no internet. Any other tier is fetched from
+`valorant-api.com` on first run and cached.
 
 Resolution order for each rank, first hit wins:
 
-1. An image you dropped in `public/ranks` (e.g. `27.png` for Radiant)
+1. An image in `public/ranks` named after the tier (`27.png` for Radiant)
 2. Riot's art, cached locally from a previous run
 3. Riot's art, fetched live
-4. Drawn artwork built into the overlay — a crimson crest with 1-3 pips for
-   Immortal, a gold starburst for Radiant. A readable stand-in, not Riot's
-   artwork.
+4. Drawn artwork built into the overlay — a readable stand-in, not Riot's art
 
-To use exact art of your own, save it as the tier number in `public/ranks` and
-restart the agent — `24.png` Immortal 1, `25.png` Immortal 2, `26.png`
-Immortal 3, `27.png` Radiant. See `public/ranks/README.md` for the full list.
+To swap in different art, drop it in `public/ranks` as the tier number and
+restart. Trim transparent padding and centre it on a square canvas first, or
+that rank will render at a different size from the others. See
+`public/ranks/README.md`.
 
 ### Immortal and Radiant
 
@@ -148,9 +147,10 @@ keeps polling for three minutes after a match.
 
 **Port 3040 is in use** — set `port` in `config.json`, and update the OBS URL.
 
-**Drawn rank art instead of Riot's** — the agent could not reach
-`valorant-api.com` to download the real icons. It retries on a later run; see
-[Rank art](#rank-art) to drop your own in and skip the download entirely.
+**Drawn rank art instead of the real icons** — only affects ranks below
+Immortal, which are downloaded rather than bundled. The agent could not reach
+`valorant-api.com`; it retries on a later run, or drop the art into
+`public/ranks` yourself. See [Rank art](#rank-art).
 
 **Nothing shows in OBS** — open the URL in a normal browser first. If it works
 there, right-click the source and *Refresh*.
