@@ -31,6 +31,8 @@ export function createServer(tracker, config) {
 
     if (route === '/events') return streamEvents(req, res)
     if (route === '/api/state') return json(res, tracker.state)
+    if (route === '/api/debug') return json(res, { version: config.version, ...tracker.debugInfo() })
+    if (route === '/debug') return sendFile(res, path.join(publicDir, 'debug.html'))
     if (route === '/api/session/reset' && req.method === 'POST') {
       tracker.resetSession()
       return json(res, { ok: true })

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Overlay diagnosis</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0d12; --panel:#141821; --line:rgba(255,255,255,.1); --text:#eef1f6; --muted:rgba(238,241,246,.55); --ok:#35d08a; --bad:#ff5c72; --warn:#e8c56a; }
+      * { box-sizing:border-box; margin:0; padding:0 }
+      body { background:var(--bg); color:var(--text); font-family:'Inter','Segoe UI',system-ui,sans-serif;
+        padding:28px 20px 60px; display:flex; justify-content:center }
+      .wrap { width:100%; max-width:820px; display:flex; flex-direction:column; gap:16px }
+      h1 { font-size:19px; font-weight:700 }
+      h2 { font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:10px }
+      .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px }
+      .verdict { font-size:15px; line-height:1.5 }
+      .verdict.ok { color:var(--ok) } .verdict.bad { color:var(--bad) } .verdict.warn { color:var(--warn) }
+      table { width:100%; border-collapse:collapse; font-size:13px }
+      td, th { text-align:left; padding:6px 10px 6px 0; border-bottom:1px solid var(--line); vertical-align:top }
+      th { color:var(--muted); font-weight:600; font-size:11px; letter-spacing:.08em; text-transform:uppercase }
+      tr:last-child td { border-bottom:0 }
+      .mono { font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:12px }
+      .yes { color:var(--ok) } .no { color:var(--bad) }
+      .cur { color:var(--ok); font-weight:700 }
+      button { background:#ff4655; color:#fff; border:0; border-radius:8px; padding:10px 18px;
+        font:inherit; font-size:13px; font-weight:600; cursor:pointer }
+      pre { background:#0a0c11; border:1px solid var(--line); border-radius:8px; padding:12px;
+        overflow:auto; max-height:320px; font-size:11px; line-height:1.45; margin-top:12px }
+      .hint { color:var(--muted); font-size:13px; line-height:1.55 }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Overlay diagnosis</h1>
+      <div class="panel"><div id="verdict" class="verdict">Loading…</div></div>
+      <div class="panel"><h2>Connection</h2><table id="conn"></table></div>
+      <div class="panel"><h2>Ranked history Riot returned</h2><div id="acts"></div></div>
+      <div class="panel">
+        <h2>Send this to Claude</h2>
+        <p class="hint">Press the button, then paste into the chat. Your player id is removed.</p>
+        <p style="margin-top:12px"><button id="copy">Copy diagnosis</button></p>
+        <pre id="raw"></pre>
+      </div>
+    </div>
+    <script>
+      const el = (id) => document.getElementById(id)
+      const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))
+      const yn = (v) => (v ? '<span class="yes">yes</span>' : '<span class="no">no</span>')
+
+      fetch('/api/debug').then((r) => r.json()).then((d) => {
+        el('conn').innerHTML = [
+          ['Version', esc(d.version)],
+          ['Connected to Riot Client', yn(d.connected)],
+          ['Account', esc(d.account || '—')],
+          ['Player id found', yn(d.hasPlayerId)],
+          ['Region / shard', esc(`${d.region || '?'} / ${d.shard || '?'}`)],
+          ['Rank response received', yn(d.rankResponseReceived)],
+          ['Queues in response', esc(d.queues.join(', ') || 'none')],
+          ['Current act known', d.currentActId ? esc(d.currentActId.slice(0, 8) + '…') : '<span class="no">no</span>'],
+          ['Overlay is showing', esc(`${d.resolved.name} · ${d.resolved.rr} RR`)],
+          d.error ? ['Last error', esc(d.error)] : null,
+        ].filter(Boolean).map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')
+
+        if (!d.acts.length) {
+          el('acts').innerHTML = '<p class="hint">Riot returned no act history at all.</p>'
+        } else {
+          el('acts').innerHTML =
+            '<table><tr><th>Act</th><th>Tier</th><th>RR</th><th>Games</th><th>Board</th></tr>' +
+            d.acts.map((a) => `<tr class="${a.isCurrent ? 'cur' : ''}">
+                <td class="mono">${esc(a.id.slice(0, 8))}…${a.isCurrent ? ' (current)' : ''}</td>
+                <td>${a.tier}</td><td>${a.rr}</td><td>${a.wins}W / ${a.games}</td>
+                <td>${a.leaderboard || '—'}</td></tr>`).join('') + '</table>'
+        }
+        if (d.latestMatch) {
+          el('acts').innerHTML += `<p class="hint" style="margin-top:12px">Last ranked match: tier
+            ${d.latestMatch.tier}, ${d.latestMatch.rr} RR, in act
+            <span class="mono">${esc(String(d.latestMatch.actId || '').slice(0, 8))}…</span></p>`
+        } else {
+          el('acts').innerHTML += '<p class="hint" style="margin-top:12px">No recent ranked match on record.</p>'
+        }
+
+        const ranked = d.acts.some((a) => a.tier > 0) || (d.latestMatch && d.latestMatch.tier > 0)
+        const v = el('verdict')
+        if (!d.connected) {
+          v.className = 'verdict bad'
+          v.textContent = `Not connected to the Riot Client. ${d.error || ''}`
+        } else if (!d.rankResponseReceived) {
+          v.className = 'verdict warn'
+          v.textContent = 'Connected, but no rank response from Riot yet. Give it a few seconds and refresh.'
+        } else if (ranked && d.resolved.tier > 0) {
+          v.className = 'verdict ok'
+          v.textContent = `Working — showing ${d.resolved.name}, ${d.resolved.rr} RR.`
+        } else if (ranked) {
+          v.className = 'verdict bad'
+          v.textContent = 'Riot returned a rank but the overlay is not reading it. Copy the diagnosis below and send it to Claude.'
+        } else {
+          v.className = 'verdict warn'
+          v.textContent = 'Riot returned no ranked tier for this account. Copy the diagnosis below and send it to Claude.'
+        }
+
+        const text = JSON.stringify(d, null, 2)
+        el('raw').textContent = text
+        el('copy').addEventListener('click', async () => {
+          await navigator.clipboard.writeText('```json\n' + text + '\n```')
+          el('copy').textContent = 'Copied — now paste it in the chat'
+        })
+      }).catch((err) => {
+        el('verdict').className = 'verdict bad'
+        el('verdict').textContent = 'Could not reach the overlay app. Is start.bat running?'
+        console.error(err)
+      })
+    </script>
+  </body>
+</html>

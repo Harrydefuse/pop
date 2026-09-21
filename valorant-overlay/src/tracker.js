@@ -354,6 +354,50 @@ export class Tracker extends EventEmitter {
     }
   }
 
+  /**
+   * Everything needed to work out why a rank is or is not showing, in one
+   * place, so diagnosing it does not depend on reading console scrollback.
+   */
+  debugInfo() {
+    const competitive = this.mmr?.QueueSkills?.competitive
+    const bySeason = competitive?.SeasonalInfoBySeasonID || {}
+    const latest = this.mmr?.LatestCompetitiveUpdate
+
+    return {
+      mock: false,
+      connected: this.connected,
+      error: this.lastError,
+      account: this.identity ? `${this.identity.name || '?'}#${this.identity.tag || '?'}` : null,
+      hasPlayerId: Boolean(this.identity?.puuid),
+      region: this.identity?.region || null,
+      shard: this.pd?.shard || null,
+      clientVersion: this.pd?.version || null,
+      rankResponseReceived: Boolean(this.mmr),
+      responseKeys: this.mmr ? Object.keys(this.mmr) : [],
+      queues: Object.keys(this.mmr?.QueueSkills || {}),
+      currentActId: this.catalog.actId,
+      acts: Object.entries(bySeason).map(([id, info]) => ({
+        id,
+        tier: info.CompetitiveTier ?? 0,
+        rr: info.RankedRating ?? 0,
+        wins: info.NumberOfWins ?? 0,
+        games: info.NumberOfGames ?? 0,
+        leaderboard: info.LeaderboardRank ?? 0,
+        isCurrent: id === this.catalog.actId,
+      })),
+      latestMatch: latest?.MatchID
+        ? {
+            tier: latest.TierAfterUpdate,
+            rr: latest.RankedRatingAfterUpdate,
+            actId: latest.SeasonID,
+            at: latest.MatchStartTime,
+          }
+        : null,
+      resolved: { tier: this.state.rank.tier, name: this.state.rank.name, rr: this.state.rr },
+      raw: redactMmr(this.mmr),
+    }
+  }
+
   publish() {
     const next = this.buildState()
     const changed = JSON.stringify(stripTimestamp(next)) !== JSON.stringify(stripTimestamp(this.state))
@@ -389,6 +433,18 @@ function describeFailure(err) {
     return { short: 'Riot Client refused the request', detail: 'restart VALORANT to refresh its credentials' }
   }
   return { short: 'Cannot reach the Riot Client', detail: err.message }
+}
+
+/** The rank payload minus the player id, safe to share when asking for help. */
+function redactMmr(mmr) {
+  if (!mmr) return null
+  try {
+    const copy = JSON.parse(JSON.stringify(mmr))
+    if (copy.Subject) copy.Subject = 'REDACTED'
+    return copy
+  } catch {
+    return null
+  }
 }
 
 function stripTimestamp(state) {

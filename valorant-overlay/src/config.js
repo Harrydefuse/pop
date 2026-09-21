@@ -58,6 +58,11 @@ export function loadConfig() {
   }
 
   const config = { ...defaults, ...fromFile, root }
+  try {
+    config.version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version
+  } catch {
+    config.version = 'unknown'
+  }
   if (process.env.PORT) config.port = Number(process.env.PORT)
   config.mock = process.argv.includes('--mock')
   fs.mkdirSync(config.cacheDir, { recursive: true })

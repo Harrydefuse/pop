@@ -61,7 +61,14 @@ leave the window open, and the overlay updates itself after every ranked game.
 Open <http://localhost:3040/control> in a browser for live status, a button to
 reset the session record, and a builder for customised overlay URLs.
 
-### Something wrong? Run the check
+### Something wrong? Open the diagnosis page
+
+With the app running, open <http://localhost:3040/debug>. It shows whether the
+Riot Client is connected, what rank data Riot returned, and what the overlay
+made of it — with a button that copies the whole thing to your clipboard to
+paste into a chat or issue. Your player id is removed.
+
+### Something wrong and the app will not start? Run the check
 
 Double-click **`check.bat`**. It reports whether the Riot Client is reachable,
 whether it has signed in, and what rank data Riot returns for your account —

@@ -107,6 +107,26 @@ export class MockTracker extends EventEmitter {
     }
   }
 
+  debugInfo() {
+    return {
+      mock: true,
+      connected: true,
+      error: null,
+      account: 'MockPlayer#DEMO',
+      hasPlayerId: true,
+      region: 'na',
+      shard: 'na',
+      rankResponseReceived: true,
+      responseKeys: [],
+      queues: ['competitive'],
+      currentActId: 'mock-act',
+      acts: [{ id: 'mock-act', tier: this.tier, rr: this.rr, wins: 0, games: 0, leaderboard: 0, isCurrent: true }],
+      latestMatch: null,
+      resolved: { tier: this.state.rank.tier, name: this.state.rank.name, rr: this.state.rr },
+      raw: null,
+    }
+  }
+
   publish() {
     this.state = this.buildState()
     this.emit('update', this.state)
