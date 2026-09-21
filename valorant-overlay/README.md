@@ -5,43 +5,73 @@ couple of seconds of a ranked game ending — no manual refresh, no alt-tabbing.
 
 ![Overlay preview](docs/preview.png)
 
+## What this is
+
+A small program that runs on your own PC, next to VALORANT. It is not a
+website and there is nothing to sign into — no Riot login, no API key, no
+account to connect. While VALORANT is running it reads your rank from the Riot
+Client that is already signed in on that machine, and serves a small page that
+OBS displays.
+
+That page lives at `http://localhost:3040/overlay`. `localhost` means *this
+computer*, so the address only works on the PC running the program, and only
+while it is running. Nothing is hosted publicly and nothing leaves your machine
+except requests to Riot's own servers.
+
+Whichever Riot account is signed into the client is the one shown. To switch
+accounts, sign into the other one and the overlay follows.
+
 ## Requirements
 
-- Windows (the Riot Client only writes its lockfile there)
-- Node.js 18 or newer — <https://nodejs.org>
-- VALORANT running, on the same PC as OBS
+- Windows, with VALORANT and OBS on the same PC
+- Node.js 18 or newer — <https://nodejs.org>, pick the big **LTS** button and
+  click through the installer with the defaults
 
 No `npm install` needed. The project has zero dependencies.
 
-## Quick start
+## Setup
+
+**1. Get the files onto your PC.** Either download
+[the ZIP](https://github.com/Harrydefuse/pop/archive/refs/heads/claude/eloquent-darwin-btgopu.zip)
+and extract it somewhere permanent (not your Downloads folder), or clone it:
 
 ```bash
-node src/index.js
+git clone -b claude/eloquent-darwin-btgopu https://github.com/Harrydefuse/pop.git
 ```
 
-Then in OBS:
+The overlay is the `valorant-overlay` folder inside.
 
-1. **Sources → + → Browser**, name it `Rank`.
+**2. Start it.** Double-click **`start.bat`**. A black window opens and stays
+open — that is the program running, so leave it be. It will tell you it is
+waiting if VALORANT is not open yet.
+
+Prefer a terminal? `node src/index.js` in the same folder does the same thing.
+
+**3. Add it to OBS.**
+
+1. **Sources → + → Browser**, name it `Rank`
 2. **URL**: `http://localhost:3040/overlay`
-3. **Width** `600`, **Height** `160`.
-4. Leave *Shutdown source when not visible* **unchecked** — the overlay keeps a
-   live connection open, and shutting it down delays the first update.
-5. Position it wherever you like. The background is transparent.
+3. **Width** `600`, **Height** `160`
+4. Untick *Shutdown source when not visible*
+5. **OK**, then drag it where you want it. The background is transparent.
 
-Open <http://localhost:3040/control> to check status, reset the session record,
-and build a customised overlay URL with a live preview.
+That is the whole setup. From then on: start `start.bat` before you stream,
+leave the window open, and the overlay updates itself after every ranked game.
 
-Start the agent before you start streaming and leave it running. It reconnects
-on its own when VALORANT closes and reopens.
+Open <http://localhost:3040/control> in a browser for live status, a button to
+reset the session record, and a builder for customised overlay URLs.
 
-### Styling it without the game running
+### Nothing showing up?
 
-```bash
-node src/index.js --mock
-```
+Open `http://localhost:3040/overlay` in a normal browser. If the rank appears
+there, the program is fine and it is an OBS issue — right-click the source and
+*Refresh*. If it does not, check the black window for a message.
 
-Serves fake data and "finishes" a ranked game every few seconds, so you can
-position and size the overlay without queuing.
+### Positioning it without the game running
+
+Double-click **`start-demo.bat`** (or run `node src/index.js --mock`). It
+serves fake data and "finishes" a ranked game every few seconds, so you can
+size and position the overlay without queuing for a match.
 
 ## How the fast updates work
 
@@ -136,6 +166,14 @@ Copy `config.example.json` to `config.json` to override defaults:
 
 ## Troubleshooting
 
+**`'node' is not recognized`** — Node.js is not installed, or the install
+finished after you opened the window. Install it from <https://nodejs.org> and
+try again; if you just installed it, close the window and reopen it first.
+
+**The black window flashes and closes** — that is an error you are not seeing.
+Open the folder in a terminal and run `node src/index.js` instead, so the
+message stays on screen.
+
 **"VALORANT is not running"** — start the game. The agent picks it up within a
 few seconds; you do not need to restart it.
 
@@ -151,9 +189,6 @@ keeps polling for three minutes after a match.
 Immortal, which are downloaded rather than bundled. The agent could not reach
 `valorant-api.com`; it retries on a later run, or drop the art into
 `public/ranks` yourself. See [Rank art](#rank-art).
-
-**Nothing shows in OBS** — open the URL in a normal browser first. If it works
-there, right-click the source and *Refresh*.
 
 ## How it gets the data
 
@@ -174,6 +209,8 @@ overlay is not reachable from your network.
 ## Layout
 
 ```
+start.bat           double-click to run
+start-demo.bat      double-click to run on fake data
 src/
   index.js          entry point: wires the tracker to the server
   config.js         defaults and config.json loading
