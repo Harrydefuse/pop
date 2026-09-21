@@ -14,10 +14,11 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Starting the rank overlay. Leave this window open while you stream.
+echo Running from:
+echo   %CD%
 echo.
 echo   Overlay URL for OBS:  http://localhost:3040/overlay
-echo   Settings and status:  http://localhost:3040/control
+echo   If something is wrong: http://localhost:3040/debug
 echo.
 node src/index.js
 

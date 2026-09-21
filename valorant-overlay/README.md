@@ -61,6 +61,16 @@ leave the window open, and the overlay updates itself after every ranked game.
 Open <http://localhost:3040/control> in a browser for live status, a button to
 reset the session record, and a builder for customised overlay URLs.
 
+## Updating
+
+Double-click **`update.bat`**. It downloads the current version and replaces
+the files in this folder, leaving `config.json` and any custom rank art alone.
+Close the overlay window first, then run `start.bat` again afterwards.
+
+`start.bat` prints the folder it is running from and the version, so if a
+change does not seem to have taken effect, check those two lines first — the
+usual cause is two copies of the folder and launching the older one.
+
 ### Something wrong? Open the diagnosis page
 
 With the app running, open <http://localhost:3040/debug>. It shows whether the
