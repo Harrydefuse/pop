@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VALORANT Rank Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/overlay.css" />
+  </head>
+  <body>
+    <div class="overlay" id="overlay" data-state="loading">
+      <div class="card">
+        <div class="rank" data-block="rank">
+          <div class="icon-wrap">
+            <img class="rank-icon" id="rankIcon" alt="" hidden />
+            <div class="rank-badge" id="rankBadge"></div>
+            <span class="live-dot" id="liveDot"></span>
+          </div>
+          <div class="rank-text">
+            <div class="rank-name" id="rankName">Connecting…</div>
+            <div class="rr-line">
+              <span class="rr-value" id="rrValue">0</span>
+              <span class="rr-unit">RR</span>
+              <span class="leaderboard" id="leaderboard"></span>
+            </div>
+            <div class="rr-bar"><div class="rr-fill" id="rrFill"></div></div>
+          </div>
+        </div>
+
+        <div class="divider" data-block="record delta form"></div>
+
+        <div class="stats" data-block="record delta form">
+          <div class="stat" data-block="record">
+            <div class="stat-label" id="recordLabel">Session</div>
+            <div class="stat-value record" id="record">
+              <span class="wins">0</span><span class="sep">–</span><span class="losses">0</span>
+            </div>
+          </div>
+          <div class="stat" data-block="delta">
+            <div class="stat-label">Net RR</div>
+            <div class="stat-value delta" id="delta">+0</div>
+          </div>
+          <div class="form" data-block="form" id="form"></div>
+        </div>
+      </div>
+      <div class="status-note" id="statusNote"></div>
+    </div>
+    <script src="/overlay.js"></script>
+  </body>
+</html>

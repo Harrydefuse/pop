@@ -1,0 +1,8 @@
+{
+  "_comment": "Copy to config.json to override. Every field is optional.",
+  "port": 3040,
+  "shard": null,
+  "idlePollMs": 30000,
+  "activePollMs": 3000,
+  "sessionIdleResetMs": 21600000
+}
