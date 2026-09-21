@@ -47,15 +47,22 @@ export class Tracker extends EventEmitter {
   // ---------------------------------------------------------------- session
 
   loadSession() {
+    let saved = {}
     try {
-      const saved = JSON.parse(fs.readFileSync(this.config.stateFile, 'utf8'))
-      const goneFor = Date.now() - (saved.lastSeen || 0)
-      if (saved.startedAt && goneFor < this.config.sessionIdleResetMs) {
-        if (saved.outcomes) for (const [id, outcome] of Object.entries(saved.outcomes)) this.outcomes.set(id, outcome)
-        return { startedAt: saved.startedAt }
-      }
+      saved = JSON.parse(fs.readFileSync(this.config.stateFile, 'utf8'))
     } catch {
       // No usable state file — start a fresh session.
+    }
+
+    // A discovered shard belongs to the account, not to this sitting, so it
+    // outlives both the session reset and the app being closed. Without this
+    // every restart would rediscover it, or worse, fail back to the wrong one.
+    this.resolvedShard = saved.shard || null
+
+    const goneFor = Date.now() - (saved.lastSeen || 0)
+    if (saved.startedAt && goneFor < this.config.sessionIdleResetMs) {
+      if (saved.outcomes) for (const [id, outcome] of Object.entries(saved.outcomes)) this.outcomes.set(id, outcome)
+      return { startedAt: saved.startedAt }
     }
     return { startedAt: Date.now() }
   }
@@ -65,7 +72,12 @@ export class Tracker extends EventEmitter {
       fs.writeFileSync(
         this.config.stateFile,
         JSON.stringify(
-          { startedAt: this.session.startedAt, lastSeen: Date.now(), outcomes: Object.fromEntries(this.outcomes) },
+          {
+            startedAt: this.session.startedAt,
+            lastSeen: Date.now(),
+            shard: this.resolvedShard || null,
+            outcomes: Object.fromEntries(this.outcomes),
+          },
           null,
           2,
         ),
@@ -105,7 +117,11 @@ export class Tracker extends EventEmitter {
     // only implies one, and several regions share a shard.
     const fromLog = shardFromLog(this.config.valorantLogPath)
     this.logShard = fromLog?.shard || null
-    const shard = this.config.shard || this.logShard || shardFor(region)
+    const shard = this.config.shard || this.resolvedShard || this.logShard || shardFor(region)
+
+    // Reconnecting is a fresh chance to probe, in case the remembered shard
+    // ever stops being the right one.
+    this.shardProbe = null
     this.pd = new PlayerDataClient({ shard, auth: this.auth, version: await getClientVersion(this.config.valorantLogPath) })
     this.connected = true
     this.lastError = null
@@ -264,6 +280,8 @@ export class Tracker extends EventEmitter {
         if (!isEmptyMmr(await client.getMmr(this.identity.puuid))) {
           this.shardProbe.found = shard
           this.pd = client
+          this.resolvedShard = shard
+          this.saveSession()
           console.log(`[tracker] ranked data found on the ${shard} shard — switching from ${started}`)
           return true
         }
@@ -420,6 +438,7 @@ export class Tracker extends EventEmitter {
       queues: Object.keys(this.mmr?.QueueSkills || {}),
       currentActId: this.catalog.actId,
       shardFromLog: this.logShard || null,
+      rememberedShard: this.resolvedShard || null,
       shardProbe: this.shardProbe,
       emptyRecord: isEmptyMmr(this.mmr),
       acts: Object.entries(bySeason).map(([id, info]) => ({
