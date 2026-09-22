@@ -592,10 +592,10 @@ export default function Site({ onEnterApp }) {
                 </p>
               </div>
               <div className="fact">
-                <span className="n"><Count to={50} suffix="%" /></span>
+                <span className="n"><Count to={100} suffix="%" /></span>
                 <p>
-                  What a manual entry pays. It still builds your character, because your training is
-                  yours — it just can&rsquo;t climb past anyone.
+                  What a manual entry pays today. It was going to be half, until it turned out there
+                  is nothing to sync with yet — so charging the penalty would just tax everybody.
                 </p>
               </div>
               <div className="fact">
