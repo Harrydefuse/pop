@@ -16,6 +16,7 @@ import UpdateBar from './components/UpdateBar'
 import Train, { SessionBar } from './screens/Train'
 import { campaignState } from './game/engine'
 import { alpha } from './game/color'
+import ArenaAir from './components/ArenaAir'
 import Shop from './screens/Shop'
 
 const PITCH = [
@@ -100,7 +101,10 @@ function Device() {
 
       <TopBar onOpenProfile={() => setTab('hero')} onOpenMap={() => setMap(true)} />
 
-      <main className="flex-1 overflow-y-auto scroll-thin app-bg">
+      <main className="relative flex-1 overflow-y-auto scroll-thin app-bg">
+        {/* The room. Behind every screen, in front of nothing, and it changes
+            when you cross into the next arena. */}
+        <ArenaAir arena={arena} />
         {/* Caps the measure when the app runs full-bleed on a wide, short
             viewport (landscape phone) — cards stay readable instead of
             stretching edge to edge. No-op inside the 400px frame. */}

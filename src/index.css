@@ -101,6 +101,10 @@
   --color-go: #0d7f37;
   --tone-sky: #0675a7;
   --tone-slate: #5f6675;
+  /* Volcanic glass. Obsidian used to borrow --color-ink, which made it the one
+     arena that swapped identity with the theme: near-white in dark, near-black
+     in light. A room should look like itself on both grounds. */
+  --tone-obsidian: #5b4c7a;
   --tone-orange: #b35204;
   --tone-jade: #0c7d6c;
   --tone-blue: #0768e1;
@@ -212,6 +216,7 @@
   --color-go: #4ade80;
   --tone-sky: #38bdf8;
   --tone-slate: #c5cdd8;
+  --tone-obsidian: #a99bc7;
   --tone-orange: #fb923c;
   --tone-jade: #5eead4;
   --tone-blue: #60a5fa;
@@ -374,6 +379,75 @@ button:disabled {
   background-color: var(--color-void);
   background-image: linear-gradient(180deg, var(--arena-wash) 0, transparent 260px);
   background-repeat: no-repeat;
+}
+
+/* ----------------------------------------------------------- the arena --- */
+
+/* The room, behind every screen and in front of nothing. It never intercepts a
+   tap and it never sits over a panel, so the app on top of it is exactly as
+   readable in Everforge as it is in Stone. */
+.arena-air {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Everything the screens draw sits above the room. */
+.arena-air ~ * {
+  position: relative;
+  z-index: 1;
+}
+
+.arena-mote {
+  position: absolute;
+  border-radius: 9999px;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+/* Four kinds of air. A forge's embers go up, a crater's ash comes down, a
+   quarry's dust hangs and moves sideways, and starlight does not move at all
+   -- it only remembers to be there. */
+@keyframes air-rise {
+  0% { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; }
+  12% { opacity: 0.55; }
+  80% { opacity: 0.35; }
+  100% { transform: translate3d(14px, -180px, 0) scale(1); opacity: 0; }
+}
+@keyframes air-fall {
+  0% { transform: translate3d(0, -40px, 0) scale(0.7); opacity: 0; }
+  15% { opacity: 0.45; }
+  85% { opacity: 0.3; }
+  100% { transform: translate3d(-22px, 200px, 0) scale(0.9); opacity: 0; }
+}
+@keyframes air-drift {
+  0% { transform: translate3d(-18px, 0, 0); opacity: 0; }
+  20% { opacity: 0.4; }
+  80% { opacity: 0.4; }
+  100% { transform: translate3d(34px, -26px, 0); opacity: 0; }
+}
+@keyframes air-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.7); }
+  45% { opacity: 0.75; transform: scale(1.15); }
+  55% { opacity: 0.6; transform: scale(1); }
+}
+
+.air-rise { animation-name: air-rise; }
+.air-fall { animation-name: air-fall; }
+.air-drift { animation-name: air-drift; }
+.air-twinkle { animation-name: air-twinkle; }
+
+/* Somebody who has asked for less motion still gets the room -- the light and
+   the grain are static and stay. What stops is the air. */
+@media (prefers-reduced-motion: reduce) {
+  .arena-mote {
+    animation: none;
+    opacity: 0.3;
+  }
 }
 
 /* One elevation, used by every raised surface. Two shadows: a tight one that
