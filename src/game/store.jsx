@@ -4,7 +4,7 @@ import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, 
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey } from './engine'
+import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { beatsRecord } from './coach'
 import { challengeProgress } from './challenge'
@@ -89,6 +89,31 @@ function load() {
     // hold a form from 1 to 4 now and are moved by treats. A save from before
     // keeps whatever form its old level had earned, so nobody who grew a pet
     // the old way is handed a hatchling.
+    // The XP curve was flattened from 120 x level^1.22 to 90 x level^0.95,
+    // which cut the road to level 100 from 1.47M XP to 363K.
+    //
+    // A save from before that keeps its LEVEL, not its banked XP. Re-spending
+    // the old total at the new prices is the honest accounting and it is the
+    // wrong thing to do: level 27 becomes 45, level 50 becomes 92, and level
+    // 75 finishes the game outright. The arenas are the content here, so
+    // paying somebody in skipped content is not a reward, it is deleting the
+    // part they had not played yet.
+    //
+    // So: same level, same position inside it, and everything ahead is
+    // cheaper. The XP they "lose" was only ever expensive because of prices
+    // that no longer exist.
+    if (!parsed.curve) {
+      const lv = merged.player.level ?? 1
+      const oldNeed = Math.round(120 * Math.pow(lv, 1.22))
+      const through = oldNeed > 0 ? Math.min(1, (merged.player.xp ?? 0) / oldNeed) : 0
+      const need = xpToNext(lv)
+      merged.player = {
+        ...merged.player,
+        xp: Number.isFinite(need) ? Math.min(need - 1, Math.round(through * need)) : 0,
+      }
+      merged.curve = 2
+    }
+
     merged.player.treats = merged.player.treats ?? 0
     merged.player.pets = (merged.player.pets ?? []).map((pet) => {
       // TUSKLING was renamed KOOKIE along with its art. A save holding the old

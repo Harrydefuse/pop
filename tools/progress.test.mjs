@@ -686,6 +686,30 @@ is('and it carries the session with it',
 is('but a blank week still just asks you to start',
   planToday({ player: { split: 'ppl', goal: 'strong' }, log: [] }, { now: NOW }).kind, 'start')
 
+
+// The curve is the pace of the whole game, and it was wrong once: at 1.22 the
+// road to level 100 was 1,472,277 XP, which is fourteen years at five sessions
+// a week. These are the guards against it drifting back.
+console.log('\nthe road is a length a person can actually walk')
+const ROAD = bracketXp(1, 100)
+is('level 100 is reachable inside four years at five sessions a week',
+  ROAD / (400 * 5 * 52) < 4, true)
+is('and it is not so short that it is over in one',
+  ROAD / (400 * 5 * 52) > 2, true)
+// The rooms are the reward, so the early ones have to arrive at a pace
+// somebody notices. Five different arenas inside the first six months is the
+// cadence that makes climbing feel like going somewhere.
+is('the first five arenas are cleared inside six months',
+  bracketXp(1, CAMPAIGN[5].level) / (400 * 5 * 52) * 12 < 6, true)
+// A level should get dearer as you climb, but gently. The old curve nearly
+// doubled the cost every twenty-five levels.
+is('a late level costs less than ten times an early one',
+  xpToNext(99) / xpToNext(10) < 10, true)
+is('every level still costs more than the one before it',
+  [...Array(98)].every((_, i) => xpToNext(i + 2) > xpToNext(i + 1)), true)
+is('and the first level is small enough that one session clears it',
+  xpToNext(1) < 200, true)
+
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()
 process.exit(fails ? 1 : 0)

@@ -617,6 +617,9 @@ export const INITIAL_STATE = {
   gift: { pending: true, opened: false },
   chest: { unlocked: true, openedToday: false },
   dailies: freshDailies(),
+  // Which XP curve this save was priced on. A fresh save is already on the
+  // current one, so the migration in load() has nothing to do.
+  curve: 2,
   links: { health: [], games: [] },
   log: [
     { id: 'l1', activityId: 'run', amount: 6.2, verified: true, at: Date.now() - 20 * H, xp: 341, source: 'Garmin' },

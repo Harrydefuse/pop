@@ -22,10 +22,33 @@ import { ARENAS, arenaFor } from './arenas'
 
 // ------------------------------------------------------------------ progression
 
-/** XP required to go from `level` to `level + 1`. */
+/**
+ * XP required to go from `level` to `level + 1`.
+ *
+ * The exponent is the whole game's pace, and it used to be 1.22. That is
+ * superlinear, which sounds harmless and is not: it put 1,472,277 XP between
+ * level 1 and level 100, and a hard hour in the gym pays about 440. At five
+ * sessions a week that is fourteen years, and the back half carried almost all
+ * of it — the eighteen levels from 70 to 88 cost more than the first fifty-five
+ * put together. An app named LVL100 whose level 100 nobody reaches is not
+ * difficult, it is broken.
+ *
+ * Just under linear instead. The road is 363,040 XP long, which is about three
+ * and a half years at five sessions a week — still a very long game, which is
+ * right for something meant to be a habit rather than a weekend, but one a real
+ * person finishes. It also flattens the shape: a level costs 802 XP at ten and
+ * 7,081 at ninety-nine, rather than 1,992 and 32,648.
+ *
+ * Everything downstream reads this — boss health is exactly a bracket's XP, and
+ * the ladder, the rank and the milestones all hang off that — so this single
+ * line is the only place the pace is set.
+ */
+export const XP_BASE = 90
+export const XP_EXP = 0.95
+
 export function xpToNext(level) {
   if (level >= MAX_LEVEL) return Infinity
-  return Math.round(120 * Math.pow(level, 1.22))
+  return Math.round(XP_BASE * Math.pow(level, XP_EXP))
 }
 
 /** Applies XP to a level/xp pair, cascading through as many levels as it earns. */
