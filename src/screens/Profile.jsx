@@ -13,6 +13,7 @@ import { pinnedEfforts } from '../game/efforts'
 import { buildCard, cardAge, cardTitle, encodeCard, leaderboard } from '../game/profile'
 import { alpha } from '../game/color'
 import LegalSheet from '../components/LegalSheet'
+import ImportSheet from '../components/ImportSheet'
 import { DOCS, DOC_ORDER } from '../game/legal'
 import { GameMark } from '../components/Sprites'
 
@@ -37,6 +38,7 @@ export default function Profile() {
   const [sharing, setSharing] = useState(false)
   const [legal, setLegal] = useState(null)
   const [editing, setEditing] = useState(false)
+  const [importing, setImporting] = useState(false)
   const power = powerScore(p)
   const arena = campaignState(p, state.campaign).arena
   const cls = classById(p.classId)
@@ -127,7 +129,7 @@ export default function Profile() {
         ))}
       </div>
 
-      {tab === 'progress' && <Progress state={state} />}
+      {tab === 'progress' && <Progress state={state} onImport={() => setImporting(true)} />}
       {/* The character screen in full, rather than a summary of it: it is
           already the best page in the app and it belongs behind this name. */}
       {tab === 'character' && <Hero embedded />}
@@ -151,6 +153,7 @@ export default function Profile() {
       {sharing && <ShareSheet state={state} onClose={() => setSharing(false)} />}
       {editing && <EditSheet player={p} onClose={() => setEditing(false)} />}
       {legal && <LegalSheet start={legal} onClose={() => setLegal(null)} />}
+      {importing && <ImportSheet onClose={() => setImporting(false)} />}
     </div>
   )
 }
@@ -165,7 +168,7 @@ export default function Profile() {
  * one thing. Weeks folded before the app kept a breakdown have none, which is
  * why a filtered chart can be shorter than the unfiltered one.
  */
-function Progress({ state }) {
+function Progress({ state, onImport }) {
   const [act, setAct] = useState(null)
   const series = useMemo(() => weekSeries(state.weeks, WEEKS_KEPT).map((w) => weekOf(w, act)), [state.weeks, act])
   // Everything they have actually done, not a top five: the row scrolls, and
@@ -271,6 +274,32 @@ function Progress({ state }) {
           </Panel>
         </div>
       )}
+
+      {/* History is the thing this tab is made of, and most people arrive with
+          years of it sitting in another app. Put the way in where the history
+          lives rather than behind a settings gear nobody opens. */}
+      <div>
+        <SectionTitle>Training from elsewhere</SectionTitle>
+        <button
+          onClick={onImport}
+          className="w-full flex items-center gap-3 p-3.5 border border-line rounded-[var(--radius-sm)] text-left active:bg-panel-2"
+        >
+          <span
+            className="grid place-items-center w-10 h-10 shrink-0 rounded-[var(--radius-sm)]"
+            style={{ background: 'color-mix(in srgb, var(--color-cyan) 14%, transparent)' }}
+          >
+            <Icon name="run" size={20} color="var(--color-cyan)" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[15px] text-ink">Bring a workout in</span>
+            <span className="block text-[13px] text-ink-faint leading-snug mt-0.5">
+              A route exported from Apple Fitness, a watch, Strava or anything else. It counts for XP and fills in the
+              map.
+            </span>
+          </span>
+          <Icon name="chevron" size={11} color="var(--color-ink-faint)" />
+        </button>
+      </div>
     </>
   )
 }

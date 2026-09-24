@@ -39,6 +39,7 @@ const { setTotals, byLift } = await server.ssrLoadModule('/src/game/session.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
 const { reducer } = await server.ssrLoadModule('/src/game/store.jsx')
+const { readWorkout, fromFixes, spanMetres } = await server.ssrLoadModule('/src/game/workout.js')
 const { MAX_SHIELDS } = await server.ssrLoadModule('/src/game/config.js')
 const { todayKey, dayKeyPlus } = await server.ssrLoadModule('/src/game/engine.js')
 const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty, keepsStreak, daysTrained, STREAK_MIN_MINUTES } =
@@ -895,6 +896,69 @@ is('and so is boss damage',
   payout('ride', 100000).bossDamage, payout('ride', rideAct.max).bossDamage)
 is('a nonsense entry pays nothing rather than NaN',
   [payout('walk', -10).xp, payout('walk', NaN).xp, payout('walk', NaN).cores > 0], [0, 0, true])
+
+
+// Reading a workout out of somebody else's file. The parser runs on a real
+// DOMParser in a browser and on none at all here, so what is checked is the
+// arithmetic on the fixes — which is the part with a wrong answer available.
+console.log('\nworkouts from other apps')
+// A straight line north: 0.001 degrees of latitude is about 111 metres.
+const line = (n, gapS = 60) =>
+  [...Array(n)].map((_, i) => ({ lat: -33.87 + i * 0.001, lon: 151.21, t: Date.UTC(2026, 8, 1, 7, 0, 0) + i * gapS * 1000 }))
+const w = fromFixes(line(10))
+is('the distance comes out of the trace', Math.abs(w.metres - 9 * 111) < 30, true)
+is('the duration is first fix to last', w.ms, 9 * 60000)
+is('and it knows when it started', new Date(w.startedAt).toISOString(), '2026-09-01T07:00:00.000Z')
+is('the whole trace is kept for the map', w.points.length, 10)
+// A stray coordinate is the thing this filter exists for: a watch losing
+// signal under a bridge and reporting a position in another country.
+const glitched = line(10)
+glitched[5] = { ...glitched[5], lat: 12.34, lon: 99.9 }
+is('a jump nobody could have made adds no distance',
+  Math.abs(fromFixes(glitched).metres - w.metres) < 300, true)
+is('and is not drawn on the map', fromFixes(glitched).points.length < 10, true)
+// Splits land as each kilometre is crossed.
+is('a three kilometre trace has two splits behind it',
+  fromFixes(line(28)).splits.length, Math.floor(fromFixes(line(28)).metres / 1000))
+is('and each split is numbered in order',
+  fromFixes(line(28)).splits.map((x) => x.km), fromFixes(line(28)).splits.map((_, i) => i + 1))
+// A route drawn in a planner rather than run: no times, so no duration.
+is('a file with no timestamps has a distance and no duration',
+  [fromFixes(line(10).map((f) => ({ ...f, t: null }))).ms,
+   fromFixes(line(10).map((f) => ({ ...f, t: null }))).metres > 0], [0, true])
+is('one point is not a workout', fromFixes(line(1)).metres, 0)
+is('and neither is none', [fromFixes([]).metres, fromFixes([]).ms], [0, 0])
+is('the span is the furthest point from the start',
+  Math.abs(spanMetres(line(10).map(({ lat, lon }) => ({ lat, lon }))) - 9 * 111) < 30, true)
+// Node has no DOMParser. The reader has to hand back null rather than throw,
+// or a browser without one takes the whole screen down with it.
+is('a file it cannot parse is null, never an exception',
+  [readWorkout('<gpx/>'), readWorkout('not xml at all'), readWorkout('')], [null, null, null])
+
+// An imported workout lands on its own day and leaves today alone.
+console.log('\nand an old one stays old')
+const past = Date.now() - 9 * 86400000
+const back = reducer(blank, {
+  type: 'importWorkout',
+  activityId: 'run',
+  workout: { ms: 30 * 60000, metres: 6000, points: [], splits: [], startedAt: past },
+})
+const brought = back.log.find((e) => e.source === 'Imported')
+is('it is logged on the day it happened', brought?.at, past)
+is('and is marked as having come from somewhere else', brought?.source, 'Imported')
+is('it pays XP', back.player.xp !== blank.player.xp || back.player.level !== blank.player.level, true)
+is('it does not touch the streak', back.player.streak, blank.player.streak)
+is('nor claim the streak day', back.streakDay, blank.streakDay)
+is('nor tick a daily', back.dailies.map((d) => d.done), blank.dailies.map((d) => d.done))
+// The same import, dated today, does all three.
+const fresh = reducer(blank, {
+  type: 'importWorkout',
+  activityId: 'run',
+  workout: { ms: 30 * 60000, metres: 6000, points: [], splits: [], startedAt: Date.now() },
+})
+is('a run from this morning does move the streak', fresh.player.streak, blank.player.streak + 1)
+is('and the log stays newest first',
+  back.log.every((e, i) => i === 0 || back.log[i - 1].at >= e.at), true)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

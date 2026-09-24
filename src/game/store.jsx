@@ -5,7 +5,7 @@ import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, MAX_SHIELDS, OFFHAN
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
 import { daysTrained, keepsStreak } from './pillars'
-import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyPlus, daysBetween, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
+import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyOf, dayKeyPlus, daysBetween, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords, weekKey, weekStart } from './progress'
 import { beatsRecord } from './coach'
 import { challengeProgress } from './challenge'
@@ -331,7 +331,20 @@ function sessionDetail(s, ms) {
   return null
 }
 
-function applyLog(state, { activityId, amount, verified, source, detail, sets = [] }) {
+/**
+ * `at` is when the session HAPPENED, which is not always now. An imported file
+ * is usually last Tuesday's run, and it should land on last Tuesday: in the
+ * right week on the chart, in the right place in the log, and — the part that
+ * matters — without touching today.
+ *
+ * So everything that is about today is gated on the entry actually being from
+ * today: the dailies, the chest and the streak. Importing a month of old runs
+ * pays their XP and fills in the history, and it cannot hand somebody a
+ * thirty-day streak they did not live through. It also does not retroactively
+ * repair a streak that broke back then, which is a thing Apple's rings do and
+ * this does not — said plainly in the importer rather than left to be noticed.
+ */
+function applyLog(state, { activityId, amount, verified, source, detail, sets = [], at = Date.now() }) {
   const player = state.player
   const result = resolveActivity(player, { activityId, amount, verified, log: state.log })
   const act = result.activity
@@ -376,8 +389,9 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   // "Real" is twenty minutes of getting out or the gym. See `keepsStreak`:
   // sleep and aim training are logged and paid and do not hold a streak.
   const today = todayKey()
+  const isToday = dayKeyOf(at) === today
   const claimedToday = state.streakDay === today
-  const claimsStreak = !claimedToday && keepsStreak(act.id, minutesOf(act, amount))
+  const claimsStreak = isToday && !claimedToday && keepsStreak(act.id, minutesOf(act, amount))
   const streak = claimsStreak ? player.streak + 1 : player.streak
   const streakTier = claimsStreak ? STREAK_TIERS.find((t) => t.days === streak) : null
 
@@ -400,7 +414,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     //
     // The streak's own day only moves when the streak was actually claimed —
     // a logged nap has been seen but has not held anything.
-    lastDayKey: today,
+    lastDayKey: isToday ? today : state.lastDayKey,
     streakDay: claimsStreak ? today : state.streakDay,
     player: {
       ...player,
@@ -414,26 +428,28 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
       cores: player.cores + result.cores,
       treats: (player.treats ?? 0) + TREAT_PER_SESSION,
     },
-    dailies: bumpDailies(state.dailies, act, amount),
+    dailies: isToday ? bumpDailies(state.dailies, act, amount) : state.dailies,
     world: { ...state.world, bossKm: state.world.bossKm + result.bossDamage },
     records: foldRecords(state.records, sets),
     lastSets: foldLastSets(state.lastSets, sets),
     bests: foldEfforts(state.bests, { activityId, detail, sets }),
-    weeks: foldWeek(state.weeks, { act, amount, xp: result.xp + prXp, detail }),
+    weeks: foldWeek(state.weeks, { act, amount, xp: result.xp + prXp, detail }, at),
     log: [
       {
         id: nextId('l'),
         activityId,
         amount,
         verified,
-        at: Date.now(),
+        at,
         xp: result.xp + prXp,
         source: source ?? (verified ? 'Health app' : 'Manual'),
         ...(prs.length ? { prs: prs.map((r) => r.lift) } : null),
         ...(detail ? { detail } : null),
       },
       ...state.log,
-    ].slice(0, 40),
+    ]
+      .sort((a, b) => b.at - a.at)
+      .slice(0, 40),
   }
 
   // Everything this session earned, gathered in one place instead of fired off
@@ -784,9 +800,13 @@ export function reducer(state, action) {
         activityId,
         amount: sessionAmount(act, workout.ms, workout.metres),
         verified: true,
-        source: 'Imported',
+        source: action.source ?? 'Imported',
         detail,
         sets: [],
+        // The file knows when it happened. Without this every import from a
+        // watch would be stamped with the moment it was read, which puts a
+        // month of history on one afternoon.
+        at: workout.startedAt ?? Date.now(),
       })
       if (!workout.points?.length) return next
       return { ...next, explored: [...coverPoints(new Set(next.explored), workout.points)] }
@@ -1291,7 +1311,7 @@ export function GameProvider({ children }) {
       addFriend: (code) => dispatch({ type: 'addFriend', code }),
       removeFriend: (handle) => dispatch({ type: 'removeFriend', handle }),
       editProfile: (name, handle) => dispatch({ type: 'editProfile', name, handle }),
-      importWorkout: (activityId, workout) => dispatch({ type: 'importWorkout', activityId, workout }),
+      importWorkout: (activityId, workout, source) => dispatch({ type: 'importWorkout', activityId, workout, source }),
       pauseSession: () => dispatch({ type: 'pauseSession' }),
       resumeSession: () => dispatch({ type: 'resumeSession' }),
       sessionFix: (point, metres, keep) => dispatch({ type: 'sessionFix', point, metres, keep }),
