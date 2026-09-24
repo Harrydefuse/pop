@@ -4,7 +4,7 @@ import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, 
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
+import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyPlus, daysBetween, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
 import { beatsRecord } from './coach'
 import { challengeProgress } from './challenge'
@@ -13,6 +13,11 @@ import { exerciseByName } from './exercises'
 import { decodeCard } from './profile'
 
 const SAVE_KEY = 'lvl100.save.v12' // v12: explored ground is real map tiles now, not cells of a drawn Sydney
+
+// How far back a single settlement will reckon. Somebody who comes back after
+// six months has lost their streak either way, and walking six months of empty
+// days one at a time is work with no answer at the end of it.
+const MAX_SETTLE_DAYS = 60
 
 let uid = 0
 const nextId = (p) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`
@@ -59,6 +64,20 @@ function baseState() {
     // Cards other people sent. Not a follow — there is no server to follow
     // anyone on — but the thing a follow would be carrying.
     friends: [],
+    // The calendar, in local days.
+    //
+    // `lastDayKey` is the last day the app settled up on: dailies, the chest
+    // and the streak are all reckoned from it, and until it catches up with
+    // today none of them have rolled over. `streakDay` is the last day that
+    // counted towards the streak, which is a different question — you can
+    // open the app every day for a week without training once.
+    //
+    // A new save starts on today rather than on nothing, so the first launch
+    // has no history to settle and cannot cost anybody a streak. This is also
+    // the merge base an old save is read onto, which is what upgrades a save
+    // from before the day roll existed.
+    lastDayKey: todayKey(),
+    streakDay: null,
   }
 }
 
@@ -113,6 +132,13 @@ function load() {
       }
       merged.curve = 2
     }
+
+    // A save from before the day roll existed has no record of which day it
+    // was last seen on — the merge above has already given it today. A streak
+    // that is already running is anchored to today as well, because breaking
+    // somebody's 40-day streak on an update would be a bug they would be right
+    // to be furious about.
+    if (merged.streakDay == null && (merged.player.streak ?? 0) > 0) merged.streakDay = merged.lastDayKey
 
     merged.player.treats = merged.player.treats ?? 0
     merged.player.pets = (merged.player.pets ?? []).map((pet) => {
@@ -338,6 +364,15 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   // later on the pet screen — that decision is the whole of the collection.
   const pets = player.pets
 
+  // The streak is claimed by the first session of the day, not by a clock
+  // ticking over at midnight. The number should move while you are standing
+  // there having just done the work — that is the entire reason it exists.
+  // Everything the streak COSTS is settled in `dayRoll`; this only pays it.
+  const today = todayKey()
+  const claimedToday = state.streakDay === today
+  const streak = claimedToday ? player.streak : player.streak + 1
+  const streakTier = claimedToday ? null : STREAK_TIERS.find((t) => t.days === streak)
+
   const week = {
     ...player.week,
     activeMinutes: player.week.activeMinutes + (act.unit === 'min' ? amount : act.id === 'run' ? amount * 6 : 25),
@@ -345,8 +380,17 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     sessions: player.week.sessions + 1,
   }
 
+  // The lifetime figure is the longest streak ever held, not the current one,
+  // so it only ever goes up.
+  lifetime.streak = Math.max(lifetime.streak ?? 0, streak)
+
   let next = {
     ...state,
+    // Training is also being seen, so a session that lands on a new day is
+    // allowed to settle it. Without this, logging before the app happened to
+    // notice the date would claim the streak on yesterday's key.
+    lastDayKey: today,
+    streakDay: today,
     player: {
       ...player,
       level,
@@ -355,6 +399,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
       lifetime,
       pets,
       week,
+      streak,
       cores: player.cores + result.cores,
       treats: (player.treats ?? 0) + TREAT_PER_SESSION,
     },
@@ -455,6 +500,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   // ---- loot, and only from milestones. Volume does not drop gear; moments do.
   const claims = []
   for (const pr of prs) claims.push({ kind: 'pr', label: `${pr.lift} best` })
+  if (streakTier) claims.push({ kind: 'streak', label: `${streakTier.days}-day streak · ${streakTier.label}` })
   if (next.pendingMilestone) claims.push({ kind: next.pendingMilestone.kind, label: next.pendingMilestone.label })
   if (reward.milestones.some((m) => m.kind === 'goal')) claims.push({ kind: 'goal', label: "Week's goal" })
 
@@ -467,6 +513,9 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   if (next.pendingMilestone) {
     reward.milestones.push({ kind: next.pendingMilestone.kind, label: next.pendingMilestone.label })
     next = { ...next, pendingMilestone: null }
+  }
+  if (streakTier) {
+    reward.milestones.push({ kind: 'streak', label: `${streakTier.days}-day streak · ${streakTier.label}` })
   }
   if (prs.length) reward.milestones.unshift({ kind: 'pr', label: prs.length === 1 ? 'Personal best' : `${prs.length} personal bests` })
 
@@ -495,7 +544,18 @@ function syntheticSync(links) {
   return picks
 }
 
-function reducer(state, action) {
+/**
+ * Exported so the tests can drive it directly. Everything the game does to a
+ * save goes through here, and a rule like "a missed day costs a shield" is
+ * only worth having if something checks it every time the file changes.
+ *
+ * It sits beside a component, so fast refresh cannot hot-swap this file any
+ * more — it reloads it. That is the right trade: a reducer that is never
+ * exercised is a reducer that rots, and this one has already shipped one dead
+ * branch nothing called.
+ */
+// oxlint-disable-next-line react/only-export-components
+export function reducer(state, action) {
   switch (action.type) {
     case 'onboard': {
       const { name, handle, classId, avatar, health, games, goalDays, picks } = action
@@ -506,6 +566,10 @@ function reducer(state, action) {
           ...state,
           ...FRESH_START,
           onboarded: true,
+          // A new character has never trained, so it has no day to count from.
+          // The showroom's does not carry over.
+          lastDayKey: todayKey(),
+          streakDay: null,
           player: {
             ...state.player,
             ...FRESH_START.player,
@@ -1003,19 +1067,85 @@ function reducer(state, action) {
     case 'dismissToast':
       return { ...state, toasts: state.toasts.filter((t) => t.id !== action.id) }
 
-    case 'newDay': {
-      const streak = state.player.streak + 1
-      const crossed = STREAK_TIERS.find((t) => t.days === streak)
-      return {
+    /**
+     * Midnight, settled up whenever the app next notices.
+     *
+     * A phone app is not running at midnight, so the day cannot roll over on a
+     * timer — it rolls over the next time somebody looks, and has to cope with
+     * "the next time somebody looks" being a fortnight later. So this is
+     * written as a settlement rather than a tick: it looks at how far the
+     * calendar has moved since `lastDayKey` and works out what that costs.
+     *
+     * Dailies, the chest and the perfect-day flag simply reset. The streak is
+     * the part with a rule behind it, and the rule is: every day that went by
+     * without a session takes a shield, and the first missed day with no
+     * shield left ends the streak.
+     *
+     * Note what this case does NOT do: it never adds to the streak. Training
+     * is what adds to it, and that happens in `applyLog` the moment the
+     * session is saved. This side only ever takes away.
+     */
+    case 'dayRoll': {
+      // Injectable so the tests can move the calendar without moving the clock.
+      const today = action.today ?? todayKey()
+      const last = state.lastDayKey
+
+      // Nothing to settle: same day, or a save that has never been seen before
+      // and so has no history to hold against anybody.
+      if (last === today) return state
+      if (!last) return { ...state, lastDayKey: today, streakDay: state.streakDay ?? today }
+
+      // A clock that has gone backwards — a timezone flight, a device with the
+      // date set wrong. Adopt the new day and settle nothing, because the
+      // alternative is charging somebody for days that have not happened.
+      if (daysBetween(last, today) <= 0) return { ...state, lastDayKey: today }
+
+      const fresh = {
         ...state,
+        lastDayKey: today,
         dailies: freshDailies(),
         perfectToday: false,
         chest: { unlocked: false, openedToday: false },
-        player: { ...state.player, streak },
-        pendingMilestone: crossed
-          ? { kind: 'streak', label: `${crossed.days}-day streak · ${crossed.label}` }
-          : state.pendingMilestone,
       }
+
+      // Days that came and went with nothing logged. The day the streak was
+      // last claimed does not count against itself, and today is not over yet
+      // — which is why a streak never breaks on the day you open the app, only
+      // on the days you did not.
+      const anchor = state.streakDay ?? last
+      const gone = Math.max(0, Math.min(daysBetween(anchor, today), MAX_SETTLE_DAYS) - 1)
+      if (!state.player.streak || !gone) return fresh
+
+      const saved = Math.min(state.player.shields ?? 0, gone)
+      const broke = gone > saved
+      let next = {
+        ...fresh,
+        player: {
+          ...fresh.player,
+          streak: broke ? 0 : state.player.streak,
+          shields: (state.player.shields ?? 0) - saved,
+        },
+        // A broken streak starts again from nothing, so it has no anchor. A
+        // saved one is anchored to the last day a shield covered, which keeps
+        // the next settlement's arithmetic honest.
+        streakDay: broke ? null : saved ? dayKeyPlus(today, -1) : state.streakDay,
+      }
+
+      if (saved) {
+        next = toast(next, {
+          kind: 'streak',
+          title: saved === 1 ? 'Streak shield used' : `${saved} streak shields used`,
+          body: `${state.player.streak} days still standing. ${next.player.shields} shield${next.player.shields === 1 ? '' : 's'} left.`,
+        })
+      }
+      if (broke) {
+        next = toast(next, {
+          kind: 'streak',
+          title: 'Streak reset',
+          body: `${state.player.streak} days ended. The next one starts with your next session.`,
+        })
+      }
+      return next
     }
 
     // Restoring is a whole-save swap. There is no server behind any of this,
@@ -1086,6 +1216,23 @@ export function GameProvider({ children }) {
     return () => clearTimeout(saveRef.current)
   }, [state])
 
+  // Catch the day up. Once on mount, and again every time the app is brought
+  // back to the front — a phone app is asleep at midnight, so the only moment
+  // it can notice the date has changed is the moment somebody opens it.
+  useEffect(() => {
+    const roll = () => dispatch({ type: 'dayRoll' })
+    roll()
+    const onShow = () => {
+      if (document.visibilityState === 'visible') roll()
+    }
+    document.addEventListener('visibilitychange', onShow)
+    window.addEventListener('focus', roll)
+    return () => {
+      document.removeEventListener('visibilitychange', onShow)
+      window.removeEventListener('focus', roll)
+    }
+  }, [])
+
   // The world boss is a live event: other players keep chipping at it.
   useEffect(() => {
     const t = setInterval(() => dispatch({ type: 'bossTick', km: 40 + Math.random() * 180 }), 3200)
@@ -1135,7 +1282,7 @@ export function GameProvider({ children }) {
       buyCoaching: (id, name) => dispatch({ type: 'buyCoaching', id, name }),
       onboard: (payload) => dispatch({ type: 'onboard', ...payload }),
       dismissToast: (id) => dispatch({ type: 'dismissToast', id }),
-      newDay: () => dispatch({ type: 'newDay' }),
+      dayRoll: () => dispatch({ type: 'dayRoll' }),
       restore: (next) => dispatch({ type: 'restore', state: next }),
       reset: () => dispatch({ type: 'reset' }),
       battle: (result) => dispatch({ type: 'battle', ...result }),

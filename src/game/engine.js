@@ -690,6 +690,37 @@ export function fmt(n) {
 export function fmtFull(n) {
   return Math.round(n).toLocaleString('en-US')
 }
+/**
+ * Which day it is, where the person actually is.
+ *
+ * This used to be `toISOString().slice(0, 10)`, which is UTC. In Sydney — the
+ * city this app is built around — that makes the day roll over at 10am local:
+ * a session before breakfast was filed under yesterday, one after was today,
+ * and the same calendar day could hand out two boss fights and two streak
+ * ticks. The day has to be the day the person is living in.
+ */
 export function todayKey(d = new Date()) {
-  return d.toISOString().slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/**
+ * Whole days from one key to another, counted on the calendar rather than in
+ * milliseconds — so a clock change or a daylight-saving jump cannot turn one
+ * day into two or none.
+ */
+export function daysBetween(fromKey, toKey) {
+  const at = (k) => {
+    const [y, m, d] = k.split('-').map(Number)
+    return Date.UTC(y, m - 1, d)
+  }
+  return Math.round((at(toKey) - at(fromKey)) / 86400000)
+}
+
+/** The key `n` days after this one. */
+export function dayKeyPlus(key, n) {
+  const [y, m, d] = key.split('-').map(Number)
+  return todayKey(new Date(y, m - 1, d + n))
 }

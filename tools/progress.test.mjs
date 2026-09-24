@@ -38,6 +38,8 @@ const { SPLITS, GOALS, splitById, goalById, nextDay, recommend, todaysSession, p
 const { setTotals, byLift } = await server.ssrLoadModule('/src/game/session.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
+const { reducer } = await server.ssrLoadModule('/src/game/store.jsx')
+const { todayKey, dayKeyPlus } = await server.ssrLoadModule('/src/game/engine.js')
 const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
 const { GAMES, playsAim } = await server.ssrLoadModule('/src/game/config.js')
 const { petSprite, PET_SPRITES } = await server.ssrLoadModule('/src/game/sprites.js')
@@ -709,6 +711,82 @@ is('every level still costs more than the one before it',
   [...Array(98)].every((_, i) => xpToNext(i + 2) > xpToNext(i + 1)), true)
 is('and the first level is small enough that one session clears it',
   xpToNext(1) < 200, true)
+
+
+// The day roll. Every one of these was broken until now: the case that settles
+// a new day was never dispatched by anything, so a streak could not go up, a
+// shield could not be spent and the dailies never reset. These are the rules
+// it is supposed to enforce, written down so they stay enforced.
+console.log('\nthe day rolls over')
+// A save mid-streak, seen yesterday, with one shield in the bank.
+const KEY = (n) => dayKeyPlus(todayKey(), n)
+const saveOn = (seen, claimed, over) => ({
+  player: { streak: 12, shields: 1 },
+  dailies: [{ id: 'active', done: true }, { id: 'b', done: true }, { id: 'c', done: true }],
+  perfectToday: true,
+  chest: { unlocked: true, openedToday: true },
+  toasts: [],
+  lastDayKey: seen,
+  streakDay: claimed,
+  ...over,
+})
+const roll = (save, today = todayKey()) => reducer(save, { type: 'dayRoll', today })
+
+const sameDay = saveOn(todayKey(), todayKey())
+is('the same day is left completely alone — the very same object back',
+  roll(sameDay) === sameDay, true)
+is('a new day resets the dailies',
+  roll(saveOn(KEY(-1), KEY(-1))).dailies.every((d) => !d.done), true)
+is('and the chest, and the perfect-day flag',
+  [roll(saveOn(KEY(-1), KEY(-1))).chest, roll(saveOn(KEY(-1), KEY(-1))).perfectToday],
+  [{ unlocked: false, openedToday: false }, false])
+// Trained yesterday, so nothing was missed — today is not over yet.
+is('a day trained keeps the streak and the shield',
+  [roll(saveOn(KEY(-1), KEY(-1))).player.streak, roll(saveOn(KEY(-1), KEY(-1))).player.shields], [12, 1])
+// Last trained two days ago: yesterday went by empty, and a shield covers it.
+is('one missed day is paid for with one shield',
+  [roll(saveOn(KEY(-1), KEY(-2))).player.streak, roll(saveOn(KEY(-1), KEY(-2))).player.shields], [12, 0])
+is('and it says so',
+  roll(saveOn(KEY(-1), KEY(-2))).toasts[0].title, 'Streak shield used')
+// Two missed days against one shield. The second one lands.
+is('two missed days with one shield ends the streak',
+  [roll(saveOn(KEY(-1), KEY(-3))).player.streak, roll(saveOn(KEY(-1), KEY(-3))).player.shields], [0, 0])
+is('and the streak has no anchor left to count from',
+  roll(saveOn(KEY(-1), KEY(-3))).streakDay, null)
+is('a missed day with no shield ends it immediately',
+  roll(saveOn(KEY(-1), KEY(-2), { player: { streak: 12, shields: 0 } })).player.streak, 0)
+is('a streak of nothing cannot be broken, and keeps its shields',
+  roll(saveOn(KEY(-1), null, { player: { streak: 0, shields: 1 } })).player.shields, 1)
+// Somebody who disappears for a year. The loop has to stop somewhere, and the
+// answer is the same either way: the streak is gone.
+is('a year away ends the streak without walking a year of days',
+  roll(saveOn(KEY(-400), KEY(-400))).player.streak, 0)
+is('a save that has never been seen adopts today rather than charging for it',
+  [roll(saveOn(null, null)).player.streak, roll(saveOn(null, null)).lastDayKey], [12, todayKey()])
+is('a clock that has gone backwards settles nothing',
+  [roll(saveOn(KEY(3), KEY(3))).player.streak, roll(saveOn(KEY(3), KEY(3))).player.shields], [12, 1])
+is('every roll leaves the calendar on today',
+  [KEY(-1), KEY(-9), KEY(3), null].every((d) => roll(saveOn(d, d)).lastDayKey === todayKey()), true)
+
+// The other half of the loop: the roll only ever takes the streak away, and
+// training is what puts it up. This is the half people actually see.
+console.log('\nand training claims the day')
+const blank = reducer(undefined, { type: 'reset' })
+const trained = (save) => reducer(save, { type: 'log', activityId: 'walk', amount: 30, verified: false })
+is('the first session of the day puts the streak up',
+  trained(blank).player.streak, blank.player.streak + 1)
+is('and marks the day as claimed',
+  trained(blank).streakDay, todayKey())
+is('a second session the same day does not claim it twice',
+  trained(trained(blank)).player.streak, blank.player.streak + 1)
+is('the longest streak ever held only goes up',
+  trained({ ...blank, player: { ...blank.player, streak: 40, lifetime: { ...blank.player.lifetime, streak: 99 } } })
+    .player.lifetime.streak, 99)
+// Yesterday's key with today's session: the streak is claimed on today, not on
+// the stale key, whether or not the app noticed the date change first.
+is('a session logged before the app noticed the date still claims today',
+  trained({ ...blank, lastDayKey: KEY(-1), streakDay: KEY(-1), player: { ...blank.player, streak: 5 } })
+    .player.streak, 6)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()
