@@ -449,13 +449,15 @@ export default function Home({ onGo }) {
 
         {/* The shields were real and invisible: they auto-spend on a missed day
             and the only place that ever said so was a coach panel most people
-            never opened. A safety net nobody knows about protects nothing. */}
+            never opened. A safety net nobody knows about protects nothing —
+            and neither does one with no way to earn it, so the empty state
+            says how rather than just saying no. */}
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-t border-line">
           <Icon name="shield" size={14} color={p.shields > 0 ? 'var(--color-cyan)' : 'var(--color-ink-faint)'} />
           <span className="text-[13px] text-ink-faint leading-snug">
             {p.shields > 0
               ? `${p.shields} rest ${p.shields === 1 ? 'day' : 'days'} banked — miss one and the streak holds.`
-              : 'No shields left. A missed day resets the streak.'}
+              : `No rest days banked. Train ${p.goalDays ?? 4} days in a week to earn one.`}
           </span>
         </div>
       </Panel>

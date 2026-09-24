@@ -483,7 +483,9 @@ export const TEST_ACCOUNT = {
     level: 100,
     xp: 0,
     streak: 214,
-    shields: 3,
+    // The bank is capped at two, so a showroom holding three was showing a
+    // state the game cannot reach.
+    shields: 2,
     cores: 250000,
     stats: { STR: 96000, END: 104000, AGI: 88000, VIT: 92000, FOCUS: 81000 },
     // The full gilded regalia, plus one of every other set in the bag so the

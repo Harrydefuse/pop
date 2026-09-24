@@ -377,6 +377,21 @@ export const DAILY_SLOTS = [
 // 0.5 the day the sync step returns.
 export const UNVERIFIED_XP_MULT = 1
 
+/**
+ * How many rest days can sit in the bank at once.
+ *
+ * Two, which is where Duolingo settled its free streak freezes after years of
+ * tuning the thing. The cap is the whole mechanic: a streak that can absorb a
+ * month off is not a streak, it is a number that goes up. Two covers an
+ * illness or a weekend away and runs out if the habit actually stops.
+ *
+ * They are earned and never sold. The moment a streak can be bought back with
+ * currency it stops being evidence that you trained and becomes evidence that
+ * you had cores, which is the exact complaint aimed at every app that has
+ * tried it.
+ */
+export const MAX_SHIELDS = 2
+
 export const STREAK_TIERS = [
   { days: 3, mult: 1.05, label: 'Warm' },
   { days: 7, mult: 1.1, label: 'Locked in' },

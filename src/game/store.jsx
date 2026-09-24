@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { GameContext } from './context'
 import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, gearPiece } from './data'
-import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
+import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, MAX_SHIELDS, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyPlus, daysBetween, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
-import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords } from './progress'
+import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyPlus, daysBetween, daysTrainedSince, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
+import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords, weekKey, weekStart } from './progress'
 import { beatsRecord } from './coach'
 import { challengeProgress } from './challenge'
 import { EFFORT_SLOTS, effortsFromLog, foldEfforts } from './efforts'
@@ -78,6 +78,9 @@ function baseState() {
     // from before the day roll existed.
     lastDayKey: todayKey(),
     streakDay: null,
+    // The week a rest day was last banked, so the faucet runs once a week
+    // however many sessions land after it.
+    shieldWeek: null,
   }
 }
 
@@ -519,6 +522,31 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   }
   if (prs.length) reward.milestones.unshift({ kind: 'pr', label: prs.length === 1 ? 'Personal best' : `${prs.length} personal bests` })
 
+  // ---- a rest day, earned by training rather than bought.
+  //
+  // Peloton's streak counts weeks you hit your workout target, not days,
+  // because a gym app that demands seven days a week is telling people to
+  // train through a rest day. LVL100's streak is daily — moving counts, not
+  // just lifting — so the week is where the forgiveness is earned instead:
+  // hit the number of days you set yourself and you have banked one day off.
+  //
+  // Once a week, and never more than MAX_SHIELDS in the bank.
+  const thisWeek = weekKey(Date.now())
+  if (next.shieldWeek !== thisWeek && (next.player.shields ?? 0) < MAX_SHIELDS) {
+    const goal = next.player.goalDays ?? 4
+    if (daysTrainedSince(next.log, weekStart(Date.now())) >= goal) {
+      next = {
+        ...next,
+        shieldWeek: thisWeek,
+        player: { ...next.player, shields: (next.player.shields ?? 0) + 1 },
+      }
+      reward.milestones.push({
+        kind: 'shield',
+        label: `Rest day banked · ${goal} days done this week`,
+      })
+    }
+  }
+
   reward.coins = next.player.cores - player.cores
   return { ...next, sessionReward: reward }
 }
@@ -570,6 +598,7 @@ export function reducer(state, action) {
           // The showroom's does not carry over.
           lastDayKey: todayKey(),
           streakDay: null,
+          shieldWeek: null,
           player: {
             ...state.player,
             ...FRESH_START.player,

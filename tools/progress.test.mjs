@@ -39,6 +39,7 @@ const { setTotals, byLift } = await server.ssrLoadModule('/src/game/session.js')
 const { MAX_LEVEL } = await server.ssrLoadModule('/src/game/config.js')
 const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js')
 const { reducer } = await server.ssrLoadModule('/src/game/store.jsx')
+const { MAX_SHIELDS } = await server.ssrLoadModule('/src/game/config.js')
 const { todayKey, dayKeyPlus } = await server.ssrLoadModule('/src/game/engine.js')
 const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
 const { GAMES, playsAim } = await server.ssrLoadModule('/src/game/config.js')
@@ -787,6 +788,39 @@ is('the longest streak ever held only goes up',
 is('a session logged before the app noticed the date still claims today',
   trained({ ...blank, lastDayKey: KEY(-1), streakDay: KEY(-1), player: { ...blank.player, streak: 5 } })
     .player.streak, 6)
+
+// The other end of the shield: they were spendable and unearnable, which is a
+// safety net with no rope. A week hit is what pays for one.
+console.log('\na week hit banks a rest day')
+// A log of n different days inside this week, oldest first, so weekStart sees
+// them all. Monday is the week's start, so count forward from it.
+const { weekStart: wkStart } = await server.ssrLoadModule('/src/game/progress.js')
+const daysIn = (n) => [...Array(n)].map((_, i) => ({
+  id: `l${i}`, activityId: 'walk', amount: 30, verified: false,
+  at: wkStart(Date.now()) + i * 86400000 + 3600000, xp: 10,
+}))
+const weekOf = (n, over = {}) => ({
+  ...blank,
+  ...over,
+  log: daysIn(n),
+  player: { ...blank.player, goalDays: 4, shields: 0, ...over.player },
+})
+is('three days in is not the week yet',
+  trained(weekOf(2)).player.shields, 0)
+is('the session that makes it four banks one',
+  trained(weekOf(3)).player.shields, 1)
+is('and says so on the reward screen',
+  trained(weekOf(3)).sessionReward.milestones.some((m) => m.kind === 'shield'), true)
+is('a fifth and sixth day do not bank a second',
+  trained(trained(weekOf(3))).player.shields, 1)
+is('the bank has a ceiling',
+  trained(weekOf(3, { player: { goalDays: 4, shields: MAX_SHIELDS } })).player.shields, MAX_SHIELDS)
+// Days, not sessions: three sessions on one day is one day of training.
+is('two sessions in a day do not count as two days',
+  trained({ ...blank, log: [...daysIn(3), { id: 'x', activityId: 'walk', amount: 30, at: wkStart(Date.now()) + 7200000, xp: 10 }],
+    player: { ...blank.player, goalDays: 5, shields: 0 } }).player.shields, 0)
+is('somebody who set themselves two days banks one at two',
+  trained(weekOf(1, { player: { goalDays: 2, shields: 0 } })).player.shields, 1)
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()
