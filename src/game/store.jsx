@@ -4,7 +4,8 @@ import { BOSS, CATALOG, FRESH_START, INITIAL_STATE, TEST_ACCOUNT, freshDailies, 
 import { ACTIVITIES, DAILY_SLOTS, EQUIP_SLOTS, FOUNDER_GIFT, MAX_SHIELDS, OFFHAND_KINDS, RARITY, SHOP_CHESTS, STREAK_TIERS, setForRarity } from './config'
 import { INTERVAL, MIN_SESSION_S, SPLIT_M, byLift, elapsedMs, modeOf, sessionAmount, setTotals, simplifyRoute } from './session'
 import { coverPoints } from './ground'
-import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyPlus, daysBetween, daysTrainedSince, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
+import { daysTrained, keepsStreak } from './pillars'
+import { MILESTONES, TREAT_PER_SESSION, bestLoadout, bossHit, campaignState, dayKeyPlus, daysBetween, feedPet, grantXp, petStage, minutesOf, resolveActivity, rollChest, rollDailyChest, rollMilestone, stoneProgress, todayKey, xpToNext } from './engine'
 import { PR_DAMAGE, PR_PER_SESSION, PR_XP, e1rm, foldLastSets, foldRecords, foldWeek, newRecords, weekKey, weekStart } from './progress'
 import { beatsRecord } from './coach'
 import { challengeProgress } from './challenge'
@@ -367,14 +368,18 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   // later on the pet screen — that decision is the whole of the collection.
   const pets = player.pets
 
-  // The streak is claimed by the first session of the day, not by a clock
+  // The streak is claimed by the first real session of the day, not by a clock
   // ticking over at midnight. The number should move while you are standing
   // there having just done the work — that is the entire reason it exists.
   // Everything the streak COSTS is settled in `dayRoll`; this only pays it.
+  //
+  // "Real" is twenty minutes of getting out or the gym. See `keepsStreak`:
+  // sleep and aim training are logged and paid and do not hold a streak.
   const today = todayKey()
   const claimedToday = state.streakDay === today
-  const streak = claimedToday ? player.streak : player.streak + 1
-  const streakTier = claimedToday ? null : STREAK_TIERS.find((t) => t.days === streak)
+  const claimsStreak = !claimedToday && keepsStreak(act.id, minutesOf(act, amount))
+  const streak = claimsStreak ? player.streak + 1 : player.streak
+  const streakTier = claimsStreak ? STREAK_TIERS.find((t) => t.days === streak) : null
 
   const week = {
     ...player.week,
@@ -392,8 +397,11 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     // Training is also being seen, so a session that lands on a new day is
     // allowed to settle it. Without this, logging before the app happened to
     // notice the date would claim the streak on yesterday's key.
+    //
+    // The streak's own day only moves when the streak was actually claimed —
+    // a logged nap has been seen but has not held anything.
     lastDayKey: today,
-    streakDay: today,
+    streakDay: claimsStreak ? today : state.streakDay,
     player: {
       ...player,
       level,
@@ -534,7 +542,7 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
   const thisWeek = weekKey(Date.now())
   if (next.shieldWeek !== thisWeek && (next.player.shields ?? 0) < MAX_SHIELDS) {
     const goal = next.player.goalDays ?? 4
-    if (daysTrainedSince(next.log, weekStart(Date.now())) >= goal) {
+    if (daysTrained(next.log, weekStart(Date.now())) >= goal) {
       next = {
         ...next,
         shieldWeek: thisWeek,

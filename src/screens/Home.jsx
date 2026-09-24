@@ -9,6 +9,7 @@ import CampaignSheet from '../components/CampaignSheet'
 import { useGame } from '../game/useGame'
 import { DAILY_CHEST, DAILY_SLOTS } from '../game/config'
 import { arenaLadder, bracketXp, campaignState, fmtFull, streakTier } from '../game/engine'
+import { STREAK_MIN_MINUTES } from '../game/pillars'
 import { alpha } from '../game/color'
 
 /**
@@ -447,18 +448,35 @@ export default function Home({ onGo }) {
           />
         ))}
 
-        {/* The shields were real and invisible: they auto-spend on a missed day
-            and the only place that ever said so was a coach panel most people
-            never opened. A safety net nobody knows about protects nothing —
-            and neither does one with no way to earn it, so the empty state
-            says how rather than just saying no. */}
-        <div className="flex items-center gap-2 px-3.5 py-2.5 border-t border-line">
-          <Icon name="shield" size={14} color={p.shields > 0 ? 'var(--color-cyan)' : 'var(--color-ink-faint)'} />
-          <span className="text-[13px] text-ink-faint leading-snug">
-            {p.shields > 0
-              ? `${p.shields} rest ${p.shields === 1 ? 'day' : 'days'} banked — miss one and the streak holds.`
-              : `No rest days banked. Train ${p.goalDays ?? 4} days in a week to earn one.`}
-          </span>
+        {/* How the streak works, said where the streak is.
+
+            The rule was nowhere and the shields were invisible: they
+            auto-spend on a missed day and the only place that ever mentioned
+            them was a coach panel most people never opened. A safety net
+            nobody knows about protects nothing, and a streak whose bar is
+            never stated reads as a demand to train seven days a week next to
+            a target that asks for four. They are different bars on purpose —
+            so both are printed, one under the other. */}
+        <div className="px-3.5 py-2.5 border-t border-line space-y-1.5">
+          <div className="flex items-start gap-2">
+            <Icon name="bolt" size={14} color="var(--tone-orange)" className="mt-0.5 shrink-0" />
+            <span className="text-[13px] text-ink-dim leading-snug">
+              {STREAK_MIN_MINUTES} minutes of getting out or the gym keeps the streak. A walk counts.
+            </span>
+          </div>
+          <div className="flex items-start gap-2">
+            <Icon
+              name="shield"
+              size={14}
+              color={p.shields > 0 ? 'var(--color-cyan)' : 'var(--color-ink-faint)'}
+              className="mt-0.5 shrink-0"
+            />
+            <span className="text-[13px] text-ink-faint leading-snug">
+              {p.shields > 0
+                ? `${p.shields} rest ${p.shields === 1 ? 'day' : 'days'} banked — a missed day spends one instead of resetting.`
+                : `No rest days banked. Train ${p.goalDays ?? 4} days in a week to earn one.`}
+            </span>
+          </div>
         </div>
       </Panel>
 

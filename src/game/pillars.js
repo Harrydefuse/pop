@@ -14,7 +14,8 @@
  * proof you are actually improving rather than merely turning up.
  */
 
-import { GAMES } from './config'
+import { ACTIVITIES, GAMES } from './config'
+import { dayKeyOf, minutesOf } from './engine'
 import { weekSeries } from './progress'
 import { readEffort } from './efforts'
 
@@ -74,6 +75,59 @@ export function pillarEmpty(pillar, games = []) {
  *  recovery, it pays XP, and it is not a thing you are getting better at. */
 export function pillarOf(activityId) {
   return PILLARS.find((p) => p.activities.includes(activityId)) ?? null
+}
+
+/**
+ * How long a session has to be before the day counts as trained.
+ *
+ * The same twenty minutes the Active daily already asks for, so the app has
+ * one number for "that was a day" rather than two that disagree. Below it the
+ * streak was claimable by the minimum loggable sixty seconds, which made the
+ * longest streak in the game a measure of who remembered to open the app.
+ */
+export const STREAK_MIN_MINUTES = 20
+
+/**
+ * Whether a session is the kind of thing the daily streak is about.
+ *
+ * Getting out or the gym — the two pillars that are your body doing something.
+ * Sleep and aim training are logged, pay XP and count towards the dailies, and
+ * they do not keep a streak: a hundred-day streak built out of typing in last
+ * night's sleep is a number, not a habit, and it carries a x1.5 multiplier on
+ * everything else.
+ *
+ * This is also what stops the streak and the weekly training target from
+ * contradicting each other. They are deliberately different bars: the streak
+ * asks for twenty minutes of moving every day, which is Apple's move ring and
+ * is meant to be cleared on a rest day by walking. The target asks for the
+ * days you actually trained, which is Peloton's weekly goal and is meant to be
+ * four or five. Neither is the other one failing.
+ */
+export function keepsStreak(activityId, minutes) {
+  const p = pillarOf(activityId)
+  if (p?.id !== 'out' && p?.id !== 'gym') return false
+  return minutes >= STREAK_MIN_MINUTES
+}
+
+/**
+ * How many different days in a window held a session that counted.
+ *
+ * The same bar as `keepsStreak`, on purpose: the daily streak and the weekly
+ * training target now agree about what a day of training is, and the only
+ * difference between them is how often they ask for one. Two definitions of
+ * "a day" was the thing that made the two read as contradicting each other.
+ *
+ * Days, not sessions. Two sessions on a Tuesday is one day, and a target of
+ * four that a double day can clear in two is not a target.
+ */
+export function daysTrained(log = [], since) {
+  const days = new Set()
+  for (const e of log) {
+    if (e.at < since) continue
+    const act = ACTIVITIES.find((a) => a.id === e.activityId)
+    if (act && keepsStreak(act.id, minutesOf(act, e.amount))) days.add(dayKeyOf(e.at))
+  }
+  return days.size
 }
 
 /** Which best-effort ids belong to which pillar, by the prefix the id is

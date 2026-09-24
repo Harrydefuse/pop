@@ -710,18 +710,6 @@ export function todayKey(d = new Date()) {
 export const dayKeyOf = (ms) => todayKey(new Date(ms))
 
 /**
- * How many different days were trained since a given moment.
- *
- * Days, not sessions. Two sessions on a Tuesday is one day of training, and a
- * weekly target of four that a double day can clear in two is not a target.
- */
-export function daysTrainedSince(log = [], since) {
-  const days = new Set()
-  for (const e of log) if (e.at >= since) days.add(dayKeyOf(e.at))
-  return days.size
-}
-
-/**
  * Whole days from one key to another, counted on the calendar rather than in
  * milliseconds — so a clock change or a daylight-saving jump cannot turn one
  * day into two or none.

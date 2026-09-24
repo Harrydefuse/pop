@@ -361,7 +361,9 @@ export const DAILY_SLOTS = [
     detail: 'Anything that builds you back up. Sleep counts as training here.',
     examples: 'Gym · Calisthenics · Mobility · Sleep',
     minMinutes: 0,
-    accepts: ['gym', 'bodyweight', 'mobility', 'sleep'],
+    // `lift` is the same gym session logged by volume rather than by the
+    // clock. Without it here, a manual gym entry moved none of the three.
+    accepts: ['gym', 'lift', 'bodyweight', 'mobility', 'sleep'],
     xp: 100,
     color: 'var(--color-gold)',
     icon: 'dumbbell',

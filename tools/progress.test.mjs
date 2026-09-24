@@ -41,7 +41,8 @@ const { CATALOG, INITIAL_STATE } = await server.ssrLoadModule('/src/game/data.js
 const { reducer } = await server.ssrLoadModule('/src/game/store.jsx')
 const { MAX_SHIELDS } = await server.ssrLoadModule('/src/game/config.js')
 const { todayKey, dayKeyPlus } = await server.ssrLoadModule('/src/game/engine.js')
-const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty } = await server.ssrLoadModule('/src/game/pillars.js')
+const { PILLARS, pillarOf, pillarWeek, pillarBest, pillarEmpty, keepsStreak, daysTrained, STREAK_MIN_MINUTES } =
+  await server.ssrLoadModule('/src/game/pillars.js')
 const { GAMES, playsAim } = await server.ssrLoadModule('/src/game/config.js')
 const { petSprite, PET_SPRITES } = await server.ssrLoadModule('/src/game/sprites.js')
 const { petStage, PET_STAGES, TREAT_PER_SESSION, feedPet, treatsToNext, petPct } =
@@ -789,12 +790,45 @@ is('a session logged before the app noticed the date still claims today',
   trained({ ...blank, lastDayKey: KEY(-1), streakDay: KEY(-1), player: { ...blank.player, streak: 5 } })
     .player.streak, 6)
 
+// What a day has to be before it counts as one. The streak used to move on
+// any log at all, which made a sixty-second walk and a nap worth the same as
+// an hour under the bar — and put a x1.5 multiplier behind typing in sleep.
+const { weekStart: wkStart } = await server.ssrLoadModule('/src/game/progress.js')
+console.log('\nand not everything logged is a day')
+is('twenty minutes of walking is a day', keepsStreak('walk', 20), true)
+is('nineteen is not', keepsStreak('walk', 19), false)
+is('an hour in the gym is a day', keepsStreak('gym', 60), true)
+is('so is a long lift logged by volume', keepsStreak('lift', 44), true)
+is('sleep is logged and paid and holds nothing', keepsStreak('sleep', 480), false)
+is('and neither does aim training, for all that it counts elsewhere',
+  [keepsStreak('aim', 60), keepsStreak('vod', 45)], [false, false])
+is('the bar is the one the Active daily already asks for', STREAK_MIN_MINUTES, 20)
+// Through the reducer, which is where it actually matters.
+const logged = (save, activityId, amount) => reducer(save, { type: 'log', activityId, amount, verified: false })
+is('a nap does not move the streak',
+  logged(blank, 'sleep', 8).player.streak, blank.player.streak)
+is('and leaves the streak day where it was',
+  logged(blank, 'sleep', 8).streakDay, blank.streakDay)
+is('but it is still logged, and still paid XP',
+  [logged(blank, 'sleep', 8).log.length - blank.log.length, logged(blank, 'sleep', 8).sessionReward.xp > 0],
+  [1, true])
+is('a two-minute walk does not move it either',
+  logged(blank, 'walk', 2).player.streak, blank.player.streak)
+is('a proper walk does',
+  logged(blank, 'walk', 25).player.streak, blank.player.streak + 1)
+// The weekly target counts the same kind of day, which is the whole point —
+// two definitions of "a day" is what made the two systems read as a fight.
+const dayAt = (n) => wkStart(Date.now()) + n * 86400000 + 3600000
+is('a week of naps is no days trained',
+  daysTrained([0, 1, 2, 3].map((n) => ({ activityId: 'sleep', amount: 8, at: dayAt(n) })), wkStart(Date.now())), 0)
+is('a week of real sessions is four',
+  daysTrained([0, 1, 2, 3].map((n) => ({ activityId: 'walk', amount: 30, at: dayAt(n) })), wkStart(Date.now())), 4)
+
 // The other end of the shield: they were spendable and unearnable, which is a
 // safety net with no rope. A week hit is what pays for one.
 console.log('\na week hit banks a rest day')
 // A log of n different days inside this week, oldest first, so weekStart sees
 // them all. Monday is the week's start, so count forward from it.
-const { weekStart: wkStart } = await server.ssrLoadModule('/src/game/progress.js')
 const daysIn = (n) => [...Array(n)].map((_, i) => ({
   id: `l${i}`, activityId: 'walk', amount: 30, verified: false,
   at: wkStart(Date.now()) + i * 86400000 + 3600000, xp: 10,
