@@ -27,7 +27,7 @@ const { bestWindow, effortsIn, foldEfforts, effortsFromLog, readEffort, pinnedEf
 const { EXERCISES, searchExercises, muscleOf, muscleSplit, neglected, exerciseByName } =
   await server.ssrLoadModule('/src/game/exercises.js')
 const { buildCard, encodeCard, decodeCard, leaderboard } = await server.ssrLoadModule('/src/game/profile.js')
-const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaignState, xpToNext, resolveFight, swingFor, fightPower, parAttack, bossHit, arenaLadder } =
+const { baselineMinutes, coinsFor, rollMilestone, MILESTONES, bracketXp, campaignState, xpToNext, resolveFight, swingFor, fightPower, parAttack, bossHit, arenaLadder, payable, grantXp, resolveActivity } =
   await server.ssrLoadModule('/src/game/engine.js')
 const { ARENAS, arenaFor } = await server.ssrLoadModule('/src/game/arenas.js')
 const { CAMPAIGN } = await server.ssrLoadModule('/src/game/campaign.js')
@@ -855,6 +855,46 @@ is('two sessions in a day do not count as two days',
     player: { ...blank.player, goalDays: 5, shields: 0 } }).player.shields, 0)
 is('somebody who set themselves two days banks one at two',
   trained(weekOf(1, { player: { goalDays: 2, shields: 0 } })).player.shields, 1)
+
+
+// What one session can be worth. Every number in the game is computed from
+// `amount`, and `amount` comes from outside — a hand-typed entry, a GPX with a
+// stray coordinate, a health export with the decimal in the wrong place. Until
+// now a single import of 100,000 km walked a level-1 character to level 100.
+console.log('\nno one session can be worth a game')
+const rideAct = ACTIVITIES.find((a) => a.id === 'ride')
+const walkAct = ACTIVITIES.find((a) => a.id === 'walk')
+is('a real ride is paid in full', payable(rideAct, 40), 40)
+is('a ride nobody has ever done is paid at the ceiling', payable(rideAct, 100000), rideAct.max)
+// Infinity is not a big number, it is a parser that divided by zero. It pays
+// nothing rather than the ceiling, because nothing about it is a claim.
+is('an infinite distance is nonsense and pays nothing', payable(rideAct, Infinity), 0)
+is('a negative distance is worth nothing', payable(rideAct, -500), 0)
+is('and so is a field that was not a number', [payable(rideAct, NaN), payable(rideAct, undefined), payable(rideAct, 'x')], [0, 0, 0])
+is('every activity has a ceiling', ACTIVITIES.every((a) => a.max > 0), true)
+is('and every one of them is above what it suggests', ACTIVITIES.every((a) => a.max > a.default), true)
+
+const rookie = { ...INITIAL_STATE.player, level: 1, xp: 0, streak: 0, classId: 'strider', stats: {}, stones: [], pets: [] }
+const payout = (activityId, amount) =>
+  resolveActivity(rookie, { activityId, amount, verified: true, log: [] })
+is('the 100,000 km import no longer finishes the game',
+  grantXp(1, 0, payout('ride', 100000).xp).level, grantXp(1, 0, payout('ride', rideAct.max).xp).level)
+// The promise worth pinning: no single entry, of any activity, can take a new
+// character more than a fraction of the way up. The worst case is a claimed
+// hundred-mile ultra, and a hundred-mile ultra is allowed to be worth a lot.
+is('and no single entry of anything gets a rookie past level 20',
+  ACTIVITIES.every((a) => grantXp(1, 0, payout(a.id, a.max * 1000).xp).level < 20), true)
+is('a session that was capped says so', payout('walk', 5000).capped, true)
+is('and one that was not says nothing', payout('walk', 45).capped, false)
+is('a capped session reports what it was paid for', payout('walk', 5000).paid, walkAct.max)
+is('but keeps what was actually logged', payout('walk', 5000).amount, 5000)
+// Coins and boss damage read the paid figure too, or the cap is a hole.
+is('coins are paid on the ceiling, not the claim',
+  payout('ride', 100000).cores, payout('ride', rideAct.max).cores)
+is('and so is boss damage',
+  payout('ride', 100000).bossDamage, payout('ride', rideAct.max).bossDamage)
+is('a nonsense entry pays nothing rather than NaN',
+  [payout('walk', -10).xp, payout('walk', NaN).xp, payout('walk', NaN).cores > 0], [0, 0, true])
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n')
 await server.close()

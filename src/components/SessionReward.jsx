@@ -120,6 +120,16 @@ export default function SessionReward() {
         </div>
       )}
 
+      {/* Said out loud, because a session that paid less than it looks like it
+          should have is the kind of thing that reads as a bug. The entry is
+          kept in full either way — this is a ceiling on the reward, not on
+          the training. */}
+      {r.capped != null && (
+        <p className="text-[14px] text-ink-dim leading-snug mt-3.5">
+          Logged in full. Paid up to {r.capped} {r.unit} — the most one session can be worth.
+        </p>
+      )}
+
       {/* ---- milestones: the things that actually drop loot */}
       {r.milestones.length > 0 && (
         <div className="mt-3.5 space-y-1.5">

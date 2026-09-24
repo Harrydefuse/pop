@@ -445,6 +445,9 @@ function applyLog(state, { activityId, amount, verified, source, detail, sets = 
     amount,
     unit: act.unit === 'kg volume' ? 'kg' : act.unit,
     verified,
+    // Set only when the entry was bigger than one session can be paid for.
+    // Saying so is the difference between a ceiling and a silent shortfall.
+    capped: result.capped ? result.paid : null,
     xp: result.xp + prXp,
     coins: result.cores,
     levels: levelsGained,

@@ -376,9 +376,30 @@ export function coinsFor(player, log, act, amount, verified) {
   return Math.max(5, Math.round(SESSION_COINS * effort * real * streak * (verified ? 1 : 0.5)))
 }
 
+/**
+ * How much of a logged amount a session is paid for.
+ *
+ * Clamped to nothing at the bottom and to the activity's own ceiling at the
+ * top, with anything that is not a finite number treated as nothing. See
+ * `max` on ACTIVITIES for why the ceilings exist and how they were picked.
+ */
+export function payable(act, amount) {
+  const n = Number(amount)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return act.max ? Math.min(n, act.max) : n
+}
+
 export function resolveActivity(player, { activityId, amount, verified, log = [] }) {
   const act = activityById(activityId)
-  const blocks = amount / act.per
+  // The one place a number from outside becomes XP, coins, stats and boss
+  // damage — so it is the one place worth defending. Everything downstream
+  // reads `blocks`, which means a ceiling here is a ceiling on all of it.
+  //
+  // NaN, undefined, a negative and Infinity all arrive the same way: a
+  // hand-typed entry, a file with a bad field, a distance in metres where the
+  // app wanted kilometres. They become zero, zero, zero and the ceiling.
+  const paid = payable(act, amount)
+  const blocks = paid / act.per
   const cls = classById(player.classId)
 
   let xpMult = 1
@@ -403,11 +424,15 @@ export function resolveActivity(player, { activityId, amount, verified, log = []
   return {
     xp: Math.round(act.xp * blocks * xpMult),
     statGains,
-    cores: coinsFor(player, log, act, amount, verified),
-    bossDamage: act.boss ? Math.round(act.boss * amount * 10) / 10 : 0,
+    cores: coinsFor(player, log, act, paid, verified),
+    bossDamage: act.boss ? Math.round(act.boss * paid * 10) / 10 : 0,
     verified,
     activity: act,
     amount,
+    // What was actually paid for, and whether that was less than what was
+    // logged. The session screen says so rather than quietly paying short.
+    paid,
+    capped: paid < amount,
   }
 }
 

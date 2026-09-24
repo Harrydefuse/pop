@@ -144,6 +144,25 @@ export const RANKS = [
 // unit equals one "block" of reward, and `stats` splits the block across stats.
 // `minPerUnit` converts an amount into minutes so a daily slot can hold one
 // honest minimum ("20 minutes") no matter which activity fills it.
+/**
+ * `max` is the most a single session can be paid for, in that activity's own
+ * unit. It is not a limit on what you can log — your history is yours and a
+ * hundred-mile run is a hundred-mile run — it is a limit on what one entry can
+ * be worth, which is a different thing.
+ *
+ * It exists because the numbers come in from outside. A manual entry, a
+ * malformed GPX with a stray coordinate in it, a health export with a decimal
+ * point in the wrong place: any of those can hand the game a distance nobody
+ * has ever covered, and without a ceiling one bad file walks a character to
+ * level 100. Pokemon GO's answer to the same problem is the right one — input
+ * that could not have happened does not pay — except that throwing the session
+ * away as well would be deleting somebody's training, so it is logged in full
+ * and paid at the ceiling.
+ *
+ * Each one is set at roughly the outer edge of what a person does in one go:
+ * a hundred-mile ultra, a double-century ride, twelve hours on your feet,
+ * fifty tonnes on the bar. Nobody training normally will ever see one.
+ */
 export const ACTIVITIES = [
   {
     id: 'walk',
@@ -156,6 +175,7 @@ export const ACTIVITIES = [
     stats: { VIT: 3, END: 2 },
     step: 5,
     default: 20,
+    max: 720,
     icon: 'walk',
     boss: 0.08,
   },
@@ -170,6 +190,7 @@ export const ACTIVITIES = [
     stats: { END: 5, AGI: 1 },
     step: 0.5,
     default: 5,
+    max: 160,
     icon: 'run',
     boss: 1, // 1 km = 1 damage against the world boss
   },
@@ -184,6 +205,7 @@ export const ACTIVITIES = [
     stats: { END: 4, AGI: 1 },
     step: 1,
     default: 15,
+    max: 400,
     icon: 'bike',
     boss: 0.34,
   },
@@ -198,6 +220,7 @@ export const ACTIVITIES = [
     stats: { AGI: 5, END: 2, STR: 1 },
     step: 5,
     default: 20,
+    max: 120,
     icon: 'timer',
     boss: 0.4,
   },
@@ -212,6 +235,7 @@ export const ACTIVITIES = [
     stats: { AGI: 4, STR: 2, END: 2 },
     step: 15,
     default: 60,
+    max: 480,
     icon: 'ball',
     boss: 0.3,
   },
@@ -226,6 +250,7 @@ export const ACTIVITIES = [
     stats: { STR: 6, VIT: 1 },
     step: 500,
     default: 4000,
+    max: 50000,
     icon: 'dumbbell',
   },
   {
@@ -239,6 +264,7 @@ export const ACTIVITIES = [
     stats: { END: 4, VIT: 3 },
     step: 5,
     default: 20,
+    max: 300,
     icon: 'swim',
     boss: 0.12,
   },
@@ -253,6 +279,7 @@ export const ACTIVITIES = [
     stats: { STR: 6, VIT: 2 },
     step: 5,
     default: 45,
+    max: 300,
     icon: 'dumbbell',
     boss: 0.05,
   },
@@ -267,6 +294,7 @@ export const ACTIVITIES = [
     stats: { VIT: 4, AGI: 2 },
     step: 5,
     default: 20,
+    max: 180,
     icon: 'lotus',
   },
   {
@@ -280,6 +308,7 @@ export const ACTIVITIES = [
     stats: { STR: 3, AGI: 3, VIT: 1 },
     step: 5,
     default: 30,
+    max: 300,
     icon: 'hold',
   },
   {
@@ -293,6 +322,7 @@ export const ACTIVITIES = [
     stats: { VIT: 3, FOCUS: 2 },
     step: 0.5,
     default: 8,
+    max: 14,
     icon: 'moon',
   },
   {
@@ -306,6 +336,7 @@ export const ACTIVITIES = [
     stats: { FOCUS: 5 },
     step: 5,
     default: 20,
+    max: 480,
     icon: 'crosshair',
     gaming: true,
   },
@@ -320,6 +351,7 @@ export const ACTIVITIES = [
     stats: { FOCUS: 4 },
     step: 5,
     default: 20,
+    max: 480,
     icon: 'play',
     gaming: true,
   },
